@@ -409,7 +409,8 @@ class Field {
     const center = (gx, gy) => ({ x: ox + (gx - gy) * 32, y: oy + (gx + gy + 1) * 16 });
     const f = (Game.frame >> 5) % 4;
     const objs = [];
-    ctx.fillStyle = map.dark ? '#000' : '#1e3a1c';
+    // マップの外は画用紙の色
+    ctx.fillStyle = map.dark ? '#000' : '#efe6d2';
     ctx.fillRect(0, 0, W, H);
     // レンより手前でレンに重なる壁や木は半透明にする
     const pcx = W / 2, pcy = oy + (pg.x + pg.y + 1) * 16;
@@ -458,8 +459,9 @@ class Field {
     // 左上から差す光と、右下の陰り
     ctx.fillStyle = map.dark
       ? linGrad(0, 0, W, H, [[0, 'rgba(120,90,160,0.10)'], [1, 'rgba(0,0,10,0.25)']])
-      : linGrad(0, 0, W, H, [[0, 'rgba(255,236,190,0.16)'], [0.5, 'rgba(255,255,255,0)'], [1, 'rgba(10,20,70,0.24)']]);
+      : linGrad(0, 0, W, H, [[0, 'rgba(255,236,190,0.16)'], [0.5, 'rgba(255,255,255,0)'], [1, 'rgba(10,20,70,0.12)']]);
     ctx.fillRect(0, 0, W, H);
+    Watercolor.apply(0, H, !!map.dark);
     if (map.dark) {
       const g = ctx.createRadialGradient(pc.x, pc.y - 16, 80, pc.x, pc.y - 16, 300);
       g.addColorStop(0, 'rgba(0,0,0,0)');
@@ -806,8 +808,9 @@ class Fishing {
       ctx.beginPath(); ctx.moveTo(220, 230); ctx.quadraticCurveTo(320, 220, bx, by); ctx.stroke();
       ctx.fillStyle = '#e33'; ctx.beginPath(); ctx.arc(bx, by, 6, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.fillRect(bx - 6, by - 1, 12, 2);
-      if (this.state === 'bite') drawText('！', bx + 10, by - 50, '#ff4', 40);
     }
+    Watercolor.apply();
+    if (this.state === 'bite') drawText('！', bx + 10, by - 50, '#ff4', 40);
     if (this.state === 'reel') {
       drawWindow(220, 380, 400, 88);
       const x0 = 244, w = 352;
@@ -846,6 +849,7 @@ class Title {
       ctx.fillRect((i * 137) % W, (i * 71) % 260, 2, 2);
     }
     drawSprite('dragon_fire', 360, 60 + Math.sin(Game.frame / 40) * 6, 14, { alpha: 0.35, flip: true });
+    Watercolor.apply();
     drawText('竜血の旅路', W / 2, 120, '#ffe0a0', 64, 'center');
     drawText('～ Dragon Blood Saga ～', W / 2, 200, '#e0c0ff', 22, 'center');
     drawWindow(230, 290, 180, 96);

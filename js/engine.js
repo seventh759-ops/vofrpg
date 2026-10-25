@@ -113,12 +113,20 @@ function getSprite(name, white = false) {
   const g = c.getContext('2d');
   // 光は左上から。輪郭の左上側を明るく、右下側を暗く、全体は下ほど暗くする
   const filled = (x, y) => { const ch = (rows[y] || '')[x]; return !!ch && ch !== '.' && ch !== 'k'; };
+  // 輪郭線は黒ではなく、隣り合う色を暗くした色にする (水彩風の色線)
+  const lineColor = (x, y) => {
+    for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) {
+      if (filled(x + dx, y + dy)) return shadeHex(def.pal[rows[y + dy][x + dx]], -0.62);
+    }
+    return null;
+  };
   rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
       const ch = row[x];
       let col = def.pal[ch];
       if (!col || ch === '.') continue;
-      if (ch !== 'k') {
+      if (ch === 'k') col = lineColor(x, y) || col;
+      else {
         let amt = 0.1 - 0.24 * (y / (h - 1));
         const lit = !filled(x - 1, y) || !filled(x, y - 1);
         const dark = !filled(x + 1, y) || !filled(x, y + 1);
@@ -310,8 +318,8 @@ function roundRectPath(x, y, w, h, r) {
 
 function drawWindow(x, y, w, h) {
   const gr = ctx.createLinearGradient(0, y, 0, y + h);
-  gr.addColorStop(0, '#3048a8');
-  gr.addColorStop(1, '#141c58');
+  gr.addColorStop(0, '#4a5c96');
+  gr.addColorStop(1, '#262f5c');
   ctx.save();
   roundRectPath(x, y, w, h, 6);
   ctx.fillStyle = gr;
@@ -319,11 +327,11 @@ function drawWindow(x, y, w, h) {
   ctx.fill();
   ctx.globalAlpha = 1;
   ctx.lineWidth = 3;
-  ctx.strokeStyle = '#eef0ff';
+  ctx.strokeStyle = '#f4ecd8';
   ctx.stroke();
   roundRectPath(x + 4, y + 4, w - 8, h - 8, 4);
   ctx.lineWidth = 1;
-  ctx.strokeStyle = '#7080c0';
+  ctx.strokeStyle = '#8a90b8';
   ctx.stroke();
   ctx.restore();
 }
@@ -334,6 +342,79 @@ function drawBar(x, y, w, h, ratio, color) {
   ctx.fillStyle = color;
   ctx.fillRect(x + 1, y + 1, Math.max(0, (w - 2) * clamp(ratio, 0, 1)), h - 2);
 }
+
+// ---------- 水彩調の仕上げ ----------
+// 描いた絵を淡くにじませ、紙の質感と絵の具のムラを乗算で重ねる
+const Watercolor = {
+  paper: null,
+  buf: null,
+  makePaper() {
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    g.fillStyle = '#fbf6ec';
+    g.fillRect(0, 0, W, H);
+    // 絵の具のしみ (暖色と寒色の淡いムラ)
+    const tints = ['200,170,130', '150,170,200', '190,150,170', '170,190,150'];
+    for (let i = 0; i < 160; i++) {
+      const x = Math.random() * W, y = Math.random() * H, r = 20 + Math.random() * 90;
+      const gr = g.createRadialGradient(x, y, r * 0.2, x, y, r);
+      const t = tints[i % tints.length];
+      gr.addColorStop(0, `rgba(${t},0.10)`);
+      gr.addColorStop(0.75, `rgba(${t},0.05)`);
+      gr.addColorStop(0.9, `rgba(${t},0.09)`);  // 縁に色がたまる
+      gr.addColorStop(1, `rgba(${t},0)`);
+      g.fillStyle = gr;
+      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+    }
+    // 紙の繊維
+    for (let i = 0; i < 9000; i++) {
+      g.fillStyle = Math.random() < 0.5 ? 'rgba(120,100,80,0.10)' : 'rgba(255,255,255,0.35)';
+      g.fillRect(Math.random() * W, Math.random() * H, 1 + Math.random() * 2, 1);
+    }
+    return c;
+  },
+  // dark: 洞窟など暗い場面では明るくする処理を弱める
+  apply(y0 = 0, h = H, dark = false) {
+    if (!this.paper) {
+      this.paper = this.makePaper();
+      this.buf = document.createElement('canvas');
+      this.buf.width = W; this.buf.height = H;
+    }
+    // ctx.filter は重いので、合成モードだけで仕上げる
+    const b = this.buf.getContext('2d');
+    b.clearRect(0, y0, W, h);
+    b.drawImage(canvas, 0, y0, W, h, 0, y0, W, h);
+    ctx.save();
+    // にじみ: 少しずらして薄く重ねる
+    ctx.globalAlpha = 0.28;
+    ctx.drawImage(this.buf, 0, y0, W, h, 1, y0 + 1, W, h);
+    ctx.drawImage(this.buf, 0, y0, W, h, -1, y0, W, h);
+    // 彩度を落とす
+    ctx.globalCompositeOperation = 'saturation';
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = '#808080';
+    ctx.fillRect(0, y0, W, h);
+    // 淡い暖色の水でうすめて明るく
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = dark ? 'rgba(40,30,30,0.3)' : 'rgba(70,60,40,0.55)';
+    ctx.fillRect(0, y0, W, h);
+    ctx.globalCompositeOperation = 'source-over';
+    if (!dark) {
+      // 画面の縁は紙の色に溶かす
+      const v = ctx.createRadialGradient(W / 2, y0 + h / 2, Math.min(W, h) * 0.38, W / 2, y0 + h / 2, Math.max(W, h) * 0.72);
+      v.addColorStop(0, 'rgba(250,244,230,0.06)');
+      v.addColorStop(1, 'rgba(250,244,230,0.62)');
+      ctx.fillStyle = v;
+      ctx.fillRect(0, y0, W, h);
+    }
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = dark ? 0.35 : 0.55;
+    ctx.drawImage(this.paper, 0, y0, W, h, 0, y0, W, h);
+    ctx.restore();
+  },
+};
 
 // ---------- メニュー ----------
 // items: [{label, right, disabled, ...}]

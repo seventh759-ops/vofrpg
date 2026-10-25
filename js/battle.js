@@ -420,7 +420,7 @@ class Battle {
     const cave = this.bg === 'cave';
     const g = ctx.createLinearGradient(0, 0, 0, 340);
     if (cave) { g.addColorStop(0, '#0c0810'); g.addColorStop(1, '#2a2030'); }
-    else { g.addColorStop(0, '#4a7ad0'); g.addColorStop(0.3, '#b0d8f4'); g.addColorStop(0.31, '#4f8f40'); g.addColorStop(1, '#2e6a2a'); }
+    else { g.addColorStop(0, '#8ab4e4'); g.addColorStop(0.3, '#e4eef0'); g.addColorStop(0.31, '#a8c890'); g.addColorStop(1, '#d8dcb8'); }
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, 340);
     const ground = cave ? 'f' : '.';
@@ -475,6 +475,7 @@ class Battle {
     list.sort((a, b) => a.y - b.y).forEach(d => d.fn());
     ctx.fillStyle = linGrad(0, 0, W, 340, [[0, 'rgba(255,236,190,0.12)'], [0.5, 'rgba(255,255,255,0)'], [1, 'rgba(10,20,70,0.22)']]);
     ctx.fillRect(0, 0, W, 340);
+    Watercolor.apply(0, 340, this.bg === 'cave');
     // ダメージ表示
     for (const p of this.popups) {
       drawText(p.text, p.x, p.y - Math.min(p.t, 20) * 1.2, p.color, 24, 'center');
