@@ -455,6 +455,11 @@ class Field {
       fn: () => drawIsoChar('ren' + back, pc.x, pc.y, 2, { flip, lift }) });
     objs.sort((a, b) => a.d - b.d).forEach(o => o.fn());
 
+    // 左上から差す光と、右下の陰り
+    ctx.fillStyle = map.dark
+      ? linGrad(0, 0, W, H, [[0, 'rgba(120,90,160,0.10)'], [1, 'rgba(0,0,10,0.25)']])
+      : linGrad(0, 0, W, H, [[0, 'rgba(255,236,190,0.16)'], [0.5, 'rgba(255,255,255,0)'], [1, 'rgba(10,20,70,0.24)']]);
+    ctx.fillRect(0, 0, W, H);
     if (map.dark) {
       const g = ctx.createRadialGradient(pc.x, pc.y - 16, 80, pc.x, pc.y - 16, 300);
       g.addColorStop(0, 'rgba(0,0,0,0)');

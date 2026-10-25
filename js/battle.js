@@ -431,6 +431,13 @@ class Battle {
         drawIsoGround(ground, c.x, c.y - 16, f);
       }
     }
+    // 戦場の中央を明るく、縁を暗く
+    const spot = ctx.createRadialGradient(300, 190, 40, 320, 200, 320);
+    spot.addColorStop(0, cave ? 'rgba(255,200,140,0.14)' : 'rgba(255,250,220,0.18)');
+    spot.addColorStop(0.6, 'rgba(0,0,0,0)');
+    spot.addColorStop(1, 'rgba(0,0,20,0.45)');
+    ctx.fillStyle = spot;
+    ctx.fillRect(0, 0, W, 340);
     // 奥の縁に木や岩壁を並べる
     for (let k = -1; k <= 8; k++) {
       for (const [gx, gy] of [[-1, k], [k, -1]]) {
@@ -466,6 +473,8 @@ class Battle {
       } });
     }
     list.sort((a, b) => a.y - b.y).forEach(d => d.fn());
+    ctx.fillStyle = linGrad(0, 0, W, 340, [[0, 'rgba(255,236,190,0.12)'], [0.5, 'rgba(255,255,255,0)'], [1, 'rgba(10,20,70,0.22)']]);
+    ctx.fillRect(0, 0, W, 340);
     // ダメージ表示
     for (const p of this.popups) {
       drawText(p.text, p.x, p.y - Math.min(p.t, 20) * 1.2, p.color, 24, 'center');

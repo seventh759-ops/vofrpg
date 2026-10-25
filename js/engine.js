@@ -95,18 +95,37 @@ const Sound = {
 };
 
 // ---------- スプライト / タイル ----------
+// '#rrggbb' を明るく (amt > 0) / 暗く (amt < 0)
+function shadeHex(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const f = v => Math.round(amt >= 0 ? v + (255 - v) * amt : v * (1 + amt));
+  return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`;
+}
+
 const spriteCache = {};
 function getSprite(name, white = false) {
   const key = name + (white ? '#w' : '');
   if (spriteCache[key]) return spriteCache[key];
   const def = SPRITES[name];
+  const rows = def.rows, h = rows.length;
   const c = document.createElement('canvas');
-  c.width = def.rows[0].length; c.height = def.rows.length;
+  c.width = rows[0].length; c.height = h;
   const g = c.getContext('2d');
-  def.rows.forEach((row, y) => {
+  // 光は左上から。輪郭の左上側を明るく、右下側を暗く、全体は下ほど暗くする
+  const filled = (x, y) => { const ch = (rows[y] || '')[x]; return !!ch && ch !== '.' && ch !== 'k'; };
+  rows.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
-      const col = def.pal[row[x]];
-      if (!col || row[x] === '.') continue;
+      const ch = row[x];
+      let col = def.pal[ch];
+      if (!col || ch === '.') continue;
+      if (ch !== 'k') {
+        let amt = 0.1 - 0.24 * (y / (h - 1));
+        const lit = !filled(x - 1, y) || !filled(x, y - 1);
+        const dark = !filled(x + 1, y) || !filled(x, y + 1);
+        if (lit && !dark) amt += 0.22;
+        else if (dark && !lit) amt -= 0.24;
+        col = shadeHex(col, amt);
+      }
       g.fillStyle = col;
       g.fillRect(x, y, 1, 1);
     }
@@ -168,6 +187,7 @@ function getTile(ch, f = 0) {
   };
   const water = () => {
     R(0, 0, 32, 32, '#3474d0');
+    R(((f * 11) % 28) + 2, ((f * 7) % 24) + 4, 2, 2, '#d8ecff');
     const o = f * 8;
     [[2, 6], [18, 14], [8, 24]].forEach(([x, y]) => { R((x + o) % 32, y, 8, 2, '#7ab4f4'); });
   };
