@@ -132,7 +132,7 @@ function newGame() {
 const INTRO = [
   'ここは 山あいの小さな村、ルフ。',
   'いにしえの竜の血をひく青年 レンは、村の長老に呼ばれていた。',
-  '（矢印キーで移動 / Zで調べる・決定 / Xでメニュー・キャンセル）',
+  '（矢印キーで移動：↑右上 →右下 ↓左下 ←左上 / Zで調べる・決定 / Xでメニュー・キャンセル）',
 ];
 
 function doorElder() {
@@ -394,48 +394,69 @@ class Field {
     }
   }
 
-  // ---------- 描画 ----------
-  lerpPos(from, to) {
+  // ---------- 描画 (クォータービュー) ----------
+  lerpGrid(from, to) {
     const t = this.moving ? this.t : 1;
-    return { x: (from.x + (to.x - from.x) * t) * TILE, y: (from.y + (to.y - from.y) * t) * TILE };
+    return { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t };
   }
+  // 移動中は奥行きを行き先と移動元の手前側で判定する
+  depthOf(from, to) { return Math.max(from.x + from.y, this.moving ? to.x + to.y : 0); }
   draw() {
-    const map = this.map;
-    const mw = map.rows[0].length * TILE, mh = map.rows.length * TILE;
-    const p = this.moving ? this.lerpPos({ x: G.x, y: G.y }, { x: this.tx, y: this.ty }) : { x: G.x * TILE, y: G.y * TILE };
-    const cx = Math.round(mw <= W ? (mw - W) / 2 : clamp(p.x + 16 - W / 2, 0, mw - W));
-    const cy = Math.round(mh <= H ? (mh - H) / 2 : clamp(p.y + 16 - H / 2, 0, mh - H));
+    const map = this.map, rows = map.rows;
+    const pg = this.moving ? this.lerpGrid({ x: G.x, y: G.y }, { x: this.tx, y: this.ty }) : { x: G.x, y: G.y };
+    const ox = Math.round(W / 2 - (pg.x - pg.y) * 32);
+    const oy = Math.round(H / 2 + 8 - (pg.x + pg.y + 1) * 16);
+    const center = (gx, gy) => ({ x: ox + (gx - gy) * 32, y: oy + (gx + gy + 1) * 16 });
     const f = (Game.frame >> 5) % 4;
-    const x0 = Math.floor(cx / TILE), y0 = Math.floor(cy / TILE);
-    for (let ty = y0; ty <= y0 + H / TILE + 1; ty++) {
-      for (let tx = x0; tx <= x0 + W / TILE + 1; tx++) {
-        ctx.drawImage(getTile(this.tileAt(tx, ty), f), tx * TILE - cx, ty * TILE - cy);
+    const objs = [];
+    ctx.fillStyle = map.dark ? '#000' : '#1e3a1c';
+    ctx.fillRect(0, 0, W, H);
+    // レンより手前でレンに重なる壁や木は半透明にする
+    const pcx = W / 2, pcy = oy + (pg.x + pg.y + 1) * 16;
+    const hides = (sx, sy) => Math.abs(sx - pcx) < 56 && sy + 16 > pcy && sy + 16 - pcy < 90;
+    for (let y = 0; y < rows.length; y++) {
+      for (let x = 0; x < rows[y].length; x++) {
+        const sx = ox + (x - y) * 32, sy = oy + (x + y) * 16;
+        if (sx < -96 || sx > W + 96 || sy < -140 || sy > H + 40) continue;
+        const ch = this.tileAt(x, y);
+        drawIsoGround(ch, sx, sy, f);
+        if (ISO_TALL.has(ch)) {
+          const fade = hides(sx, sy);
+          objs.push({ d: x + y, fn: () => {
+            if (fade) ctx.globalAlpha = 0.4;
+            drawIsoObject(ch, sx, sy);
+            ctx.globalAlpha = 1;
+          } });
+        }
       }
     }
-    // 人物 (y順)
-    const draws = [];
     for (const e of entitiesOf(G.map)) {
-      draws.push({ y: e.y * TILE, fn: () => {
-        const sx = e.x * TILE - cx, sy = e.y * TILE - cy;
-        if (e.chest) this.drawChest(sx, sy, G.opened[e.id]);
-        else if (e.big) drawSprite(e.sprite, sx - 16, sy - 32 + Math.sin(Game.frame / 20) * 2, 4);
-        else drawSprite(e.sprite, sx, sy, 2);
+      const c = center(e.x, e.y);
+      objs.push({ d: e.x + e.y + 0.5, fn: () => {
+        if (e.chest) drawIsoChest(c.x, c.y, G.opened[e.id]);
+        else if (e.big) drawIsoChar(e.sprite, c.x, c.y, 4, { lift: Math.sin(Game.frame / 20) * 2 });
+        else drawIsoChar(e.sprite, c.x, c.y, 2);
       } });
     }
-    const bob = this.moving && Math.floor(this.t * 4) % 2 ? -2 : 0;
-    const back = G.dir === 'up' ? '_back' : '';
+    // 奥 (上・左) を向いているときは後ろ姿
+    const back = G.dir === 'up' || G.dir === 'left' ? '_back' : '';
+    const flip = G.dir === 'up' || G.dir === 'right';
+    const lift = this.moving && Math.floor(this.t * 4) % 2 ? -2 : 0;
     this.syncTrail();
     G.partyIds.slice(1).forEach((id, i) => {
-      const fp = this.moving ? this.lerpPos(this.trailFrom[i], this.trail[i]) : { x: this.trail[i].x * TILE, y: this.trail[i].y * TILE };
       if (!this.moving && this.trail[i].x === G.x && this.trail[i].y === G.y) return;
-      draws.push({ y: fp.y - 0.5 - i * 0.01, fn: () => drawSprite(CHARS[id].sprite + back, fp.x - cx, fp.y - cy + bob, 2) });
+      const fp = this.lerpGrid(this.trailFrom[i], this.trail[i]);
+      const c = center(fp.x, fp.y);
+      objs.push({ d: this.depthOf(this.trailFrom[i], this.trail[i]) + 0.5 - (i + 1) * 0.01,
+        fn: () => drawIsoChar(CHARS[id].sprite + back, c.x, c.y, 2, { flip, lift }) });
     });
-    draws.push({ y: p.y, fn: () => drawSprite('ren' + back, p.x - cx, p.y - cy + bob, 2, { flip: G.dir === 'left' }) });
-    draws.sort((a, b) => a.y - b.y).forEach(d => d.fn());
+    const pc = center(pg.x, pg.y);
+    objs.push({ d: this.depthOf({ x: G.x, y: G.y }, { x: this.tx, y: this.ty }) + 0.5,
+      fn: () => drawIsoChar('ren' + back, pc.x, pc.y, 2, { flip, lift }) });
+    objs.sort((a, b) => a.d - b.d).forEach(o => o.fn());
 
     if (map.dark) {
-      const px = p.x - cx + 16, py = p.y - cy + 16;
-      const g = ctx.createRadialGradient(px, py, 70, px, py, 280);
+      const g = ctx.createRadialGradient(pc.x, pc.y - 16, 80, pc.x, pc.y - 16, 300);
       g.addColorStop(0, 'rgba(0,0,0,0)');
       g.addColorStop(1, 'rgba(0,0,0,0.88)');
       ctx.fillStyle = g;
@@ -447,16 +468,6 @@ class Field {
       drawText(map.name, 116, 27, '#fff', 20, 'center');
       ctx.globalAlpha = 1;
     }
-  }
-  drawChest(x, y, open) {
-    ctx.fillStyle = '#1b1424';
-    ctx.fillRect(x + 4, y + 10, 24, 18);
-    ctx.fillStyle = open ? '#5a3a1c' : '#a8642a';
-    ctx.fillRect(x + 6, y + 12, 20, 14);
-    ctx.fillStyle = '#f2d04b';
-    ctx.fillRect(x + 6, y + 17, 20, 2);
-    ctx.fillRect(x + 14, y + 15, 4, 6);
-    if (open) { ctx.fillStyle = '#1b1424'; ctx.fillRect(x + 6, y + 12, 20, 4); }
   }
 }
 

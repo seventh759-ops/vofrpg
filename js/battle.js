@@ -392,41 +392,47 @@ class Battle {
     else if (this.phase === 'cmd') this.updateCmd();
   }
 
-  // ---------- 描画 ----------
+  // ---------- 描画 (クォータービュー) ----------
+  // 戦場は 9x9 マス。整数座標がマスの中心。敵は左上、味方は右下に並ぶ
+  iso(gx, gy) { return { x: 320 + (gx - gy) * 32, y: 200 + (gx + gy - 8) * 16 }; }
+  slot(n, i, gx) { return [gx, n === 1 ? 4 : n === 2 ? [3, 5][i] : [2, 4, 6][i]]; }
   pos(b) {
+    let foot, scale;
     if (b.isEnemy) {
-      const n = this.enemies.length, i = this.enemies.indexOf(b);
-      const scale = b.data.boss ? 7 : 4, s = 16 * scale;
-      const cx = b.data.boss ? 200 : 60 + (i + 0.5) * (300 / n);
-      return { x: cx - s / 2, y: 300 - s - (n > 2 && i % 2 ? 24 : 0), s, scale };
+      const [gx, gy] = b.data.boss ? [1.6, 4] : this.slot(this.enemies.length, this.enemies.indexOf(b), 2);
+      foot = this.iso(gx, gy);
+      scale = b.data.boss ? 6 : 4;
+      if (this.active === b) { foot.x += 14; foot.y += 7; }
+    } else {
+      foot = this.iso(...this.slot(3, this.party.indexOf(b), 6));
+      scale = b.form ? 4 : 3;
+      if (this.active === b || (this.phase === 'cmd' && this.party[this.ci] === b)) { foot.x -= 20; foot.y -= 10; }
     }
-    const i = this.party.indexOf(b);
-    const scale = b.form ? 4 : 3, s = 16 * scale;
-    let x = 470 + i * 28, y = 92 + i * 76 - (b.form ? 12 : 0);
-    if (this.active === b || (this.phase === 'cmd' && this.party[this.ci] === b)) x -= 24;
-    return { x, y, s, scale };
+    const s = 16 * scale;
+    return { x: foot.x - s / 2, y: foot.y - s + scale * 2, s, scale, fx: foot.x, fy: foot.y };
   }
   drawBackground() {
-    if (this.bg === 'cave') {
-      const g = ctx.createLinearGradient(0, 0, 0, 340);
-      g.addColorStop(0, '#0c0810'); g.addColorStop(0.55, '#2a2030'); g.addColorStop(1, '#3e3238');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, 340);
-      ctx.fillStyle = '#1a1218';
-      for (let x = 0; x < W; x += 40) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 20, 30 + (x * 7) % 40); ctx.lineTo(x + 40, 0); ctx.fill();
+    const cave = this.bg === 'cave';
+    const g = ctx.createLinearGradient(0, 0, 0, 340);
+    if (cave) { g.addColorStop(0, '#0c0810'); g.addColorStop(1, '#2a2030'); }
+    else { g.addColorStop(0, '#4a7ad0'); g.addColorStop(0.3, '#b0d8f4'); g.addColorStop(0.31, '#4f8f40'); g.addColorStop(1, '#2e6a2a'); }
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, 340);
+    const ground = cave ? 'f' : '.';
+    const f = (Game.frame >> 5) % 4;
+    for (let gy = 0; gy <= 8; gy++) {
+      for (let gx = 0; gx <= 8; gx++) {
+        const c = this.iso(gx, gy);
+        drawIsoGround(ground, c.x, c.y - 16, f);
       }
-      ctx.fillStyle = '#4a3c40'; ctx.fillRect(0, 230, W, 110);
-    } else {
-      const g = ctx.createLinearGradient(0, 0, 0, 200);
-      g.addColorStop(0, '#4a7ad0'); g.addColorStop(1, '#b0d8f4');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, 200);
-      ctx.fillStyle = '#6a9a5a';
-      ctx.beginPath(); ctx.moveTo(0, 200);
-      for (let x = 0; x <= W; x += 80) ctx.quadraticCurveTo(x + 40, 150 + (x % 160 ? 10 : -10), x + 80, 200);
-      ctx.fill();
-      const g2 = ctx.createLinearGradient(0, 200, 0, 340);
-      g2.addColorStop(0, '#5aa848'); g2.addColorStop(1, '#2e6a2a');
-      ctx.fillStyle = g2; ctx.fillRect(0, 200, W, 140);
+    }
+    // 奥の縁に木や岩壁を並べる
+    for (let k = -1; k <= 8; k++) {
+      for (const [gx, gy] of [[-1, k], [k, -1]]) {
+        const c = this.iso(gx, gy);
+        if (cave) drawBlock(c.x, c.y - 16, 40, faceTex('cavetop'), faceTex('cave'), faceTex('cave'));
+        else if ((k + 8) % 2 === 0) drawIsoTree(c.x, c.y);
+      }
     }
   }
   draw() {
@@ -437,24 +443,24 @@ class Battle {
       ctx.fillStyle = `rgba(255,240,200,${this.glow / 80})`;
       ctx.fillRect(0, 0, W, 340);
     }
-    // 敵
+    // 敵と味方を奥から順に。味方は敵の方を向いた後ろ姿
+    const list = [];
     for (const e of this.enemies) {
       if (!alive(e) && e.deadT > 24) continue;
       const p = this.pos(e);
-      const blink = e.flash > 0 && (e.flash >> 1) % 2;
-      const alpha = alive(e) ? 1 : 1 - e.deadT / 24;
-      ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.beginPath(); ctx.ellipse(p.x + p.s / 2, p.y + p.s - 2, p.s / 2.6, p.s / 10, 0, 0, Math.PI * 2); ctx.fill();
-      drawSprite(e.data.sprite, p.x, p.y + (this.active === e ? 6 : 0), p.scale, { white: blink, alpha });
+      list.push({ y: p.fy, fn: () => drawIsoChar(e.data.sprite, p.fx, p.fy, p.scale, {
+        white: e.flash > 0 && (e.flash >> 1) % 2, alpha: alive(e) ? 1 : 1 - e.deadT / 24,
+      }) });
     }
-    // 味方
     for (const b of this.party) {
       const p = this.pos(b);
-      const sprite = b.form ? FORMS[b.form].sprite : CHARS[b.ref.id].sprite;
-      const blink = b.flash > 0 && (b.flash >> 1) % 2;
-      drawSprite(sprite, p.x, p.y, p.scale, { white: blink, alpha: alive(b) ? 1 : 0.35 });
-      if (b.defend) drawText('盾', p.x - 4, p.y, '#9cf', 16);
+      const sprite = b.form ? FORMS[b.form].sprite : CHARS[b.ref.id].sprite + '_back';
+      list.push({ y: p.fy, fn: () => {
+        drawIsoChar(sprite, p.fx, p.fy, p.scale, { white: b.flash > 0 && (b.flash >> 1) % 2, alpha: alive(b) ? 1 : 0.35 });
+        if (b.defend) drawText('盾', p.x - 4, p.y, '#9cf', 16);
+      } });
     }
+    list.sort((a, b) => a.y - b.y).forEach(d => d.fn());
     // ダメージ表示
     for (const p of this.popups) {
       drawText(p.text, p.x, p.y - Math.min(p.t, 20) * 1.2, p.color, 24, 'center');
