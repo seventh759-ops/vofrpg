@@ -78,7 +78,69 @@ function defHuman(name, pal, opts) {
   SPRITES[name] = s;
   SPRITES[name + '_back'] = { rows: backOf(s.rows), pal: s.pal };
 }
-defHuman('ren', { H: '#2f62d6', C: '#eeeae0', P: '#34407a', B: '#6b3f1f' });
+// レンは専用の 20x32 ドット。ツンツン髪・スカーフ・前開きのコート・だぶだぶのズボン・ブーツ・背中の大剣
+const REN_FRONT = [
+  '...........k..k.....',
+  '.......k..kHkkHk....',
+  '......kHkkHHHHHk.k..',
+  '.....kHHHHHHHHHHkHk.',
+  '....kHHHHHHHHHHHHHk.',
+  '....kHHsHHHHsHHHHk..',
+  '....kHsssssssssHk...',
+  '....kHseksssekssk...',
+  '.....ksssssssssk....',
+  '....kOOOOsssOOOOk...',
+  '...kOOOOOOOOOOOOOk..',
+  '..kGGkOOTTTTLLkAAk..',
+  '..kGGkOLTTTTLLkAAk..',
+  '..kGGkLLTTTTLLkGGk..',
+  '..kWWkLLRRRRLLkWWk..',
+  '..kWWkLLRRRRLLkWWk..',
+  '..ksskLLYyyYLLkssk..',
+  '...kkkLLPPPPLLkkk...',
+  '....kLLPPPPPPLLk....',
+  '...kLLPPPPPPPPLLk...',
+  '...kLPPPPPPPPPPLk...',
+  '..kLLPPPPkkPPPPLLk..',
+  '..kLPPPPPkkPPPPPLk..',
+  '..kLPPPPPkkPPPPPLk..',
+  '..kLkPPPPkkPPPPkLk..',
+  '...kkGGGGkkGGGGkk...',
+  '....kGGGk..kGGGk....',
+  '....kBBBk..kBBBk....',
+  '....kBBBk..kBBBk....',
+  '...kBBBBk..kBBBBk...',
+  '..kBBBBBk..kBBBBBk..',
+  '..kkkkkkk..kkkkkkk..',
+];
+
+// 後ろ姿: 顔は髪、胴はコートの背中、背中に斜めの大剣
+function renBack(rows) {
+  const g = rows.map(r => r.split(''));
+  for (let y = 5; y <= 8; y++) {
+    const first = g[y].indexOf('k'), last = g[y].lastIndexOf('k');
+    for (let x = first + 1; x < last; x++) g[y][x] = 'H';
+  }
+  g[9] = g[9].map(c => (c === 's' ? 'O' : c));
+  for (let y = 11; y <= 23; y++) for (let x = 6; x <= 13; x++) if (g[y][x] !== 'k') g[y][x] = 'L';
+  for (let i = 0; i <= 9; i++) { g[9 + i][15 - i] = 'S'; g[9 + i][14 - i] = 'S'; }
+  [[16, 8], [17, 7], [15, 8], [17, 8], [16, 7]].forEach(([x, y]) => { g[y][x] = 'M'; });
+  return g.map(r => r.join(''));
+}
+
+const REN_PAL = Object.assign({}, BASE_PAL, {
+  H: '#2fb4d0', s: '#f6d2a8', e: '#2a5ab8', O: '#ec7448', T: '#9ad8e0', R: '#b83a3a',
+  L: '#b8a4d8', P: '#5a6030', G: '#8a9aa0', B: '#6a3a24', Y: '#5a3a28', y: '#a8c8d0',
+  A: '#b83a3a', W: '#c8b8a4', S: '#a83030', M: '#8a8a40',
+});
+// 正面: 肩越しに背中の大剣の鞘がのぞく
+const REN_FRONT_SWORD = REN_FRONT.map(r => r.split(''));
+[[19, 4], [18, 5], [19, 5], [17, 6], [18, 6], [17, 7], [16, 8]].forEach(([x, y]) => {
+  if (REN_FRONT_SWORD[y][x] === '.') REN_FRONT_SWORD[y][x] = 'S';
+});
+SPRITES.ren = { rows: REN_FRONT_SWORD.map(r => r.join('')), pal: REN_PAL };
+SPRITES.ren_back = { rows: renBack(REN_FRONT), pal: REN_PAL };
+
 defHuman('mina', { H: '#f2d860', C: '#e2588c', P: '#e2588c', B: '#8a4a2a', W: '#ffffff' }, { wings: true });
 defHuman('garo', { H: '#d07a2a', s: '#eaa060', C: '#4f7a3a', P: '#5a4030', B: '#3a2a1a' }, { ears: true, tail: true });
 defHuman('elder', { H: '#d6d6d6', C: '#7a4aa0', P: '#7a4aa0', B: '#4a2a1a' });
