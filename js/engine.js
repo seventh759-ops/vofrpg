@@ -101,10 +101,10 @@ function getSprite(name, white = false) {
   if (spriteCache[key]) return spriteCache[key];
   const def = SPRITES[name];
   const c = document.createElement('canvas');
-  c.width = 16; c.height = 16;
+  c.width = def.rows[0].length; c.height = def.rows.length;
   const g = c.getContext('2d');
   def.rows.forEach((row, y) => {
-    for (let x = 0; x < 16; x++) {
+    for (let x = 0; x < row.length; x++) {
       const col = def.pal[row[x]];
       if (!col || row[x] === '.') continue;
       g.fillStyle = col;
@@ -114,23 +114,29 @@ function getSprite(name, white = false) {
   if (white) {
     g.globalCompositeOperation = 'source-in';
     g.fillStyle = '#fff';
-    g.fillRect(0, 0, 16, 16);
+    g.fillRect(0, 0, c.width, c.height);
   }
   return (spriteCache[key] = c);
 }
 
+// 表示サイズ (ドット数 x 倍率)
+function spriteSize(name, scale) {
+  const img = getSprite(name);
+  return { w: img.width * scale, h: img.height * scale };
+}
+
 function drawSprite(name, x, y, scale = 2, opts = {}) {
   const img = getSprite(name, !!opts.white);
-  const s = 16 * scale;
+  const w = img.width * scale, h = img.height * scale;
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   if (opts.alpha != null) ctx.globalAlpha = opts.alpha;
   if (opts.flip) {
-    ctx.translate(Math.round(x) + s, Math.round(y));
+    ctx.translate(Math.round(x) + w, Math.round(y));
     ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, 0, s, s);
+    ctx.drawImage(img, 0, 0, w, h);
   } else {
-    ctx.drawImage(img, Math.round(x), Math.round(y), s, s);
+    ctx.drawImage(img, Math.round(x), Math.round(y), w, h);
   }
   ctx.restore();
 }

@@ -588,7 +588,7 @@ class FieldMenu {
         ctx.fillRect(22, y - 6, 400, 128);
         drawText('▶', 24, y + 40, '#ffe080', 20);
       }
-      drawSprite(CHARS[c.id].sprite, 46, y + 16, 4);
+      drawSprite(CHARS[c.id].sprite, 50, y + 8, 3);
       drawText(c.name, 130, y, '#fff', 22);
       drawText(`Lv ${c.lv}`, 410, y, '#ffe080', 20, 'right');
       const row = (label, cur, max, col, yy) => {
@@ -627,7 +627,7 @@ class FieldMenu {
   }
   drawStatus(c) {
     drawWindow(30, 24, 580, 432);
-    drawSprite(CHARS[c.id].sprite, 56, 56, 6);
+    drawSprite(CHARS[c.id].sprite, 66, 44, 4);
     drawText(c.name, 170, 50, '#fff', 28);
     drawText(`レベル ${c.lv}`, 170, 90, '#ffe080', 20);
     drawText(`経験値 ${c.exp}`, 170, 118, '#fff', 18);
@@ -707,7 +707,7 @@ class Shop {
     }
     wrapText(desc, 560, 18).forEach((l, i) => drawText(l, 40, 364 + i * 24, '#fff', 18));
     drawText(this.note, 40, 424, '#cce', 18);
-    if (EQUIPS[cur.id]) drawSprite(CHARS[EQUIPS[cur.id].who].sprite, 480, 120, 6);
+    if (EQUIPS[cur.id]) drawSprite(CHARS[EQUIPS[cur.id].who].sprite, 486, 100, 5);
   }
 }
 
@@ -790,7 +790,7 @@ class Fishing {
       ctx.fillRect(x, 170 + i * 21, 30 + (i % 4) * 10, 2);
     }
     ctx.fillStyle = '#7a5a3a'; ctx.fillRect(0, 380, 200, 100);
-    drawSprite('ren_back', 70, 330, 4);
+    drawSprite('ren_back', 78, 282, 3);
     // 竿と浮き
     const casting = this.state !== 'ready';
     const bx = 400, by = 260 + (this.state === 'wait' ? Math.sin(this.t / 10) * 3 : 0) + (this.state === 'bite' ? 10 : 0);

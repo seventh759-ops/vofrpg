@@ -128,7 +128,7 @@ function drawIsoChest(cx, cy, open) {
 function drawIsoObject(ch, sx, sy) {
   const cx = sx, cy = sy + 16;
   switch (ch) {
-    case 'T': drawIsoTree(cx, cy); break;
+    case 'T': drawIsoTree(cx, cy, 1.4); break;
     case '*':
       drawIsoTree(cx - 12, cy - 3, 0.55); drawIsoTree(cx + 12, cy - 3, 0.55); drawIsoTree(cx, cy + 6, 0.6);
       break;
@@ -137,16 +137,16 @@ function drawIsoObject(ch, sx, sy) {
     case 'v': drawIsoHut(cx - 10, cy - 2); drawIsoHut(cx + 12, cy + 4, 0.85); break;
     case 'F': drawIsoSign(cx, cy); break;
     case 'R': drawIsoRock(cx, cy); break;
-    case '#': drawBlock(sx, sy, 30, faceTex('cavetop'), faceTex('cave'), faceTex('cave')); break;
-    case 'H': drawBlock(sx, sy, 44, faceTex('roof'), faceTex('wallplain'), faceTex('wallplain')); break;
-    case 'W': drawBlock(sx, sy, 44, faceTex('roof'), faceTex('wall'), faceTex('wallplain')); break;
-    case 'D': drawBlock(sx, sy, 44, faceTex('roof'), faceTex('door'), faceTex('wallplain')); break;
+    case '#': drawBlock(sx, sy, 44, faceTex('cavetop'), faceTex('cave'), faceTex('cave')); break;
+    case 'H': drawBlock(sx, sy, 72, faceTex('roof'), faceTex('wallplain'), faceTex('wallplain')); break;
+    case 'W': drawBlock(sx, sy, 72, faceTex('roof'), faceTex('wall'), faceTex('wallplain')); break;
+    case 'D': drawBlock(sx, sy, 72, faceTex('roof'), faceTex('door'), faceTex('wallplain')); break;
   }
 }
 
 // 足元に影を付けてキャラクターを描く (cx, cy = 足元)
 function drawIsoChar(name, cx, cy, scale = 2, opts = {}) {
-  const s = 16 * scale;
-  ellipse(cx, cy, s * 0.34, s * 0.14, 'rgba(0,0,0,0.3)');
-  drawSprite(name, cx - s / 2, cy - s + scale * 2 + (opts.lift || 0), scale, opts);
+  const { w, h } = spriteSize(name, scale);
+  ellipse(cx, cy, w * 0.34, w * 0.14, 'rgba(0,0,0,0.3)');
+  drawSprite(name, cx - w / 2, cy - h + scale * 2 + (opts.lift || 0), scale, opts);
 }

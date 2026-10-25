@@ -7,46 +7,64 @@ const BASE_PAL = {
   o: '#8a5a2b', e: '#6a6a7a',
 };
 
+// 人物は 16x32 ドットの 4 頭身 (頭 8 ドット + 体 24 ドット)
 const HUMAN = [
   '................',
   '.....kkkkkk.....',
   '....kHHHHHHk....',
   '...kHHHHHHHHk...',
-  '...kHHHHHHHHk...',
-  '...kHsssssHHk...',
-  '...ksksssksHk...',
+  '...kHHsHHsHHk...',
+  '...kHskssksHk...',
+  '...kHssssssHk...',
   '....kssssssk....',
   '.....kkkkkk.....',
-  '....kCCCCCCk....',
-  '...ksCCCCCCsk...',
-  '...ksCCCCCCsk...',
+  '......kssk......',
+  '....kkCCCCkk....',
+  '...kCCCCCCCCk...',
+  '..kCkCCCCCCkCk..',
+  '..kCkCCCCCCkCk..',
+  '..kCkCCCCCCkCk..',
+  '..kCkCCCCCCkCk..',
+  '..kskCCCCCCksk..',
+  '...kkYYYYYYkk...',
+  '....kPPPPPPk....',
   '....kPPPPPPk....',
   '....kPPkkPPk....',
+  '....kPPkkPPk....',
+  '....kPPkkPPk....',
+  '....kPPkkPPk....',
+  '....kPPkkPPk....',
+  '....kPPkkPPk....',
+  '....kPPkkPPk....',
+  '....kPPkkPPk....',
   '....kBBkkBBk....',
-  '....kkkkkkkk....',
+  '....kBBkkBBk....',
+  '...kBBBkkBBBk...',
+  '...kkkkkkkkkk...',
 ];
 
 function makeHuman(pal, opts = {}) {
   const g = HUMAN.map(r => r.split(''));
   const put = (x, y, c) => { if (g[y] && g[y][x] === '.') g[y][x] = c; };
   if (opts.wings) {
-    [[2, 8], [13, 8], [1, 9], [2, 9], [3, 9], [12, 9], [13, 9], [14, 9], [0, 10], [1, 10], [2, 10],
-     [13, 10], [14, 10], [15, 10], [1, 11], [2, 11], [13, 11], [14, 11], [2, 12], [13, 12]]
+    [[2, 10], [3, 10], [12, 10], [13, 10], [1, 11], [2, 11], [13, 11], [14, 11],
+     [0, 12], [1, 12], [14, 12], [15, 12], [0, 13], [1, 13], [14, 13], [15, 13],
+     [0, 14], [1, 14], [14, 14], [15, 14], [1, 15], [14, 15], [1, 16], [14, 16]]
       .forEach(([x, y]) => put(x, y, 'W'));
   }
   if (opts.ears) {
     put(4, 0, 'k'); put(11, 0, 'k'); put(4, 1, 'H'); put(11, 1, 'H');
   }
   if (opts.tail) {
-    [[12, 12], [13, 12], [13, 11], [14, 11], [14, 10]].forEach(([x, y]) => put(x, y, 'H'));
+    [[12, 19], [13, 19], [13, 18], [14, 18], [14, 17], [14, 16]].forEach(([x, y]) => put(x, y, 'H'));
   }
-  return { rows: g.map(r => r.join('')), pal: Object.assign({}, BASE_PAL, pal) };
+  return { rows: g.map(r => r.join('')), pal: Object.assign({ Y: '#6b4a2a' }, BASE_PAL, pal) };
 }
 
 // 後ろ向き: 顔を髪で塗りつぶす
 function backOf(rows) {
   return rows.map((row, y) => {
-    if (y !== 5 && y !== 6) return row;
+    if (y < 4 || y > 7) return row;
     const a = row.split('');
     const first = a.indexOf('k'), last = a.lastIndexOf('k');
     for (let x = first + 1; x < last; x++) if (a[x] === 's' || a[x] === 'k') a[x] = 'H';

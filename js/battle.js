@@ -220,7 +220,7 @@ class Battle {
   }
   popup(b, text, color) {
     const p = this.pos(b);
-    this.popups.push({ x: p.x + p.s / 2, y: p.y + p.s / 3, text: String(text), color, t: 0 });
+    this.popups.push({ x: p.x + p.s / 2, y: p.y + p.h / 3, text: String(text), color, t: 0 });
   }
   hit(t, dmg, after) {
     t.ref.hp = Math.max(0, t.ref.hp - dmg);
@@ -405,11 +405,16 @@ class Battle {
       if (this.active === b) { foot.x += 14; foot.y += 7; }
     } else {
       foot = this.iso(...this.slot(3, this.party.indexOf(b), 6));
-      scale = b.form ? 4 : 3;
+      scale = b.form ? 4 : 2;
       if (this.active === b || (this.phase === 'cmd' && this.party[this.ci] === b)) { foot.x -= 20; foot.y -= 10; }
     }
-    const s = 16 * scale;
-    return { x: foot.x - s / 2, y: foot.y - s + scale * 2, s, scale, fx: foot.x, fy: foot.y };
+    const { w, h } = spriteSize(this.spriteOf(b), scale);
+    return { x: foot.x - w / 2, y: foot.y - h + scale * 2, s: w, h, scale, fx: foot.x, fy: foot.y };
+  }
+  // 味方は敵の方を向いた後ろ姿
+  spriteOf(b) {
+    if (b.isEnemy) return b.data.sprite;
+    return b.form ? FORMS[b.form].sprite : CHARS[b.ref.id].sprite + '_back';
   }
   drawBackground() {
     const cave = this.bg === 'cave';
@@ -454,7 +459,7 @@ class Battle {
     }
     for (const b of this.party) {
       const p = this.pos(b);
-      const sprite = b.form ? FORMS[b.form].sprite : CHARS[b.ref.id].sprite + '_back';
+      const sprite = this.spriteOf(b);
       list.push({ y: p.fy, fn: () => {
         drawIsoChar(sprite, p.fx, p.fy, p.scale, { white: b.flash > 0 && (b.flash >> 1) % 2, alpha: alive(b) ? 1 : 0.35 });
         if (b.defend) drawText('盾', p.x - 4, p.y, '#9cf', 16);
@@ -473,7 +478,7 @@ class Battle {
         const p = this.pos(t);
         const bob = (Game.frame >> 3) % 2 * 3;
         if (t.isEnemy) drawText('▼', p.x + p.s / 2, p.y - 26 + bob, '#ffe080', 22, 'center');
-        else drawText('▶', p.x - 28 + bob, p.y + p.s / 2 - 12, '#ffe080', 22);
+        else drawText('▶', p.x - 28 + bob, p.y + p.h / 2 - 12, '#ffe080', 22);
         drawWindow(8, 8, 624, 52);
         const hp = t.isEnemy ? '' : `  HP ${t.ref.hp}/${bMaxHp(t)}`;
         drawText(t.name + hp, 28, 22, '#fff', 20);
