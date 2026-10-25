@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>竜血の旅路</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <canvas id="game" width="640" height="480"></canvas>
+  <div id="pad">
+    <div class="dpad">
+      <button data-key="up" class="u">▲</button>
+      <button data-key="left" class="l">◀</button>
+      <button data-key="right" class="r">▶</button>
+      <button data-key="down" class="d">▼</button>
+    </div>
+    <div class="ab">
+      <button data-key="cancel" class="x">X</button>
+      <button data-key="ok" class="z">Z</button>
+    </div>
+  </div>
+</main>
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

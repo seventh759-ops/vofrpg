@@ -1,0 +1,22 @@
+:root { --bg: #0b0b14; --btn: #2a2f5a; --btn-fg: #eef; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: #eef; }
+body { display: flex; align-items: center; justify-content: center; font-family: 'DotGothic16', sans-serif; }
+main { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; padding: 0 16px; }
+#game {
+  width: 100%; max-width: 960px; aspect-ratio: 4 / 3; height: auto;
+  image-rendering: pixelated; background: #000; border-radius: 4px;
+  box-shadow: 0 0 0 3px #333a66, 0 8px 32px rgba(0,0,0,.6);
+}
+#pad { display: none; width: 100%; max-width: 640px; justify-content: space-between; align-items: center; user-select: none; touch-action: none; }
+#pad button {
+  background: var(--btn); color: var(--btn-fg); border: 2px solid #556; border-radius: 10px;
+  font: inherit; font-size: 20px; width: 56px; height: 56px; touch-action: none;
+}
+#pad button:active { background: #4a5199; }
+.dpad { display: grid; grid-template: 56px 56px 56px / 56px 56px 56px; gap: 2px; }
+.dpad .u { grid-area: 1 / 2; } .dpad .l { grid-area: 2 / 1; } .dpad .r { grid-area: 2 / 3; } .dpad .d { grid-area: 3 / 2; }
+.ab { display: flex; gap: 16px; }
+.ab .z { width: 72px; height: 72px; border-radius: 50%; background: #5a2a3a; }
+.ab .x { width: 60px; height: 60px; border-radius: 50%; margin-top: 30px; }
+@media (pointer: coarse) { #pad { display: flex; } }
