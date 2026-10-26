@@ -14,10 +14,10 @@ const HUMAN = [
   '....kHHHHHHk....',
   '...kHHHHHHHHk...',
   '...kHHsHHsHHk...',
-  '...kHskssksHk...',
+  '...kHsessesHk...',
   '...kHssssssHk...',
   '....kssssssk....',
-  '.....kkkkkk.....',
+  '.....kssssk.....',
   '......kssk......',
   '....kkCCCCkk....',
   '...kCCCCCCCCk...',
@@ -58,16 +58,16 @@ function makeHuman(pal, opts = {}) {
   if (opts.tail) {
     [[12, 19], [13, 19], [13, 18], [14, 18], [14, 17], [14, 16]].forEach(([x, y]) => put(x, y, 'H'));
   }
-  return { rows: g.map(r => r.join('')), pal: Object.assign({ Y: '#6b4a2a' }, BASE_PAL, pal) };
+  return { rows: g.map(r => r.join('')), pal: Object.assign({}, BASE_PAL, { Y: '#6b4a2a', e: '#3a3048' }, pal) };
 }
 
 // 後ろ向き: 顔を髪で塗りつぶす
 function backOf(rows) {
   return rows.map((row, y) => {
-    if (y < 4 || y > 7) return row;
+    if (y < 4 || y > 8) return row;
     const a = row.split('');
     const first = a.indexOf('k'), last = a.lastIndexOf('k');
-    for (let x = first + 1; x < last; x++) if (a[x] === 's' || a[x] === 'k') a[x] = 'H';
+    for (let x = first + 1; x < last; x++) if ('ske'.includes(a[x])) a[x] = 'H';
     return a.join('');
   });
 }

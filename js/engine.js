@@ -102,21 +102,72 @@ function shadeHex(hex, amt) {
   return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`;
 }
 
+// Scale2x: ドット絵の斜めや丸みを保ったまま縦横 2 倍にする (文字のグリッドのまま処理)
+function scale2x(rows) {
+  const h = rows.length, w = rows[0].length;
+  const at = (x, y) => (y < 0 || y >= h || x < 0 || x >= w ? '.' : rows[y][x]);
+  const out = Array.from({ length: h * 2 }, () => new Array(w * 2));
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const P = at(x, y), A = at(x, y - 1), B = at(x + 1, y), C = at(x - 1, y), D = at(x, y + 1);
+      out[y * 2][x * 2] = C === A && C !== D && A !== B ? A : P;
+      out[y * 2][x * 2 + 1] = A === B && A !== C && B !== D ? B : P;
+      out[y * 2 + 1][x * 2] = D === C && D !== B && C !== A ? C : P;
+      out[y * 2 + 1][x * 2 + 1] = B === D && B !== A && D !== C ? D : P;
+    }
+  }
+  return thinOutline(out.map(r => r.join('')));
+}
+
+// 拡大で 2 ピクセル幅に太った線を 1 ピクセルに戻す (片側を隣の色で塗る)
+// 外側の輪郭は内側の半分を、内側の線 (あご・目など) は上か左の半分を塗る
+function thinOutline(rows) {
+  const h = rows.length, w = rows[0].length;
+  const at = (x, y) => (y < 0 || y >= h || x < 0 || x >= w ? '.' : rows[y][x]);
+  const isFill = c => c !== 'k' && c !== '.';
+  const g = rows.map(r => r.split(''));
+  const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (rows[y][x] !== 'k' || dirs.some(([dx, dy]) => at(x + dx, y + dy) === '.')) continue;
+      for (const [dx, dy] of dirs) {
+        const fill = at(x - dx, y - dy), beyond = at(x + 2 * dx, y + 2 * dy);
+        if (at(x + dx, y + dy) !== 'k' || !isFill(fill)) continue;
+        const silhouette = beyond === '.';
+        // 目のような小さな点は残し、3 ピクセル以上続く線だけ細くする
+        const k = (n) => at(x + dy * n, y + dx * n) === 'k';
+        const isLine = (k(1) && (k(-1) || k(2))) || (k(-1) && k(-2));
+        const innerLine = isFill(beyond) && (dx > 0 || dy > 0) && isLine;
+        if (silhouette || innerLine) { g[y][x] = fill; break; }
+      }
+    }
+  }
+  return g.map(r => r.join(''));
+}
+
+// 倍率に合わせて何回 Scale2x をかけるか (2 倍表示なら 1 回、4 倍以上なら 2 回)
+const upLevel = scale => (scale >= 4 ? 2 : scale >= 2 ? 1 : 0);
+
 const spriteCache = {};
-function getSprite(name, white = false) {
-  const key = name + (white ? '#w' : '');
+function getSprite(name, white = false, level = 0) {
+  const key = name + (white ? '#w' : '') + '@' + level;
   if (spriteCache[key]) return spriteCache[key];
   const def = SPRITES[name];
-  const rows = def.rows, h = rows.length;
+  let rows = def.rows;
+  for (let i = 0; i < level; i++) rows = scale2x(rows);
+  const h = rows.length;
   const c = document.createElement('canvas');
   c.width = rows[0].length; c.height = h;
   const g = c.getContext('2d');
   // 光は左上から。輪郭の左上側を明るく、右下側を暗く、全体は下ほど暗くする
   const filled = (x, y) => { const ch = (rows[y] || '')[x]; return !!ch && ch !== '.' && ch !== 'k'; };
   // 輪郭線は黒ではなく、隣り合う色を暗くした色にする (水彩風の色線)
+  // 外側の輪郭は濃く、内側の線は淡くして塊に見えないようにする
+  const empty = (x, y) => { const ch = (rows[y] || '')[x]; return !ch || ch === '.'; };
   const lineColor = (x, y) => {
+    const outer = empty(x, y - 1) || empty(x - 1, y) || empty(x + 1, y) || empty(x, y + 1);
     for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) {
-      if (filled(x + dx, y + dy)) return shadeHex(def.pal[rows[y + dy][x + dx]], -0.62);
+      if (filled(x + dx, y + dy)) return shadeHex(def.pal[rows[y + dy][x + dx]], outer ? -0.7 : -0.45);
     }
     return null;
   };
@@ -146,15 +197,15 @@ function getSprite(name, white = false) {
   return (spriteCache[key] = c);
 }
 
-// 表示サイズ (ドット数 x 倍率)
+// 表示サイズ (元のドット数 x 倍率)
 function spriteSize(name, scale) {
-  const img = getSprite(name);
-  return { w: img.width * scale, h: img.height * scale };
+  const rows = SPRITES[name].rows;
+  return { w: rows[0].length * scale, h: rows.length * scale };
 }
 
 function drawSprite(name, x, y, scale = 2, opts = {}) {
-  const img = getSprite(name, !!opts.white);
-  const w = img.width * scale, h = img.height * scale;
+  const img = getSprite(name, !!opts.white, upLevel(scale));
+  const { w, h } = spriteSize(name, scale);
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   if (opts.alpha != null) ctx.globalAlpha = opts.alpha;
