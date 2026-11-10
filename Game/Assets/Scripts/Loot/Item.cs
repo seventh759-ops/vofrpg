@@ -106,7 +106,7 @@ namespace VividOfFade
         {
             switch (ClassInfo.Current)
             {
-                case ClassType.Shadeblade: return $"+{v * 15f:0} deg Slash Arc";
+                case ClassType.Shadeblade: return $"+{v * 15f:0} deg Arc, +{v:0} Target";
                 case ClassType.Warden: return $"+{v:0} Flame";
                 default: return $"+{v:0} Projectile";
             }

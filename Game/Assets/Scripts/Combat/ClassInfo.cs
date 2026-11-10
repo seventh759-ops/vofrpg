@@ -46,6 +46,7 @@ namespace VividOfFade
         public int Orbs;                // 回る灯りの数
         public float OrbitSpeed;        // 回る速さ（ラジアン/秒）
         public float CritBonus;
+        public int MaxTargets = 1;      // 斬撃が一度に当たる数（近い順）。2体目以降は威力が下がる
 
         /// <summary>この武器を使う職業の主能力。</summary>
         public Attr ClassAttr() => ClassInfo.Get(Class).MainAttr;
@@ -106,11 +107,11 @@ namespace VividOfFade
 
             // 影刃：斬撃
             { WeaponKind.Sword, new WeaponSpec { Kind = WeaponKind.Sword, Class = ClassType.Shadeblade, Name = "Sword", Desc = "Wide slash",
-                Attack = AttackKind.Slash, BaseDamage = 14f, Interval = 0.35f, Reach = 1.6f, Arc = 120f } },
+                Attack = AttackKind.Slash, BaseDamage = 12f, Interval = 0.4f, Reach = 1.45f, Arc = 120f, MaxTargets = 4 } },
             { WeaponKind.Dagger, new WeaponSpec { Kind = WeaponKind.Dagger, Class = ClassType.Shadeblade, Name = "Dagger", Desc = "Quick stabs, more crits",
-                Attack = AttackKind.Slash, BaseDamage = 8f, Interval = 0.18f, Reach = 1.25f, Arc = 70f, CritBonus = 0.1f } },
+                Attack = AttackKind.Slash, BaseDamage = 8f, Interval = 0.2f, Reach = 1.2f, Arc = 70f, CritBonus = 0.1f, MaxTargets = 2 } },
             { WeaponKind.Greatblade, new WeaponSpec { Kind = WeaponKind.Greatblade, Class = ClassType.Shadeblade, Name = "Greatblade", Desc = "Slow, huge sweep",
-                Attack = AttackKind.Slash, BaseDamage = 26f, Interval = 0.6f, Reach = 2f, Arc = 180f } },
+                Attack = AttackKind.Slash, BaseDamage = 24f, Interval = 0.7f, Reach = 1.8f, Arc = 180f, MaxTargets = 6 } },
 
             // 灯番：回る灯り・周りを焼く
             { WeaponKind.Censer, new WeaponSpec { Kind = WeaponKind.Censer, Class = ClassType.Warden, Name = "Censer", Desc = "2 circling flames",

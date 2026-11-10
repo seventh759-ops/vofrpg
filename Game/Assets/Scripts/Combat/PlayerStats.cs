@@ -33,6 +33,7 @@ namespace VividOfFade
         // 斬撃（影刃）
         public float Reach;
         public float ArcDeg;
+        public int MaxTargets;
 
         // 回る灯り・周りを焼く（灯番）
         public int Orbs;
@@ -45,6 +46,9 @@ namespace VividOfFade
 
         public float AttacksPerSecond => 1f / FireInterval;
 
+        /// <summary>斬撃の2体目以降に入る威力の割合。</summary>
+        public const float SecondaryHit = 0.5f;
+
         /// <summary>1回の攻撃で何体ぶん当たりやすいか（強さの比較用の目安）。</summary>
         public float Multiplicity
         {
@@ -52,7 +56,7 @@ namespace VividOfFade
             {
                 switch (Kind)
                 {
-                    case AttackKind.Slash: return ArcDeg / 90f * (0.5f + Reach * 0.5f);
+                    case AttackKind.Slash: return 1f + (Mathf.Max(1, MaxTargets) - 1) * SecondaryHit;
                     case AttackKind.Orbit: return Orbs;
                     case AttackKind.Pulse: return PulseRadius;
                     default: return Shots * (1f + 0.15f * Pierce);
@@ -183,6 +187,7 @@ namespace VividOfFade
                     // 明るさが広いほど、少しだけ遠くまで斬れる
                     s.Reach = w.Reach + Mathf.Max(0f, s.Light - cls.BaseLight) * 0.1f;
                     s.ArcDeg = Mathf.Min(w.Arc + 15f * extra, 300f);
+                    s.MaxTargets = w.MaxTargets + extra; // 弾の数の効果は、当たる数も1体増やす
                     break;
                 case AttackKind.Orbit:
                     s.Orbs = w.Orbs + extra;

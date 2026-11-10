@@ -16,6 +16,7 @@ namespace VividOfFade
         FxSystem fx;
 
         readonly List<SpriteRenderer> orbs = new List<SpriteRenderer>();
+        readonly List<Enemy> slashHits = new List<Enemy>();
         int activeOrbs;
         float timer;
         float orbAngle;
@@ -90,11 +91,13 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>前方の扇形の中の敵を、近い順に MaxTargets 体まで斬る。2体目以降は威力が下がる。</summary>
         void Slash(Player player, PlayerStats st, Vector2 aim)
         {
             Vector2 origin = player.Pos;
             float cosHalf = Mathf.Cos(st.ArcDeg * 0.5f * Mathf.Deg2Rad);
             var list = enemies.Active;
+            slashHits.Clear();
             for (int i = 0; i < list.Count; i++)
             {
                 var e = list[i];
@@ -103,8 +106,19 @@ namespace VividOfFade
                 float dist = d.magnitude;
                 if (dist > st.Reach + e.Radius) continue;
                 if (dist > 0.2f && Vector2.Dot(d / dist, aim) < cosHalf) continue;
+                slashHits.Add(e);
+            }
+            slashHits.Sort((a, b) => (a.Pos - origin).sqrMagnitude.CompareTo((b.Pos - origin).sqrMagnitude));
+
+            int count = Mathf.Min(slashHits.Count, Mathf.Max(1, st.MaxTargets));
+            for (int i = 0; i < count; i++)
+            {
+                var e = slashHits[i];
+                Vector2 d = e.Pos - origin;
+                float dist = d.magnitude;
                 bool crit = Random.value < st.CritChance;
-                enemies.Damage(e, st.Damage * (crit ? st.CritMult : 1f), dist > 0.001f ? d / dist : aim, crit);
+                float scale = i == 0 ? 1f : PlayerStats.SecondaryHit;
+                enemies.Damage(e, st.Damage * scale * (crit ? st.CritMult : 1f), dist > 0.001f ? d / dist : aim, crit);
             }
             fx.Slash(origin, aim, st.Reach, st.ArcDeg, new Color(0.85f, 0.9f, 1f, 0.9f));
         }

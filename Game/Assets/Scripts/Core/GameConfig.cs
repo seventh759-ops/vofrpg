@@ -35,12 +35,14 @@ namespace VividOfFade
         public const float ShotRadius = 0.15f;
 
         // 雑魚（スライム）
-        public const int SlimeContactDamage = 8;
+        public const int SlimeContactDamage = 8; // 第1波の値。波が進むと増える（EnemyDamage）
         public const float SlimeRadius = 0.32f;
         public const float SlimeSpeedMin = 1.4f;
         public const float SlimeSpeedMax = 2.1f;
 
-        public static float EnemyHp(int wave) => 20f * (1f + 0.25f * (wave - 1));
+        // 波が進むほど、体力も攻撃力も増える（後半ほど伸びが大きい）
+        public static float EnemyHp(int wave) => 20f * (1f + 0.3f * (wave - 1)) * Mathf.Pow(1.03f, wave - 1);
+        public static int EnemyDamage(int wave) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (wave - 1)) * Mathf.Pow(1.02f, wave - 1));
 
         // 敵の波
         public const int MaxEnemies = 150;

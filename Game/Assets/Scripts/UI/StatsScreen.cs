@@ -88,7 +88,7 @@ namespace VividOfFade
             string kind;
             switch (st.Kind)
             {
-                case AttackKind.Slash: kind = $"Slash  reach {st.Reach:0.0}  arc {st.ArcDeg:0}"; break;
+                case AttackKind.Slash: kind = $"Slash  reach {st.Reach:0.0}  arc {st.ArcDeg:0}  targets {st.MaxTargets}"; break;
                 case AttackKind.Orbit: kind = $"Flames x{st.Orbs}"; break;
                 case AttackKind.Pulse: kind = $"Pulse  radius {st.PulseRadius:0.0}"; break;
                 default: kind = $"Shots x{st.Shots}  pierce {st.Pierce}"; break;

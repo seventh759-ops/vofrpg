@@ -31,7 +31,7 @@ namespace VividOfFade
                 spawnTimer -= dt;
                 while (spawnTimer <= 0f && toSpawn > 0)
                 {
-                    enemies.Spawn(PickSpawn(player.Pos, room), GameConfig.EnemyHp(Wave));
+                    enemies.Spawn(PickSpawn(player.Pos, room), GameConfig.EnemyHp(Wave), GameConfig.EnemyDamage(Wave));
                     toSpawn--;
                     spawnTimer += spawnInterval;
                 }

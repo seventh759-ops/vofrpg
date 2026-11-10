@@ -53,12 +53,12 @@ namespace VividOfFade
             return e;
         }
 
-        public void Spawn(Vector2 pos, float hp)
+        public void Spawn(Vector2 pos, float hp, int contactDamage)
         {
             if (Active.Count >= GameConfig.MaxEnemies) return;
             var e = pool.Get();
             e.Hp = hp;
-            e.ContactDamage = GameConfig.SlimeContactDamage;
+            e.ContactDamage = contactDamage;
             e.Speed = UnityEngine.Random.Range(GameConfig.SlimeSpeedMin, GameConfig.SlimeSpeedMax);
             e.Radius = GameConfig.SlimeRadius;
             e.Knock = Vector2.zero;
