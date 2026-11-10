@@ -70,7 +70,7 @@ namespace VividOfFade
             {
                 var r = new Rect(pad + (i % cols) * (bcell + gap), y + (i / cols) * (bcell + gap), bcell, bcell);
                 var item = i < inv.Bag.Count ? inv.Bag[i] : null;
-                bool better = item != null && BestCandidate(inv, item, out _).Power > current.Power * 1.01f;
+                bool better = item != null && IsUpgrade(inv, item, current);
                 DrawCell(r, item, item != null && item == selectedItem, better, item == null ? (System.Action)null : () =>
                 {
                     selectedItem = item;
@@ -79,20 +79,25 @@ namespace VividOfFade
             }
             y += (Inventory.BagCapacity / cols) * (bcell + gap) + H * 0.01f;
 
-            // 下のボタン（一括分解・白の自動分解）
+            // 下のボタン：一括分解（ロック中の品は残る）と自動分解の段階
             float bottomY = H - pad - btnH;
+            float rowY = bottomY - btnH - gap;
+            float third = (W - pad * 2f - gap * 2f) / 3f;
             float half = (W - pad * 2f - gap) * 0.5f;
-            hud.Button(new Rect(pad, bottomY, half, btnH), "SALVAGE ALL WHITE", buttonBack, centered, () =>
+            for (int r = 0; r <= (int)Rarity.Rare; r++)
             {
-                inv.SalvageAllCommon();
-                selectedItem = null;
-            });
-            hud.Button(new Rect(pad + half + gap, bottomY, half, btnH),
-                inv.AutoSalvageCommon ? "AUTO WHITE: ON" : "AUTO WHITE: OFF", buttonBack, centered,
-                () => inv.AutoSalvageCommon = !inv.AutoSalvageCommon);
+                int max = r;
+                var c = RarityInfo.ColorOf((Rarity)r);
+                hud.Button(new Rect(pad + (third + gap) * r, rowY, third, btnH), r == 0 ? "SALVAGE WHITE" : $"SALVAGE <= {Short((Rarity)r)}",
+                    new Color(c.r, c.g, c.b, 0.3f), centered, () => SalvageBulk(inv, it => (int)it.Rarity <= max));
+            }
+            hud.Button(new Rect(pad, bottomY, half, btnH), "SALVAGE NO \"+\"", buttonBack, centered,
+                () => SalvageBulk(inv, it => it.Rarity < Rarity.Legendary && !IsUpgrade(inv, it, current)));
+            hud.Button(new Rect(pad + half + gap, bottomY, half, btnH), AutoLabel(inv.AutoSalvageMax), buttonBack, centered,
+                () => inv.CycleAutoSalvage());
 
             // 選んだ品の詳細と操作
-            float actionY = bottomY - btnH - gap;
+            float actionY = rowY - btnH - gap;
             var detail = new Rect(pad, y, W - pad * 2f, actionY - gap - y);
             if (selectedItem != null) DrawBagItem(world, inv, selectedItem, detail, actionY, btnH, gap, pad);
             else if (selectedEquip >= 0) DrawEquipped(inv, selectedEquip, detail, actionY, btnH, pad);
@@ -108,18 +113,21 @@ namespace VividOfFade
 
             float W = Screen.width;
             var centered = hud.CenteredStyle;
+            string lockText = item.Locked ? "UNLOCK" : "LOCK";
             if (item.Slot == ItemSlot.Ring)
             {
-                float w = (W - pad * 2f - gap * 2f) / 3f;
+                float w = (W - pad * 2f - gap * 3f) / 4f;
                 hud.Button(new Rect(pad, actionY, w, btnH), "EQUIP R1", buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring1));
-                hud.Button(new Rect(pad + w + gap, actionY, w, btnH), "EQUIP R2", buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring2));
-                hud.Button(new Rect(pad + (w + gap) * 2f, actionY, w, btnH), $"SALVAGE +{RarityInfo.SalvageOf(item.Rarity)}", buttonBack, centered, () => Salvage(inv, item));
+                hud.Button(new Rect(pad + (w + gap), actionY, w, btnH), "EQUIP R2", buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring2));
+                hud.Button(new Rect(pad + (w + gap) * 2f, actionY, w, btnH), lockText, buttonBack, centered, () => item.Locked = !item.Locked);
+                DrawSalvageButton(inv, item, new Rect(pad + (w + gap) * 3f, actionY, w, btnH));
             }
             else
             {
-                float w = (W - pad * 2f - gap) * 0.5f;
+                float w = (W - pad * 2f - gap * 2f) / 3f;
                 hud.Button(new Rect(pad, actionY, w, btnH), "EQUIP", buttonBack, centered, () => Equip(inv, item, slot));
-                hud.Button(new Rect(pad + w + gap, actionY, w, btnH), $"SALVAGE +{RarityInfo.SalvageOf(item.Rarity)}", buttonBack, centered, () => Salvage(inv, item));
+                hud.Button(new Rect(pad + (w + gap), actionY, w, btnH), lockText, buttonBack, centered, () => item.Locked = !item.Locked);
+                DrawSalvageButton(inv, item, new Rect(pad + (w + gap) * 2f, actionY, w, btnH));
             }
         }
 
@@ -137,6 +145,47 @@ namespace VividOfFade
             {
                 if (inv.Unequip((EquipSlot)slot)) selectedEquip = -1;
             });
+        }
+
+        void DrawSalvageButton(Inventory inv, Item item, Rect r)
+        {
+            if (item.Locked)
+            {
+                Hud.Fill(r, new Color(1f, 1f, 1f, 0.05f));
+                GUI.Label(r, "LOCKED", hud.CenteredStyle);
+                return;
+            }
+            hud.Button(r, $"SALVAGE +{RarityInfo.SalvageOf(item.Rarity)}", buttonBack, hud.CenteredStyle, () => Salvage(inv, item));
+        }
+
+        void SalvageBulk(Inventory inv, System.Func<Item, bool> match)
+        {
+            int n = inv.SalvageWhere(match);
+            if (n > 0) hud.Toast($"Salvaged {n} items", Color.white);
+            if (selectedItem != null && !inv.Bag.Contains(selectedItem)) selectedItem = null;
+        }
+
+        static bool IsUpgrade(Inventory inv, Item item, PlayerStats current)
+        {
+            return BestCandidate(inv, item, out _).Power > current.Power * 1.01f;
+        }
+
+        static string Short(Rarity r)
+        {
+            switch (r)
+            {
+                case Rarity.Common: return "WHITE";
+                case Rarity.Magic: return "BLUE";
+                case Rarity.Rare: return "YELLOW";
+                case Rarity.Legendary: return "ORANGE";
+                default: return "PURPLE";
+            }
+        }
+
+        static string AutoLabel(int max)
+        {
+            if (max < 0) return "AUTO SALVAGE: OFF";
+            return max == 0 ? "AUTO SALVAGE: WHITE" : $"AUTO SALVAGE: <= {Short((Rarity)max)}";
         }
 
         void Equip(Inventory inv, Item item, EquipSlot slot)
@@ -164,6 +213,12 @@ namespace VividOfFade
             if (item == null) return;
             float inset = r.width * 0.15f;
             Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.ItemIcon(item.Slot, item.Rarity));
+            if (item.Locked)
+            {
+                var lockStyle = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };
+                lockStyle.normal.textColor = new Color(1f, 0.85f, 0.4f);
+                GUI.Label(new Rect(r.x + r.width * 0.06f, r.y + r.height * 0.5f, r.width * 0.5f, r.height * 0.5f), "L", lockStyle);
+            }
             if (better)
             {
                 var style = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };

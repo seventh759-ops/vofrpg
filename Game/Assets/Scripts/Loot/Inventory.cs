@@ -11,7 +11,8 @@ namespace VividOfFade
         public readonly Item[] Equipped = new Item[5];
         public readonly List<Item> Bag = new List<Item>();
         public int Embers;
-        public bool AutoSalvageCommon;
+        /// <summary>拾った時点で自動分解する珍しさの上限。-1 で自動分解しない。</summary>
+        public int AutoSalvageMax = -1;
 
         public bool BagFull => Bag.Count >= BagCapacity;
 
@@ -31,7 +32,7 @@ namespace VividOfFade
         /// <summary>拾ったときに呼ぶ。入らなければ false。</summary>
         public bool Add(Item item)
         {
-            if (AutoSalvageCommon && item.Rarity == Rarity.Common)
+            if (AutoSalvages(item))
             {
                 Embers += RarityInfo.SalvageOf(item.Rarity);
                 return true;
@@ -42,7 +43,15 @@ namespace VividOfFade
         }
 
         /// <summary>鞄が満杯でも、拾えるものか（自動分解される白など）。</summary>
-        public bool CanTake(Item item) => !BagFull || (AutoSalvageCommon && item.Rarity == Rarity.Common);
+        public bool CanTake(Item item) => !BagFull || AutoSalvages(item);
+
+        bool AutoSalvages(Item item) => (int)item.Rarity <= AutoSalvageMax;
+
+        /// <summary>自動分解の段階を 切 → 白 → 青まで → 黄まで → 切 の順に切り替える。</summary>
+        public void CycleAutoSalvage()
+        {
+            AutoSalvageMax = AutoSalvageMax >= (int)Rarity.Rare ? -1 : AutoSalvageMax + 1;
+        }
 
         public static bool Fits(Item item, EquipSlot slot)
         {
@@ -96,13 +105,15 @@ namespace VividOfFade
             if (Bag.Remove(item)) Embers += RarityInfo.SalvageOf(item.Rarity);
         }
 
-        public int SalvageAllCommon()
+        /// <summary>条件に合う品をまとめて分解する。ロック中の品は残す。分解した数を返す。</summary>
+        public int SalvageWhere(Func<Item, bool> match)
         {
             int n = 0;
             for (int i = Bag.Count - 1; i >= 0; i--)
             {
-                if (Bag[i].Rarity != Rarity.Common) continue;
-                Embers += RarityInfo.SalvageOf(Rarity.Common);
+                var item = Bag[i];
+                if (item.Locked || !match(item)) continue;
+                Embers += RarityInfo.SalvageOf(item.Rarity);
                 Bag.RemoveAt(i);
                 n++;
             }

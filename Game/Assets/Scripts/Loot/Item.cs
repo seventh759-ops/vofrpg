@@ -22,6 +22,9 @@ namespace VividOfFade
         public WeaponKind Weapon;
         public int Level = 1;
 
+        /// <summary>ロック中は一括分解・自動分解の対象にしない。</summary>
+        public bool Locked;
+
         /// <summary>武器：基本ダメージ／ランタン：明るさ（マス）／防具：最大体力。指輪は0。</summary>
         public float BaseValue;
 
