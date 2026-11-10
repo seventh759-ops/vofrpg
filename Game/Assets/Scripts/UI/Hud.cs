@@ -256,6 +256,8 @@ namespace VividOfFade
                 ty += small.fontSize * 1.3f;
             }
 
+            DrawBossBar();
+
             if (World.Paused || player.IsDead || World.ChoosingClass) return;
 
             // 右上のボタン
@@ -293,6 +295,19 @@ namespace VividOfFade
                 GUI.Label(new Rect(m, Screen.height - lineH * 2.2f, Screen.width, lineH * 2f),
                     "Move: WASD / drag   Dodge: Space / flick   Bag: B   Stats: C\nAttack (HOLD): J or right click   Toggle: T", small);
             }
+        }
+
+        /// <summary>ボスがいる間、画面の下に体力バーを出す。</summary>
+        void DrawBossBar()
+        {
+            var boss = World.Enemies.Boss;
+            if (boss == null) return;
+            float w = Screen.width * 0.8f;
+            float h = Screen.height * 0.018f;
+            var r = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.82f, w, h);
+            Fill(r, new Color(0f, 0f, 0f, 0.7f));
+            Fill(new Rect(r.x, r.y, r.width * Mathf.Clamp01(boss.Hp / boss.MaxHp), r.height), new Color(0.9f, 0.2f, 0.25f, 0.95f));
+            GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), $"BOSS  -  WAVE {World.Waves.Wave}", small);
         }
 
         void DrawNumbers()

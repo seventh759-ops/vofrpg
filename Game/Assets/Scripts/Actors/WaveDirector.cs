@@ -45,6 +45,14 @@ namespace VividOfFade
 
             Wave++;
             toSpawn = GameConfig.WaveSize(Wave);
+            if (GameConfig.IsBossWave(Wave))
+            {
+                // ボスは奥の角から。お供の雑魚は普段の半分
+                enemies.SpawnBoss(new Vector2(room.HalfW - 1.5f, room.HalfH - 1.5f),
+                    GameConfig.EnemyHp(Wave) * GameConfig.BossHpMult,
+                    Mathf.RoundToInt(GameConfig.EnemyDamage(Wave) * GameConfig.BossDamageMult));
+                toSpawn /= 2;
+            }
             spawnInterval = GameConfig.WaveSpawnDuration / toSpawn;
             spawnTimer = 0f;
             gapTimer = GameConfig.WaveGap;

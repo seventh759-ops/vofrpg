@@ -119,6 +119,9 @@ namespace VividOfFade
                 case UniqueType.ExplodeOnKill: return "Enemies explode on death";
                 case UniqueType.HealOnKill: return "Heal 1 HP on kill";
                 case UniqueType.SplitShot: return MultiText(2f) + " (unique)";
+                case UniqueType.DodgeNova: return "Dodging releases a burst of flame";
+                case UniqueType.DoubleStrike: return "25% chance to attack again";
+                case UniqueType.Vampiric: return "Heal 1% of damage dealt";
                 default: return "";
             }
         }

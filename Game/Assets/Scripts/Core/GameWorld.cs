@@ -37,6 +37,7 @@ namespace VividOfFade
         int rewardedWave;
         float slowMoTimer;
         bool exploding;
+        float lifeStealPool; // 与えたダメージから回復する分の端数
 
         public bool AutoAttack
         {
@@ -55,6 +56,9 @@ namespace VividOfFade
             Enemies.Init();
             Enemies.Damaged += OnEnemyDamaged;
             Enemies.Killed += OnEnemyKilled;
+            Enemies.BossKilled += OnBossKilled;
+            Enemies.BossWindup += (pos, radius, time) => Fx.Ring(pos, radius, new Color(1f, 0.2f, 0.2f, 0.7f), time);
+            Enemies.BossSlam += OnBossSlam;
 
             Shots = AddChild<ProjectileSystem>("Shots");
             Shots.Init();
@@ -74,6 +78,7 @@ namespace VividOfFade
             Player = AddChild<Player>("Player");
             Player.Sr = Player.gameObject.AddComponent<SpriteRenderer>();
             Player.Sr.sprite = PixelArt.Player;
+            Player.Dodged += OnPlayerDodged;
 
             Inventory.Changed += () => Player.ApplyStats(PlayerStats.From(Inventory.Equipped));
 
@@ -178,6 +183,49 @@ namespace VividOfFade
         {
             Hud.AddNumber(pos, amount, crit);
             Sfx.Hit();
+
+            float steal = Player.Stats.LifeSteal;
+            if (steal > 0f && !Player.IsDead)
+            {
+                lifeStealPool += amount * steal;
+                if (lifeStealPool >= 1f)
+                {
+                    int whole = Mathf.FloorToInt(lifeStealPool);
+                    lifeStealPool -= whole;
+                    Player.Heal(whole);
+                }
+            }
+        }
+
+        /// <summary>ボスの叩きつけ。輪の内側にいて、回避の無敵中でなければ当たる。</summary>
+        void OnBossSlam(Vector2 pos, float radius, int damage)
+        {
+            Fx.Ring(pos, radius, new Color(1f, 0.9f, 0.8f, 0.9f), 0.2f);
+            Sfx.Boom();
+            cameraRig.Shake(0.2f, 0.3f);
+            if ((Player.Pos - pos).sqrMagnitude <= radius * radius) Player.TakeHit(damage);
+        }
+
+        /// <summary>ボスを倒した：大きな噴水と、低い確率でボス専用の Mythic 装備。</summary>
+        void OnBossKilled(Vector2 pos)
+        {
+            Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropLevel, GameConfig.BossRarityBonus,
+                GameConfig.FountainEmberOrbs(Waves.Wave), GameConfig.EmberAmount(Waves.Wave) * 3);
+            if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
+            Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
+            cameraRig.Shake(0.3f, 0.5f);
+            Hud.Toast("BOSS DEFEATED!", new Color(1f, 0.5f, 0.4f));
+            GainExp(Progression.KillExp(Waves.Wave) * 30);
+        }
+
+        /// <summary>ボス装備の固有効果：回避した場所で炎が弾ける。</summary>
+        void OnPlayerDodged(Vector2 pos)
+        {
+            var st = Player.Stats;
+            if (st == null || st.DodgeNovaMult <= 0f) return;
+            const float radius = 1.8f;
+            Fx.Ring(pos, radius, new Color(0.5f, 0.8f, 1f, 0.9f), 0.3f);
+            Enemies.DamageArea(pos, radius, st.Damage * st.DodgeNovaMult);
         }
 
         void OnEnemyKilled(Vector2 pos)
@@ -260,7 +308,7 @@ namespace VividOfFade
             {
                 cameraRig.Shake(0.15f, 0.3f);
             }
-            else if (item.Rarity == Rarity.Relic)
+            else if (item.Rarity >= Rarity.Relic)
             {
                 cameraRig.Shake(0.25f, 0.5f);
                 slowMoTimer = 0.6f; // 一瞬スローにする
@@ -320,6 +368,7 @@ namespace VividOfFade
             BagOpen = false;
             StatsOpen = false;
             rewardedWave = 0;
+            lifeStealPool = 0f;
             Enemies.Clear();
             Enemies.Kills = 0;
             Shots.Clear();

@@ -20,6 +20,25 @@ namespace VividOfFade
         public event Action<Vector2, float, bool> Damaged;
         /// <summary>倒した（位置）。ドロップや撃破時の効果に使う。</summary>
         public event Action<Vector2> Killed;
+        /// <summary>ボスを倒した（位置）。</summary>
+        public event Action<Vector2> BossKilled;
+        /// <summary>ボスが力をため始めた（位置・範囲・ためる時間）。</summary>
+        public event Action<Vector2, float, float> BossWindup;
+        /// <summary>ボスが叩きつけた（位置・範囲・ダメージ）。</summary>
+        public event Action<Vector2, float, int> BossSlam;
+
+        /// <summary>生きているボス（いなければ null）。体力バーの表示に使う。</summary>
+        public Enemy Boss
+        {
+            get
+            {
+                foreach (var e in Active)
+                {
+                    if (e.IsBoss && !e.Dying) return e;
+                }
+                return null;
+            }
+        }
 
         Pool<Enemy> pool;
 
@@ -66,10 +85,31 @@ namespace VividOfFade
             e.Dying = false;
             e.DyingTimer = 0f;
             e.Sr.color = Color.white;
+            e.IsBoss = false;
+            e.MaxHp = hp;
+            e.BaseScale = 1f;
+            e.SlamTimer = 0f;
+            e.Windup = 0f;
             e.transform.localScale = Vector3.one;
             e.Pos = pos;
             e.Sr.sortingOrder = SortOrder.For(pos);
             Active.Add(e);
+        }
+
+        /// <summary>ボス：大きく、硬く、遅い。数秒ごとに周りを叩きつける。</summary>
+        public void SpawnBoss(Vector2 pos, float hp, int contactDamage)
+        {
+            int before = Active.Count;
+            Spawn(pos, hp, contactDamage);
+            if (Active.Count == before) return; // 上限で出せなかった
+            var e = Active[Active.Count - 1];
+            e.IsBoss = true;
+            e.BaseScale = GameConfig.BossScale;
+            e.Radius = GameConfig.SlimeRadius * GameConfig.BossScale;
+            e.Speed = GameConfig.BossSpeed;
+            e.SlamTimer = GameConfig.BossSlamInterval * 0.6f;
+            e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale, 1f);
+            e.Sr.color = GameConfig.BossTint;
         }
 
         public void Damage(Enemy e, float amount, Vector2 dir, bool crit)
@@ -78,14 +118,15 @@ namespace VividOfFade
             e.Hp -= amount;
             e.FlashTimer = 0.08f;
             e.Sr.color = HitColor;
-            e.Knock += dir * (crit ? 5f : 3f);
+            e.Knock += dir * (crit ? 5f : 3f) * (e.IsBoss ? 0.05f : 1f); // ボスはほとんどのけぞらない
             Damaged?.Invoke(e.Pos, amount, crit);
             if (e.Hp <= 0f)
             {
                 e.Dying = true;
-                e.DyingTimer = DeathTime;
+                e.DyingTimer = e.IsBoss ? DeathTime * 4f : DeathTime;
                 Kills++;
                 Killed?.Invoke(e.Pos);
+                if (e.IsBoss) BossKilled?.Invoke(e.Pos);
             }
         }
 
@@ -132,8 +173,8 @@ namespace VividOfFade
                 {
                     // 倒れたら少し膨らんで消える
                     e.DyingTimer -= dt;
-                    float t = 1f - Mathf.Clamp01(e.DyingTimer / DeathTime);
-                    e.transform.localScale = Vector3.one * (1f + t * 0.6f);
+                    float t = 1f - Mathf.Clamp01(e.DyingTimer / (e.IsBoss ? DeathTime * 4f : DeathTime));
+                    e.transform.localScale = Vector3.one * (e.BaseScale * (1f + t * 0.6f));
                     var c = e.Sr.color;
                     c.a = 1f - t;
                     e.Sr.color = c;
@@ -144,13 +185,15 @@ namespace VividOfFade
                 if (e.FlashTimer > 0f)
                 {
                     e.FlashTimer -= dt;
-                    if (e.FlashTimer <= 0f) e.Sr.color = Color.white;
+                    if (e.FlashTimer <= 0f) e.Sr.color = e.IsBoss ? GameConfig.BossTint : Color.white;
                 }
 
                 Vector2 pos = e.Pos;
                 Vector2 to = target - pos;
                 float dist = to.magnitude;
                 Vector2 dir = dist > 0.001f ? to / dist : Vector2.zero;
+
+                if (e.IsBoss && UpdateBoss(e, dt, dist)) dir = Vector2.zero; // 力をためている間は止まる
 
                 // 重なりすぎないように押し合う
                 Vector2 separation = Vector2.zero;
@@ -180,6 +223,29 @@ namespace VividOfFade
                     if (player.TakeHit(e.ContactDamage)) e.Knock -= dir * 4f;
                 }
             }
+        }
+
+        /// <summary>ボスの叩きつけ。力をためている間は true（動かない）。</summary>
+        bool UpdateBoss(Enemy e, float dt, float distToPlayer)
+        {
+            if (e.Windup > 0f)
+            {
+                e.Windup -= dt;
+                if (e.Windup <= 0f)
+                {
+                    BossSlam?.Invoke(e.Pos, GameConfig.BossSlamRadius, e.ContactDamage * 2);
+                    e.SlamTimer = GameConfig.BossSlamInterval;
+                }
+                return true;
+            }
+            e.SlamTimer -= dt;
+            if (e.SlamTimer <= 0f && distToPlayer < GameConfig.BossSlamRadius + 2f)
+            {
+                e.Windup = GameConfig.BossWindup;
+                BossWindup?.Invoke(e.Pos, GameConfig.BossSlamRadius, GameConfig.BossWindup);
+                return true;
+            }
+            return false;
         }
 
         public void Clear()

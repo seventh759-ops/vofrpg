@@ -21,6 +21,7 @@ namespace VividOfFade
         };
 
         static readonly UniqueType[] allUniques = { UniqueType.ExplodeOnKill, UniqueType.HealOnKill, UniqueType.SplitShot };
+        static readonly UniqueType[] bossUniques = { UniqueType.DodgeNova, UniqueType.DoubleStrike, UniqueType.Vampiric };
 
         /// <summary>bonus が大きいほど、珍しい段階が出やすくなる（0 で通常）。</summary>
         public static Rarity RollRarity(float bonus)
@@ -82,6 +83,23 @@ namespace VividOfFade
                     pool.RemoveAt(k);
                 }
             }
+            return item;
+        }
+
+        /// <summary>
+        /// ボス専用の Mythic 装備。効果4つ（強めの値）＋通常の固有効果1つ＋ボス専用の固有効果1つ。
+        /// </summary>
+        public static Item RollMythic(int level)
+        {
+            var item = Roll(level, 0f);
+            item.Rarity = Rarity.Mythic;
+            if (item.Slot == ItemSlot.Weapon) item.BaseValue = WeaponDamage(item.Weapon, item.Level, Rarity.Mythic);
+            else if (item.Slot == ItemSlot.Armor) item.BaseValue = Mathf.Round((20f + 5f * item.Level) * RarityMult(Rarity.Mythic));
+            item.Affixes.Clear();
+            item.Uniques.Clear();
+            AddAffixes(item, 4);
+            item.Uniques.Add(allUniques[Random.Range(0, allUniques.Length)]);
+            item.Uniques.Add(bossUniques[Random.Range(0, bossUniques.Length)]);
             return item;
         }
 

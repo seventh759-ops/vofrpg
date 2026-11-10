@@ -53,7 +53,8 @@ namespace VividOfFade
             {
                 case Rarity.Rare: source.PlayOneShot(chime); break;
                 case Rarity.Legendary: source.PlayOneShot(fanfare); break;
-                case Rarity.Relic: source.PlayOneShot(relic); break;
+                case Rarity.Relic:
+                case Rarity.Mythic: source.PlayOneShot(relic); break;
             }
         }
 

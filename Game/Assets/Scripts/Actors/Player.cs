@@ -17,6 +17,9 @@ namespace VividOfFade
         /// <summary>向いている方向（論理座標）。押している間だけ攻撃で、敵がいないときに使う。</summary>
         public Vector2 FacingLogical => Iso.ToLogical(facing).normalized;
 
+        /// <summary>回避した（論理座標の位置）。ボス装備の固有効果に使う。</summary>
+        public event System.Action<Vector2> Dodged;
+
         public float DodgeReady => 1f - Mathf.Clamp01(dodgeCooldown / GameConfig.DodgeCooldown);
 
         Vector2 pos;
@@ -130,6 +133,7 @@ namespace VividOfFade
                 dashTimer = GameConfig.DodgeTime;
                 dodgeCooldown = GameConfig.DodgeCooldown;
                 invuln = Mathf.Max(invuln, GameConfig.DodgeInvuln);
+                Dodged?.Invoke(Pos);
             }
 
             bool dashing = dashTimer > 0f;

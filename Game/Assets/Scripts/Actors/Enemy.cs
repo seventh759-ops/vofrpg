@@ -15,6 +15,13 @@ namespace VividOfFade
         public bool Dying;
         public float DyingTimer;
 
+        // ボス
+        public bool IsBoss;
+        public float MaxHp;
+        public float BaseScale = 1f;
+        public float SlamTimer;   // 次に叩きつけるまで
+        public float Windup;      // 力をためている残り時間（0 より大きい間は動かない）
+
         Vector2 pos;
 
         /// <summary>論理座標。画面にはクォータービューに変換して描く。</summary>

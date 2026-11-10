@@ -43,6 +43,9 @@ namespace VividOfFade
 
         public float ExplodeMult; // 撃破時の爆発（攻撃力に対する倍率）
         public int HealOnKill;
+        public float DodgeNovaMult;       // 回避したときの炎（攻撃力に対する倍率）
+        public float DoubleStrikeChance;
+        public float LifeSteal;           // 与えたダメージのうち回復する割合
 
         public float AttacksPerSecond => 1f / FireInterval;
 
@@ -73,7 +76,8 @@ namespace VividOfFade
                 float dps = Damage * (1f + CritChance * (CritMult - 1f)) * Multiplicity / FireInterval;
                 float survive = 1f + MaxHp * 0.002f + Armor * 0.002f;
                 float reach = 1f + (Light - spec.BaseLight) * 0.05f;
-                return dps * survive * reach * (1f + ExplodeMult * 0.5f);
+                return dps * survive * reach * (1f + ExplodeMult * 0.5f) * (1f + DoubleStrikeChance)
+                    * (1f + DodgeNovaMult * 0.1f) * (1f + LifeSteal * 10f);
             }
         }
 
@@ -148,6 +152,9 @@ namespace VividOfFade
                         case UniqueType.ExplodeOnKill: s.ExplodeMult += 0.6f; break;
                         case UniqueType.HealOnKill: s.HealOnKill += 1; break;
                         case UniqueType.SplitShot: extra += 2; break;
+                        case UniqueType.DodgeNova: s.DodgeNovaMult += 1.5f; break;
+                        case UniqueType.DoubleStrike: s.DoubleStrikeChance += 0.25f; break;
+                        case UniqueType.Vampiric: s.LifeSteal += 0.01f; break;
                     }
                 }
             }

@@ -51,6 +51,20 @@ namespace VividOfFade
 
         public static int WaveSize(int wave) => Mathf.Min(15 + wave * 10, 120);
 
+        // ボス（10波ごと）
+        public static bool IsBossWave(int wave) => wave > 0 && wave % 10 == 0;
+        public const float BossHpMult = 40f;          // 同じ波の雑魚の何倍か
+        public const float BossDamageMult = 2f;
+        public const float BossScale = 3f;
+        public const float BossSpeed = 1.1f;
+        public const float BossSlamInterval = 4f;
+        public const float BossWindup = 0.8f;
+        public const float BossSlamRadius = 2.2f;
+        public static readonly Color BossTint = new Color(1f, 0.45f, 0.45f, 1f);
+        public const float MythicChance = 0.15f;       // ボスから Mythic 装備が落ちる確率
+        public const int BossFountainItems = 8;
+        public const float BossRarityBonus = 1.5f;
+
         // ドロップ
         public const float ItemDropChance = 0.04f;   // 雑魚1体あたり
         public const float EmberDropChance = 0.3f;

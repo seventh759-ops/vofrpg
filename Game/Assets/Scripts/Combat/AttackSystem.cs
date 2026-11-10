@@ -63,7 +63,8 @@ namespace VividOfFade
                 default:
                     return; // 回る灯りは UpdateOrbs で当てる
             }
-            timer = st.FireInterval;
+            // ボス装備の固有効果：一定の確率ですぐにもう一度攻撃する
+            timer = Random.value < st.DoubleStrikeChance ? 0.05f : st.FireInterval;
         }
 
         /// <summary>範囲内の一番近い敵へ向ける。押している間だけのときは、敵がいなくても向いている方へ。</summary>
