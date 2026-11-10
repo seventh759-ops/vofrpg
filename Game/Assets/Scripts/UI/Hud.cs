@@ -256,7 +256,8 @@ namespace VividOfFade
                 DrawHud();
             }
 
-            if (World.ChoosingClass) DrawClassSelect();
+            if (World.ChoosingClass && World.PendingClass.HasValue) DrawFloorSelect(World.PendingClass.Value);
+            else if (World.ChoosingClass) DrawClassSelect();
             else if (World.Player.IsDead) DrawGameOver();
             else if (World.BagOpen) bag.Draw(World);
             else if (World.StatsOpen) stats.Draw(World);
@@ -509,6 +510,39 @@ namespace VividOfFade
             GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), "Tap / Enter to continue", centered);
         }
 
+        /// <summary>開始する層を選ぶ画面（1層と、倒したボスの次の層）。PC は数字キーでも選べる。</summary>
+        void DrawFloorSelect(ClassType type)
+        {
+            float W = Screen.width;
+            float H = Screen.height;
+            Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.8f));
+            var ch = Profile.Get(type);
+            var spec = ClassInfo.Get(type);
+
+            var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
+            GUI.Label(new Rect(0, H * 0.12f, W, H * 0.06f), "Choose a starting floor", title);
+            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), $"{spec.Name}   Lv {ch.Level}   Best floor {ch.BestFloor}", centered);
+
+            var floors = GameWorld.Checkpoints(ch);
+            const int cols = 3;
+            float pad = W * 0.08f;
+            float gap = W * 0.03f;
+            float bw = (W - pad * 2f - gap * (cols - 1)) / cols;
+            float bh = H * 0.07f;
+            float y = H * 0.27f;
+            for (int i = 0; i < floors.Count; i++)
+            {
+                int floor = floors[i];
+                var r = new Rect(pad + (i % cols) * (bw + gap), y + (i / cols) * (bh + gap), bw, bh);
+                string key = Application.isMobilePlatform || i >= 9 ? "" : $"[{i + 1}] ";
+                Button(r, $"{key}Floor {floor}", i == floors.Count - 1 ? new Color(0.5f, 0.4f, 0.1f, 0.7f) : new Color(1f, 1f, 1f, 0.12f), centered,
+                    () => World.StartRun(type, floor));
+            }
+            int rows = (floors.Count + cols - 1) / cols;
+            var back = new Rect(pad, y + rows * (bh + gap) + gap, W - pad * 2f, H * 0.05f);
+            Button(back, "BACK", new Color(1f, 1f, 1f, 0.08f), centered, () => World.CancelFloorSelect());
+        }
+
         /// <summary>職業を選ぶ画面。3つの大きなボタン（PC は数字キー 1〜3 でも選べる）。</summary>
         void DrawClassSelect()
         {
@@ -530,7 +564,7 @@ namespace VividOfFade
                 var spec = ClassInfo.Get((ClassType)i);
                 var type = spec.Type;
                 var r = new Rect(pad, y, W - pad * 2f, bh);
-                Button(r, null, new Color(1f, 1f, 1f, 0.12f), centered, () => World.StartRun(type));
+                Button(r, null, new Color(1f, 1f, 1f, 0.12f), centered, () => World.ChooseClass(type));
 
                 float inner = r.height * 0.12f;
                 float icon = r.height - inner * 2f;

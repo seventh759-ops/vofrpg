@@ -32,6 +32,7 @@ namespace VividOfFade
         public int Embers;                            // 持ち帰った火種の合計
         public int CarrySlots = 3;                    // 今回拾った品から持ち帰れる数
         public int BestFloor;                         // たどり着いた一番深い層
+        public int BossCleared;                       // 倒した一番深いボスの層（その次の層がチェックポイント）
 
         public void Repair()
         {

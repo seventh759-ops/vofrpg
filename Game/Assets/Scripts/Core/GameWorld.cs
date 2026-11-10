@@ -42,6 +42,30 @@ namespace VividOfFade
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
         public bool ChoosingClass { get; private set; }
 
+        /// <summary>職業を選んだあと、開始する層を選んでいるときの職業（それ以外は null）。</summary>
+        public ClassType? PendingClass { get; private set; }
+
+        /// <summary>始められる層：1層と、倒したボスの次の層（6・11・16…）。</summary>
+        public static List<int> Checkpoints(CharacterData ch)
+        {
+            var list = new List<int> { 1 };
+            for (int boss = GameConfig.BossFloorEvery; boss <= ch.BossCleared; boss += GameConfig.BossFloorEvery) list.Add(boss + 1);
+            return list;
+        }
+
+        /// <summary>職業を選んだ。チェックポイントがあれば開始する層を選ぶ画面へ、なければ1層から始める。</summary>
+        public void ChooseClass(ClassType type)
+        {
+            var ch = Profile.Get(type);
+            if (Checkpoints(ch).Count > 1) PendingClass = type;
+            else StartRun(type, 1);
+        }
+
+        public void CancelFloorSelect()
+        {
+            PendingClass = null;
+        }
+
         CameraRig cameraRig;
         Vector2 lastKillPos;
         bool roomRewardPending;
@@ -159,7 +183,16 @@ namespace VividOfFade
 
             if (ChoosingClass)
             {
-                if (Input.NumberPressed >= 0 && Input.NumberPressed < ClassInfo.Count) StartRun((ClassType)Input.NumberPressed);
+                if (PendingClass.HasValue)
+                {
+                    var cps = Checkpoints(Profile.Get(PendingClass.Value));
+                    if (Input.NumberPressed >= 0 && Input.NumberPressed < cps.Count) StartRun(PendingClass.Value, cps[Input.NumberPressed]);
+                    else if (Input.CancelPressed) CancelFloorSelect();
+                }
+                else if (Input.NumberPressed >= 0 && Input.NumberPressed < ClassInfo.Count)
+                {
+                    ChooseClass((ClassType)Input.NumberPressed);
+                }
                 cameraRig.Tick(Player.Pos, Room, dt);
                 return;
             }
@@ -311,6 +344,13 @@ namespace VividOfFade
             Hud.Toast("BOSS DEFEATED!", new Color(1f, 0.5f, 0.4f));
             GainExp(Progression.KillExp(Floors.Tier) * 30);
             Floors.OpenStairs();
+            var ch = Profile.Current;
+            if (ch != null && Floors.Floor > ch.BossCleared)
+            {
+                ch.BossCleared = Floors.Floor;
+                Profile.Save();
+                Hud.Toast($"Checkpoint unlocked: floor {Floors.Floor + 1}", new Color(0.7f, 1f, 0.7f));
+            }
             Hud.Toast("The stairs have appeared", new Color(1f, 0.85f, 0.5f));
         }
 
@@ -483,11 +523,13 @@ namespace VividOfFade
         {
             ClearField();
             ChoosingClass = true;
+            PendingClass = null;
         }
 
         /// <summary>選んだ職業で挑戦を始める。</summary>
-        public void StartRun(ClassType type)
+        public void StartRun(ClassType type, int startFloor = 1)
         {
+            PendingClass = null;
             ClassInfo.Current = type;
             Profile.Select(type);
             ChoosingClass = false;
@@ -495,7 +537,7 @@ namespace VividOfFade
             Player.SetClass(type);
             Inventory.Reset(type, Profile.Current);
             Player.ResetState(PlayerStats.From(Inventory.Equipped, type));
-            EnterFloor(1);
+            EnterFloor(Mathf.Max(1, startFloor));
             Input.ClearQueued();
         }
 
