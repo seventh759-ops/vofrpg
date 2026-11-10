@@ -154,6 +154,7 @@ namespace VividOfFade
             Input.Poll();
             if (Input.MusicPressed) Music.ToggleMute();
             if (Input.HelpPressed) Hud.ShowHelp = !Hud.ShowHelp;
+            if (Input.NextMusicPressed) NextMusic();
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
 
             if (ChoosingClass)
@@ -343,6 +344,13 @@ namespace VividOfFade
                 Enemies.DamageArea(pos, radius, stats.Damage * stats.ExplodeMult);
                 exploding = false;
             }
+        }
+
+        /// <summary>BGM のテーマを次へ。</summary>
+        public void NextMusic()
+        {
+            Music.NextTheme();
+            Hud.Toast($"BGM: {Music.ThemeName}", new Color(0.8f, 0.8f, 1f));
         }
 
         /// <summary>鞄・能力値・スキルの画面のどれか1つだけを開く（全部 false で閉じる）。</summary>

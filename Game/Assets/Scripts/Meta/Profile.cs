@@ -75,6 +75,7 @@ namespace VividOfFade
     public sealed class SaveData
     {
         public int Version = 1;
+        public int MusicTheme;
         public List<CharacterData> Characters = new List<CharacterData>();
     }
 
@@ -122,6 +123,21 @@ namespace VividOfFade
         public static void Select(ClassType type)
         {
             Current = Get(type);
+        }
+
+        /// <summary>選んだ BGM のテーマ（どの職業でも共通）。</summary>
+        public static int MusicTheme
+        {
+            get
+            {
+                EnsureLoaded();
+                return data.MusicTheme;
+            }
+            set
+            {
+                EnsureLoaded();
+                data.MusicTheme = value;
+            }
         }
 
         public static void Save()

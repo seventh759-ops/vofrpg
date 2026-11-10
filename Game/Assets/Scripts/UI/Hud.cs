@@ -401,7 +401,7 @@ namespace VividOfFade
             "Skills ...... 1 / 2 / 3",
             "Attack mode . T  (HOLD: J or right click)",
             "Bag ......... B      Stats ... C",
-            "Skill list .. K      Music ... M",
+            "Skill list .. K      Music ... M (on/off)  N (change)",
             "Close ....... Esc",
         };
 
@@ -547,6 +547,10 @@ namespace VividOfFade
                     $"Lv {ch.Level}   Best floor {ch.BestFloor}   Main: {Attributes.ShortName(spec.MainAttr)} / {Attributes.ShortName(spec.SubAttr)}", small);
                 y += bh + gap;
             }
+
+            // BGM の切り替え（N キーでも）
+            var musicRect = new Rect(pad, y + gap, W - pad * 2f, H * 0.045f);
+            Button(musicRect, $"BGM: {World.Music.ThemeName}   (tap to change)", new Color(1f, 1f, 1f, 0.1f), centered, () => World.NextMusic());
         }
 
         void EnsureStyles()
