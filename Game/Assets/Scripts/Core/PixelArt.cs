@@ -21,30 +21,105 @@ namespace VividOfFade
         /// <summary>職業ごとの見た目。同じ形で、外套と手に持つ物の色を変える（仮）。</summary>
         public static Sprite PlayerFor(ClassType type)
         {
-            Color32 cloak, held, glow;
+            var pal = new Dictionary<char, Color32>
+            {
+                { 'k', new Color32(27, 20, 36, 255) },
+                { 's', new Color32(242, 201, 160, 255) },
+                { 'e', new Color32(27, 20, 36, 255) },
+                { 'b', new Color32(60, 46, 36, 255) },
+            };
+            string[] rows;
             switch (type)
             {
                 case ClassType.Shadeblade:
-                    cloak = new Color32(46, 40, 60, 255); held = new Color32(120, 120, 140, 255); glow = new Color32(220, 225, 240, 255);
+                    // 覆面と短いマントの剣士
+                    rows = ShadebladeRows;
+                    pal['c'] = new Color32(46, 40, 62, 255);
+                    pal['d'] = new Color32(34, 30, 46, 255);
+                    pal['r'] = new Color32(170, 40, 50, 255);
+                    pal['m'] = new Color32(205, 212, 228, 255);
                     break;
                 case ClassType.Warden:
-                    cloak = new Color32(130, 58, 44, 255); held = new Color32(150, 110, 50, 255); glow = new Color32(255, 180, 70, 255);
+                    // 兜と肩当ての鎧。鎖で香炉を下げている
+                    rows = WardenRows;
+                    pal['c'] = new Color32(130, 58, 44, 255);
+                    pal['m'] = new Color32(170, 176, 190, 255);
+                    pal['n'] = new Color32(100, 104, 118, 255);
+                    pal['g'] = new Color32(220, 180, 70, 255);
+                    pal['l'] = new Color32(255, 180, 70, 255);
+                    pal['o'] = new Color32(120, 120, 130, 255);
                     break;
                 default:
-                    cloak = new Color32(59, 74, 138, 255); held = new Color32(107, 74, 42, 255); glow = new Color32(255, 210, 90, 255);
+                    // とがったフードのローブ。ランタンを下げた杖を持つ
+                    rows = LampwrightRows;
+                    pal['c'] = new Color32(59, 74, 138, 255);
+                    pal['d'] = new Color32(40, 50, 100, 255);
+                    pal['l'] = new Color32(255, 214, 96, 255);
+                    pal['o'] = new Color32(110, 76, 44, 255);
                     break;
             }
-            return FromArt($"Player_{type}", PlayerRows, new Dictionary<char, Color32>
-            {
-                { 'k', new Color32(27, 20, 36, 255) },
-                { 'c', cloak },
-                { 's', new Color32(242, 201, 160, 255) },
-                { 'e', new Color32(27, 20, 36, 255) },
-                { 'o', held },
-                { 'l', glow },
-                { 'b', new Color32(74, 58, 42, 255) },
-            });
+            return FromArt($"Player_{type}", rows, pal);
         }
+
+        static readonly string[] LampwrightRows =
+        {
+            "......k.........",
+            ".....kck....kk..",
+            "....kccck..kllk.",
+            "....kcccck.kllk.",
+            "...kccsssk..kk..",
+            "...kcsesek...o..",
+            "...kcsssck...o..",
+            "....kccck...ko..",
+            "...kccdcck.kso..",
+            "..kccdccddkk.o..",
+            "..kcdcccddk..o..",
+            "..kcdccccdk..o..",
+            "..kccccccdk..o..",
+            ".kccccccccdk.o..",
+            ".kddddddddddk...",
+            "..kkkkkkkkkk....",
+        };
+
+        static readonly string[] ShadebladeRows =
+        {
+            "................",
+            "......kkkk......",
+            ".....kddddk.....",
+            "....kddddddk....",
+            "....kdssssdk....",
+            "....kdesesdk....",
+            "....krrrrrrk..mk",
+            "...kccrrrrck.mk.",
+            "..kcccddddcckmk.",
+            ".kccckddddkcmk..",
+            ".kcc.kddddksk...",
+            "..kc.kddddkk....",
+            "..kk.kdkkdk.....",
+            ".....kdk.kdk....",
+            ".....kbk..kbk...",
+            ".....kkk..kkk...",
+        };
+
+        static readonly string[] WardenRows =
+        {
+            "................",
+            ".....kkkkkk.....",
+            "....kmmmmmmk....",
+            "....kmnnnnmk....",
+            "....kmeeeemk....",
+            "...kkmmmmmmkk...",
+            "..kgmkccccckmgk.",
+            "..kmmkccgcckmmk.",
+            "...kkccgggcckk..",
+            "...kcccgcccck.k.",
+            "...kscccccccsko.",
+            "...kknnnnnnkk.k.",
+            "....kccccccck.kl",
+            "....kcck.kcck.kl",
+            "....knnk.knnk...",
+            "....kkkk.kkkk...",
+        };
 
         /// <summary>斬撃の扇（120 度、半径 1 ユニット、右向き）。白で作り、色は SpriteRenderer で付ける。</summary>
         public static Sprite SlashArc
@@ -302,26 +377,6 @@ namespace VividOfFade
             }
             return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp));
         }
-
-        static readonly string[] PlayerRows =
-        {
-            "................",
-            "......kkkk......",
-            ".....kcccck.....",
-            "....kcccccck....",
-            "....kcssssck....",
-            "....kcesseck....",
-            "....kcssssck....",
-            ".....kcccck.....",
-            "....kcccccck....",
-            "...kcccccccck...",
-            "...kcccccccckolo",
-            "...kcccccccclll.",
-            "....kcccccckolo.",
-            "....kbk..kbk....",
-            "....kbk..kbk....",
-            "....kkk..kkk....",
-        };
 
         static readonly string[] SlimeRows =
         {
