@@ -36,6 +36,7 @@ namespace VividOfFade
         Vector2 lastKillPos;
         int rewardedWave;
         float slowMoTimer;
+        bool exploding;
 
         public bool AutoAttack
         {
@@ -189,12 +190,15 @@ namespace VividOfFade
             if (Random.value < GameConfig.EmberDropChance) Loot.DropEmbers(pos, GameConfig.EmberAmount(Waves.Wave), Room, 0.6f);
             if (stats.HealOnKill > 0) Player.Heal(stats.HealOnKill);
 
-            if (stats.ExplodeMult > 0f)
+            // 爆発で倒した敵は、さらに爆発しない（連鎖で群れ全体が一度に消えるのを防ぐ）
+            if (stats.ExplodeMult > 0f && !exploding)
             {
                 const float radius = 1.4f;
                 Fx.Ring(pos, radius, new Color(1f, 0.5f, 0.15f, 0.9f));
                 Sfx.Boom();
+                exploding = true;
                 Enemies.DamageArea(pos, radius, stats.Damage * stats.ExplodeMult);
+                exploding = false;
             }
         }
 
