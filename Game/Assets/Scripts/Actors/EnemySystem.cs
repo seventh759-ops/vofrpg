@@ -85,6 +85,14 @@ namespace VividOfFade
             sr.sprite = PixelArt.Slime;
             var e = go.AddComponent<Enemy>();
             e.Sr = sr;
+
+            var aura = new GameObject("Aura");
+            aura.transform.SetParent(go.transform, false);
+            e.Aura = aura.AddComponent<SpriteRenderer>();
+            e.Aura.sprite = PixelArt.Ring;
+            Lighting.MakeGlow(e.Aura);
+            e.Aura.enabled = false;
+
             go.SetActive(false);
             return e;
         }
@@ -106,6 +114,7 @@ namespace VividOfFade
             e.Enraged = false;
             e.Elite = EliteKind.None;
             e.Tint = Color.white;
+            e.Aura.enabled = false;
             e.MaxHp = hp;
             e.BaseScale = 1f;
             e.SlamTimer = 0f;
@@ -131,6 +140,32 @@ namespace VividOfFade
             e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale, 1f);
             e.Sr.color = GameConfig.BossTint;
             e.Tint = GameConfig.BossTint;
+            ShowAura(e, new Color(1f, 0.25f, 0.2f));
+        }
+
+        /// <summary>足元に光る輪を出す（親の大きさに合わせて、床の上の楕円に見えるようにする）。</summary>
+        static void ShowAura(Enemy e, Color color)
+        {
+            float r = e.Radius * 1.5f;                  // 論理座標の半径
+            float k = 1f / Mathf.Max(0.01f, e.BaseScale); // 親の拡大を打ち消す
+            e.Aura.transform.localScale = new Vector3(r * 1.414f * k, r * 0.707f * k, 1f);
+            e.Aura.transform.localPosition = new Vector3(0f, -0.3f * k, 0f);
+            color.a = 0.8f;
+            e.Aura.color = color;
+            e.Aura.enabled = true;
+        }
+
+        /// <summary>精鋭の名前（頭の上の表示用）。</summary>
+        public static string EliteName(EliteKind kind)
+        {
+            switch (kind)
+            {
+                case EliteKind.Swift: return "Swift";
+                case EliteKind.Hardened: return "Hardened";
+                case EliteKind.Splitter: return "Splitter";
+                case EliteKind.Shroud: return "Shroud";
+                default: return "";
+            }
         }
 
         /// <summary>精鋭にする。大きく、色が変わり、種類ごとの性質が付く。</summary>
@@ -161,6 +196,7 @@ namespace VividOfFade
             e.MaxHp = e.Hp;
             e.Sr.color = e.Tint;
             e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale, 1f);
+            ShowAura(e, e.Tint);
         }
 
         /// <summary>まだ出ていない精鋭の種類をランダムに選ぶ。</summary>
@@ -294,6 +330,13 @@ namespace VividOfFade
                 e.Knock = Vector2.MoveTowards(e.Knock, Vector2.zero, 20f * dt);
                 e.Pos = pos;
                 e.Sr.sortingOrder = SortOrder.For(pos);
+                if (e.Aura.enabled)
+                {
+                    e.Aura.sortingOrder = e.Sr.sortingOrder - 1;
+                    var ac = e.Aura.color;
+                    ac.a = 0.55f + 0.3f * Mathf.Sin(Time.time * 5f + i);
+                    e.Aura.color = ac;
+                }
 
                 if (!player.IsDead && dist < e.Radius + GameConfig.PlayerRadius)
                 {

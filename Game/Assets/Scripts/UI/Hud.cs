@@ -252,6 +252,7 @@ namespace VividOfFade
             if (!World.Paused && !World.ChoosingClass)
             {
                 DrawNumbers();
+                DrawEliteLabels();
                 DrawHud();
             }
 
@@ -454,6 +455,28 @@ namespace VividOfFade
             Fill(r, new Color(0f, 0f, 0f, 0.7f));
             Fill(new Rect(r.x, r.y, r.width * Mathf.Clamp01(boss.Hp / boss.MaxHp), r.height), new Color(0.9f, 0.2f, 0.25f, 0.95f));
             GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), $"BOSS  -  FLOOR {World.Floors.Floor}", small);
+        }
+
+        /// <summary>精鋭の頭の上に、名前と小さな体力バー。</summary>
+        void DrawEliteLabels()
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+            var style = new GUIStyle(small) { alignment = TextAnchor.LowerCenter, fontStyle = FontStyle.Bold };
+            foreach (var e in World.Enemies.Active)
+            {
+                if (e.Dying || e.Elite == EliteKind.None) continue;
+                Vector2 head = Iso.ToScreen(e.Pos) + new Vector2(0f, 0.55f * e.BaseScale);
+                Vector3 sp = cam.WorldToScreenPoint(new Vector3(head.x, head.y, 0f));
+                if (sp.z < 0f) continue;
+                float w = small.fontSize * 6f;
+                float gy = Screen.height - sp.y;
+                style.normal.textColor = e.Tint;
+                GUI.Label(new Rect(sp.x - w * 0.5f, gy - small.fontSize * 1.8f, w, small.fontSize * 1.4f), EnemySystem.EliteName(e.Elite), style);
+                var bar = new Rect(sp.x - w * 0.3f, gy - small.fontSize * 0.35f, w * 0.6f, Mathf.Max(3f, small.fontSize * 0.25f));
+                Fill(bar, new Color(0f, 0f, 0f, 0.7f));
+                Fill(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(e.Hp / e.MaxHp), bar.height), e.Tint);
+            }
         }
 
         void DrawNumbers()
