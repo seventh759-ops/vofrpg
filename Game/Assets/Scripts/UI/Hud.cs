@@ -191,15 +191,16 @@ namespace VividOfFade
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
             Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.5f, 0.75f, 1f, 0.9f));
 
+            // 右上のボタンと重ならないよう、左側の幅に収めて3行にする
             float lineH = label.fontSize * 1.4f;
+            float textW = ToggleRect.x - m * 2f;
             float y = dodge.yMax + m * 0.5f;
-            GUI.Label(new Rect(m, y, Screen.width, lineH),
-                $"HP {player.Hp}/{player.MaxHp}   WAVE {World.Waves.Wave}   ENEMY {World.Enemies.AliveCount}", label);
-            GUI.Label(new Rect(m, y + lineH, Screen.width, lineH),
-                $"KILL {World.Enemies.Kills}   EMBERS {inv.Embers}   FPS {fps:0}", label);
+            GUI.Label(new Rect(m, y, textW, lineH), $"HP {player.Hp}/{player.MaxHp}   WAVE {World.Waves.Wave}", label);
+            GUI.Label(new Rect(m, y + lineH, textW, lineH), $"ENEMY {World.Enemies.AliveCount}   KILL {World.Enemies.Kills}", label);
+            GUI.Label(new Rect(m, y + lineH * 2f, textW, lineH), $"EMBERS {inv.Embers}   FPS {fps:0}", label);
 
             // 拾った品の通知
-            float ty = y + lineH * 2.4f;
+            float ty = y + lineH * 3.4f;
             foreach (var t in toasts)
             {
                 var c = t.Color;

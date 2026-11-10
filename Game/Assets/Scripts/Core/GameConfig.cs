@@ -51,7 +51,8 @@ namespace VividOfFade
         // ドロップ
         public const float ItemDropChance = 0.04f;   // 雑魚1体あたり
         public const float EmberDropChance = 0.3f;
-        public const float MagnetRange = 1.6f;
+        public const float MagnetRange = 2.2f;
+        public const float VacuumDelay = 1.2f;   // 波を全滅させてから、地面のドロップを全部吸い寄せるまで
         public const float PickupRange = 0.35f;
 
         // 噴水の数は上限を設ける。火種は粒の数を増やしすぎず、1粒の量で増やす

@@ -133,6 +133,7 @@ namespace VividOfFade
             Fx.Ring(lastKillPos, 2.5f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.4f);
             Sfx.Fountain();
             cameraRig.Shake(0.12f, 0.25f);
+            Loot.VacuumAfter(GameConfig.VacuumDelay);
         }
 
         void OnEnemyDamaged(Vector2 pos, float amount, bool crit)

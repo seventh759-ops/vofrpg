@@ -39,6 +39,7 @@ namespace VividOfFade
         readonly List<GroundLoot> active = new List<GroundLoot>();
         Pool<GroundLoot> pool;
         Inventory inventory;
+        float vacuumTimer = -1f;
 
         public event Action<Item> Landed;
         public event Action<Item> PickedUp;
@@ -61,7 +62,7 @@ namespace VividOfFade
 
             var beam = new GameObject("Beam");
             beam.transform.SetParent(go.transform, false);
-            beam.transform.localScale = new Vector3(3f, 3.5f, 1f);
+            beam.transform.localScale = new Vector3(3f, 0.9f, 1f); // 高さ約1.8マス
             g.Beam = beam.AddComponent<SpriteRenderer>();
             g.Beam.sprite = PixelArt.Beam;
 
@@ -114,8 +115,23 @@ namespace VividOfFade
             return g;
         }
 
+        /// <summary>少し待ってから、地面のドロップをすべてプレイヤーへ吸い寄せる（波を全滅させたとき）。</summary>
+        public void VacuumAfter(float delay)
+        {
+            vacuumTimer = delay;
+        }
+
         public void Tick(float dt, Player player, Inventory inventory)
         {
+            if (vacuumTimer >= 0f)
+            {
+                vacuumTimer -= dt;
+                if (vacuumTimer < 0f)
+                {
+                    foreach (var g in active) g.Magnet = true; // 飛んでいる途中の品は着地してから寄ってくる
+                }
+            }
+
             Vector2 target = player.Pos;
             for (int i = active.Count - 1; i >= 0; i--)
             {
@@ -213,6 +229,7 @@ namespace VividOfFade
 
         public void Clear()
         {
+            vacuumTimer = -1f;
             for (int i = active.Count - 1; i >= 0; i--) ReleaseAt(i);
         }
 
