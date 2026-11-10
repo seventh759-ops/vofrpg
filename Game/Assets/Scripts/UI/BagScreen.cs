@@ -18,6 +18,7 @@ namespace VividOfFade
 
         readonly Hud hud;
         Item selectedItem;
+        bool bulkOpen; // 一括分解の選択欄を開いている
         int selectedEquip = -1;
 
         public BagScreen(Hud hud)
@@ -79,27 +80,19 @@ namespace VividOfFade
             }
             y += (Inventory.BagCapacity / cols) * (bcell + gap) + H * 0.01f;
 
-            // 下のボタン：一括分解（ロック中の品は残る）と自動分解の段階
+            // 下の段：一括分解（押すと選択欄が開く）と、拾ったときの自動分解
             float bottomY = H - pad - btnH;
-            float rowY = bottomY - btnH - gap;
-            float third = (W - pad * 2f - gap * 2f) / 3f;
             float half = (W - pad * 2f - gap) * 0.5f;
-            for (int r = 0; r <= (int)Rarity.Rare; r++)
-            {
-                int max = r;
-                var c = RarityInfo.ColorOf((Rarity)r);
-                hud.Button(new Rect(pad + (third + gap) * r, rowY, third, btnH), r == 0 ? "SALVAGE WHITE" : $"SALVAGE <= {Short((Rarity)r)}",
-                    new Color(c.r, c.g, c.b, 0.3f), centered, () => SalvageBulk(inv, it => (int)it.Rarity <= max));
-            }
-            hud.Button(new Rect(pad, bottomY, half, btnH), "SALVAGE NO \"+\"", buttonBack, centered,
-                () => SalvageBulk(inv, it => it.Rarity < Rarity.Legendary && !IsUpgrade(inv, it, current)));
+            hud.Button(new Rect(pad, bottomY, half, btnH), "BULK SALVAGE", bulkOpen ? new Color(1f, 1f, 1f, 0.3f) : buttonBack, centered,
+                () => bulkOpen = !bulkOpen);
             hud.Button(new Rect(pad + half + gap, bottomY, half, btnH), AutoLabel(inv.AutoSalvageMax), buttonBack, centered,
                 () => inv.CycleAutoSalvage());
 
-            // 選んだ品の詳細と操作
-            float actionY = rowY - btnH - gap;
+            // 選んだ品の詳細と操作（一括分解の選択欄を開いているときは、そちらを出す）
+            float actionY = bottomY - btnH - gap;
             var detail = new Rect(pad, y, W - pad * 2f, actionY - gap - y);
-            if (selectedItem != null) DrawBagItem(world, inv, selectedItem, detail, actionY, btnH, gap, pad);
+            if (bulkOpen) DrawBulkMenu(inv, current, new Rect(pad, y, W - pad * 2f, bottomY - gap - y), btnH, gap);
+            else if (selectedItem != null) DrawBagItem(world, inv, selectedItem, detail, actionY, btnH, gap, pad);
             else if (selectedEquip >= 0) DrawEquipped(inv, selectedEquip, detail, actionY, btnH, pad);
             else GUI.Label(detail, "Tap an item to see details.", small);
         }
@@ -182,6 +175,36 @@ namespace VividOfFade
             hud.Button(r, $"SALVAGE +{RarityInfo.SalvageOf(item.Rarity)}", buttonBack, hud.CenteredStyle, () => Salvage(inv, item));
         }
 
+        /// <summary>一括分解の選択欄。ロック中の品は残る。</summary>
+        void DrawBulkMenu(Inventory inv, PlayerStats current, Rect area, float btnH, float gap)
+        {
+            var small = hud.SmallStyle;
+            float lineH = small.fontSize * 1.4f;
+            GUI.Label(new Rect(area.x, area.y, area.width, lineH), "Salvage all at once (locked items are kept):", small);
+            float y = area.y + lineH * 1.3f;
+            float h = Mathf.Min(btnH, (area.height - lineH * 1.3f - gap * 4f) / 5f);
+
+            void Option(string text, Color back, System.Func<Item, bool> match)
+            {
+                int count = 0;
+                foreach (var it in inv.Bag) if (!it.Locked && match(it)) count++;
+                hud.Button(new Rect(area.x, y, area.width, h), $"{text}   ({count})", back, hud.CenteredStyle, () =>
+                {
+                    SalvageBulk(inv, match);
+                    bulkOpen = false;
+                });
+                y += h + gap;
+            }
+
+            for (int r = 0; r <= (int)Rarity.Rare; r++)
+            {
+                int max = r;
+                var c = RarityInfo.ColorOf((Rarity)r);
+                Option(r == 0 ? "White" : $"White to {Short((Rarity)r).ToLower()}", new Color(c.r, c.g, c.b, 0.3f), it => (int)it.Rarity <= max);
+            }
+            Option("Everything that is not an upgrade", buttonBack, it => it.Rarity < Rarity.Legendary && !IsUpgrade(inv, it, current));
+        }
+
         void SalvageBulk(Inventory inv, System.Func<Item, bool> match)
         {
             int n = inv.SalvageWhere(match);
@@ -209,8 +232,8 @@ namespace VividOfFade
 
         static string AutoLabel(int max)
         {
-            if (max < 0) return "AUTO SALVAGE: OFF";
-            return max == 0 ? "AUTO SALVAGE: WHITE" : $"AUTO SALVAGE: <= {Short((Rarity)max)}";
+            if (max < 0) return "AUTO: OFF";
+            return max == 0 ? "AUTO: WHITE" : $"AUTO: <= {Short((Rarity)max)}";
         }
 
         void Equip(Inventory inv, Item item, EquipSlot slot)
