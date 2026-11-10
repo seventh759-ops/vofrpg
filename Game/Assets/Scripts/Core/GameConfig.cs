@@ -53,7 +53,7 @@ namespace VividOfFade
 
         // ボス（10波ごと）
         public static bool IsBossWave(int wave) => wave > 0 && wave % 10 == 0;
-        public const float BossHpMult = 40f;          // 同じ波の雑魚の何倍か
+        public const float BossHpMult = 80f;          // 同じ波の雑魚の何倍か
         public const float BossDamageMult = 2f;
         public const float BossScale = 3f;
         public const float BossSpeed = 1.1f;
