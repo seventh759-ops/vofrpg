@@ -84,6 +84,28 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>スキルの強化（一定時間）を足した能力を作る。元の能力は変えない。</summary>
+        public PlayerStats WithBuff(SkillSpec b, float power)
+        {
+            var s = (PlayerStats)MemberwiseClone();
+            s.Damage *= 1f + b.BuffDamage * power;
+            s.FireInterval /= 1f + b.BuffAttackSpeed * power;
+            s.Armor += b.BuffArmor * power;
+            if (b.BuffTaken < 1f) s.DamageTaken *= Mathf.Max(0.3f, 1f - (1f - b.BuffTaken) * power);
+            s.Light = Mathf.Min(s.Light + b.BuffLight * power, GameConfig.MaxLight + 3f);
+            int e = b.BuffExtra;
+            if (e > 0)
+            {
+                s.Shots += e;
+                if (s.SpreadDeg <= 0f) s.SpreadDeg = 12f;
+                s.Orbs += e;
+                s.ArcDeg = Mathf.Min(s.ArcDeg + 15f * e, 300f);
+                s.MaxTargets += e;
+                s.PulseRadius += 0.3f * e;
+            }
+            return s;
+        }
+
         public static PlayerStats From(Item[] equipped) => From(equipped, ClassInfo.Current);
 
         public static PlayerStats From(Item[] equipped, ClassType type) => From(equipped, type, Profile.Get(type));

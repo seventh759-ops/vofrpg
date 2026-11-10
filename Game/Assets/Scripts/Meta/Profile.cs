@@ -15,17 +15,40 @@ namespace VividOfFade
         public int Points;
         public int[] Alloc = new int[Attributes.Count]; // 自分で振った能力値
 
+        // スキル（覚えるのはレベルで自動。強さは使った回数で上がる）
+        public int[] SkillLv = { 1, 1, 1, 1, 1, 1 };
+        public int[] SkillUses = new int[SkillInfo.PerClass];
+        public int[] Slots = { 0, -1, -1 };            // ボタンに付けたスキルの番号（-1 は空き）
+        public bool[] SlotAuto = new bool[SkillInfo.Slots];
+
         public void Repair()
         {
             if (Level < 1) Level = 1;
             if (Exp < 0) Exp = 0;
             if (Points < 0) Points = 0;
-            if (Alloc == null || Alloc.Length != Attributes.Count)
+            Alloc = Fit(Alloc, Attributes.Count, 0);
+            SkillLv = Fit(SkillLv, SkillInfo.PerClass, 1);
+            SkillUses = Fit(SkillUses, SkillInfo.PerClass, 0);
+            Slots = Fit(Slots, SkillInfo.Slots, -1);
+            if (SlotAuto == null || SlotAuto.Length != SkillInfo.Slots)
             {
-                var fixedAlloc = new int[Attributes.Count];
-                if (Alloc != null) Array.Copy(Alloc, fixedAlloc, Mathf.Min(Alloc.Length, fixedAlloc.Length));
-                Alloc = fixedAlloc;
+                var fixedAuto = new bool[SkillInfo.Slots];
+                if (SlotAuto != null) Array.Copy(SlotAuto, fixedAuto, Mathf.Min(SlotAuto.Length, fixedAuto.Length));
+                SlotAuto = fixedAuto;
             }
+            for (int i = 0; i < SkillLv.Length; i++) SkillLv[i] = Mathf.Clamp(SkillLv[i], 1, SkillInfo.MaxSkillLevel);
+            for (int i = 0; i < Slots.Length; i++)
+            {
+                if (Slots[i] < -1 || Slots[i] >= SkillInfo.PerClass) Slots[i] = -1;
+            }
+        }
+
+        static int[] Fit(int[] source, int length, int fill)
+        {
+            if (source != null && source.Length == length) return source;
+            var result = new int[length];
+            for (int i = 0; i < length; i++) result[i] = source != null && i < source.Length ? source[i] : fill;
+            return result;
         }
     }
 

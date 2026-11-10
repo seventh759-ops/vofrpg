@@ -43,6 +43,7 @@ namespace VividOfFade
 
         BagScreen bag;
         StatsScreen stats;
+        SkillsScreen skills;
         GUIStyle label;
         GUIStyle small;
         GUIStyle centered;
@@ -82,6 +83,81 @@ namespace VividOfFade
             {
                 var b = BagButtonRect;
                 return new Rect(b.x, b.y - b.height - Screen.height * 0.01f, b.width, b.height);
+            }
+        }
+
+        Rect SkillsButtonRect
+        {
+            get
+            {
+                var b = StatsButtonRect;
+                return new Rect(b.x, b.y - b.height - Screen.height * 0.01f, b.width, b.height);
+            }
+        }
+
+        /// <summary>スキルのボタン（画面左下に3つ）。画面座標（左下原点）。</summary>
+        Rect SkillRect(int slot)
+        {
+            float s = Mathf.Min(Screen.width, Screen.height) * 0.17f;
+            float m = Screen.height * 0.015f;
+            float gap = s * 0.15f;
+            return new Rect(m + slot * (s + gap), m + Screen.height * 0.04f, s, s);
+        }
+
+        /// <summary>スキルのボタンの上の「オート」の切り替え。</summary>
+        Rect SkillAutoRect(int slot)
+        {
+            var r = SkillRect(slot);
+            return new Rect(r.x, r.yMax + r.height * 0.06f, r.width, r.height * 0.3f);
+        }
+
+        void DrawSkillButtons(CharacterData ch)
+        {
+            if (ch == null) return;
+            var player = World.Player;
+            for (int i = 0; i < SkillInfo.Slots; i++)
+            {
+                int slot = i;
+                int index = ch.Slots[i];
+                var r = ToGui(SkillRect(i));
+                if (index < 0 || !SkillInfo.Learned(ClassInfo.Current, index, ch.Level))
+                {
+                    Button(r, "-", new Color(0f, 0f, 0f, 0.35f), centered, () => World.OpenPanel(false, false, true));
+                    continue;
+                }
+
+                var spec = SkillInfo.Get(ClassInfo.Current, index);
+                bool enoughMp = player.Mp >= spec.Mp;
+                var back = enoughMp ? new Color(spec.Color.r * 0.5f, spec.Color.g * 0.5f, spec.Color.b * 0.5f, 0.75f) : new Color(0.4f, 0.1f, 0.1f, 0.6f);
+                Button(r, null, back, centered, () => World.Skills.Press(slot, World.Player));
+
+                // 待ち時間（上から暗くする）
+                float cd = World.Skills.CooldownRatio(i);
+                if (cd > 0f) Fill(new Rect(r.x, r.y, r.width, r.height * cd), new Color(0f, 0f, 0f, 0.55f));
+
+                var nameStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
+                GUI.Label(new Rect(r.x, r.y, r.width, r.height * 0.7f), spec.Name, nameStyle);
+                var costStyle = new GUIStyle(small) { alignment = TextAnchor.LowerCenter, fontSize = Mathf.Max(9, Mathf.RoundToInt(small.fontSize * 0.85f)) };
+                costStyle.normal.textColor = enoughMp ? new Color(0.6f, 0.75f, 1f) : new Color(1f, 0.5f, 0.5f);
+                string key = Application.isMobilePlatform ? "" : $"[{i + 1}] ";
+                GUI.Label(new Rect(r.x, r.y, r.width, r.height * 0.95f), $"{key}MP {spec.Mp}", costStyle);
+
+                bool auto = ch.SlotAuto[i];
+                Button(ToGui(SkillAutoRect(i)), auto ? "AUTO" : "MANUAL",
+                    auto ? new Color(0.2f, 0.5f, 0.2f, 0.7f) : new Color(0f, 0f, 0f, 0.45f), nameStyle, () =>
+                    {
+                        ch.SlotAuto[slot] = !ch.SlotAuto[slot];
+                        Profile.Save();
+                    });
+            }
+
+            // かかっている強化
+            float y = Screen.height - SkillAutoRect(0).yMax - small.fontSize * 1.6f * (player.BuffCount + 0.2f);
+            for (int b = 0; b < player.BuffCount; b++)
+            {
+                GUI.Label(new Rect(Screen.height * 0.015f, y, Screen.width * 0.6f, small.fontSize * 1.5f),
+                    $"{player.BuffName(b)}  {player.BuffRemaining(b):0.0}s", small);
+                y += small.fontSize * 1.5f;
             }
         }
 
@@ -138,6 +214,7 @@ namespace VividOfFade
         {
             bag = new BagScreen(this);
             stats = new StatsScreen(this);
+            skills = new SkillsScreen(this);
         }
 
         void Update()
@@ -180,6 +257,7 @@ namespace VividOfFade
             else if (World.Player.IsDead) DrawGameOver();
             else if (World.BagOpen) bag.Draw(World);
             else if (World.StatsOpen) stats.Draw(World);
+            else if (World.SkillsOpen) skills.Draw(World);
 
             if (repaint)
             {
@@ -265,11 +343,14 @@ namespace VividOfFade
                 () => World.AutoAttack = !World.AutoAttack);
             string bagLabel = inv.BagFull ? $"BAG FULL {inv.Bag.Count}" : $"BAG {inv.Bag.Count}/{Inventory.BagCapacity}";
             Button(ToGui(BagButtonRect), bagLabel, inv.BagFull ? new Color(0.5f, 0.1f, 0.1f, 0.7f) : new Color(0f, 0f, 0f, 0.55f), centered,
-                () => World.BagOpen = true);
+                () => World.OpenPanel(true, false, false));
             int points = ch != null ? ch.Points : 0;
             Button(ToGui(StatsButtonRect), points > 0 ? $"STATS +{points}" : "STATS",
                 points > 0 ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.55f), centered,
-                () => World.StatsOpen = true);
+                () => World.OpenPanel(false, true, false));
+            Button(ToGui(SkillsButtonRect), "SKILLS", new Color(0f, 0f, 0f, 0.55f), centered, () => World.OpenPanel(false, false, true));
+
+            DrawSkillButtons(ch);
 
             // 攻撃ボタン（押している間だけ、のとき）
             if (!World.AutoAttack)
@@ -293,7 +374,7 @@ namespace VividOfFade
             if (!Application.isMobilePlatform)
             {
                 GUI.Label(new Rect(m, Screen.height - lineH * 2.2f, Screen.width, lineH * 2f),
-                    "Move: WASD / drag   Dodge: Space / flick   Bag: B   Stats: C\nAttack (HOLD): J or right click   Toggle: T", small);
+                    "Move: WASD / drag   Dodge: Space / flick   Skills: 1-3   Bag: B   Stats: C   Skill list: K\nAttack (HOLD): J or right click   Toggle: T", small);
             }
         }
 
@@ -304,7 +385,7 @@ namespace VividOfFade
             if (boss == null) return;
             float w = Screen.width * 0.8f;
             float h = Screen.height * 0.018f;
-            var r = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.82f, w, h);
+            var r = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.72f, w, h);
             Fill(r, new Color(0f, 0f, 0f, 0.7f));
             Fill(new Rect(r.x, r.y, r.width * Mathf.Clamp01(boss.Hp / boss.MaxHp), r.height), new Color(0.9f, 0.2f, 0.25f, 0.95f));
             GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), $"BOSS  -  WAVE {World.Waves.Wave}", small);

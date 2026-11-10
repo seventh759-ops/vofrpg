@@ -12,7 +12,25 @@ namespace VividOfFade
         public int MaxMp { get; private set; }
         public bool IsDead => Hp <= 0;
         public bool AutoAttack = true;
+        /// <summary>今の能力（スキルの強化を含む）。</summary>
         public PlayerStats Stats { get; private set; }
+
+        /// <summary>職業・レベル・装備から計算した能力（スキルの強化を含まない）。</summary>
+        public PlayerStats BaseStats { get; private set; }
+
+        sealed class ActiveBuff
+        {
+            public SkillSpec Spec;
+            public float Power;
+            public float Remaining;
+        }
+
+        readonly System.Collections.Generic.List<ActiveBuff> buffs = new System.Collections.Generic.List<ActiveBuff>();
+
+        /// <summary>かかっている強化（HUD の表示用）。</summary>
+        public int BuffCount => buffs.Count;
+        public string BuffName(int i) => buffs[i].Spec.Name;
+        public float BuffRemaining(int i) => buffs[i].Remaining;
 
         /// <summary>向いている方向（論理座標）。押している間だけ攻撃で、敵がいないときに使う。</summary>
         public Vector2 FacingLogical => Iso.ToLogical(facing).normalized;
@@ -47,6 +65,8 @@ namespace VividOfFade
 
         public void ResetState(PlayerStats stats)
         {
+            buffs.Clear();
+            BaseStats = stats;
             Stats = stats;
             MaxHp = stats.MaxHp;
             Hp = MaxHp;
@@ -68,11 +88,43 @@ namespace VividOfFade
         {
             int gained = stats.MaxHp - MaxHp;
             int gainedMp = stats.MaxMp - MaxMp;
-            Stats = stats;
+            BaseStats = stats;
+            RebuildStats();
             MaxHp = stats.MaxHp;
             Hp = Mathf.Clamp(Hp + Mathf.Max(0, gained), IsDead ? 0 : 1, MaxHp);
             MaxMp = stats.MaxMp;
             mp = Mathf.Clamp(mp + Mathf.Max(0, gainedMp), 0f, MaxMp);
+        }
+
+        /// <summary>スキルの強化をかける。同じスキルなら時間を延ばす。</summary>
+        public void AddBuff(SkillSpec spec, float power)
+        {
+            foreach (var b in buffs)
+            {
+                if (b.Spec != spec) continue;
+                b.Power = power;
+                b.Remaining = spec.Duration;
+                RebuildStats();
+                return;
+            }
+            buffs.Add(new ActiveBuff { Spec = spec, Power = power, Remaining = spec.Duration });
+            RebuildStats();
+        }
+
+        void RebuildStats()
+        {
+            var s = BaseStats;
+            foreach (var b in buffs) s = s.WithBuff(b.Spec, b.Power);
+            Stats = s;
+        }
+
+        /// <summary>スキルで突進する（論理座標の向き・距離）。少しの間、無敵になる。</summary>
+        public void SkillDash(Vector2 dir, float distance, Room room)
+        {
+            Pos = room.Clamp(Pos + dir * distance, GameConfig.PlayerRadius);
+            invuln = Mathf.Max(invuln, 0.3f);
+            var screen = Iso.ToScreen(dir);
+            if (screen.sqrMagnitude > 0.0001f) facing = screen.normalized;
         }
 
         /// <summary>レベルが上がったとき。体力と MP を全回復する。</summary>
@@ -113,6 +165,17 @@ namespace VividOfFade
             dodgeCooldown = Mathf.Max(0f, dodgeCooldown - dt);
             invuln = Mathf.Max(0f, invuln - dt);
             hurtTimer = Mathf.Max(0f, hurtTimer - dt);
+
+            // スキルの強化の残り時間
+            bool expired = false;
+            for (int i = buffs.Count - 1; i >= 0; i--)
+            {
+                buffs[i].Remaining -= dt;
+                if (buffs[i].Remaining > 0f) continue;
+                buffs.RemoveAt(i);
+                expired = true;
+            }
+            if (expired) RebuildStats();
 
             // 自然回復
             mp = Mathf.Min(MaxMp, mp + Stats.MpRegen * dt);

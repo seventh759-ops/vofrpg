@@ -13,6 +13,7 @@ namespace VividOfFade
         public EnemySystem Enemies { get; private set; }
         public ProjectileSystem Shots { get; private set; }
         public AttackSystem Attack { get; private set; }
+        public SkillSystem Skills { get; private set; }
         public LootSystem Loot { get; private set; }
         public FxSystem Fx { get; private set; }
         public Sfx Sfx { get; private set; }
@@ -27,7 +28,10 @@ namespace VividOfFade
         /// <summary>能力値の画面を開いている間もゲームを止める。</summary>
         public bool StatsOpen { get; set; }
 
-        public bool Paused => BagOpen || StatsOpen;
+        /// <summary>スキルの画面を開いている間もゲームを止める。</summary>
+        public bool SkillsOpen { get; set; }
+
+        public bool Paused => BagOpen || StatsOpen || SkillsOpen;
 
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
         public bool ChoosingClass { get; private set; }
@@ -73,7 +77,15 @@ namespace VividOfFade
             Fx = AddChild<FxSystem>("Fx");
             Attack = AddChild<AttackSystem>("Attack");
             Attack.Init(Enemies, Shots, Fx);
+            Skills = AddChild<SkillSystem>("Skills");
+            Skills.SkillLeveled += (name, lv) =>
+            {
+                Hud.Toast($"{name} Lv {lv}", new Color(0.6f, 0.85f, 1f));
+                Profile.Save();
+            };
+            Skills.SkillLearned += name => Hud.Toast($"New skill: {name}", new Color(0.6f, 0.85f, 1f));
             Sfx = gameObject.AddComponent<Sfx>();
+            Skills.Init(Enemies, Shots, Fx, Sfx, Room);
 
             Player = AddChild<Player>("Player");
             Player.Sr = Player.gameObject.AddComponent<SpriteRenderer>();
@@ -127,21 +139,10 @@ namespace VividOfFade
             }
 
             if (Input.ToggleModePressed) AutoAttack = !AutoAttack;
-            if (Input.BagPressed && !Player.IsDead)
-            {
-                BagOpen = !BagOpen;
-                StatsOpen = false;
-            }
-            if (Input.StatsPressed && !Player.IsDead)
-            {
-                StatsOpen = !StatsOpen;
-                BagOpen = false;
-            }
-            if (Input.CancelPressed)
-            {
-                BagOpen = false;
-                StatsOpen = false;
-            }
+            if (Input.BagPressed && !Player.IsDead) OpenPanel(!BagOpen, false, false);
+            if (Input.StatsPressed && !Player.IsDead) OpenPanel(false, !StatsOpen, false);
+            if (Input.SkillsPressed && !Player.IsDead) OpenPanel(false, false, !SkillsOpen);
+            if (Input.CancelPressed) OpenPanel(false, false, false);
 
             if (Player.IsDead)
             {
@@ -155,6 +156,7 @@ namespace VividOfFade
             {
                 Player.Tick(dt, Input, Room);
                 Attack.Tick(dt, Player, AutoAttack || Input.AttackHeld);
+                Skills.Tick(dt, Player, Input.NumberPressed);
                 Waves.Tick(dt, Enemies, Player, Room);
                 Enemies.Tick(dt, Player, Room);
                 Shots.Tick(dt, Enemies, Room);
@@ -250,11 +252,21 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>鞄・能力値・スキルの画面のどれか1つだけを開く（全部 false で閉じる）。</summary>
+        public void OpenPanel(bool bag, bool stats, bool skills)
+        {
+            BagOpen = bag;
+            StatsOpen = stats;
+            SkillsOpen = skills;
+        }
+
         void GainExp(int amount)
         {
             var ch = Profile.Current;
+            int oldLevel = ch.Level;
             int gained = Progression.AddExp(ch, amount);
             if (gained <= 0) return;
+            Skills.OnLevelChanged(ch, oldLevel);
 
             RefreshStats();
             Player.Refill();
@@ -299,6 +311,11 @@ namespace VividOfFade
             ch.Exp = 0;
             ch.Points = 0;
             for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;
+            // 覚えていないスキルはボタンから外す（スキルレベル＝熟練度は残す）
+            for (int i = 0; i < ch.Slots.Length; i++)
+            {
+                if (ch.Slots[i] >= 0 && !SkillInfo.Learned(ClassInfo.Current, ch.Slots[i], 1)) ch.Slots[i] = -1;
+            }
             Profile.Save();
             ShowClassSelect();
         }
@@ -393,8 +410,7 @@ namespace VividOfFade
         {
             Time.timeScale = 1f;
             slowMoTimer = 0f;
-            BagOpen = false;
-            StatsOpen = false;
+            OpenPanel(false, false, false);
             rewardedWave = 0;
             lifeStealPool = 0f;
             Enemies.Clear();
@@ -403,6 +419,7 @@ namespace VividOfFade
             Loot.Clear();
             Fx.Clear();
             Attack.ResetState();
+            Skills.ResetState();
         }
 
         void OnApplicationPause(bool paused)
