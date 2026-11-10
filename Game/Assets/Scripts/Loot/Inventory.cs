@@ -19,12 +19,12 @@ namespace VividOfFade
         /// <summary>装備が変わった。能力の再計算に使う。</summary>
         public event Action Changed;
 
-        public void Reset()
+        public void Reset(ClassType type)
         {
             Array.Clear(Equipped, 0, Equipped.Length);
             Bag.Clear();
             Embers = 0;
-            Equipped[(int)EquipSlot.Weapon] = ItemGenerator.StarterWeapon();
+            Equipped[(int)EquipSlot.Weapon] = ItemGenerator.StarterWeapon(type);
             Equipped[(int)EquipSlot.Lantern] = ItemGenerator.StarterLantern();
             Changed?.Invoke();
         }

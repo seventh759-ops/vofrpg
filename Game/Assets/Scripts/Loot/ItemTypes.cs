@@ -11,8 +11,8 @@ namespace VividOfFade
     /// <summary>珍しさ。白・青・黄・橙・紫。</summary>
     public enum Rarity { Common, Magic, Rare, Legendary, Relic }
 
-    /// <summary>武器の種類で通常攻撃の形が変わる。</summary>
-    public enum WeaponKind { None, Wand, Repeater, Fan }
+    /// <summary>武器の種類で通常攻撃の形が変わる。職業ごとに3種類（ClassInfo）。</summary>
+    public enum WeaponKind { None, Wand, Repeater, Fan, Sword, Dagger, Greatblade, Censer, Chain, Brazier }
 
     /// <summary>装備に付く効果。</summary>
     public enum StatType { DamagePct, AttackSpeedPct, CritChance, CritDamage, MoveSpeedPct, MaxHp, Armor, LightRadius, Pierce, Multishot }

@@ -161,8 +161,9 @@ namespace VividOfFade
             DrawNumbers();
             DrawHud();
 
-            if (World.BagOpen && !World.Player.IsDead) bag.Draw(World);
-            if (World.Player.IsDead) DrawGameOver();
+            if (World.ChoosingClass) DrawClassSelect();
+            else if (World.Player.IsDead) DrawGameOver();
+            else if (World.BagOpen) bag.Draw(World);
 
             if (repaint)
             {
@@ -211,7 +212,7 @@ namespace VividOfFade
                 ty += small.fontSize * 1.3f;
             }
 
-            if (World.BagOpen || player.IsDead) return;
+            if (World.BagOpen || player.IsDead || World.ChoosingClass) return;
 
             // 右上のボタン
             Button(ToGui(ToggleRect), World.AutoAttack ? "ATK: AUTO" : "ATK: HOLD", new Color(0f, 0f, 0f, 0.55f), centered,
@@ -273,7 +274,46 @@ namespace VividOfFade
             GUI.Label(new Rect(0, h * 0.38f, Screen.width, h * 0.08f), "GAME OVER", title);
             GUI.Label(new Rect(0, h * 0.47f, Screen.width, h * 0.05f),
                 $"WAVE {World.Waves.Wave}   KILL {World.Enemies.Kills}   EMBERS {World.Inventory.Embers}", centered);
-            GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), "Tap / Enter to retry", centered);
+            GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), "Tap / Enter to continue", centered);
+        }
+
+        /// <summary>職業を選ぶ画面。3つの大きなボタン（PC は数字キー 1〜3 でも選べる）。</summary>
+        void DrawClassSelect()
+        {
+            float W = Screen.width;
+            float H = Screen.height;
+            Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.75f));
+
+            var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
+            GUI.Label(new Rect(0, H * 0.12f, W, H * 0.06f), "VIVID OF FADE", title);
+            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), "Choose your class", centered);
+
+            float pad = W * 0.08f;
+            float bh = H * 0.15f;
+            float gap = H * 0.025f;
+            float y = H * 0.27f;
+            var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(label.fontSize * 1.3f) };
+            for (int i = 0; i < ClassInfo.Count; i++)
+            {
+                var spec = ClassInfo.Get((ClassType)i);
+                var type = spec.Type;
+                var r = new Rect(pad, y, W - pad * 2f, bh);
+                Button(r, null, new Color(1f, 1f, 1f, 0.12f), centered, () => World.StartRun(type));
+
+                float inner = r.height * 0.12f;
+                float icon = r.height - inner * 2f;
+                DrawSprite(new Rect(r.x + inner, r.y + inner, icon, icon), PixelArt.PlayerFor(type));
+                float tx = r.x + icon + inner * 2f;
+                float tw = r.xMax - tx - inner;
+                float lh = small.fontSize * 1.35f;
+                string key = Application.isMobilePlatform ? "" : $"[{i + 1}] ";
+                GUI.Label(new Rect(tx, r.y + inner, tw, nameStyle.fontSize * 1.4f), key + spec.Name, nameStyle);
+                GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, tw, lh), spec.Line1, small);
+                GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh), spec.Line2, small);
+                GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh * 2f, tw, lh),
+                    $"HP {spec.MaxHp}   Weapon: {ClassInfo.Weapon(spec.Starter).Name}", small);
+                y += bh + gap;
+            }
         }
 
         void EnsureStyles()

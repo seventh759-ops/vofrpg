@@ -16,16 +16,61 @@ namespace VividOfFade
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() => cache.Clear();
 
-        public static Sprite Player => FromArt("Player", PlayerRows, new Dictionary<char, Color32>
+        public static Sprite Player => PlayerFor(ClassType.Lampwright);
+
+        /// <summary>職業ごとの見た目。同じ形で、外套と手に持つ物の色を変える（仮）。</summary>
+        public static Sprite PlayerFor(ClassType type)
         {
-            { 'k', new Color32(27, 20, 36, 255) },
-            { 'c', new Color32(59, 74, 138, 255) },
-            { 's', new Color32(242, 201, 160, 255) },
-            { 'e', new Color32(27, 20, 36, 255) },
-            { 'o', new Color32(107, 74, 42, 255) },
-            { 'l', new Color32(255, 210, 90, 255) },
-            { 'b', new Color32(74, 58, 42, 255) },
-        });
+            Color32 cloak, held, glow;
+            switch (type)
+            {
+                case ClassType.Shadeblade:
+                    cloak = new Color32(46, 40, 60, 255); held = new Color32(120, 120, 140, 255); glow = new Color32(220, 225, 240, 255);
+                    break;
+                case ClassType.Warden:
+                    cloak = new Color32(130, 58, 44, 255); held = new Color32(150, 110, 50, 255); glow = new Color32(255, 180, 70, 255);
+                    break;
+                default:
+                    cloak = new Color32(59, 74, 138, 255); held = new Color32(107, 74, 42, 255); glow = new Color32(255, 210, 90, 255);
+                    break;
+            }
+            return FromArt($"Player_{type}", PlayerRows, new Dictionary<char, Color32>
+            {
+                { 'k', new Color32(27, 20, 36, 255) },
+                { 'c', cloak },
+                { 's', new Color32(242, 201, 160, 255) },
+                { 'e', new Color32(27, 20, 36, 255) },
+                { 'o', held },
+                { 'l', glow },
+                { 'b', new Color32(74, 58, 42, 255) },
+            });
+        }
+
+        /// <summary>斬撃の扇（120 度、半径 1 ユニット、右向き）。白で作り、色は SpriteRenderer で付ける。</summary>
+        public static Sprite SlashArc
+        {
+            get
+            {
+                const string key = "SlashArc";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int size = 32;
+                var px = new Color32[size * size];
+                float c = (size - 1) * 0.5f;
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float dx = x - c, dy = y - c;
+                        float d = Mathf.Sqrt(dx * dx + dy * dy);
+                        float ang = Mathf.Abs(Mathf.Atan2(dy, dx) * Mathf.Rad2Deg);
+                        bool on = d <= c && d >= c * 0.55f && ang <= 60f;
+                        byte a = on ? (byte)(255 * Mathf.Clamp01((d - c * 0.55f) / (c * 0.45f))) : (byte)0;
+                        px[y * size + x] = new Color32(255, 255, 255, a);
+                    }
+                }
+                return Store(key, MakeTexture(key, size, size, px, TextureWrapMode.Clamp));
+            }
+        }
 
         public static Sprite Slime => FromArt("Slime", SlimeRows, new Dictionary<char, Color32>
         {

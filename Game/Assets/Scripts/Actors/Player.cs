@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace VividOfFade
 {
-    /// <summary>プレイヤー。移動・回避・通常攻撃（自動／押している間だけ）。能力は装備から計算した PlayerStats を使う。</summary>
+    /// <summary>プレイヤー。移動・回避。通常攻撃は AttackSystem。能力は職業と装備から計算した PlayerStats を使う。</summary>
     public sealed class Player : MonoBehaviour
     {
         public SpriteRenderer Sr;
@@ -11,6 +11,9 @@ namespace VividOfFade
         public bool IsDead => Hp <= 0;
         public bool AutoAttack = true;
         public PlayerStats Stats { get; private set; }
+
+        /// <summary>向いている方向（論理座標）。押している間だけ攻撃で、敵がいないときに使う。</summary>
+        public Vector2 FacingLogical => Iso.ToLogical(facing).normalized;
 
         public float DodgeReady => 1f - Mathf.Clamp01(dodgeCooldown / GameConfig.DodgeCooldown);
 
@@ -34,7 +37,6 @@ namespace VividOfFade
         float dodgeCooldown;
         float invuln;
         float hurtTimer;
-        float fireTimer;
 
         public void ResetState(PlayerStats stats)
         {
@@ -47,7 +49,6 @@ namespace VividOfFade
             dodgeCooldown = 0f;
             invuln = 0f;
             hurtTimer = 0f;
-            fireTimer = 0f;
             Sr.color = Color.white;
             Sr.sortingOrder = SortOrder.For(Vector2.zero);
         }
@@ -78,7 +79,7 @@ namespace VividOfFade
             return true;
         }
 
-        public void Tick(float dt, PlayerInputReader input, Room room, EnemySystem enemies, ProjectileSystem shots)
+        public void Tick(float dt, PlayerInputReader input, Room room)
         {
             dodgeCooldown = Mathf.Max(0f, dodgeCooldown - dt);
             invuln = Mathf.Max(0f, invuln - dt);
@@ -114,41 +115,12 @@ namespace VividOfFade
             {
                 Sr.color = Color.white;
             }
-
-            // 通常攻撃：明るさの範囲内の一番近い敵を狙う
-            fireTimer -= dt;
-            bool wantFire = AutoAttack || input.AttackHeld;
-            if (!wantFire || fireTimer > 0f) return;
-
-            var target = enemies.FindNearest(Pos, Stats.Light);
-            Vector2 aim;
-            if (target != null) aim = (target.Pos - Pos).normalized;
-            else if (!AutoAttack) aim = Iso.ToLogical(facing).normalized; // 押している間は、敵がいなくても向いている方へ撃つ
-            else return;
-
-            FireVolley(aim, shots);
-            fireTimer = Stats.FireInterval;
         }
 
-        void FireVolley(Vector2 aim, ProjectileSystem shots)
+        /// <summary>職業の見た目に切り替える。</summary>
+        public void SetClass(ClassType type)
         {
-            int n = Stats.Shots;
-            for (int k = 0; k < n; k++)
-            {
-                float angle = (k - (n - 1) * 0.5f) * Stats.SpreadDeg;
-                Vector2 dir = Rotate(aim, angle);
-                bool crit = Random.value < Stats.CritChance;
-                float damage = Stats.Damage * (crit ? Stats.CritMult : 1f);
-                shots.Fire(Pos + dir * 0.3f, dir, damage, crit, Stats.Pierce, Stats.Light);
-            }
-        }
-
-        static Vector2 Rotate(Vector2 v, float degrees)
-        {
-            float r = degrees * Mathf.Deg2Rad;
-            float c = Mathf.Cos(r);
-            float s = Mathf.Sin(r);
-            return new Vector2(v.x * c - v.y * s, v.x * s + v.y * c);
+            Sr.sprite = PixelArt.PlayerFor(type);
         }
     }
 }

@@ -37,13 +37,7 @@ namespace VividOfFade
             {
                 switch (Slot)
                 {
-                    case ItemSlot.Weapon:
-                        switch (Weapon)
-                        {
-                            case WeaponKind.Repeater: return "Repeater";
-                            case WeaponKind.Fan: return "Fan Staff";
-                            default: return "Wand";
-                        }
+                    case ItemSlot.Weapon: return ClassInfo.Weapon(Weapon).Name;
                     case ItemSlot.Lantern: return "Lantern";
                     case ItemSlot.Armor: return "Coat";
                     default: return "Ring";
@@ -60,7 +54,7 @@ namespace VividOfFade
             {
                 case ItemSlot.Weapon:
                     lines.Add($"Damage {BaseValue:0}");
-                    lines.Add(WeaponText.Describe(Weapon));
+                    lines.Add(ClassInfo.Weapon(Weapon).Desc);
                     break;
                 case ItemSlot.Lantern:
                     lines.Add($"Light +{BaseValue:0.0}");
@@ -72,19 +66,6 @@ namespace VividOfFade
             foreach (var a in Affixes) lines.Add(StatText.Format(a.Stat, a.Value));
             foreach (var u in Uniques) lines.Add("* " + StatText.Unique(u));
             return lines;
-        }
-    }
-
-    public static class WeaponText
-    {
-        public static string Describe(WeaponKind k)
-        {
-            switch (k)
-            {
-                case WeaponKind.Repeater: return "Rapid shots";
-                case WeaponKind.Fan: return "3-way shots";
-                default: return "Piercing shot";
-            }
         }
     }
 
@@ -103,8 +84,19 @@ namespace VividOfFade
                 case StatType.Armor: return $"+{v:0} Armor";
                 case StatType.LightRadius: return $"+{v:0.0} Light";
                 case StatType.Pierce: return $"+{v:0} Pierce";
-                case StatType.Multishot: return $"+{v:0} Projectile";
+                case StatType.Multishot: return MultiText(v);
                 default: return t.ToString();
+            }
+        }
+
+        /// <summary>弾の数の効果は、職業によって意味が変わる。</summary>
+        static string MultiText(float v)
+        {
+            switch (ClassInfo.Current)
+            {
+                case ClassType.Shadeblade: return $"+{v * 15f:0} deg Slash Arc";
+                case ClassType.Warden: return $"+{v:0} Flame";
+                default: return $"+{v:0} Projectile";
             }
         }
 
@@ -114,7 +106,7 @@ namespace VividOfFade
             {
                 case UniqueType.ExplodeOnKill: return "Enemies explode on death";
                 case UniqueType.HealOnKill: return "Heal 1 HP on kill";
-                case UniqueType.SplitShot: return "+2 projectiles";
+                case UniqueType.SplitShot: return MultiText(2f) + " (unique)";
                 default: return "";
             }
         }

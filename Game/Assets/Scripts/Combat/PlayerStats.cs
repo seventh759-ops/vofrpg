@@ -2,9 +2,12 @@ using UnityEngine;
 
 namespace VividOfFade
 {
-    /// <summary>装備から計算したプレイヤーの能力。装備が変わるたびに作り直す。</summary>
+    /// <summary>職業と装備から計算したプレイヤーの能力。装備が変わるたびに作り直す。</summary>
     public sealed class PlayerStats
     {
+        public ClassType Class;
+        public AttackKind Kind;
+
         public float Damage;
         public float FireInterval;
         public float CritChance;
@@ -12,41 +15,75 @@ namespace VividOfFade
         public float MoveSpeed;
         public int MaxHp;
         public float Armor;
-        public float Light;       // 明るさ＝通常攻撃が届く範囲（マス）
+        public float Light;       // 明るさ。灯術師は火の玉の届く範囲、ほかは狙いを付ける範囲
+
+        // 火の玉（灯術師）
         public int Pierce;
         public int Shots;
-        public float SpreadDeg;   // 弾と弾の間の角度
+        public float SpreadDeg;
+
+        // 斬撃（影刃）
+        public float Reach;
+        public float ArcDeg;
+
+        // 回る灯り・周りを焼く（灯番）
+        public int Orbs;
+        public float OrbitRadius;
+        public float OrbitSpeed;
+        public float PulseRadius;
+
         public float ExplodeMult; // 撃破時の爆発（攻撃力に対する倍率）
         public int HealOnKill;
 
         public float AttacksPerSecond => 1f / FireInterval;
+
+        /// <summary>1回の攻撃で何体ぶん当たりやすいか（強さの比較用の目安）。</summary>
+        public float Multiplicity
+        {
+            get
+            {
+                switch (Kind)
+                {
+                    case AttackKind.Slash: return ArcDeg / 90f * (0.5f + Reach * 0.5f);
+                    case AttackKind.Orbit: return Orbs;
+                    case AttackKind.Pulse: return PulseRadius;
+                    default: return Shots * (1f + 0.15f * Pierce);
+                }
+            }
+        }
 
         /// <summary>装備の良し悪しを比べるための大まかな強さ。</summary>
         public float Power
         {
             get
             {
-                float dps = Damage * (1f + CritChance * (CritMult - 1f)) * Shots / FireInterval * (1f + 0.15f * Pierce);
-                float survive = 1f + (MaxHp - GameConfig.PlayerMaxHp) * 0.004f + Armor * 0.002f;
-                float reach = 1f + (Light - 5f) * 0.05f;
+                var spec = ClassInfo.Get(Class);
+                float dps = Damage * (1f + CritChance * (CritMult - 1f)) * Multiplicity / FireInterval;
+                float survive = 1f + (MaxHp - spec.MaxHp) * 0.004f + (Armor - spec.Armor) * 0.002f;
+                float reach = 1f + (Light - spec.BaseLight) * 0.05f;
                 return dps * survive * reach * (1f + ExplodeMult * 0.5f);
             }
         }
 
-        public static PlayerStats From(Item[] equipped)
+        public static PlayerStats From(Item[] equipped) => From(equipped, ClassInfo.Current);
+
+        public static PlayerStats From(Item[] equipped, ClassType type)
         {
+            var cls = ClassInfo.Get(type);
             var s = new PlayerStats
             {
-                CritChance = 0.05f,
+                Class = type,
+                CritChance = cls.Crit,
                 CritMult = 1.5f,
-                MaxHp = GameConfig.PlayerMaxHp,
-                Light = GameConfig.BaseLight,
+                MaxHp = cls.MaxHp,
+                Light = cls.BaseLight,
+                Armor = cls.Armor,
             };
 
-            float baseDamage = 6f; // 武器なし
-            var kind = WeaponKind.None;
+            float baseDamage = ClassInfo.Weapon(cls.Starter).BaseDamage * 0.6f; // 武器なし
+            var kind = cls.Starter;
             float dmgPct = 0f, atkSpd = 0f, moveSpd = 0f;
-            int pierce = 0, extraShots = 0;
+            int pierce = 0, extra = 0;
 
             foreach (var item in equipped)
             {
@@ -78,7 +115,7 @@ namespace VividOfFade
                         case StatType.Armor: s.Armor += a.Value; break;
                         case StatType.LightRadius: s.Light += a.Value; break;
                         case StatType.Pierce: pierce += Mathf.RoundToInt(a.Value); break;
-                        case StatType.Multishot: extraShots += Mathf.RoundToInt(a.Value); break;
+                        case StatType.Multishot: extra += Mathf.RoundToInt(a.Value); break;
                     }
                 }
 
@@ -88,35 +125,41 @@ namespace VividOfFade
                     {
                         case UniqueType.ExplodeOnKill: s.ExplodeMult += 0.6f; break;
                         case UniqueType.HealOnKill: s.HealOnKill += 1; break;
-                        case UniqueType.SplitShot: extraShots += 2; break;
+                        case UniqueType.SplitShot: extra += 2; break;
                     }
                 }
             }
 
-            // 武器の種類ごとの基本の形
-            float interval, kindMult, kindSpread;
-            int kindPierce, kindShots;
-            switch (kind)
+            var w = ClassInfo.Weapon(kind);
+            s.Kind = w.Attack;
+            s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
+            s.Damage = baseDamage * w.Mult * (1f + dmgPct);
+            s.FireInterval = w.Interval / (1f + atkSpd);
+            s.MoveSpeed = cls.Speed * (1f + moveSpd);
+            s.CritChance = Mathf.Min(s.CritChance + w.CritBonus, 0.75f);
+
+            switch (w.Attack)
             {
-                case WeaponKind.Repeater:
-                    interval = 0.11f; kindMult = 0.6f; kindPierce = 0; kindShots = 1; kindSpread = 0f;
+                case AttackKind.Projectile:
+                    s.Pierce = w.Pierce + pierce;
+                    s.Shots = w.Shots + extra;
+                    s.SpreadDeg = s.Shots > 1 ? (w.Spread > 0f ? w.Spread : 12f) : 0f;
                     break;
-                case WeaponKind.Fan:
-                    interval = 0.3f; kindMult = 0.8f; kindPierce = 0; kindShots = 3; kindSpread = 22f;
+                case AttackKind.Slash:
+                    // 明るさが広いほど、少しだけ遠くまで斬れる
+                    s.Reach = w.Reach + Mathf.Max(0f, s.Light - cls.BaseLight) * 0.1f;
+                    s.ArcDeg = Mathf.Min(w.Arc + 15f * extra, 300f);
                     break;
-                default: // Wand / 武器なし
-                    interval = 0.18f; kindMult = 1f; kindPierce = 1; kindShots = 1; kindSpread = 0f;
+                case AttackKind.Orbit:
+                    s.Orbs = w.Orbs + extra;
+                    s.OrbitRadius = 0.8f + s.Light * 0.15f;
+                    s.OrbitSpeed = w.OrbitSpeed * (1f + atkSpd);
+                    break;
+                case AttackKind.Pulse:
+                    s.PulseRadius = 1f + s.Light * 0.2f + 0.3f * extra;
                     break;
             }
-
-            s.Damage = baseDamage * kindMult * (1f + dmgPct);
-            s.FireInterval = interval / (1f + atkSpd);
-            s.MoveSpeed = GameConfig.PlayerSpeed * (1f + moveSpd);
-            s.Pierce = kindPierce + pierce;
-            s.Shots = kindShots + extraShots;
-            s.SpreadDeg = s.Shots > 1 ? (kindSpread > 0f ? kindSpread : 12f) : 0f;
-            s.CritChance = Mathf.Min(s.CritChance, 0.75f);
-            s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
+            s.Shots = Mathf.Max(1, s.Shots);
             return s;
         }
     }

@@ -52,7 +52,8 @@ namespace VividOfFade
             switch (item.Slot)
             {
                 case ItemSlot.Weapon:
-                    item.Weapon = (WeaponKind)Random.Range(1, 4);
+                    var kinds = ClassInfo.CurrentSpec.Weapons; // 今の職業の武器だけが落ちる
+                    item.Weapon = kinds[Random.Range(0, kinds.Length)];
                     item.BaseValue = WeaponDamage(item.Weapon, item.Level, item.Rarity);
                     break;
                 case ItemSlot.Lantern:
@@ -82,15 +83,16 @@ namespace VividOfFade
             return item;
         }
 
-        public static Item StarterWeapon()
+        public static Item StarterWeapon(ClassType type)
         {
+            var spec = ClassInfo.Weapon(ClassInfo.Get(type).Starter);
             return new Item
             {
                 Slot = ItemSlot.Weapon,
-                Weapon = WeaponKind.Wand,
+                Weapon = spec.Kind,
                 Rarity = Rarity.Common,
                 Level = 1,
-                BaseValue = 10f,
+                BaseValue = spec.BaseDamage,
             };
         }
 
@@ -118,7 +120,7 @@ namespace VividOfFade
 
         static float WeaponDamage(WeaponKind kind, int level, Rarity rarity)
         {
-            float b = kind == WeaponKind.Repeater ? 6f : kind == WeaponKind.Fan ? 7f : 10f;
+            float b = ClassInfo.Weapon(kind).BaseDamage;
             return Mathf.Round(b * (1f + 0.2f * (level - 1)) * RarityMult(rarity) * Random.Range(0.9f, 1.1f));
         }
 
@@ -137,6 +139,7 @@ namespace VividOfFade
         static void AddAffixes(Item item, int count)
         {
             var candidates = new List<StatType>(allStats);
+            if (ClassInfo.Current != ClassType.Lampwright) candidates.Remove(StatType.Pierce); // 貫通は火の玉だけ
             for (int n = 0; n < count && candidates.Count > 0; n++)
             {
                 float total = 0f;

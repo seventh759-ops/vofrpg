@@ -12,6 +12,7 @@ namespace VividOfFade
         public Player Player { get; private set; }
         public EnemySystem Enemies { get; private set; }
         public ProjectileSystem Shots { get; private set; }
+        public AttackSystem Attack { get; private set; }
         public LootSystem Loot { get; private set; }
         public FxSystem Fx { get; private set; }
         public Sfx Sfx { get; private set; }
@@ -22,6 +23,9 @@ namespace VividOfFade
 
         /// <summary>鞄を開いている間はゲームを止める。</summary>
         public bool BagOpen { get; set; }
+
+        /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
+        public bool ChoosingClass { get; private set; }
 
         CameraRig cameraRig;
         Vector2 lastKillPos;
@@ -57,6 +61,8 @@ namespace VividOfFade
             Loot.EmbersPickedUp += _ => Sfx.Ember();
 
             Fx = AddChild<FxSystem>("Fx");
+            Attack = AddChild<AttackSystem>("Attack");
+            Attack.Init(Enemies, Shots, Fx);
             Sfx = gameObject.AddComponent<Sfx>();
 
             Player = AddChild<Player>("Player");
@@ -70,7 +76,7 @@ namespace VividOfFade
 
             Input = new PlayerInputReader
             {
-                IsReserved = p => BagOpen || Hud.IsOverButton(p),
+                IsReserved = p => BagOpen || ChoosingClass || Hud.IsOverButton(p),
                 IsAttackArea = p => !BagOpen && !AutoAttack && Hud.AttackRect.Contains(p),
             };
             Input.Tapped += OnTapped;
@@ -85,7 +91,8 @@ namespace VividOfFade
             cameraRig = new CameraRig(cam);
 
             Waves = new WaveDirector();
-            Restart();
+            StartRun(ClassType.Lampwright);
+            ShowClassSelect();
         }
 
         T AddChild<T>(string name) where T : Component
@@ -101,17 +108,25 @@ namespace VividOfFade
             float dt = Mathf.Min(Time.deltaTime, 1f / 20f);
             Input.Poll();
 
+            if (ChoosingClass)
+            {
+                if (Input.NumberPressed >= 0 && Input.NumberPressed < ClassInfo.Count) StartRun((ClassType)Input.NumberPressed);
+                cameraRig.Tick(Player.Pos, Room, dt);
+                return;
+            }
+
             if (Input.ToggleModePressed) AutoAttack = !AutoAttack;
             if (Input.BagPressed && !Player.IsDead) BagOpen = !BagOpen;
             if (Input.CancelPressed) BagOpen = false;
 
             if (Player.IsDead)
             {
-                if (Input.ConfirmPressed) Restart();
+                if (Input.ConfirmPressed) ShowClassSelect();
             }
             else if (!BagOpen)
             {
-                Player.Tick(dt, Input, Room, Enemies, Shots);
+                Player.Tick(dt, Input, Room);
+                Attack.Tick(dt, Player, AutoAttack || Input.AttackHeld);
                 Waves.Tick(dt, Enemies, Player, Room);
                 Enemies.Tick(dt, Player, Room);
                 Shots.Tick(dt, Enemies, Room);
@@ -191,15 +206,35 @@ namespace VividOfFade
 
         void OnTapped(Vector2 startPos)
         {
-            if (Player.IsDead)
+            if (Player.IsDead && !ChoosingClass)
             {
-                Restart();
+                ShowClassSelect();
                 return;
             }
             Hud.HandleTap(startPos);
         }
 
-        void Restart()
+        /// <summary>職業を選ぶ画面を出す。選ぶと StartRun が呼ばれる。</summary>
+        public void ShowClassSelect()
+        {
+            ClearField();
+            ChoosingClass = true;
+        }
+
+        /// <summary>選んだ職業で挑戦を始める。</summary>
+        public void StartRun(ClassType type)
+        {
+            ClassInfo.Current = type;
+            ChoosingClass = false;
+            ClearField();
+            Player.SetClass(type);
+            Inventory.Reset(type);
+            Player.ResetState(PlayerStats.From(Inventory.Equipped, type));
+            Waves.Reset();
+            Input.ClearQueued();
+        }
+
+        void ClearField()
         {
             Time.timeScale = 1f;
             slowMoTimer = 0f;
@@ -210,10 +245,7 @@ namespace VividOfFade
             Shots.Clear();
             Loot.Clear();
             Fx.Clear();
-            Inventory.Reset();
-            Player.ResetState(PlayerStats.From(Inventory.Equipped));
-            Waves.Reset();
-            Input.ClearQueued();
+            Attack.ResetState();
         }
 
         void OnDestroy()
