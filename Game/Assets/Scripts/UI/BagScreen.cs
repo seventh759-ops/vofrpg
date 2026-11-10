@@ -224,8 +224,8 @@ namespace VividOfFade
                 case Rarity.Common: return "WHITE";
                 case Rarity.Magic: return "BLUE";
                 case Rarity.Rare: return "YELLOW";
-                case Rarity.Legendary: return "ORANGE";
-                case Rarity.Relic: return "PURPLE";
+                case Rarity.Legendary: return "PURPLE";
+                case Rarity.Relic: return "ORANGE";
                 default: return "RED";
             }
         }

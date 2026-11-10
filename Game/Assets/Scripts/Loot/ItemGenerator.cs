@@ -9,7 +9,7 @@ namespace VividOfFade
     /// </summary>
     public static class ItemGenerator
     {
-        // 白・青・黄・橙・紫の出やすさ
+        // 白・青・黄・紫（Legendary）・橙（Relic）の出やすさ
         static readonly float[] rarityWeights = { 60f, 28f, 9f, 2.5f, 0.5f };
 
         static readonly StatType[] allStats =
@@ -166,7 +166,7 @@ namespace VividOfFade
                 case Rarity.Magic: return Random.Range(1, 3);
                 case Rarity.Rare: return Random.Range(3, 5);
                 case Rarity.Legendary: return 3;
-                default: return 0; // 紫は固有効果のみ
+                default: return 2; // Relic（橙）：効果2つ＋固有効果2つ
             }
         }
 

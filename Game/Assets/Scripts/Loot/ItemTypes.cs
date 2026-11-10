@@ -8,7 +8,7 @@ namespace VividOfFade
     /// <summary>装備欄。</summary>
     public enum EquipSlot { Weapon = 0, Lantern = 1, Armor = 2, Ring1 = 3, Ring2 = 4 }
 
-    /// <summary>珍しさ。白・青・黄・橙・紫。赤（Mythic）はボスからしか落ちない。</summary>
+    /// <summary>珍しさ。白・青・黄・紫・橙。赤（Mythic）はボスからしか落ちない。</summary>
     public enum Rarity { Common, Magic, Rare, Legendary, Relic, Mythic }
 
     /// <summary>武器の種類で通常攻撃の形が変わる。職業ごとに3種類（ClassInfo）。</summary>
@@ -28,8 +28,8 @@ namespace VividOfFade
             new Color(0.88f, 0.88f, 0.88f),
             new Color(0.35f, 0.6f, 1f),
             new Color(1f, 0.85f, 0.25f),
-            new Color(1f, 0.55f, 0.15f),
-            new Color(0.78f, 0.42f, 1f),
+            new Color(0.78f, 0.42f, 1f),   // Legendary：紫
+            new Color(1f, 0.55f, 0.15f),   // Relic：橙（光り方が一番派手なので、紫より上）
             new Color(1f, 0.25f, 0.3f),
         };
 
