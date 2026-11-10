@@ -6,7 +6,7 @@ namespace VividOfFade
     /// <summary>
     /// 仮の BGM。音のファイルを使わず、コードで曲を組み立てる（どれもこのゲーム用のオリジナルの旋律）。
     /// 3つのテーマ（通常の曲＋それに合わせたボス戦の曲）から選べる。ボスが出ると切り替わる。
-    /// 音作り：重ねた鋸波の和音、こもらせたベース、ディレイ（反響）、キックに合わせた音量のうねり。
+    /// 音作り：重ねた鋸波の和音、こもらせたベース、ディレイ（反響）。音量や音程の揺れは控えめにしている。
     /// 本番の曲ができたら AudioClip を差し替える。
     /// </summary>
     public sealed class Music : MonoBehaviour
@@ -172,7 +172,7 @@ namespace VividOfFade
                     Lead1 = LeadKind.Saw, LeadVol = 0.09f,
                     Bass = BassKind.Pump, BassVol = 0.24f, PadVol = 0.05f, ArpVol = 0.04f, ArpSaw = true,
                     Kick = "x...x...x...x...", Clap = "....x.......x...", Hat = "..x...x...x...x.",
-                    KickVol = 0.42f, Duck = 0.5f, Echo = 0.22f,
+                    KickVol = 0.42f, Echo = 0.22f,
                 },
             },
             new Theme
@@ -216,7 +216,7 @@ namespace VividOfFade
                     Lead1 = LeadKind.Saw, LeadVol = 0.09f,
                     Bass = BassKind.Octaves, BassVol = 0.22f, PadVol = 0.04f, ArpVol = 0.06f, ArpSaw = true,
                     Kick = "x..x..x.x..x..x.", Snare = "....x.......x...", Hat = "x.x.x.x.x.x.x.x.",
-                    KickVol = 0.4f, Duck = 0.2f, Echo = 0.15f,
+                    KickVol = 0.4f, Echo = 0.15f,
                 },
             },
             new Theme
@@ -240,7 +240,7 @@ namespace VividOfFade
                     Lead1 = LeadKind.Square, LeadVol = 0.08f,
                     Bass = BassKind.Octaves, BassVol = 0.22f, PadVol = 0.05f, ArpVol = 0.045f,
                     Kick = "x...x...x...x...", Clap = "....x.......x...", Hat = "..x...x...x...x.",
-                    KickVol = 0.38f, Duck = 0.45f, Echo = 0.3f,
+                    KickVol = 0.38f, Echo = 0.3f,
                 },
                 Boss = new Song
                 {
@@ -260,7 +260,7 @@ namespace VividOfFade
                     Lead1 = LeadKind.Saw, LeadVol = 0.09f,
                     Bass = BassKind.Pump, BassVol = 0.24f, PadVol = 0.04f, ArpVol = 0.05f, ArpSaw = true,
                     Kick = "x...x...x...x...", Snare = "....x.......x...", Hat = "xxxxxxxxxxxxxxxx",
-                    KickVol = 0.42f, HatVol = 0.02f, Duck = 0.55f, Echo = 0.15f,
+                    KickVol = 0.42f, HatVol = 0.02f, Echo = 0.15f,
                 },
             },
         };
@@ -389,7 +389,7 @@ namespace VividOfFade
             for (int j = 0; j < len; j++)
             {
                 float t = (float)j / Rate;
-                float x = (Saw(freq * 1.004f * t) + Saw(freq * 0.996f * t)) * 0.5f;
+                float x = (Saw(freq * 1.0012f * t) + Saw(freq * 0.9988f * t)) * 0.5f; // ずれは小さく（揺れすぎないように）
                 y += a * (x - y);
                 float env = Mathf.Min(1f, (float)j / attack) * Mathf.Min(1f, (float)(len - j) / release);
                 Add(buf, start + j, y * env * vol);
@@ -435,14 +435,14 @@ namespace VividOfFade
             {
                 float t = (float)j / Rate;
                 // 少し遅れてかかるビブラート
-                float vib = 1f + 0.006f * Mathf.Sin(2f * Mathf.PI * 5.5f * t) * Mathf.Clamp01((t - 0.15f) * 4f);
+                float vib = 1f + 0.0025f * Mathf.Sin(2f * Mathf.PI * 5.5f * t) * Mathf.Clamp01((t - 0.25f) * 3f);
                 float ph = freq * vib * t;
                 float x;
                 float env = Mathf.Min(1f, (float)j / attack) * Mathf.Min(1f, (float)(len - j) / release);
                 switch (kind)
                 {
                     case LeadKind.Square: x = Mathf.Repeat(ph, 1f) < 0.3f ? 1f : -1f; break;
-                    case LeadKind.Saw: x = (Saw(ph) + Saw(ph * 1.005f)) * 0.5f; break;
+                    case LeadKind.Saw: x = (Saw(ph) + Saw(ph * 1.0015f)) * 0.5f; break;
                     case LeadKind.Flute: x = Mathf.Sin(2f * Mathf.PI * ph) + 0.15f * Mathf.Sin(4f * Mathf.PI * ph); break;
                     default: // Bell：澄んだ音に、高い倍音を少し。ゆっくり消える
                         x = Mathf.Sin(2f * Mathf.PI * ph) + 0.35f * Mathf.Sin(2f * Mathf.PI * ph * 2.76f) * Mathf.Exp(-t * 6f);
