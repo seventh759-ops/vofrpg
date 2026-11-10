@@ -201,14 +201,14 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>手前側の低い縁（高さ4ドットの段）。足元のひし形の中心が原点。</summary>
+        /// <summary>迷宮の壁（高さ10ドットの段。どこも同じ高さ）。足元のひし形の中心が原点。</summary>
         public static Sprite IsoWallLow
         {
             get
             {
-                const string key = "IsoWallLow";
+                const string key = "IsoWallBlock";
                 if (cache.TryGetValue(key, out var cached)) return cached;
-                const int w = 32, h = 20, side = 4;
+                const int w = 32, h = 26, side = 10;
                 var px = new Color32[w * h];
                 var clear = new Color32(0, 0, 0, 0);
                 var top = new Color32(64, 58, 84, 255);
@@ -225,7 +225,11 @@ namespace VividOfFade
                         float lowerEdge = cy - 8f * (1f - dx);
                         Color32 c = clear;
                         if (dTop <= 1f) c = dTop > 0.85f ? edge : top;
-                        else if (y < lowerEdge && y >= lowerEdge - side) c = y < lowerEdge - side + 1 ? edge : (x < 16 ? left : right);
+                        else if (y < lowerEdge && y >= lowerEdge - side)
+                        {
+                            c = y < lowerEdge - side + 1 ? edge : (x < 16 ? left : right);
+                            if (y == (int)(lowerEdge - side * 0.5f)) c = edge; // 石積みの目地
+                        }
                         px[y * w + x] = c;
                     }
                 }

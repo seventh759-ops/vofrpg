@@ -255,7 +255,6 @@ namespace VividOfFade
 
             var floorA = PixelArt.IsoFloor;
             var floorB = PixelArt.IsoFloorAlt;
-            var wall = PixelArt.IsoWall;
             var rim = PixelArt.IsoWallLow;
             for (int j = 0; j < MapSize; j++)
             {
@@ -267,12 +266,10 @@ namespace VividOfFade
                         Place((i + j) % 2 == 0 ? floorA : floorB, p, SortOrder.Floor);
                         continue;
                     }
-                    // 床に接する壁だけを描く。床より奥（画面の上側）なら高い壁、手前なら低い縁
-                    bool behind = IsFloorTile(i - 1, j) || IsFloorTile(i, j - 1) || IsFloorTile(i - 1, j - 1);
-                    bool front = IsFloorTile(i + 1, j) || IsFloorTile(i, j + 1) || IsFloorTile(i + 1, j + 1)
-                                 || IsFloorTile(i + 1, j - 1) || IsFloorTile(i - 1, j + 1);
-                    if (behind) Place(wall, p, SortOrder.For(p));
-                    else if (front) Place(rim, p, SortOrder.For(p));
+                    // 床に接する壁だけを、どこも同じ高さで描く（高さがそろって見えるように）
+                    bool touches = IsFloorTile(i - 1, j) || IsFloorTile(i + 1, j) || IsFloorTile(i, j - 1) || IsFloorTile(i, j + 1)
+                                   || IsFloorTile(i - 1, j - 1) || IsFloorTile(i + 1, j + 1) || IsFloorTile(i + 1, j - 1) || IsFloorTile(i - 1, j + 1);
+                    if (touches) Place(rim, p, SortOrder.For(p));
                 }
             }
         }
