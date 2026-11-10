@@ -1,0 +1,22 @@
+# テキストは LF で保存する
+* text=auto eol=lf
+
+# Unity の設定・シーン類は YAML のテキスト。勝手に結合させない
+*.unity     text eol=lf merge=unityyamlmerge
+*.prefab    text eol=lf merge=unityyamlmerge
+*.asset     text eol=lf merge=unityyamlmerge
+*.mat       text eol=lf merge=unityyamlmerge
+*.anim      text eol=lf merge=unityyamlmerge
+*.controller text eol=lf merge=unityyamlmerge
+*.meta      text eol=lf
+*.cs        text eol=lf diff=csharp
+
+# 画像・音などはバイナリ
+*.png  binary
+*.psd  binary
+*.aseprite binary
+*.wav  binary
+*.ogg  binary
+*.mp3  binary
+*.ttf  binary
+*.otf  binary

@@ -1,0 +1,49 @@
+# Unity（プロジェクトは Game/ に置く）
+/Game/[Ll]ibrary/
+/Game/[Tt]emp/
+/Game/[Oo]bj/
+/Game/[Bb]uild/
+/Game/[Bb]uilds/
+/Game/[Ll]ogs/
+/Game/[Uu]ser[Ss]ettings/
+/Game/[Mm]emoryCaptures/
+/Game/[Rr]ecordings/
+/Game/Assets/Plugins/Editor/JetBrains*
+/Game/Assets/[Ss]treamingAssets/aa*
+
+# IDE が作るファイル
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# ビルドの出力
+*.apk
+*.aab
+*.unitypackage
+*.app
+sysinfo.txt
+mono_crash.*
+crashlytics-build.properties
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
