@@ -8,7 +8,8 @@ namespace VividOfFade
         public SpriteRenderer Sr;
         public Vector2 Velocity;
         public float Life;
-        public int Damage;
+        public float Damage;
+        public bool Crit;
         public int PierceLeft;
         public Enemy LastHit;
 

@@ -9,6 +9,7 @@ namespace VividOfFade
     public sealed class WaveDirector
     {
         public int Wave { get; private set; }
+        public bool SpawningDone => toSpawn == 0;
 
         int toSpawn;
         float spawnTimer;
@@ -30,7 +31,7 @@ namespace VividOfFade
                 spawnTimer -= dt;
                 while (spawnTimer <= 0f && toSpawn > 0)
                 {
-                    enemies.Spawn(PickSpawn(player.Pos, room));
+                    enemies.Spawn(PickSpawn(player.Pos, room), GameConfig.EnemyHp(Wave));
                     toSpawn--;
                     spawnTimer += spawnInterval;
                 }

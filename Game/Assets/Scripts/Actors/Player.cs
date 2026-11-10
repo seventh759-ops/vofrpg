@@ -2,13 +2,15 @@ using UnityEngine;
 
 namespace VividOfFade
 {
-    /// <summary>プレイヤー。移動・回避・通常攻撃（自動／押している間だけ）。</summary>
+    /// <summary>プレイヤー。移動・回避・通常攻撃（自動／押している間だけ）。能力は装備から計算した PlayerStats を使う。</summary>
     public sealed class Player : MonoBehaviour
     {
         public SpriteRenderer Sr;
         public int Hp { get; private set; }
+        public int MaxHp { get; private set; } = GameConfig.PlayerMaxHp;
         public bool IsDead => Hp <= 0;
         public bool AutoAttack = true;
+        public PlayerStats Stats { get; private set; }
 
         public float DodgeReady => 1f - Mathf.Clamp01(dodgeCooldown / GameConfig.DodgeCooldown);
 
@@ -26,9 +28,11 @@ namespace VividOfFade
         float hurtTimer;
         float fireTimer;
 
-        public void ResetState()
+        public void ResetState(PlayerStats stats)
         {
-            Hp = GameConfig.PlayerMaxHp;
+            Stats = stats;
+            MaxHp = stats.MaxHp;
+            Hp = MaxHp;
             Pos = Vector2.zero;
             facing = Vector2.down;
             dashTimer = 0f;
@@ -40,11 +44,27 @@ namespace VividOfFade
             Sr.sortingOrder = SortOrder.ForY(0f);
         }
 
-        /// <summary>ダメージを受けたら true。無敵中は受けない。</summary>
+        /// <summary>装備が変わったとき。最大体力が増えた分は今の体力にも足す。</summary>
+        public void ApplyStats(PlayerStats stats)
+        {
+            int gained = stats.MaxHp - MaxHp;
+            Stats = stats;
+            MaxHp = stats.MaxHp;
+            Hp = Mathf.Clamp(Hp + Mathf.Max(0, gained), IsDead ? 0 : 1, MaxHp);
+        }
+
+        public void Heal(int amount)
+        {
+            if (IsDead) return;
+            Hp = Mathf.Min(MaxHp, Hp + amount);
+        }
+
+        /// <summary>ダメージを受けたら true。無敵中は受けない。防御で減らす。</summary>
         public bool TakeHit(int damage)
         {
             if (invuln > 0f || IsDead) return false;
-            Hp = Mathf.Max(0, Hp - damage);
+            float reduced = damage * 100f / (100f + Stats.Armor);
+            Hp = Mathf.Max(0, Hp - Mathf.Max(1, Mathf.RoundToInt(reduced)));
             invuln = GameConfig.HitInvuln;
             hurtTimer = GameConfig.HitInvuln;
             return true;
@@ -68,7 +88,7 @@ namespace VividOfFade
             }
 
             bool dashing = dashTimer > 0f;
-            Vector2 velocity = dashing ? dashDir * GameConfig.DodgeSpeed : move * GameConfig.PlayerSpeed;
+            Vector2 velocity = dashing ? dashDir * GameConfig.DodgeSpeed : move * Stats.MoveSpeed;
             dashTimer = Mathf.Max(0f, dashTimer - dt);
             Pos = room.Clamp(Pos + velocity * dt, GameConfig.PlayerRadius);
 
@@ -87,24 +107,40 @@ namespace VividOfFade
                 Sr.color = Color.white;
             }
 
-            // 通常攻撃
+            // 通常攻撃：明るさの範囲内の一番近い敵を狙う
             fireTimer -= dt;
             bool wantFire = AutoAttack || input.AttackHeld;
             if (!wantFire || fireTimer > 0f) return;
 
-            var target = enemies.FindNearest(Pos, GameConfig.AttackRange);
-            if (target != null)
+            var target = enemies.FindNearest(Pos, Stats.Light);
+            Vector2 aim;
+            if (target != null) aim = (target.Pos - Pos).normalized;
+            else if (!AutoAttack) aim = facing; // 押している間は、敵がいなくても向いている方へ撃つ
+            else return;
+
+            FireVolley(aim, shots);
+            fireTimer = Stats.FireInterval;
+        }
+
+        void FireVolley(Vector2 aim, ProjectileSystem shots)
+        {
+            int n = Stats.Shots;
+            for (int k = 0; k < n; k++)
             {
-                Vector2 dir = (target.Pos - Pos).normalized;
-                shots.Fire(Pos + dir * 0.3f, dir);
-                fireTimer = GameConfig.FireInterval;
+                float angle = (k - (n - 1) * 0.5f) * Stats.SpreadDeg;
+                Vector2 dir = Rotate(aim, angle);
+                bool crit = Random.value < Stats.CritChance;
+                float damage = Stats.Damage * (crit ? Stats.CritMult : 1f);
+                shots.Fire(Pos + dir * 0.3f, dir, damage, crit, Stats.Pierce, Stats.Light);
             }
-            else if (!AutoAttack)
-            {
-                // 押している間は、敵がいなくても向いている方へ撃つ
-                shots.Fire(Pos + facing * 0.3f, facing);
-                fireTimer = GameConfig.FireInterval;
-            }
+        }
+
+        static Vector2 Rotate(Vector2 v, float degrees)
+        {
+            float r = degrees * Mathf.Deg2Rad;
+            float c = Mathf.Cos(r);
+            float s = Mathf.Sin(r);
+            return new Vector2(v.x * c - v.y * s, v.x * s + v.y * c);
         }
     }
 }

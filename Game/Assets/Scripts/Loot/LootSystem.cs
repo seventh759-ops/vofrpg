@@ -1,0 +1,194 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace VividOfFade
+{
+    /// <summary>地面に落ちた装備か火種1つ。</summary>
+    public sealed class GroundLoot : MonoBehaviour
+    {
+        public SpriteRenderer Sr;
+        public SpriteRenderer Beam;
+        public Item Item;      // null なら火種
+        public int Embers;
+
+        public Vector2 From;
+        public Vector2 To;
+        public float FlightTime;
+        public float T;
+        public bool Landed;
+        public bool Magnet;
+        public float MagnetSpeed;
+        public float Age;
+
+        public Vector2 Pos
+        {
+            get => transform.position;
+            set => transform.position = value;
+        }
+    }
+
+    /// <summary>
+    /// ドロップの噴水・地面のドロップ・吸い寄せと拾う処理。
+    /// 珍しい品は着地したときに光の柱を立て、Landed で GameWorld に知らせる（音・揺れ・スロー）。
+    /// </summary>
+    public sealed class LootSystem : MonoBehaviour
+    {
+        const int MaxGround = 150;
+
+        readonly List<GroundLoot> active = new List<GroundLoot>();
+        Pool<GroundLoot> pool;
+
+        public event Action<Item> Landed;
+        public event Action<Item> PickedUp;
+        public event Action<int> EmbersPickedUp;
+
+        public int GroundCount => active.Count;
+
+        public void Init()
+        {
+            pool = new Pool<GroundLoot>(Create);
+        }
+
+        GroundLoot Create()
+        {
+            var go = new GameObject("Loot");
+            go.transform.SetParent(transform, false);
+            var g = go.AddComponent<GroundLoot>();
+            g.Sr = go.AddComponent<SpriteRenderer>();
+
+            var beam = new GameObject("Beam");
+            beam.transform.SetParent(go.transform, false);
+            beam.transform.localScale = new Vector3(3f, 3.5f, 1f);
+            g.Beam = beam.AddComponent<SpriteRenderer>();
+            g.Beam.sprite = PixelArt.Beam;
+
+            go.SetActive(false);
+            return g;
+        }
+
+        public void DropItem(Vector2 from, Item item, Room room, float spread = 1f)
+        {
+            var g = Spawn(from, room, spread);
+            g.Item = item;
+            g.Embers = 0;
+            g.Sr.sprite = PixelArt.ItemIcon(item.Slot, item.Rarity);
+        }
+
+        public void DropEmbers(Vector2 from, int amount, Room room, float spread = 1f)
+        {
+            var g = Spawn(from, room, spread);
+            g.Item = null;
+            g.Embers = amount;
+            g.Sr.sprite = PixelArt.Ember;
+        }
+
+        /// <summary>ドロップの噴水。装備と火種を一斉にあふれさせる。</summary>
+        public void Fountain(Vector2 at, Room room, int items, int level, float rarityBonus, int embers)
+        {
+            for (int i = 0; i < items; i++) DropItem(at, ItemGenerator.Roll(level, rarityBonus), room, 2.2f);
+            for (int i = 0; i < embers; i++) DropEmbers(at, 1, room, 2.2f);
+        }
+
+        GroundLoot Spawn(Vector2 from, Room room, float spread)
+        {
+            if (active.Count >= MaxGround) ReleaseAt(0); // 一番古いものを消す
+
+            var g = pool.Get();
+            g.From = from;
+            Vector2 offset = UnityEngine.Random.insideUnitCircle * spread;
+            if (offset.sqrMagnitude < 0.09f) offset = offset.normalized * 0.3f + new Vector2(0.01f, 0f);
+            g.To = room.Clamp(from + offset, 0.4f);
+            g.FlightTime = UnityEngine.Random.Range(0.35f, 0.55f);
+            g.T = 0f;
+            g.Landed = false;
+            g.Magnet = false;
+            g.MagnetSpeed = 0f;
+            g.Age = 0f;
+            g.Pos = from;
+            g.Sr.color = Color.white;
+            g.Beam.enabled = false;
+            active.Add(g);
+            return g;
+        }
+
+        public void Tick(float dt, Player player, Inventory inventory)
+        {
+            Vector2 target = player.Pos;
+            for (int i = active.Count - 1; i >= 0; i--)
+            {
+                var g = active[i];
+                g.Age += dt;
+
+                if (!g.Landed)
+                {
+                    // 放物線を描いて飛ぶ
+                    g.T += dt / g.FlightTime;
+                    float t = Mathf.Clamp01(g.T);
+                    Vector2 p = Vector2.Lerp(g.From, g.To, t) + Vector2.up * (4f * t * (1f - t) * 1.2f);
+                    g.Pos = p;
+                    g.Sr.sortingOrder = SortOrder.ForY(g.To.y) + 2;
+                    if (t >= 1f)
+                    {
+                        g.Landed = true;
+                        if (g.Item != null && g.Item.Rarity >= Rarity.Rare)
+                        {
+                            g.Beam.enabled = true;
+                            var c = RarityInfo.ColorOf(g.Item.Rarity);
+                            c.a = 0.55f;
+                            g.Beam.color = c;
+                            g.Beam.sortingOrder = g.Sr.sortingOrder - 1;
+                        }
+                        Landed?.Invoke(g.Item);
+                    }
+                    continue;
+                }
+
+                bool canTake = g.Item == null || inventory.CanTake(g.Item);
+                Vector2 to = target - g.Pos;
+                float dist = to.magnitude;
+
+                if (!g.Magnet && canTake && dist < GameConfig.MagnetRange) g.Magnet = true;
+
+                if (g.Magnet && canTake)
+                {
+                    g.MagnetSpeed = Mathf.Min(g.MagnetSpeed + 40f * dt, 22f);
+                    if (dist > 0.001f) g.Pos += to / dist * Mathf.Min(dist, g.MagnetSpeed * dt);
+                    if (dist < GameConfig.PickupRange)
+                    {
+                        Collect(g, inventory);
+                        ReleaseAt(i);
+                    }
+                    continue;
+                }
+
+                // 地面で小さく弾む
+                g.Pos = g.To + Vector2.up * (Mathf.Abs(Mathf.Sin(g.Age * 3f)) * 0.08f);
+            }
+        }
+
+        void Collect(GroundLoot g, Inventory inventory)
+        {
+            if (g.Item == null)
+            {
+                inventory.Embers += g.Embers;
+                EmbersPickedUp?.Invoke(g.Embers);
+                return;
+            }
+            if (inventory.Add(g.Item)) PickedUp?.Invoke(g.Item);
+        }
+
+        public void Clear()
+        {
+            for (int i = active.Count - 1; i >= 0; i--) ReleaseAt(i);
+        }
+
+        void ReleaseAt(int i)
+        {
+            var g = active[i];
+            active.RemoveAt(i); // 古い順を保つため、ここは詰めて消す
+            g.Item = null;
+            pool.Release(g);
+        }
+    }
+}

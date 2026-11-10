@@ -43,6 +43,74 @@ namespace VividOfFade
             { 'w', new Color32(255, 250, 230, 255) },
         });
 
+        public static Sprite Ember => FromArt("Ember", EmberRows, new Dictionary<char, Color32>
+        {
+            { 'y', new Color32(255, 220, 120, 255) },
+            { 'r', new Color32(255, 120, 40, 255) },
+        });
+
+        /// <summary>地面に落ちた装備のアイコン。r の部分が珍しさの色になる。</summary>
+        public static Sprite ItemIcon(ItemSlot slot, Rarity rarity)
+        {
+            string[] rows;
+            switch (slot)
+            {
+                case ItemSlot.Weapon: rows = WeaponIconRows; break;
+                case ItemSlot.Lantern: rows = LanternIconRows; break;
+                case ItemSlot.Armor: rows = ArmorIconRows; break;
+                default: rows = RingIconRows; break;
+            }
+            Color32 c = RarityInfo.ColorOf(rarity);
+            return FromArt($"Icon_{slot}_{rarity}", rows, new Dictionary<char, Color32>
+            {
+                { 'k', new Color32(16, 12, 22, 255) },
+                { 'r', c },
+                { 'y', new Color32(255, 230, 140, 255) },
+                { 'g', new Color32(220, 180, 70, 255) },
+            });
+        }
+
+        /// <summary>珍しい装備から立ちのぼる光の柱。下が濃く上が薄い白。足元が原点。</summary>
+        public static Sprite Beam
+        {
+            get
+            {
+                const string key = "Beam";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int h = 32;
+                var px = new Color32[h];
+                for (int y = 0; y < h; y++) px[y] = new Color32(255, 255, 255, (byte)(255 * (1f - (float)y / h)));
+                var tex = MakeTexture(key, 1, h, px, TextureWrapMode.Clamp);
+                var sprite = Sprite.Create(tex, new Rect(0, 0, 1, h), new Vector2(0.5f, 0f), PixelsPerUnit, 0, SpriteMeshType.FullRect);
+                sprite.name = key;
+                cache[key] = sprite;
+                return sprite;
+            }
+        }
+
+        /// <summary>爆発などの広がる輪。白で作り、色は SpriteRenderer で付ける。</summary>
+        public static Sprite Ring
+        {
+            get
+            {
+                const string key = "Ring";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int size = 32;
+                var px = new Color32[size * size];
+                float c = (size - 1) * 0.5f;
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float d = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c));
+                        bool on = d < c && d > c - 3f;
+                        px[y * size + x] = on ? new Color32(255, 255, 255, 255) : new Color32(0, 0, 0, 0);
+                    }
+                }
+                return Store(key, MakeTexture(key, size, size, px, TextureWrapMode.Clamp));
+            }
+        }
+
         public static Sprite FloorTile => Bricks("Floor", new Color32(52, 48, 66, 255), new Color32(24, 21, 32, 255));
         public static Sprite WallTile => Bricks("Wall", new Color32(30, 26, 40, 255), new Color32(12, 10, 18, 255));
 
@@ -87,6 +155,63 @@ namespace VividOfFade
             "rywwyr",
             ".ryyr.",
             "..rr..",
+        };
+
+        static readonly string[] EmberRows =
+        {
+            "..y..",
+            ".yry.",
+            "yrrry",
+            ".yry.",
+            "..y..",
+        };
+
+        static readonly string[] WeaponIconRows =
+        {
+            "......kr",
+            ".....krr",
+            "....krk.",
+            "...krk..",
+            "..krk...",
+            ".krk....",
+            "krk.....",
+            "kk......",
+        };
+
+        static readonly string[] LanternIconRows =
+        {
+            "..kkkk..",
+            "..k..k..",
+            ".kkkkkk.",
+            ".krrrrk.",
+            ".kryyrk.",
+            ".krrrrk.",
+            ".kkkkkk.",
+            "........",
+        };
+
+        static readonly string[] ArmorIconRows =
+        {
+            ".kk..kk.",
+            "krrkkrrk",
+            "krrrrrrk",
+            ".krrrrk.",
+            ".krrrrk.",
+            ".krrrrk.",
+            "..kkkk..",
+            "........",
+        };
+
+        static readonly string[] RingIconRows =
+        {
+            "...kk...",
+            "..krrk..",
+            "...kk...",
+            "..kggk..",
+            ".kg..gk.",
+            ".kg..gk.",
+            "..kggk..",
+            "...kk...",
         };
 
         static Sprite FromArt(string key, string[] rows, Dictionary<char, Color32> palette)

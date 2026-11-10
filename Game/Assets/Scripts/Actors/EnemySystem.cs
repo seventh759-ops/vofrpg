@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,6 +15,11 @@ namespace VividOfFade
 
         public readonly List<Enemy> Active = new List<Enemy>();
         public int Kills { get; set; }
+
+        /// <summary>ダメージを与えた（位置・量・会心か）。数字の表示と音に使う。</summary>
+        public event Action<Vector2, float, bool> Damaged;
+        /// <summary>倒した（位置）。ドロップや撃破時の効果に使う。</summary>
+        public event Action<Vector2> Killed;
 
         Pool<Enemy> pool;
 
@@ -47,13 +53,13 @@ namespace VividOfFade
             return e;
         }
 
-        public void Spawn(Vector2 pos)
+        public void Spawn(Vector2 pos, float hp)
         {
             if (Active.Count >= GameConfig.MaxEnemies) return;
             var e = pool.Get();
-            e.Hp = GameConfig.SlimeHp;
+            e.Hp = hp;
             e.ContactDamage = GameConfig.SlimeContactDamage;
-            e.Speed = Random.Range(GameConfig.SlimeSpeedMin, GameConfig.SlimeSpeedMax);
+            e.Speed = UnityEngine.Random.Range(GameConfig.SlimeSpeedMin, GameConfig.SlimeSpeedMax);
             e.Radius = GameConfig.SlimeRadius;
             e.Knock = Vector2.zero;
             e.FlashTimer = 0f;
@@ -66,18 +72,35 @@ namespace VividOfFade
             Active.Add(e);
         }
 
-        public void Damage(Enemy e, int amount, Vector2 dir)
+        public void Damage(Enemy e, float amount, Vector2 dir, bool crit)
         {
             if (e.Dying) return;
             e.Hp -= amount;
             e.FlashTimer = 0.08f;
             e.Sr.color = HitColor;
-            e.Knock += dir * 3f;
-            if (e.Hp <= 0)
+            e.Knock += dir * (crit ? 5f : 3f);
+            Damaged?.Invoke(e.Pos, amount, crit);
+            if (e.Hp <= 0f)
             {
                 e.Dying = true;
                 e.DyingTimer = DeathTime;
                 Kills++;
+                Killed?.Invoke(e.Pos);
+            }
+        }
+
+        /// <summary>範囲内の敵すべてにダメージ（撃破時の爆発など）。</summary>
+        public void DamageArea(Vector2 center, float radius, float amount)
+        {
+            float r2 = radius * radius;
+            // 連鎖で倒れても一覧の並びは変わらない（消えるのは Tick の中だけ）
+            for (int i = 0; i < Active.Count; i++)
+            {
+                var e = Active[i];
+                if (e.Dying) continue;
+                Vector2 d = e.Pos - center;
+                if (d.sqrMagnitude > r2) continue;
+                Damage(e, amount, d.sqrMagnitude > 0.0001f ? d.normalized : Vector2.up, false);
             }
         }
 

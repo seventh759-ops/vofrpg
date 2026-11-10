@@ -31,6 +31,8 @@ namespace VividOfFade
         public bool AttackHeld { get; private set; }
         public bool ToggleModePressed { get; private set; }
         public bool ConfirmPressed { get; private set; }
+        public bool BagPressed { get; private set; }
+        public bool CancelPressed { get; private set; }
 
         public bool StickActive => stickId != NoId;
         public Vector2 StickOrigin { get; private set; }
@@ -120,6 +122,8 @@ namespace VividOfFade
             // --- キーボード（PC・エディタ） ---
             ToggleModePressed = false;
             ConfirmPressed = false;
+            BagPressed = false;
+            CancelPressed = false;
             var kb = Keyboard.current;
             if (kb != null)
             {
@@ -138,6 +142,8 @@ namespace VividOfFade
                 if (kb.jKey.isPressed || kb.zKey.isPressed) attack = true;
                 ToggleModePressed = kb.tKey.wasPressedThisFrame;
                 ConfirmPressed = kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame;
+                BagPressed = kb.bKey.wasPressedThisFrame || kb.tabKey.wasPressedThisFrame;
+                CancelPressed = kb.escapeKey.wasPressedThisFrame;
             }
             if (mouse != null && mouse.rightButton.isPressed) attack = true;
 
@@ -155,6 +161,8 @@ namespace VividOfFade
                 if (pad.buttonWest.isPressed || pad.rightTrigger.isPressed) attack = true;
                 if (pad.buttonNorth.wasPressedThisFrame) ToggleModePressed = true;
                 if (pad.startButton.wasPressedThisFrame) ConfirmPressed = true;
+                if (pad.selectButton.wasPressedThisFrame) BagPressed = true;
+                if (pad.buttonEast.wasPressedThisFrame) CancelPressed = true;
             }
 
             Move = move;
@@ -198,10 +206,9 @@ namespace VividOfFade
                 }
             }
 
-            if (duration < TapMaxTime && dist < StickRadius * 0.3f)
-            {
-                Tapped?.Invoke(p.Start);
-            }
+            // ボタンの上で押した指は、ゆっくり離してもタップとして扱う
+            bool tap = p.Reserved ? dist < StickRadius * 0.5f : duration < TapMaxTime && dist < StickRadius * 0.3f;
+            if (tap) Tapped?.Invoke(p.Start);
         }
     }
 }

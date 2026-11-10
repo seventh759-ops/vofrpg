@@ -26,14 +26,17 @@ namespace VividOfFade
             return p;
         }
 
-        public void Fire(Vector2 pos, Vector2 dir)
+        public void Fire(Vector2 pos, Vector2 dir, float damage, bool crit, int pierce, float range)
         {
             var p = pool.Get();
             p.Pos = pos;
             p.Velocity = dir * GameConfig.ShotSpeed;
-            p.Life = GameConfig.ShotLife;
-            p.Damage = GameConfig.ShotDamage;
-            p.PierceLeft = GameConfig.ShotPierce;
+            // 明るさの少し先まで飛んで消える
+            p.Life = Mathf.Min(GameConfig.ShotLife, (range + 1f) / GameConfig.ShotSpeed);
+            p.Damage = damage;
+            p.Crit = crit;
+            p.PierceLeft = pierce;
+            p.transform.localScale = crit ? new Vector3(1.5f, 1.5f, 1f) : Vector3.one;
             p.LastHit = null;
             p.Sr.sortingOrder = SortOrder.ForY(pos.y) + 1;
             active.Add(p);
@@ -62,7 +65,7 @@ namespace VividOfFade
                     float r = GameConfig.ShotRadius + e.Radius;
                     if ((e.Pos - pos).sqrMagnitude > r * r) continue;
 
-                    enemies.Damage(e, p.Damage, p.Velocity.normalized);
+                    enemies.Damage(e, p.Damage, p.Velocity.normalized, p.Crit);
                     p.LastHit = e;
                     if (p.PierceLeft <= 0)
                     {

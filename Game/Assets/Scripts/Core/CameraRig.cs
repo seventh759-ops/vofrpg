@@ -6,6 +6,10 @@ namespace VividOfFade
     public sealed class CameraRig
     {
         readonly Camera cam;
+        float shakeTime;
+        float shakeDuration;
+        float shakeAmount;
+        Vector2 lastShake;
 
         public CameraRig(Camera cam)
         {
@@ -13,6 +17,15 @@ namespace VividOfFade
             cam.orthographic = true;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.04f, 0.03f, 0.06f);
+        }
+
+        /// <summary>画面を揺らす。強さはユニット。</summary>
+        public void Shake(float amount, float duration)
+        {
+            if (amount < shakeAmount && shakeTime > 0f) return;
+            shakeAmount = amount;
+            shakeDuration = duration;
+            shakeTime = duration;
         }
 
         public void Tick(Vector2 target, Room room, float dt)
@@ -29,9 +42,17 @@ namespace VividOfFade
             float x = limitX > 0f ? Mathf.Clamp(target.x, -limitX, limitX) : 0f;
             float y = limitY > 0f ? Mathf.Clamp(target.y, -limitY, limitY) : 0f;
 
-            Vector3 p = cam.transform.position;
+            Vector3 p = cam.transform.position - (Vector3)lastShake;
             float k = 1f - Mathf.Exp(-10f * dt);
-            cam.transform.position = new Vector3(Mathf.Lerp(p.x, x, k), Mathf.Lerp(p.y, y, k), -10f);
+
+            lastShake = Vector2.zero;
+            if (shakeTime > 0f)
+            {
+                shakeTime -= Time.unscaledDeltaTime;
+                float s = shakeAmount * Mathf.Clamp01(shakeTime / shakeDuration);
+                lastShake = Random.insideUnitCircle * s;
+            }
+            cam.transform.position = new Vector3(Mathf.Lerp(p.x, x, k) + lastShake.x, Mathf.Lerp(p.y, y, k) + lastShake.y, -10f);
         }
     }
 }

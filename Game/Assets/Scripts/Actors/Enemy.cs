@@ -6,7 +6,7 @@ namespace VividOfFade
     public sealed class Enemy : MonoBehaviour
     {
         public SpriteRenderer Sr;
-        public int Hp;
+        public float Hp;
         public int ContactDamage;
         public float Speed;
         public float Radius;
