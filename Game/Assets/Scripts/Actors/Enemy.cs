@@ -2,6 +2,9 @@ using UnityEngine;
 
 namespace VividOfFade
 {
+    /// <summary>精鋭の種類。None は普通の敵。</summary>
+    public enum EliteKind { None, Swift, Hardened, Splitter, Shroud }
+
     /// <summary>敵1体の状態。動きは EnemySystem がまとめて処理する。</summary>
     public sealed class Enemy : MonoBehaviour
     {
@@ -21,6 +24,11 @@ namespace VividOfFade
         public float BaseScale = 1f;
         public float SlamTimer;   // 次に叩きつけるまで
         public float Windup;      // 力をためている残り時間（0 より大きい間は動かない）
+        public bool Enraged;      // 体力が半分を切って怒った
+
+        // 精鋭
+        public EliteKind Elite;
+        public Color Tint = Color.white;
 
         Vector2 pos;
 

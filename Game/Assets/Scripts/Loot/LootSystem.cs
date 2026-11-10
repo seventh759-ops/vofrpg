@@ -69,11 +69,13 @@ namespace VividOfFade
             go.transform.SetParent(transform, false);
             var g = go.AddComponent<GroundLoot>();
             g.Sr = go.AddComponent<SpriteRenderer>();
+            Lighting.MakeGlow(g.Sr); // ドロップは暗闇でも見える
 
             var beam = new GameObject("Beam");
             beam.transform.SetParent(go.transform, false);
             beam.transform.localScale = new Vector3(3f, 0.9f, 1f); // 高さ約1.8マス
             g.Beam = beam.AddComponent<SpriteRenderer>();
+            Lighting.MakeGlow(g.Beam);
             g.Beam.sprite = PixelArt.Beam;
 
             go.SetActive(false);

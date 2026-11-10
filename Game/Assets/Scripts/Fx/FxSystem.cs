@@ -53,6 +53,7 @@ namespace VividOfFade
             child.transform.SetParent(root.transform, false);
             var sr = child.AddComponent<SpriteRenderer>();
             sr.sprite = PixelArt.SlashArc;
+            Lighting.MakeGlow(sr);
             return new Burst { Sr = sr, Root = root.transform };
         }
 
@@ -76,6 +77,7 @@ namespace VividOfFade
             go.transform.SetParent(transform, false);
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = PixelArt.Ring;
+            Lighting.MakeGlow(sr);
             return new Burst { Sr = sr };
         }
 

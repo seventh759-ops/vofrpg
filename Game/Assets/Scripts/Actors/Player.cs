@@ -38,6 +38,12 @@ namespace VividOfFade
         /// <summary>回避した（論理座標の位置）。ボス装備の固有効果に使う。</summary>
         public event System.Action<Vector2> Dodged;
 
+        /// <summary>精鋭（Shroud）に奪われている明るさ。</summary>
+        public float LightPenalty { get; set; }
+
+        /// <summary>実際の明るさ（通常攻撃の届く範囲・ランタンの光）。</summary>
+        public float EffectiveLight => Stats == null ? GameConfig.BaseLight : Mathf.Max(GameConfig.MinLight, Stats.Light - LightPenalty);
+
         public float DodgeReady => 1f - Mathf.Clamp01(dodgeCooldown / (Stats != null ? Stats.DodgeCooldown : GameConfig.DodgeCooldown));
 
         Vector2 pos;

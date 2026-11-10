@@ -20,6 +20,7 @@ namespace VividOfFade
             go.transform.SetParent(transform, false);
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = PixelArt.Fireball;
+            Lighting.MakeGlow(sr);
             var p = go.AddComponent<Projectile>();
             p.Sr = sr;
             go.SetActive(false);

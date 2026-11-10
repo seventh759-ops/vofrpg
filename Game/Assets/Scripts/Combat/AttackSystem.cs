@@ -48,7 +48,7 @@ namespace VividOfFade
             switch (st.Kind)
             {
                 case AttackKind.Projectile:
-                    if (TryAim(player, st.Light, out var aim)) FireVolley(player, st, aim);
+                    if (TryAim(player, player.EffectiveLight, out var aim)) FireVolley(player, st, aim);
                     else return;
                     break;
                 case AttackKind.Slash:
@@ -88,7 +88,7 @@ namespace VividOfFade
                 float angle = (k - (n - 1) * 0.5f) * st.SpreadDeg;
                 Vector2 dir = Rotate(aim, angle);
                 bool crit = Random.value < st.CritChance;
-                shots.Fire(player.Pos + dir * 0.3f, dir, st.Damage * (crit ? st.CritMult : 1f), crit, st.Pierce, st.Light);
+                shots.Fire(player.Pos + dir * 0.3f, dir, st.Damage * (crit ? st.CritMult : 1f), crit, st.Pierce, player.EffectiveLight);
             }
         }
 
@@ -187,6 +187,7 @@ namespace VividOfFade
                 go.transform.SetParent(transform, false);
                 var sr = go.AddComponent<SpriteRenderer>();
                 sr.sprite = PixelArt.Fireball;
+                Lighting.MakeGlow(sr);
                 go.transform.localScale = new Vector3(1.6f, 1.6f, 1f);
                 orbs.Add(sr);
             }

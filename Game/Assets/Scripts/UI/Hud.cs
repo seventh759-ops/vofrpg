@@ -324,9 +324,15 @@ namespace VividOfFade
             {
                 GUI.Label(new Rect(m, y + lineH * i, textW, lineH), hudLines[i], small);
             }
+            if (player.LightPenalty > 0f)
+            {
+                var drained = new GUIStyle(small) { fontStyle = FontStyle.Bold };
+                drained.normal.textColor = new Color(0.8f, 0.6f, 1f);
+                GUI.Label(new Rect(m, y + lineH * hudLines.Length, textW, lineH), "Light drained!", drained);
+            }
 
             // 拾った品の通知
-            float ty = y + lineH * 5.4f;
+            float ty = y + lineH * 6.4f;
             foreach (var t in toasts)
             {
                 var c = t.Color;

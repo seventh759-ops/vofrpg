@@ -22,6 +22,7 @@ namespace VividOfFade
         // 明るさ（通常攻撃の届く範囲）。全員共通の基本値に、ランタンや効果で足す
         public const float BaseLight = 3f;
         public const float MaxLight = 9f;
+        public const float MinLight = 1.5f;   // 明るさを奪われても、これより狭くはならない
 
         // 回避
         public const float DodgeSpeed = 14f;
@@ -61,7 +62,20 @@ namespace VividOfFade
         public const float BossWindup = 0.8f;
         public const float BossSlamRadius = 2.2f;
         public static readonly Color BossTint = new Color(1f, 0.45f, 0.45f, 1f);
-        public const float MythicChance = 0.15f;       // ボスから Mythic 装備が落ちる確率
+        public const float MythicChance = 0.15f;
+        public const float BossEnragedSpeedMult = 1.7f;   // 体力が半分を切ったら
+        public const float BossEnragedSlamInterval = 2.5f;
+
+        // 精鋭（第3波から。1波あたり 1 + 波/10 体くらい）
+        public const int EliteFirstWave = 3;
+        public static float EliteChance(int wave) => wave < EliteFirstWave ? 0f : Mathf.Min(0.02f + wave * 0.001f, 0.06f);
+        public const float EliteHpMult = 4f;
+        public const float EliteScale = 1.45f;
+        public const int EliteFountainItems = 2;
+        public const float EliteRarityBonus = 0.8f;
+        public const float ShroudRange = 5f;      // この距離にいると明るさを奪う
+        public const float ShroudPenalty = 2f;
+        public const int SplitCount = 3;       // ボスから Mythic 装備が落ちる確率
         public const int BossFountainItems = 8;
         public const float BossRarityBonus = 1.5f;
 

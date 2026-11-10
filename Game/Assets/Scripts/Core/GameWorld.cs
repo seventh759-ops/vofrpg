@@ -19,6 +19,7 @@ namespace VividOfFade
         public FxSystem Fx { get; private set; }
         public Sfx Sfx { get; private set; }
         public Music Music { get; private set; }
+        public Lighting Lighting { get; private set; }
         public Inventory Inventory { get; private set; }
         public PlayerInputReader Input { get; private set; }
         public WaveDirector Waves { get; private set; }
@@ -69,6 +70,12 @@ namespace VividOfFade
             Enemies.BossKilled += OnBossKilled;
             Enemies.BossWindup += (pos, radius, time) => Fx.Ring(pos, radius, new Color(1f, 0.2f, 0.2f, 0.7f), time);
             Enemies.BossSlam += OnBossSlam;
+            Enemies.BossEnraged += () =>
+            {
+                Hud.Toast("The boss is enraged!", new Color(1f, 0.4f, 0.3f));
+                cameraRig.Shake(0.2f, 0.4f);
+            };
+            Enemies.EliteKilled += OnEliteKilled;
 
             Shots = AddChild<ProjectileSystem>("Shots");
             Shots.Init();
@@ -92,6 +99,8 @@ namespace VividOfFade
             Skills.SkillLearned += name => Hud.Toast($"New skill: {name}", new Color(0.6f, 0.85f, 1f));
             Sfx = gameObject.AddComponent<Sfx>();
             Music = gameObject.AddComponent<Music>();
+            Lighting = AddChild<Lighting>("Lighting");
+            Lighting.Init();
             Skills.Init(Enemies, Shots, Fx, Sfx, Room);
 
             Player = AddChild<Player>("Player");
@@ -180,7 +189,19 @@ namespace VividOfFade
                 }
             }
 
+            Player.LightPenalty = Enemies.ShroudNear ? GameConfig.ShroudPenalty : 0f;
+            Lighting.Tick(Player.Pos, Player.EffectiveLight, dt);
             cameraRig.Tick(Player.Pos, Room, dt);
+        }
+
+        /// <summary>精鋭を倒した：小さなドロップの噴水。</summary>
+        void OnEliteKilled(Vector2 pos)
+        {
+            Loot.Fountain(pos, Room, GameConfig.EliteFountainItems, DropLevel, GameConfig.EliteRarityBonus,
+                4, GameConfig.EmberAmount(Waves.Wave));
+            Fx.Ring(pos, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.35f);
+            Sfx.Fountain();
+            GainExp(Progression.KillExp(Waves.Wave) * 5);
         }
 
         /// <summary>波を全滅させたら、最後に倒した場所からドロップの噴水。</summary>
