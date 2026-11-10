@@ -31,6 +31,7 @@ namespace VividOfFade
         public List<Item> Stash = new List<Item>();   // 倉庫。次の挑戦では鞄に入った状態で始まる
         public int Embers;                            // 持ち帰った火種の合計
         public int CarrySlots = 3;                    // 今回拾った品から持ち帰れる数
+        public int BestFloor;                         // たどり着いた一番深い層
 
         public void Repair()
         {
@@ -106,6 +107,16 @@ namespace VividOfFade
             var created = new CharacterData { ClassId = (int)type };
             data.Characters.Add(created);
             return created;
+        }
+
+        /// <summary>その職業のキャラクターを、まっさらな状態に作り直す。</summary>
+        public static void ResetCharacter(ClassType type)
+        {
+            EnsureLoaded();
+            data.Characters.RemoveAll(c => c.ClassId == (int)type);
+            var fresh = new CharacterData { ClassId = (int)type, MpGrowthReady = true };
+            data.Characters.Add(fresh);
+            if (Current != null && Current.ClassId == (int)type) Current = fresh;
         }
 
         public static void Select(ClassType type)

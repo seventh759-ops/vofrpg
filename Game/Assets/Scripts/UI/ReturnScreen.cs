@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>
-    /// ボスを倒したあとの「帰還する／続ける」の画面（開いている間はゲームが止まる）。
+    /// 階段の前の「帰還する／下りる／とどまる」の画面（開いている間はゲームが止まる）。
     /// 帰還すると、装備中の5つと持ち込んだ品はそのまま、今回拾った品からは持ち帰り枠の数まで選んで持ち帰れる。
     /// </summary>
     public sealed class ReturnScreen
@@ -44,9 +44,10 @@ namespace VividOfFade
             var title = new GUIStyle(label) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(label.fontSize * 1.3f) };
             title.normal.textColor = new Color(1f, 0.85f, 0.4f);
             float y = pad;
-            GUI.Label(new Rect(pad, y, W, lineH * 1.6f), $"Wave {world.Waves.Wave} cleared!", title);
+            int next = world.Floors.Floor + 1;
+            GUI.Label(new Rect(pad, y, W, lineH * 1.6f), $"Stairs  -  Floor {world.Floors.Floor}", title);
             y += lineH * 1.8f;
-            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), "Return home to keep your gear, or keep going.", small);
+            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), $"Return home to keep your gear, or descend to floor {next}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), small);
             y += lineH;
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), "Equipped gear and carried-in items are always kept.", small);
             y += lineH;
@@ -98,21 +99,26 @@ namespace VividOfFade
                 }
             }
 
-            // 帰還する／続ける
-            float half = (W - pad * 2f - gap) * 0.5f;
+            // 帰還する／下りる／とどまる
+            float third = (W - pad * 2f - gap * 2f) / 3f;
             float by = H - pad - btnH;
-            hud.Button(new Rect(pad, by, half, btnH), $"RETURN ({chosen.Count})", new Color(0.2f, 0.5f, 0.25f, 0.85f), centered, () =>
+            hud.Button(new Rect(pad, by, third, btnH), $"RETURN ({chosen.Count})", new Color(0.2f, 0.5f, 0.25f, 0.85f), centered, () =>
             {
                 var list = new List<Item>(chosen);
                 chosen.Clear();
                 focused = null;
                 world.ReturnHome(list);
             });
-            hud.Button(new Rect(pad + half + gap, by, half, btnH), "CONTINUE", buttonBack, centered, () =>
+            hud.Button(new Rect(pad + third + gap, by, third, btnH), "DESCEND", new Color(0.5f, 0.35f, 0.15f, 0.85f), centered, () =>
             {
                 chosen.Clear();
                 focused = null;
-                world.ContinueRun();
+                world.Descend();
+            });
+            hud.Button(new Rect(pad + (third + gap) * 2f, by, third, btnH), "STAY", buttonBack, centered, () =>
+            {
+                focused = null;
+                world.StayOnFloor();
             });
         }
     }

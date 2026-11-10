@@ -119,7 +119,7 @@ namespace VividOfFade
             float gap = W * 0.03f;
             float half = (W - pad * 2f - gap) * 0.5f;
             ConfirmButton(new Rect(pad, bottomY, half, btnH), "points", "RESET POINTS", world.ResetPoints);
-            ConfirmButton(new Rect(pad + half + gap, bottomY, half, btnH), "level", "RESET LEVEL", world.ResetLevel);
+            ConfirmButton(new Rect(pad + half + gap, bottomY, half, btnH), "level", "RESET ALL", world.ResetLevel);
         }
 
         void ConfirmButton(Rect r, string id, string text, System.Action action)

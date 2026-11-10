@@ -314,7 +314,7 @@ namespace VividOfFade
             string lvText = ch != null && ch.Level >= Progression.MaxLevel ? $"Lv {level} (MAX)" : $"Lv {level}";
             string[] hudLines =
             {
-                $"{lvText}   WAVE {World.Waves.Wave}",
+                $"{lvText}   FLOOR {World.Floors.Floor}" + (World.Floors.IsBossFloor ? " (BOSS)" : ""),
                 $"HP {player.Hp}/{player.MaxHp}",
                 $"MP {player.Mp}/{player.MaxMp}",
                 $"ENEMY {World.Enemies.AliveCount}   KILL {World.Enemies.Kills}",
@@ -344,6 +344,7 @@ namespace VividOfFade
             }
 
             DrawBossBar();
+            DrawMinimap();
 
             if (World.Paused || player.IsDead || World.ChoosingClass) return;
 
@@ -416,6 +417,32 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>小さな地図（右上のボタンの下）。歩いて見た場所、自分、階段。</summary>
+        void DrawMinimap()
+        {
+            var room = World.Room;
+            if (room.Minimap == null) return;
+            var below = ToGui(SkillsButtonRect);
+            float w = Screen.width * 0.34f;
+            float h = w * Room.MiniH / Room.MiniW;
+            var r = new Rect(Screen.width - w - Screen.height * 0.015f, below.yMax + Screen.height * 0.01f, w, h);
+            Fill(r, new Color(0f, 0f, 0f, 0.45f));
+            var old = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, 0.85f);
+            GUI.DrawTexture(r, room.Minimap);
+            GUI.color = old;
+
+            float sx = w / Room.MiniW, sy = h / Room.MiniH;
+            Rect Dot(Vector2 logical, float size)
+            {
+                Vector2 m = room.MinimapPixel(logical);
+                return new Rect(r.x + m.x * sx - size * 0.5f, r.yMax - m.y * sy - size * 0.5f, size, size);
+            }
+            float s = Mathf.Max(3f, w * 0.035f);
+            if (World.Floors.StairsOpen) Fill(Dot(room.StairsPos, s * 1.3f), new Color(1f, 0.8f, 0.3f));
+            Fill(Dot(World.Player.Pos, s), Color.white);
+        }
+
         /// <summary>ボスがいる間、画面の下に体力バーを出す。</summary>
         void DrawBossBar()
         {
@@ -426,7 +453,7 @@ namespace VividOfFade
             var r = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.72f, w, h);
             Fill(r, new Color(0f, 0f, 0f, 0.7f));
             Fill(new Rect(r.x, r.y, r.width * Mathf.Clamp01(boss.Hp / boss.MaxHp), r.height), new Color(0.9f, 0.2f, 0.25f, 0.95f));
-            GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), $"BOSS  -  WAVE {World.Waves.Wave}", small);
+            GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), $"BOSS  -  FLOOR {World.Floors.Floor}", small);
         }
 
         void DrawNumbers()
@@ -455,7 +482,7 @@ namespace VividOfFade
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 3, fontStyle = FontStyle.Bold };
             GUI.Label(new Rect(0, h * 0.38f, Screen.width, h * 0.08f), "GAME OVER", title);
             GUI.Label(new Rect(0, h * 0.47f, Screen.width, h * 0.05f),
-                $"WAVE {World.Waves.Wave}   KILL {World.Enemies.Kills}   EMBERS {World.Inventory.Embers}", centered);
+                $"FLOOR {World.Floors.Floor}   KILL {World.Enemies.Kills}   EMBERS {World.Inventory.Embers}", centered);
             GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), "Tap / Enter to continue", centered);
         }
 
@@ -494,7 +521,7 @@ namespace VividOfFade
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh), spec.Line2, small);
                 var ch = Profile.Get(type);
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh * 2f, tw, lh),
-                    $"Lv {ch.Level}   Main: {Attributes.ShortName(spec.MainAttr)} / {Attributes.ShortName(spec.SubAttr)}   Weapon: {ClassInfo.Weapon(spec.Starter).Name}", small);
+                    $"Lv {ch.Level}   Best floor {ch.BestFloor}   Main: {Attributes.ShortName(spec.MainAttr)} / {Attributes.ShortName(spec.SubAttr)}", small);
                 y += bh + gap;
             }
         }

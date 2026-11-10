@@ -201,6 +201,72 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>手前側の低い縁（高さ4ドットの段）。足元のひし形の中心が原点。</summary>
+        public static Sprite IsoWallLow
+        {
+            get
+            {
+                const string key = "IsoWallLow";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int w = 32, h = 20, side = 4;
+                var px = new Color32[w * h];
+                var clear = new Color32(0, 0, 0, 0);
+                var top = new Color32(64, 58, 84, 255);
+                var left = new Color32(40, 35, 55, 255);
+                var right = new Color32(28, 24, 40, 255);
+                var edge = new Color32(16, 12, 24, 255);
+                float cy = 7.5f + side;
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        float dx = Mathf.Abs(x - 15.5f) / 16f;
+                        float dTop = dx + Mathf.Abs(y - cy) / 8f;
+                        float lowerEdge = cy - 8f * (1f - dx);
+                        Color32 c = clear;
+                        if (dTop <= 1f) c = dTop > 0.85f ? edge : top;
+                        else if (y < lowerEdge && y >= lowerEdge - side) c = y < lowerEdge - side + 1 ? edge : (x < 16 ? left : right);
+                        px[y * w + x] = c;
+                    }
+                }
+                var tex = MakeTexture(key, w, h, px, TextureWrapMode.Clamp);
+                var sprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, (cy - side) / h), PixelsPerUnit, 0, SpriteMeshType.FullRect);
+                sprite.name = key;
+                cache[key] = sprite;
+                return sprite;
+            }
+        }
+
+        /// <summary>下り階段（床のひし形に、段の線と金色の縁）。</summary>
+        public static Sprite Stairs
+        {
+            get
+            {
+                const string key = "Stairs";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int w = 32, h = 16;
+                var px = new Color32[w * h];
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        float d = Mathf.Abs(x - 15.5f) / 16f + Mathf.Abs(y - 7.5f) / 8f;
+                        Color32 c = new Color32(0, 0, 0, 0);
+                        if (d <= 1f)
+                        {
+                            // 奥へ下っていく段：斜めの縞と、中ほどほど暗く
+                            bool step = ((x + 2 * y) / 5) % 2 == 0;
+                            byte v = (byte)(step ? 70 : 40);
+                            c = new Color32(v, (byte)(v * 0.8f), (byte)(v * 0.5f), 255);
+                            if (d > 0.82f) c = new Color32(255, 205, 90, 255);
+                        }
+                        px[y * w + x] = c;
+                    }
+                }
+                return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp));
+            }
+        }
+
         static Sprite IsoTile(string key, Color32 stone, Color32 edge)
         {
             if (cache.TryGetValue(key, out var cached)) return cached;

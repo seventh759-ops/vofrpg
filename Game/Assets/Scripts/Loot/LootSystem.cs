@@ -242,6 +242,17 @@ namespace VividOfFade
             if (inventory.Add(g.Item)) PickedUp?.Invoke(g.Item);
         }
 
+        /// <summary>地面のドロップをまとめて拾う（層を下りるとき）。鞄に入らない装備は残念ながら置いていく。</summary>
+        public void CollectAll(Inventory inventory)
+        {
+            foreach (var g in active)
+            {
+                if (g.Item == null) inventory.Embers += g.Embers;
+                else if (inventory.CanTake(g.Item)) inventory.Add(g.Item);
+            }
+            Clear();
+        }
+
         public void Clear()
         {
             vacuumTimer = -1f;

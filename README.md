@@ -4,7 +4,7 @@ Unityで作るAndroid・PC向けの小規模なローグライク・ハクスラ
 
 - 計画書：[docs/GAME_PLAN.md](docs/GAME_PLAN.md)
 - Unityプロジェクトの作り方：[docs/SETUP.md](docs/SETUP.md)（プロジェクト本体は `Game/`）
-- 現在の段階：M3a（スキル）の試作。`Game/Assets/Scenes/SampleScene` を開いて Play すると始まる
+- 現在の段階：M4a（塔の層：迷宮・階段・5層ごとのボス）の試作。`Game/Assets/Scenes/SampleScene` を開いて Play すると始まる
 
 ## 試作の操作（PC・エディタ）
 

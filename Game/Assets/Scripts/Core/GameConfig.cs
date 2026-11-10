@@ -6,9 +6,12 @@ namespace VividOfFade
     public static class GameConfig
     {
         // 部屋（マス）。1マス = 16ドット = 1ユニット
-        // 部屋（論理のマス）。クォータービューでは画面上でひし形になる
-        public const int RoomWidth = 16;
-        public const int RoomHeight = 16;
+        // 塔：5層ごとにボスの層。敵の強さ・経験値・ドロップは「段階」（層×2）で決める（試作の波の数と同じ尺度）
+        public const int BossFloorEvery = 5;
+        public static bool IsBossFloor(int floor) => floor > 0 && floor % BossFloorEvery == 0;
+        public static int Tier(int floor) => floor * 2;
+        public static int RoomEnemies(int floor, int roomArea) => Mathf.Min(6 + floor * 2 + roomArea / 10, 70);
+        public const float StairsRadius = 0.7f;
 
         // 縦画面で横に見える幅（ユニット。1ユニット = 16 ドット。14 なら内部解像度 224 ドット相当）
         public const float ViewWidthTiles = 14f;

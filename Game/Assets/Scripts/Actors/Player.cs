@@ -127,7 +127,7 @@ namespace VividOfFade
         /// <summary>スキルで突進する（論理座標の向き・距離）。少しの間、無敵になる。</summary>
         public void SkillDash(Vector2 dir, float distance, Room room)
         {
-            Pos = room.Clamp(Pos + dir * distance, GameConfig.PlayerRadius);
+            Pos = room.Move(Pos, dir * distance, GameConfig.PlayerRadius); // 壁を突き抜けない
             invuln = Mathf.Max(invuln, 0.3f);
             var screen = Iso.ToScreen(dir);
             if (screen.sqrMagnitude > 0.0001f) facing = screen.normalized;
@@ -208,7 +208,7 @@ namespace VividOfFade
             bool dashing = dashTimer > 0f;
             Vector2 screenVelocity = dashing ? dashDir * GameConfig.DodgeSpeed : move * Stats.MoveSpeed;
             dashTimer = Mathf.Max(0f, dashTimer - dt);
-            Pos = room.Clamp(Pos + Iso.ToLogical(screenVelocity) * dt, GameConfig.PlayerRadius);
+            Pos = room.Move(Pos, Iso.ToLogical(screenVelocity) * dt, GameConfig.PlayerRadius);
 
             if (Mathf.Abs(screenVelocity.x) > 0.01f) Sr.flipX = screenVelocity.x < 0f;
             Sr.sortingOrder = SortOrder.For(Pos);

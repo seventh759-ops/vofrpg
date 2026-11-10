@@ -268,7 +268,9 @@ namespace VividOfFade
                 float dist = to.magnitude;
                 Vector2 dir = dist > 0.001f ? to / dist : Vector2.zero;
 
-                if (e.IsBoss && UpdateBoss(e, dt, dist)) dir = Vector2.zero; // 力をためている間は止まる
+                // 迷路を回り込んで追う（近ければまっすぐ）
+                Vector2 moveDir = room.FlowDir(pos, target);
+                if (e.IsBoss && UpdateBoss(e, dt, dist)) moveDir = Vector2.zero; // 力をためている間は止まる
                 if (e.Elite == EliteKind.Shroud && dist < GameConfig.ShroudRange) ShroudNear = true;
 
                 // 重なりすぎないように押し合う
@@ -288,9 +290,8 @@ namespace VividOfFade
                     }
                 }
 
-                pos += (dir * e.Speed + e.Knock) * dt + separation * 0.5f;
+                pos = room.Move(pos, (moveDir * e.Speed + e.Knock) * dt + separation * 0.5f, e.Radius);
                 e.Knock = Vector2.MoveTowards(e.Knock, Vector2.zero, 20f * dt);
-                pos = room.Clamp(pos, e.Radius);
                 e.Pos = pos;
                 e.Sr.sortingOrder = SortOrder.For(pos);
 

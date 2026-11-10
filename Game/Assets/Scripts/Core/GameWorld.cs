@@ -22,7 +22,7 @@ namespace VividOfFade
         public Lighting Lighting { get; private set; }
         public Inventory Inventory { get; private set; }
         public PlayerInputReader Input { get; private set; }
-        public WaveDirector Waves { get; private set; }
+        public FloorDirector Floors { get; private set; }
         public Hud Hud { get; private set; }
 
         /// <summary>鞄を開いている間はゲームを止める。</summary>
@@ -34,7 +34,7 @@ namespace VividOfFade
         /// <summary>スキルの画面を開いている間もゲームを止める。</summary>
         public bool SkillsOpen { get; set; }
 
-        /// <summary>ボスを倒したあとの「帰還する／続ける」の画面。</summary>
+        /// <summary>階段の前の「帰還する／下りる」の画面。</summary>
         public bool ReturnOpen { get; private set; }
 
         public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen;
@@ -44,9 +44,10 @@ namespace VividOfFade
 
         CameraRig cameraRig;
         Vector2 lastKillPos;
-        int rewardedWave;
+        bool roomRewardPending;
+        bool stairsLatch;     // 階段の画面を閉じたら、一度離れるまで出さない
+        SpriteRenderer stairs;
         float slowMoTimer;
-        float returnPromptTimer = -1f;
         bool exploding;
         float lifeStealPool; // 与えたダメージから回復する分の端数
 
@@ -61,7 +62,11 @@ namespace VividOfFade
             Application.targetFrameRate = 60;
 
             Room = AddChild<Room>("Room");
-            Room.Build(GameConfig.RoomWidth, GameConfig.RoomHeight);
+            var stairsGo = new GameObject("Stairs");
+            stairsGo.transform.SetParent(transform, false);
+            stairs = stairsGo.AddComponent<SpriteRenderer>();
+            stairs.sprite = PixelArt.Stairs;
+            Lighting.MakeGlow(stairs);
 
             Enemies = AddChild<EnemySystem>("Enemies");
             Enemies.Init();
@@ -129,7 +134,8 @@ namespace VividOfFade
             }
             cameraRig = new CameraRig(cam);
 
-            Waves = new WaveDirector();
+            Floors = new FloorDirector();
+            Floors.RoomActivated += () => roomRewardPending = true;
             StartRun(ClassType.Lampwright);
             ShowClassSelect();
         }
@@ -176,17 +182,16 @@ namespace VividOfFade
                 Player.Tick(dt, Input, Room);
                 Attack.Tick(dt, Player, AutoAttack || Input.AttackHeld);
                 Skills.Tick(dt, Player, Input.NumberPressed);
-                Waves.Tick(dt, Enemies, Player, Room);
+                Floors.Tick(dt, Enemies, Player, Room);
+                Room.UpdateFlow(Player.Pos);
+                Room.Reveal(Player.Pos, Player.EffectiveLight + 2f);
+                Room.ApplyMinimap();
                 Enemies.Tick(dt, Player, Room);
                 Shots.Tick(dt, Enemies, Room);
                 Loot.Tick(dt, Player, Inventory);
                 Fx.Tick(dt);
-                CheckWaveCleared();
-                if (returnPromptTimer >= 0f)
-                {
-                    returnPromptTimer -= dt;
-                    if (returnPromptTimer < 0f) ReturnOpen = true;
-                }
+                CheckRoomCleared();
+                CheckStairs();
             }
 
             Player.LightPenalty = Enemies.ShroudNear ? GameConfig.ShroudPenalty : 0f;
@@ -198,26 +203,73 @@ namespace VividOfFade
         void OnEliteKilled(Vector2 pos)
         {
             Loot.Fountain(pos, Room, GameConfig.EliteFountainItems, DropLevel, GameConfig.EliteRarityBonus,
-                4, GameConfig.EmberAmount(Waves.Wave));
+                4, GameConfig.EmberAmount(Floors.Tier));
             Fx.Ring(pos, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.35f);
             Sfx.Fountain();
-            GainExp(Progression.KillExp(Waves.Wave) * 5);
+            GainExp(Progression.KillExp(Floors.Tier) * 5);
         }
 
-        /// <summary>波を全滅させたら、最後に倒した場所からドロップの噴水。</summary>
-        void CheckWaveCleared()
+        /// <summary>部屋の敵を全滅させたら、最後に倒した場所からドロップの噴水。</summary>
+        void CheckRoomCleared()
         {
-            if (Waves.Wave <= rewardedWave || !Waves.SpawningDone || Enemies.Active.Count > 0) return;
-            rewardedWave = Waves.Wave;
-            Loot.Fountain(lastKillPos, Room, GameConfig.FountainItems(Waves.Wave), DropLevel,
-                GameConfig.FountainRarityBonus, GameConfig.FountainEmberOrbs(Waves.Wave), GameConfig.EmberAmount(Waves.Wave));
+            if (!roomRewardPending || !Floors.SpawningDone || Enemies.Active.Count > 0) return;
+            roomRewardPending = false;
+            int tier = Floors.Tier;
+            Loot.Fountain(lastKillPos, Room, Mathf.Max(1, GameConfig.FountainItems(tier) / 2), DropLevel,
+                GameConfig.FountainRarityBonus, GameConfig.FountainEmberOrbs(tier) / 2, GameConfig.EmberAmount(tier));
             Fx.Ring(lastKillPos, 2.5f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.4f);
             Sfx.Fountain();
             cameraRig.Shake(0.12f, 0.25f);
             Loot.VacuumAfter(GameConfig.VacuumDelay);
+        }
 
-            // ボスの波を片付けたら、ドロップを拾い終わるころに帰還するかを聞く
-            if (GameConfig.IsBossWave(Waves.Wave)) returnPromptTimer = GameConfig.VacuumDelay + 1.5f;
+        /// <summary>階段に乗ったら「帰還する／下りる」を聞く。</summary>
+        void CheckStairs()
+        {
+            stairs.enabled = Floors.StairsOpen;
+            if (!Floors.StairsOpen) return;
+            float d = (Player.Pos - Room.StairsPos).magnitude;
+            if (d > 1.5f) stairsLatch = false;
+            if (stairsLatch || d > GameConfig.StairsRadius) return;
+            stairsLatch = true;
+            ReturnOpen = true;
+        }
+
+        /// <summary>次の層へ。地面に残ったドロップは拾える分だけ拾ってから下りる。</summary>
+        public void Descend()
+        {
+            Loot.CollectAll(Inventory);
+            ReturnOpen = false;
+            EnterFloor(Floors.Floor + 1);
+            Hud.Toast($"FLOOR {Floors.Floor}" + (Floors.IsBossFloor ? "  -  BOSS" : ""), new Color(1f, 0.85f, 0.5f));
+        }
+
+        /// <summary>階段の画面を閉じて、この層に残る。</summary>
+        public void StayOnFloor()
+        {
+            ReturnOpen = false;
+        }
+
+        void EnterFloor(int floor)
+        {
+            Enemies.Clear();
+            Shots.Clear();
+            Loot.Clear();
+            Fx.Clear();
+            roomRewardPending = false;
+            Floors.Begin(floor, Room);
+            Player.Pos = Room.StartPos;
+            stairs.transform.position = Iso.ToScreen(Room.StairsPos);
+            stairs.sortingOrder = SortOrder.Floor + 2;
+            stairs.enabled = Floors.StairsOpen;
+            stairsLatch = false;
+
+            var ch = Profile.Current;
+            if (ch != null && floor > ch.BestFloor)
+            {
+                ch.BestFloor = floor;
+                Profile.Save();
+            }
         }
 
         void OnEnemyDamaged(Vector2 pos, float amount, bool crit)
@@ -251,12 +303,14 @@ namespace VividOfFade
         void OnBossKilled(Vector2 pos)
         {
             Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropLevel, GameConfig.BossRarityBonus,
-                GameConfig.FountainEmberOrbs(Waves.Wave), GameConfig.EmberAmount(Waves.Wave) * 3);
+                GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * 3);
             if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
             Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
             cameraRig.Shake(0.3f, 0.5f);
             Hud.Toast("BOSS DEFEATED!", new Color(1f, 0.5f, 0.4f));
-            GainExp(Progression.KillExp(Waves.Wave) * 30);
+            GainExp(Progression.KillExp(Floors.Tier) * 30);
+            Floors.OpenStairs();
+            Hud.Toast("The stairs have appeared", new Color(1f, 0.85f, 0.5f));
         }
 
         /// <summary>ボス装備の固有効果：回避した場所で炎が弾ける。</summary>
@@ -272,11 +326,11 @@ namespace VividOfFade
         void OnEnemyKilled(Vector2 pos)
         {
             lastKillPos = pos;
-            GainExp(Progression.KillExp(Waves.Wave));
+            GainExp(Progression.KillExp(Floors.Tier));
             var stats = Player.Stats;
 
             if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(DropLevel, 0f), Room);
-            if (Random.value < GameConfig.EmberDropChance) Loot.DropEmbers(pos, GameConfig.EmberAmount(Waves.Wave), Room, 0.6f);
+            if (Random.value < GameConfig.EmberDropChance) Loot.DropEmbers(pos, GameConfig.EmberAmount(Floors.Tier), Room, 0.6f);
             if (stats.HealOnKill > 0) Player.Heal(stats.HealOnKill);
 
             // 爆発で倒した敵は、さらに爆発しない（連鎖で群れ全体が一度に消えるのを防ぐ）
@@ -341,29 +395,12 @@ namespace VividOfFade
             Hud.Toast("Points reset", Color.white);
         }
 
-        /// <summary>今の職業を Lv1 からやり直す。装備と合わなくなるので、挑戦を終えて職業選択に戻る。</summary>
+        /// <summary>
+        /// 今の職業を完全に最初からやり直す：レベル・能力値・スキルの熟練度・持ち越した装備と倉庫・火種・最深層をすべて消す。
+        /// </summary>
         public void ResetLevel()
         {
-            var ch = Profile.Current;
-            if (ch == null) return;
-            ch.Level = 1;
-            ch.Exp = 0;
-            ch.Points = 0;
-            ch.MpGrown = 0;
-            ch.MpGrowthReady = true;
-            // 付けていた装備は、必要レベルに合わなくなるので倉庫へ移す
-            foreach (var it in ch.Loadout)
-            {
-                if (it != null && !it.IsEmptyMarker) ch.Stash.Add(it);
-            }
-            ch.Loadout.Clear();
-            if (ch.Stash.Count > Inventory.BagCapacity) ch.Stash.RemoveRange(Inventory.BagCapacity, ch.Stash.Count - Inventory.BagCapacity);
-            for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;
-            // 覚えていないスキルはボタンから外す（スキルレベル＝熟練度は残す）
-            for (int i = 0; i < ch.Slots.Length; i++)
-            {
-                if (ch.Slots[i] >= 0 && !SkillInfo.Learned(ClassInfo.Current, ch.Slots[i], 1)) ch.Slots[i] = -1;
-            }
+            Profile.ResetCharacter(ClassInfo.Current);
             Profile.Save();
             ShowClassSelect();
         }
@@ -386,7 +423,7 @@ namespace VividOfFade
             return true;
         }
 
-        int DropLevel => GameConfig.DropLevel(Waves.Wave, Profile.Current != null ? Profile.Current.Level : 1);
+        int DropLevel => GameConfig.DropLevel(Floors.Tier, Profile.Current != null ? Profile.Current.Level : 1);
 
         void RefreshStats()
         {
@@ -450,7 +487,7 @@ namespace VividOfFade
             Player.SetClass(type);
             Inventory.Reset(type, Profile.Current);
             Player.ResetState(PlayerStats.From(Inventory.Equipped, type));
-            Waves.Reset();
+            EnterFloor(1);
             Input.ClearQueued();
         }
 
@@ -466,20 +503,13 @@ namespace VividOfFade
             Hud.Toast($"Returned home with {chosen.Count} new items", new Color(0.7f, 1f, 0.7f));
         }
 
-        /// <summary>続ける：次の波へ。</summary>
-        public void ContinueRun()
-        {
-            ReturnOpen = false;
-        }
-
         void ClearField()
         {
             ReturnOpen = false;
-            returnPromptTimer = -1f;
             Time.timeScale = 1f;
             slowMoTimer = 0f;
             OpenPanel(false, false, false);
-            rewardedWave = 0;
+            roomRewardPending = false;
             lifeStealPool = 0f;
             Enemies.Clear();
             Enemies.Kills = 0;

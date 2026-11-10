@@ -38,13 +38,10 @@ namespace VividOfFade
 
             float halfW = size * aspect;
             float halfH = size;
-            // 部屋のひし形を囲む長方形の中に収める（奥の壁の高さ1ユニット分を足す）
+            // 迷宮は画面より広いので、そのまま追う
             Vector2 screen = Iso.ToScreen(target);
-            float extent = room.HalfW + room.HalfH;
-            float limitX = extent * Iso.HalfTileW + 1f - halfW;
-            float limitY = extent * Iso.HalfTileH + 1.5f - halfH;
-            float x = limitX > 0f ? Mathf.Clamp(screen.x, -limitX, limitX) : 0f;
-            float y = limitY > 0f ? Mathf.Clamp(screen.y, -limitY, limitY) : 0f;
+            float x = screen.x;
+            float y = screen.y;
 
             Vector3 p = cam.transform.position - (Vector3)lastShake;
             float k = 1f - Mathf.Exp(-10f * dt);
