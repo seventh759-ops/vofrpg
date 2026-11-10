@@ -109,8 +109,8 @@ namespace VividOfFade
             bool canEquip = world.CanEquip(item, out var reason);
             DrawDescription(item, new Rect(area.x, area.y, area.width * 0.55f, area.height), world);
 
-            var candidate = BestCandidate(inv, item, out var slot);
-            DrawComparison(world.Player.BaseStats, candidate, new Rect(area.x + area.width * 0.57f, area.y, area.width * 0.43f, area.height));
+            BestCandidate(inv, item, out var slot);
+            DrawItemDiff(item, inv.Equipped[(int)slot], slot, new Rect(area.x + area.width * 0.57f, area.y, area.width * 0.43f, area.height));
 
             float W = Screen.width;
             var centered = hud.CenteredStyle;
@@ -278,36 +278,104 @@ namespace VividOfFade
             }
         }
 
-        void DrawComparison(PlayerStats now, PlayerStats next, Rect area)
+        static readonly string[] slotNames = { "Weapon", "Lantern", "Armor", "R1", "R2" };
+
+        /// <summary>
+        /// 装備どうしを効果ごとに比べる（今その欄に付けている装備との差）。
+        /// 例：+39% Damage と +20% Damage → Damage +19%。片方にしかない効果はそのまま足し引き。
+        /// </summary>
+        void DrawItemDiff(Item item, Item equipped, EquipSlot slot, Rect area)
         {
             float lineH = hud.SmallStyle.fontSize * 1.3f;
             float y = area.y;
-            GUI.Label(new Rect(area.x, y, area.width, lineH), "If equipped:", hud.SmallStyle);
+            GUI.Label(new Rect(area.x, y, area.width, lineH), equipped == null ? $"vs {slotNames[(int)slot]}: empty" : $"vs {slotNames[(int)slot]}:", hud.SmallStyle);
             y += lineH * 1.2f;
 
-            float power = now.Power > 0f ? next.Power / now.Power - 1f : 0f;
-            Line(ref y, area, "POWER", power * 100f, "0.0", "%", true);
-            Line(ref y, area, "DMG", next.Damage - now.Damage, "0.0", "", false);
-            Line(ref y, area, "ATK/s", next.AttacksPerSecond - now.AttacksPerSecond, "0.0", "", false);
-            Line(ref y, area, "SHOTS", next.Shots - now.Shots, "0", "", false);
-            Line(ref y, area, "CRIT", (next.CritChance - now.CritChance) * 100f, "0", "%", false);
-            Line(ref y, area, "HP", next.MaxHp - now.MaxHp, "0", "", false);
-            Line(ref y, area, "MP", next.MaxMp - now.MaxMp, "0", "", false);
-            Line(ref y, area, "ARMOR", next.Armor - now.Armor, "0", "", false);
-            Line(ref y, area, "LIGHT", next.Light - now.Light, "0.0", "", false);
-            Line(ref y, area, "SPEED", (next.MoveSpeed / now.MoveSpeed - 1f) * 100f, "0", "%", false);
+            var a = Contributions(item);
+            var b = equipped != null ? Contributions(equipped) : new Dictionary<string, float>();
+
+            // 武器の種類が違えば、攻撃の形が変わる
+            if (item.Slot == ItemSlot.Weapon && equipped != null && equipped.Weapon != item.Weapon)
+            {
+                DiffText(ref y, area, $"{ClassInfo.Weapon(equipped.Weapon).Name} > {ClassInfo.Weapon(item.Weapon).Name}", Color.white);
+            }
+
+            var keys = new List<string>(a.Keys);
+            foreach (var k in b.Keys) if (!keys.Contains(k)) keys.Add(k);
+            keys.Sort(string.CompareOrdinal);
+            bool any = false;
+            foreach (var k in keys)
+            {
+                a.TryGetValue(k, out float va);
+                b.TryGetValue(k, out float vb);
+                float d = va - vb;
+                if (Mathf.Abs(d) < 0.0001f) continue;
+                any = true;
+                DiffText(ref y, area, FormatDiff(k, d), d > 0f ? up : down);
+            }
+
+            // 固有効果：得るもの／失うもの
+            foreach (var u in item.Uniques)
+            {
+                if (equipped != null && equipped.Uniques.Contains(u)) continue;
+                any = true;
+                DiffText(ref y, area, "+ " + StatText.Unique(u), up);
+            }
+            if (equipped != null)
+            {
+                foreach (var u in equipped.Uniques)
+                {
+                    if (item.Uniques.Contains(u)) continue;
+                    any = true;
+                    DiffText(ref y, area, "- " + StatText.Unique(u), down);
+                }
+            }
+            if (!any) DiffText(ref y, area, "(same effects)", Color.white);
         }
 
-        void Line(ref float y, Rect area, string name, float delta, string format, string unit, bool always)
+        void DiffText(ref float y, Rect area, string text, Color color)
         {
-            if (!always && Mathf.Abs(delta) < 0.05f) return;
             float lineH = hud.SmallStyle.fontSize * 1.3f;
             if (y + lineH > area.yMax) return;
             var style = new GUIStyle(hud.SmallStyle);
-            style.normal.textColor = delta > 0.05f ? up : delta < -0.05f ? down : Color.white;
-            string sign = delta > 0f ? "+" : "";
-            GUI.Label(new Rect(area.x, y, area.width, lineH), $"{name} {sign}{delta.ToString(format)}{unit}", style);
+            style.normal.textColor = color;
+            GUI.Label(new Rect(area.x, y, area.width, lineH), text, style);
             y += lineH;
+        }
+
+        /// <summary>装備1つの効果を「効果の名前 → 値」にまとめる（基本の数値も含む）。</summary>
+        static Dictionary<string, float> Contributions(Item it)
+        {
+            var map = new Dictionary<string, float>();
+            switch (it.Slot)
+            {
+                case ItemSlot.Weapon: map["0 Damage"] = it.BaseValue; break;
+                case ItemSlot.Lantern: map["0 Light"] = it.BaseValue; break;
+                case ItemSlot.Armor: map["0 Max HP"] = it.BaseValue; break;
+            }
+            foreach (var af in it.Affixes)
+            {
+                string key = "1 " + af.Stat;
+                map.TryGetValue(key, out float v);
+                map[key] = v + af.Value;
+            }
+            return map;
+        }
+
+        static string FormatDiff(string key, float d)
+        {
+            string sign = d > 0f ? "+" : "-";
+            float v = Mathf.Abs(d);
+            switch (key)
+            {
+                case "0 Damage": return $"Weapon damage {sign}{v:0}";
+                case "0 Light": return $"Light {sign}{v:0.0}";
+                case "0 Max HP": return $"Max HP {sign}{v:0}";
+            }
+            var stat = (StatType)System.Enum.Parse(typeof(StatType), key.Substring(2));
+            // 効果の書き方（+12% Damage など）の先頭の + を、増減の符号に置き換える
+            string text = StatText.Format(stat, v);
+            return text.StartsWith("+") ? sign + text.Substring(1) : sign + text;
         }
 
         /// <summary>付けたときに一番強くなる装備欄での能力（指輪は R1・R2 の良い方）。</summary>
