@@ -54,8 +54,10 @@ namespace VividOfFade
         public const float MagnetRange = 1.6f;
         public const float PickupRange = 0.35f;
 
-        public static int FountainItems(int wave) => 3 + wave / 2;
-        public static int FountainEmbers(int wave) => 6 + wave;
+        // 噴水の数は上限を設ける。火種は粒の数を増やしすぎず、1粒の量で増やす
+        public static int FountainItems(int wave) => Mathf.Min(3 + wave / 2, 10);
+        public static int FountainEmberOrbs(int wave) => Mathf.Min(6 + wave, 16);
+        public static int EmberAmount(int wave) => 1 + wave / 10;
         public const float FountainRarityBonus = 0.6f;
     }
 }

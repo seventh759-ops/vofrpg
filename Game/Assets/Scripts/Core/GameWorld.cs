@@ -50,7 +50,8 @@ namespace VividOfFade
             Shots.Init();
 
             Loot = AddChild<LootSystem>("Loot");
-            Loot.Init();
+            Inventory = new Inventory();
+            Loot.Init(Inventory);
             Loot.Landed += OnLootLanded;
             Loot.PickedUp += OnItemPickedUp;
             Loot.EmbersPickedUp += _ => Sfx.Ember();
@@ -62,7 +63,6 @@ namespace VividOfFade
             Player.Sr = Player.gameObject.AddComponent<SpriteRenderer>();
             Player.Sr.sprite = PixelArt.Player;
 
-            Inventory = new Inventory();
             Inventory.Changed += () => Player.ApplyStats(PlayerStats.From(Inventory.Equipped));
 
             Hud = gameObject.AddComponent<Hud>();
@@ -129,7 +129,7 @@ namespace VividOfFade
             if (Waves.Wave <= rewardedWave || !Waves.SpawningDone || Enemies.Active.Count > 0) return;
             rewardedWave = Waves.Wave;
             Loot.Fountain(lastKillPos, Room, GameConfig.FountainItems(Waves.Wave), Waves.Wave,
-                GameConfig.FountainRarityBonus, GameConfig.FountainEmbers(Waves.Wave));
+                GameConfig.FountainRarityBonus, GameConfig.FountainEmberOrbs(Waves.Wave), GameConfig.EmberAmount(Waves.Wave));
             Fx.Ring(lastKillPos, 2.5f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.4f);
             Sfx.Fountain();
             cameraRig.Shake(0.12f, 0.25f);
@@ -147,7 +147,7 @@ namespace VividOfFade
             var stats = Player.Stats;
 
             if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(Waves.Wave, 0f), Room);
-            if (Random.value < GameConfig.EmberDropChance) Loot.DropEmbers(pos, 1, Room, 0.6f);
+            if (Random.value < GameConfig.EmberDropChance) Loot.DropEmbers(pos, GameConfig.EmberAmount(Waves.Wave), Room, 0.6f);
             if (stats.HealOnKill > 0) Player.Heal(stats.HealOnKill);
 
             if (stats.ExplodeMult > 0f)

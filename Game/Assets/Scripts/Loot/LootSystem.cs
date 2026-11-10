@@ -38,6 +38,7 @@ namespace VividOfFade
 
         readonly List<GroundLoot> active = new List<GroundLoot>();
         Pool<GroundLoot> pool;
+        Inventory inventory;
 
         public event Action<Item> Landed;
         public event Action<Item> PickedUp;
@@ -45,8 +46,9 @@ namespace VividOfFade
 
         public int GroundCount => active.Count;
 
-        public void Init()
+        public void Init(Inventory inventory)
         {
+            this.inventory = inventory;
             pool = new Pool<GroundLoot>(Create);
         }
 
@@ -84,15 +86,15 @@ namespace VividOfFade
         }
 
         /// <summary>ドロップの噴水。装備と火種を一斉にあふれさせる。</summary>
-        public void Fountain(Vector2 at, Room room, int items, int level, float rarityBonus, int embers)
+        public void Fountain(Vector2 at, Room room, int items, int level, float rarityBonus, int emberOrbs, int emberAmount)
         {
+            for (int i = 0; i < emberOrbs; i++) DropEmbers(at, emberAmount, room, 2.2f);
             for (int i = 0; i < items; i++) DropItem(at, ItemGenerator.Roll(level, rarityBonus), room, 2.2f);
-            for (int i = 0; i < embers; i++) DropEmbers(at, 1, room, 2.2f);
         }
 
         GroundLoot Spawn(Vector2 from, Room room, float spread)
         {
-            if (active.Count >= MaxGround) ReleaseAt(0); // 一番古いものを消す
+            if (active.Count >= MaxGround) MakeRoom();
 
             var g = pool.Get();
             g.From = from;
@@ -165,6 +167,37 @@ namespace VividOfFade
                 // 地面で小さく弾む
                 g.Pos = g.To + Vector2.up * (Mathf.Abs(Mathf.Sin(g.Age * 3f)) * 0.08f);
             }
+        }
+
+        /// <summary>
+        /// 地面のドロップが多すぎるとき、1つ片付ける。失わないように、火種はそのまま所持に、
+        /// 装備は分解した火種にする。片付ける順：古い火種 → 古い白 → 青 → … （珍しい品ほど残す）。
+        /// </summary>
+        void MakeRoom()
+        {
+            int victim = -1;
+            for (int i = 0; i < active.Count; i++)
+            {
+                if (active[i].Item == null)
+                {
+                    victim = i;
+                    break;
+                }
+            }
+            for (int r = 0; victim < 0 && r <= (int)Rarity.Relic; r++)
+            {
+                for (int i = 0; i < active.Count; i++)
+                {
+                    if ((int)active[i].Item.Rarity != r) continue;
+                    victim = i;
+                    break;
+                }
+            }
+            if (victim < 0) victim = 0;
+
+            var g = active[victim];
+            inventory.Embers += g.Item == null ? g.Embers : RarityInfo.SalvageOf(g.Item.Rarity);
+            ReleaseAt(victim);
         }
 
         void Collect(GroundLoot g, Inventory inventory)
