@@ -370,11 +370,40 @@ namespace VividOfFade
                 Fill(ToGui(new Rect(input.StickKnob.x - k, input.StickKnob.y - k, k * 2f, k * 2f)), new Color(1f, 1f, 1f, 0.4f));
             }
 
-            // 操作の説明（PC・エディタ向け）
+            // 操作の説明（PC・エディタ向け）。ふだんは「H: Controls」だけ出し、H で一覧を開く
             if (!Application.isMobilePlatform)
             {
-                GUI.Label(new Rect(m, Screen.height - lineH * 2.2f, Screen.width, lineH * 2f),
-                    "Move: WASD / drag   Dodge: Space / flick   Skills: 1-3   Bag: B   Stats: C   Skill list: K\nAttack (HOLD): J or right click   Toggle: T   Music: M", small);
+                var hint = new GUIStyle(small) { alignment = TextAnchor.LowerRight };
+                hint.normal.textColor = new Color(1f, 1f, 1f, 0.5f);
+                GUI.Label(new Rect(0, Screen.height - lineH * 1.3f, Screen.width - m, lineH), "H: Controls", hint);
+                if (ShowHelp) DrawHelp();
+            }
+        }
+
+        /// <summary>操作の一覧（H で開閉）。</summary>
+        public bool ShowHelp;
+
+        static readonly string[] helpLines =
+        {
+            "Move ........ WASD / arrows (phone: drag)",
+            "Dodge ....... Space (phone: flick)",
+            "Skills ...... 1 / 2 / 3",
+            "Attack mode . T  (HOLD: J or right click)",
+            "Bag ......... B      Stats ... C",
+            "Skill list .. K      Music ... M",
+            "Close ....... Esc",
+        };
+
+        void DrawHelp()
+        {
+            float w = Screen.width * 0.86f;
+            float lh = small.fontSize * 1.45f;
+            float h = lh * (helpLines.Length + 1.2f);
+            var r = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.35f, w, h);
+            Fill(r, new Color(0f, 0f, 0f, 0.8f));
+            for (int i = 0; i < helpLines.Length; i++)
+            {
+                GUI.Label(new Rect(r.x + lh * 0.6f, r.y + lh * (0.6f + i), r.width, lh), helpLines[i], small);
             }
         }
 

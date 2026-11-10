@@ -133,6 +133,7 @@ namespace VividOfFade
             float dt = Mathf.Min(Time.deltaTime, 1f / 20f);
             Input.Poll();
             if (Input.MusicPressed) Music.ToggleMute();
+            if (Input.HelpPressed) Hud.ShowHelp = !Hud.ShowHelp;
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
 
             if (ChoosingClass)
