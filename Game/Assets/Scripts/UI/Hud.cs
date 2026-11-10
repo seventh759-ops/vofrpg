@@ -220,17 +220,28 @@ namespace VividOfFade
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
             Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.75f, 0.85f, 1f, 0.9f));
 
-            // 右上のボタンと重ならないよう、左側の幅に収めて3行にする
-            float lineH = label.fontSize * 1.4f;
+            // 右上のボタンと重ならないよう、左側の幅に収める
+            float lineH = small.fontSize * 1.35f;
             float textW = ToggleRect.x - m * 2f;
             float y = dodge.yMax + m * 0.5f;
             int level = ch != null ? ch.Level : 1;
-            GUI.Label(new Rect(m, y, textW, lineH), $"Lv {level}   HP {player.Hp}/{player.MaxHp}   MP {player.Mp}", label);
-            GUI.Label(new Rect(m, y + lineH, textW, lineH), $"WAVE {World.Waves.Wave}   ENEMY {World.Enemies.AliveCount}   KILL {World.Enemies.Kills}", label);
-            GUI.Label(new Rect(m, y + lineH * 2f, textW, lineH), $"EMBERS {inv.Embers}   FPS {fps:0}", label);
+            // 1行を短くして、数値が大きくなっても右上のボタンにかからないようにする
+            string lvText = ch != null && ch.Level >= Progression.MaxLevel ? $"Lv {level} (MAX)" : $"Lv {level}";
+            string[] hudLines =
+            {
+                $"{lvText}   WAVE {World.Waves.Wave}",
+                $"HP {player.Hp}/{player.MaxHp}",
+                $"MP {player.Mp}/{player.MaxMp}",
+                $"ENEMY {World.Enemies.AliveCount}   KILL {World.Enemies.Kills}",
+                $"EMBERS {inv.Embers}   FPS {fps:0}",
+            };
+            for (int i = 0; i < hudLines.Length; i++)
+            {
+                GUI.Label(new Rect(m, y + lineH * i, textW, lineH), hudLines[i], small);
+            }
 
             // 拾った品の通知
-            float ty = y + lineH * 3.4f;
+            float ty = y + lineH * 5.4f;
             foreach (var t in toasts)
             {
                 var c = t.Color;
