@@ -19,14 +19,60 @@ namespace VividOfFade
         /// <summary>装備が変わった。能力の再計算に使う。</summary>
         public event Action Changed;
 
-        public void Reset(ClassType type)
+        /// <summary>
+        /// 挑戦の開始。前回帰還したときの装備を付け、倉庫の品を鞄に入れた状態で始める
+        /// （どちらもなければ初期装備）。持ち込んだ品には Carried の印を付ける。
+        /// </summary>
+        public void Reset(ClassType type, CharacterData ch)
         {
             Array.Clear(Equipped, 0, Equipped.Length);
             Bag.Clear();
             Embers = 0;
-            Equipped[(int)EquipSlot.Weapon] = ItemGenerator.StarterWeapon(type);
-            Equipped[(int)EquipSlot.Lantern] = ItemGenerator.StarterLantern();
+
+            if (ch != null)
+            {
+                for (int i = 0; i < Equipped.Length && i < ch.Loadout.Count; i++)
+                {
+                    var it = ch.Loadout[i];
+                    if (it == null || it.IsEmptyMarker || !Fits(it, (EquipSlot)i)) continue;
+                    it.Carried = true;
+                    Equipped[i] = it;
+                }
+                foreach (var it in ch.Stash)
+                {
+                    if (Bag.Count >= BagCapacity) break;
+                    it.Carried = true;
+                    Bag.Add(it);
+                }
+            }
+
+            if (Equipped[(int)EquipSlot.Weapon] == null) Equipped[(int)EquipSlot.Weapon] = ItemGenerator.StarterWeapon(type);
+            if (Equipped[(int)EquipSlot.Lantern] == null) Equipped[(int)EquipSlot.Lantern] = ItemGenerator.StarterLantern();
             Changed?.Invoke();
+        }
+
+        /// <summary>帰還：装備中の5つと、持ち込んだ品と、選んだ品（今回拾った物）を保存する。</summary>
+        public void SaveForReturn(CharacterData ch, List<Item> chosen)
+        {
+            ch.Loadout.Clear();
+            foreach (var it in Equipped) ch.Loadout.Add(it ?? Item.EmptyMarker());
+            ch.Stash.Clear();
+            foreach (var it in Bag)
+            {
+                if (it.Carried || chosen.Contains(it)) ch.Stash.Add(it);
+            }
+            ch.Embers += Embers;
+        }
+
+        /// <summary>今回拾った品（持ち込んだ品ではない）。</summary>
+        public List<Item> NewThisRun()
+        {
+            var list = new List<Item>();
+            foreach (var it in Bag)
+            {
+                if (!it.Carried) list.Add(it);
+            }
+            return list;
         }
 
         /// <summary>拾ったときに呼ぶ。入らなければ false。</summary>

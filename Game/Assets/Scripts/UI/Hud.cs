@@ -44,6 +44,7 @@ namespace VividOfFade
         BagScreen bag;
         StatsScreen stats;
         SkillsScreen skills;
+        ReturnScreen returnScreen;
         GUIStyle label;
         GUIStyle small;
         GUIStyle centered;
@@ -215,6 +216,7 @@ namespace VividOfFade
             bag = new BagScreen(this);
             stats = new StatsScreen(this);
             skills = new SkillsScreen(this);
+            returnScreen = new ReturnScreen(this);
         }
 
         void Update()
@@ -258,6 +260,7 @@ namespace VividOfFade
             else if (World.BagOpen) bag.Draw(World);
             else if (World.StatsOpen) stats.Draw(World);
             else if (World.SkillsOpen) skills.Draw(World);
+            else if (World.ReturnOpen) returnScreen.Draw(World);
 
             if (repaint)
             {

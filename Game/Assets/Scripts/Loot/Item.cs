@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 
 namespace VividOfFade
 {
+    [Serializable]
     public struct Affix
     {
         public StatType Stat;
@@ -14,7 +16,8 @@ namespace VividOfFade
         }
     }
 
-    /// <summary>拾った装備1つ。種類・珍しさ・付いた効果と数値をデータとして持つ。</summary>
+    /// <summary>拾った装備1つ。種類・珍しさ・付いた効果と数値をデータとして持つ。保存できる。</summary>
+    [Serializable]
     public sealed class Item
     {
         public ItemSlot Slot;
@@ -34,8 +37,21 @@ namespace VividOfFade
         /// <summary>武器：基本ダメージ／ランタン：明るさ（マス）／防具：最大体力。指輪は0。</summary>
         public float BaseValue;
 
-        public readonly List<Affix> Affixes = new List<Affix>();
-        public readonly List<UniqueType> Uniques = new List<UniqueType>();
+        public List<Affix> Affixes = new List<Affix>();
+        public List<UniqueType> Uniques = new List<UniqueType>();
+
+        /// <summary>前の挑戦から持ち込んだ品（帰還すると、選ばなくても持ち帰れる）。保存はしない。</summary>
+        [NonSerialized] public bool Carried;
+
+        /// <summary>保存用の「空き」の印（装備欄の空きを表す）。</summary>
+        public bool IsEmptyMarker => Level <= 0;
+        public static Item EmptyMarker() => new Item { Level = 0 };
+
+        public void Repair()
+        {
+            if (Affixes == null) Affixes = new List<Affix>();
+            if (Uniques == null) Uniques = new List<UniqueType>();
+        }
 
         public string BaseName
         {

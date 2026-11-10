@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace VividOfFade
@@ -32,7 +33,10 @@ namespace VividOfFade
         /// <summary>スキルの画面を開いている間もゲームを止める。</summary>
         public bool SkillsOpen { get; set; }
 
-        public bool Paused => BagOpen || StatsOpen || SkillsOpen;
+        /// <summary>ボスを倒したあとの「帰還する／続ける」の画面。</summary>
+        public bool ReturnOpen { get; private set; }
+
+        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen;
 
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
         public bool ChoosingClass { get; private set; }
@@ -41,6 +45,7 @@ namespace VividOfFade
         Vector2 lastKillPos;
         int rewardedWave;
         float slowMoTimer;
+        float returnPromptTimer = -1f;
         bool exploding;
         float lifeStealPool; // 与えたダメージから回復する分の端数
 
@@ -168,6 +173,11 @@ namespace VividOfFade
                 Loot.Tick(dt, Player, Inventory);
                 Fx.Tick(dt);
                 CheckWaveCleared();
+                if (returnPromptTimer >= 0f)
+                {
+                    returnPromptTimer -= dt;
+                    if (returnPromptTimer < 0f) ReturnOpen = true;
+                }
             }
 
             cameraRig.Tick(Player.Pos, Room, dt);
@@ -184,6 +194,9 @@ namespace VividOfFade
             Sfx.Fountain();
             cameraRig.Shake(0.12f, 0.25f);
             Loot.VacuumAfter(GameConfig.VacuumDelay);
+
+            // ボスの波を片付けたら、ドロップを拾い終わるころに帰還するかを聞く
+            if (GameConfig.IsBossWave(Waves.Wave)) returnPromptTimer = GameConfig.VacuumDelay + 1.5f;
         }
 
         void OnEnemyDamaged(Vector2 pos, float amount, bool crit)
@@ -317,6 +330,13 @@ namespace VividOfFade
             ch.Points = 0;
             ch.MpGrown = 0;
             ch.MpGrowthReady = true;
+            // 付けていた装備は、必要レベルに合わなくなるので倉庫へ移す
+            foreach (var it in ch.Loadout)
+            {
+                if (it != null && !it.IsEmptyMarker) ch.Stash.Add(it);
+            }
+            ch.Loadout.Clear();
+            if (ch.Stash.Count > Inventory.BagCapacity) ch.Stash.RemoveRange(Inventory.BagCapacity, ch.Stash.Count - Inventory.BagCapacity);
             for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;
             // 覚えていないスキルはボタンから外す（スキルレベル＝熟練度は残す）
             for (int i = 0; i < ch.Slots.Length; i++)
@@ -407,14 +427,34 @@ namespace VividOfFade
             ChoosingClass = false;
             ClearField();
             Player.SetClass(type);
-            Inventory.Reset(type);
+            Inventory.Reset(type, Profile.Current);
             Player.ResetState(PlayerStats.From(Inventory.Equipped, type));
             Waves.Reset();
             Input.ClearQueued();
         }
 
+        /// <summary>帰還する：装備と選んだ品と火種を保存して、職業選択に戻る。</summary>
+        public void ReturnHome(List<Item> chosen)
+        {
+            var ch = Profile.Current;
+            if (ch == null) return;
+            if (chosen.Count > ch.CarrySlots) chosen = chosen.GetRange(0, ch.CarrySlots);
+            Inventory.SaveForReturn(ch, chosen);
+            Profile.Save();
+            ShowClassSelect();
+            Hud.Toast($"Returned home with {chosen.Count} new items", new Color(0.7f, 1f, 0.7f));
+        }
+
+        /// <summary>続ける：次の波へ。</summary>
+        public void ContinueRun()
+        {
+            ReturnOpen = false;
+        }
+
         void ClearField()
         {
+            ReturnOpen = false;
+            returnPromptTimer = -1f;
             Time.timeScale = 1f;
             slowMoTimer = 0f;
             OpenPanel(false, false, false);

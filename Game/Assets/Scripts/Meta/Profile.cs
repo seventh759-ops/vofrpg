@@ -26,12 +26,24 @@ namespace VividOfFade
         public int[] Slots = { 0, -1, -1 };            // ボタンに付けたスキルの番号（-1 は空き）
         public bool[] SlotAuto = new bool[SkillInfo.Slots];
 
+        // 持ち帰り（帰還したときだけ書き換わる。死んだときは前回の帰還のまま）
+        public List<Item> Loadout = new List<Item>(); // 装備欄5つ（空きは Level 0 の印）
+        public List<Item> Stash = new List<Item>();   // 倉庫。次の挑戦では鞄に入った状態で始まる
+        public int Embers;                            // 持ち帰った火種の合計
+        public int CarrySlots = 3;                    // 今回拾った品から持ち帰れる数
+
         public void Repair()
         {
             if (Level < 1) Level = 1;
             if (Exp < 0) Exp = 0;
             if (Points < 0) Points = 0;
             if (MpGrown < 0) MpGrown = 0;
+            if (Loadout == null) Loadout = new List<Item>();
+            if (Stash == null) Stash = new List<Item>();
+            if (CarrySlots < 1) CarrySlots = 3;
+            foreach (var it in Loadout) it?.Repair();
+            foreach (var it in Stash) it?.Repair();
+            Stash.RemoveAll(it => it == null || it.IsEmptyMarker);
             Alloc = Fit(Alloc, Attributes.Count, 0);
             SkillLv = Fit(SkillLv, SkillInfo.PerClass, 1);
             SkillUses = Fit(SkillUses, SkillInfo.PerClass, 0);
