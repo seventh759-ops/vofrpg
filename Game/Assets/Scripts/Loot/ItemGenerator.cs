@@ -17,6 +17,7 @@ namespace VividOfFade
             StatType.DamagePct, StatType.AttackSpeedPct, StatType.CritChance, StatType.CritDamage,
             StatType.MoveSpeedPct, StatType.MaxHp, StatType.Armor, StatType.LightRadius,
             StatType.Pierce, StatType.Multishot,
+            StatType.Str, StatType.Dex, StatType.Int, StatType.Vit, StatType.Wis, StatType.MaxMp,
         };
 
         static readonly UniqueType[] allUniques = { UniqueType.ExplodeOnKill, UniqueType.HealOnKill, UniqueType.SplitShot };
@@ -64,6 +65,7 @@ namespace VividOfFade
                     break;
             }
 
+            SetRequirements(item);
             AddAffixes(item, AffixCount(item.Rarity));
 
             if (item.Rarity == Rarity.Legendary)
@@ -105,6 +107,17 @@ namespace VividOfFade
                 Level = 1,
                 BaseValue = 2f,
             };
+        }
+
+        /// <summary>必要レベルは装備のレベルと同じ。武器は職業の主能力も要る。</summary>
+        static void SetRequirements(Item item)
+        {
+            item.ReqLevel = item.Level;
+            if (item.Slot == ItemSlot.Weapon)
+            {
+                item.ReqAttr = ClassInfo.Weapon(item.Weapon).ClassAttr();
+                item.ReqValue = 8 + item.Level;
+            }
         }
 
         static ItemSlot RollSlot()
@@ -181,6 +194,12 @@ namespace VividOfFade
                 case StatType.MaxHp: return Mathf.Round((Random.Range(8f, 20f) + 2f * level) * m);
                 case StatType.Armor: return Mathf.Round((Random.Range(5f, 15f) + 2f * level) * m);
                 case StatType.LightRadius: return Random.Range(0.5f, 1f) * m;
+                case StatType.Str:
+                case StatType.Dex:
+                case StatType.Int:
+                case StatType.Vit:
+                case StatType.Wis: return Mathf.Round((Random.Range(1f, 3f) + level * 0.25f) * m);
+                case StatType.MaxMp: return Mathf.Round((Random.Range(5f, 12f) + level) * m);
                 default: return 1f; // Pierce / Multishot
             }
         }

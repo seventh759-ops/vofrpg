@@ -8,6 +8,8 @@ namespace VividOfFade
         public SpriteRenderer Sr;
         public int Hp { get; private set; }
         public int MaxHp { get; private set; } = GameConfig.PlayerMaxHp;
+        public int Mp => Mathf.FloorToInt(mp);
+        public int MaxMp { get; private set; }
         public bool IsDead => Hp <= 0;
         public bool AutoAttack = true;
         public PlayerStats Stats { get; private set; }
@@ -37,12 +39,17 @@ namespace VividOfFade
         float dodgeCooldown;
         float invuln;
         float hurtTimer;
+        float mp;
+        float regenHp; // 体力の自然回復の端数
 
         public void ResetState(PlayerStats stats)
         {
             Stats = stats;
             MaxHp = stats.MaxHp;
             Hp = MaxHp;
+            MaxMp = stats.MaxMp;
+            mp = MaxMp;
+            regenHp = 0f;
             Pos = Vector2.zero;
             facing = Vector2.down;
             dashTimer = 0f;
@@ -57,9 +64,28 @@ namespace VividOfFade
         public void ApplyStats(PlayerStats stats)
         {
             int gained = stats.MaxHp - MaxHp;
+            int gainedMp = stats.MaxMp - MaxMp;
             Stats = stats;
             MaxHp = stats.MaxHp;
             Hp = Mathf.Clamp(Hp + Mathf.Max(0, gained), IsDead ? 0 : 1, MaxHp);
+            MaxMp = stats.MaxMp;
+            mp = Mathf.Clamp(mp + Mathf.Max(0, gainedMp), 0f, MaxMp);
+        }
+
+        /// <summary>レベルが上がったとき。体力と MP を全回復する。</summary>
+        public void Refill()
+        {
+            if (IsDead) return;
+            Hp = MaxHp;
+            mp = MaxMp;
+        }
+
+        /// <summary>MP を使う。足りなければ false（スキルで使う）。</summary>
+        public bool SpendMp(int amount)
+        {
+            if (mp < amount) return false;
+            mp -= amount;
+            return true;
         }
 
         public void Heal(int amount)
@@ -84,6 +110,16 @@ namespace VividOfFade
             dodgeCooldown = Mathf.Max(0f, dodgeCooldown - dt);
             invuln = Mathf.Max(0f, invuln - dt);
             hurtTimer = Mathf.Max(0f, hurtTimer - dt);
+
+            // 自然回復
+            mp = Mathf.Min(MaxMp, mp + Stats.MpRegen * dt);
+            regenHp += Stats.HpRegen * dt;
+            if (regenHp >= 1f)
+            {
+                int whole = Mathf.FloorToInt(regenHp);
+                regenHp -= whole;
+                Heal(whole);
+            }
 
             Vector2 move = input.Move;
             if (move.sqrMagnitude > 0.0001f) facing = move.normalized;

@@ -2,11 +2,19 @@ using UnityEngine;
 
 namespace VividOfFade
 {
-    /// <summary>職業と装備から計算したプレイヤーの能力。装備が変わるたびに作り直す。</summary>
+    /// <summary>職業・レベル・能力値・装備から計算したプレイヤーの能力。どれかが変わるたびに作り直す。</summary>
     public sealed class PlayerStats
     {
         public ClassType Class;
         public AttackKind Kind;
+        public int Level;
+
+        /// <summary>能力値の合計（初期値＋振ったポイント＋装備）。</summary>
+        public readonly int[] Attr = new int[Attributes.Count];
+
+        public int MaxMp;
+        public float HpRegen;     // 1秒あたり
+        public float MpRegen;
 
         public float Damage;
         public float FireInterval;
@@ -59,7 +67,7 @@ namespace VividOfFade
             {
                 var spec = ClassInfo.Get(Class);
                 float dps = Damage * (1f + CritChance * (CritMult - 1f)) * Multiplicity / FireInterval;
-                float survive = 1f + (MaxHp - spec.MaxHp) * 0.004f + (Armor - spec.Armor) * 0.002f;
+                float survive = 1f + MaxHp * 0.002f + Armor * 0.002f;
                 float reach = 1f + (Light - spec.BaseLight) * 0.05f;
                 return dps * survive * reach * (1f + ExplodeMult * 0.5f);
             }
@@ -67,18 +75,22 @@ namespace VividOfFade
 
         public static PlayerStats From(Item[] equipped) => From(equipped, ClassInfo.Current);
 
-        public static PlayerStats From(Item[] equipped, ClassType type)
+        public static PlayerStats From(Item[] equipped, ClassType type) => From(equipped, type, Profile.Get(type));
+
+        public static PlayerStats From(Item[] equipped, ClassType type, CharacterData ch)
         {
             var cls = ClassInfo.Get(type);
             var s = new PlayerStats
             {
                 Class = type,
+                Level = ch.Level,
                 CritChance = cls.Crit,
                 CritMult = 1.5f,
-                MaxHp = cls.MaxHp,
                 Light = cls.BaseLight,
                 Armor = cls.Armor,
             };
+            for (int i = 0; i < Attributes.Count; i++) s.Attr[i] = cls.BaseStats[i] + ch.Alloc[i];
+            int bonusHp = 0, bonusMp = 0;
 
             float baseDamage = ClassInfo.Weapon(cls.Starter).BaseDamage * 0.6f; // 武器なし
             var kind = cls.Starter;
@@ -98,7 +110,7 @@ namespace VividOfFade
                         s.Light += item.BaseValue;
                         break;
                     case ItemSlot.Armor:
-                        s.MaxHp += Mathf.RoundToInt(item.BaseValue);
+                        bonusHp += Mathf.RoundToInt(item.BaseValue);
                         break;
                 }
 
@@ -111,7 +123,13 @@ namespace VividOfFade
                         case StatType.CritChance: s.CritChance += a.Value; break;
                         case StatType.CritDamage: s.CritMult += a.Value; break;
                         case StatType.MoveSpeedPct: moveSpd += a.Value; break;
-                        case StatType.MaxHp: s.MaxHp += Mathf.RoundToInt(a.Value); break;
+                        case StatType.MaxHp: bonusHp += Mathf.RoundToInt(a.Value); break;
+                        case StatType.MaxMp: bonusMp += Mathf.RoundToInt(a.Value); break;
+                        case StatType.Str: s.Attr[(int)VividOfFade.Attr.Str] += Mathf.RoundToInt(a.Value); break;
+                        case StatType.Dex: s.Attr[(int)VividOfFade.Attr.Dex] += Mathf.RoundToInt(a.Value); break;
+                        case StatType.Int: s.Attr[(int)VividOfFade.Attr.Int] += Mathf.RoundToInt(a.Value); break;
+                        case StatType.Vit: s.Attr[(int)VividOfFade.Attr.Vit] += Mathf.RoundToInt(a.Value); break;
+                        case StatType.Wis: s.Attr[(int)VividOfFade.Attr.Wis] += Mathf.RoundToInt(a.Value); break;
                         case StatType.Armor: s.Armor += a.Value; break;
                         case StatType.LightRadius: s.Light += a.Value; break;
                         case StatType.Pierce: pierce += Mathf.RoundToInt(a.Value); break;
@@ -130,10 +148,26 @@ namespace VividOfFade
                 }
             }
 
+            // 能力値の効果
+            int str = s.Attr[(int)VividOfFade.Attr.Str];
+            int dex = s.Attr[(int)VividOfFade.Attr.Dex];
+            int intel = s.Attr[(int)VividOfFade.Attr.Int];
+            int vit = s.Attr[(int)VividOfFade.Attr.Vit];
+            int wis = s.Attr[(int)VividOfFade.Attr.Wis];
+            int main = s.Attr[(int)cls.MainAttr];
+
+            s.MaxHp = cls.BaseHp + vit * 8 + (ch.Level - 1) * 6 + bonusHp;
+            s.MaxMp = 20 + intel * 3 + wis * 4 + (ch.Level - 1) * 2 + bonusMp;
+            s.HpRegen = vit * 0.05f;
+            s.MpRegen = 0.5f + wis * 0.08f;
+            s.Armor += str * 0.5f;
+            atkSpd += dex * 0.004f;
+            s.CritChance += dex * 0.002f;
+
             var w = ClassInfo.Weapon(kind);
             s.Kind = w.Attack;
             s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
-            s.Damage = baseDamage * w.Mult * (1f + dmgPct);
+            s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f);
             s.FireInterval = w.Interval / (1f + atkSpd);
             s.MoveSpeed = cls.Speed * (1f + moveSpd);
             s.CritChance = Mathf.Min(s.CritChance + w.CritBonus, 0.75f);

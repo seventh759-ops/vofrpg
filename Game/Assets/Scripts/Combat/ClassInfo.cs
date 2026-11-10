@@ -16,7 +16,9 @@ namespace VividOfFade
         public string Name;
         public string Line1;
         public string Line2;
-        public int MaxHp;
+        public int BaseHp;              // 体力の土台（VIT とレベルで増える）
+        public int[] BaseStats;         // 能力値の初期値（STR, DEX, INT, VIT, WIS）
+        public Attr MainAttr;           // 攻撃力が伸びる能力値。武器の必要条件にも使う
         public float Speed;
         public float BaseLight;
         public float Crit;
@@ -44,6 +46,9 @@ namespace VividOfFade
         public int Orbs;                // 回る灯りの数
         public float OrbitSpeed;        // 回る速さ（ラジアン/秒）
         public float CritBonus;
+
+        /// <summary>この武器を使う職業の主能力。</summary>
+        public Attr ClassAttr() => ClassInfo.Get(Class).MainAttr;
     }
 
     /// <summary>職業と武器の表。数値はすべて仮で、遊んでから調整する。</summary>
@@ -62,7 +67,8 @@ namespace VividOfFade
                 Type = ClassType.Lampwright, Name = "Lampwright",
                 Line1 = "Hurls fire from afar.",
                 Line2 = "Stronger with wide light.",
-                MaxHp = 100, Speed = 4.5f, BaseLight = 3f, Crit = 0.05f, Armor = 0f,
+                BaseHp = 50, BaseStats = new[] { 4, 6, 12, 6, 8 }, MainAttr = Attr.Int,
+                Speed = 4.5f, BaseLight = 3f, Crit = 0.05f, Armor = 0f,
                 Starter = WeaponKind.Wand,
                 Weapons = new[] { WeaponKind.Wand, WeaponKind.Repeater, WeaponKind.Fan },
             },
@@ -71,7 +77,8 @@ namespace VividOfFade
                 Type = ClassType.Shadeblade, Name = "Shadeblade",
                 Line1 = "Cuts down crowds up close.",
                 Line2 = "Fast, sharp, fragile.",
-                MaxHp = 120, Speed = 5.2f, BaseLight = 2.5f, Crit = 0.1f, Armor = 5f,
+                BaseHp = 60, BaseStats = new[] { 12, 10, 3, 7, 4 }, MainAttr = Attr.Str,
+                Speed = 5.2f, BaseLight = 2.5f, Crit = 0.1f, Armor = 0f,
                 Starter = WeaponKind.Sword,
                 Weapons = new[] { WeaponKind.Sword, WeaponKind.Dagger, WeaponKind.Greatblade },
             },
@@ -80,7 +87,8 @@ namespace VividOfFade
                 Type = ClassType.Warden, Name = "Warden",
                 Line1 = "Circling lights burn all near.",
                 Line2 = "Slow but very tough.",
-                MaxHp = 160, Speed = 4f, BaseLight = 3f, Crit = 0.05f, Armor = 20f,
+                BaseHp = 80, BaseStats = new[] { 6, 4, 6, 12, 10 }, MainAttr = Attr.Wis,
+                Speed = 4f, BaseLight = 3f, Crit = 0.05f, Armor = 15f,
                 Starter = WeaponKind.Censer,
                 Weapons = new[] { WeaponKind.Censer, WeaponKind.Chain, WeaponKind.Brazier },
             },

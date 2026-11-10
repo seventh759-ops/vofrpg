@@ -24,6 +24,11 @@ namespace VividOfFade
         /// <summary>鞄を開いている間はゲームを止める。</summary>
         public bool BagOpen { get; set; }
 
+        /// <summary>能力値の画面を開いている間もゲームを止める。</summary>
+        public bool StatsOpen { get; set; }
+
+        public bool Paused => BagOpen || StatsOpen;
+
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
         public bool ChoosingClass { get; private set; }
 
@@ -76,8 +81,8 @@ namespace VividOfFade
 
             Input = new PlayerInputReader
             {
-                IsReserved = p => BagOpen || ChoosingClass || Hud.IsOverButton(p),
-                IsAttackArea = p => !BagOpen && !AutoAttack && Hud.AttackRect.Contains(p),
+                IsReserved = p => Paused || ChoosingClass || Hud.IsOverButton(p),
+                IsAttackArea = p => !Paused && !AutoAttack && Hud.AttackRect.Contains(p),
             };
             Input.Tapped += OnTapped;
 
@@ -116,14 +121,31 @@ namespace VividOfFade
             }
 
             if (Input.ToggleModePressed) AutoAttack = !AutoAttack;
-            if (Input.BagPressed && !Player.IsDead) BagOpen = !BagOpen;
-            if (Input.CancelPressed) BagOpen = false;
+            if (Input.BagPressed && !Player.IsDead)
+            {
+                BagOpen = !BagOpen;
+                StatsOpen = false;
+            }
+            if (Input.StatsPressed && !Player.IsDead)
+            {
+                StatsOpen = !StatsOpen;
+                BagOpen = false;
+            }
+            if (Input.CancelPressed)
+            {
+                BagOpen = false;
+                StatsOpen = false;
+            }
 
             if (Player.IsDead)
             {
-                if (Input.ConfirmPressed) ShowClassSelect();
+                if (Input.ConfirmPressed)
+                {
+                    Profile.Save();
+                    ShowClassSelect();
+                }
             }
-            else if (!BagOpen)
+            else if (!Paused)
             {
                 Player.Tick(dt, Input, Room);
                 Attack.Tick(dt, Player, AutoAttack || Input.AttackHeld);
@@ -160,6 +182,7 @@ namespace VividOfFade
         void OnEnemyKilled(Vector2 pos)
         {
             lastKillPos = pos;
+            GainExp(Progression.KillExp(Waves.Wave));
             var stats = Player.Stats;
 
             if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(Waves.Wave, 0f), Room);
@@ -173,6 +196,54 @@ namespace VividOfFade
                 Sfx.Boom();
                 Enemies.DamageArea(pos, radius, stats.Damage * stats.ExplodeMult);
             }
+        }
+
+        void GainExp(int amount)
+        {
+            var ch = Profile.Current;
+            int gained = Progression.AddExp(ch, amount);
+            if (gained <= 0) return;
+
+            RefreshStats();
+            Player.Refill();
+            Fx.Ring(Player.Pos, 2f, new Color(1f, 0.95f, 0.6f, 0.9f), 0.5f);
+            Sfx.Landed(Rarity.Legendary);
+            Hud.Toast($"LEVEL UP!  Lv {ch.Level}  (+{gained * Progression.PointsPerLevel} points)", new Color(1f, 0.95f, 0.5f));
+            Profile.Save();
+        }
+
+        /// <summary>能力値に1ポイント振る。</summary>
+        public void Allocate(Attr attr)
+        {
+            var ch = Profile.Current;
+            if (ch == null || ch.Points <= 0) return;
+            ch.Points--;
+            ch.Alloc[(int)attr]++;
+            RefreshStats();
+            Profile.Save();
+        }
+
+        /// <summary>装備できるか（必要レベルと必要能力値）。できなければ理由を返す。</summary>
+        public bool CanEquip(Item item, out string reason)
+        {
+            var st = Player.Stats;
+            if (st.Level < item.ReqLevel)
+            {
+                reason = $"Need Lv {item.ReqLevel}";
+                return false;
+            }
+            if (item.ReqValue > 0 && st.Attr[(int)item.ReqAttr] < item.ReqValue)
+            {
+                reason = $"Need {Attributes.ShortName(item.ReqAttr)} {item.ReqValue}";
+                return false;
+            }
+            reason = null;
+            return true;
+        }
+
+        void RefreshStats()
+        {
+            Player.ApplyStats(PlayerStats.From(Inventory.Equipped));
         }
 
         void OnLootLanded(Item item)
@@ -208,6 +279,7 @@ namespace VividOfFade
         {
             if (Player.IsDead && !ChoosingClass)
             {
+                Profile.Save();
                 ShowClassSelect();
                 return;
             }
@@ -225,6 +297,7 @@ namespace VividOfFade
         public void StartRun(ClassType type)
         {
             ClassInfo.Current = type;
+            Profile.Select(type);
             ChoosingClass = false;
             ClearField();
             Player.SetClass(type);
@@ -239,6 +312,7 @@ namespace VividOfFade
             Time.timeScale = 1f;
             slowMoTimer = 0f;
             BagOpen = false;
+            StatsOpen = false;
             rewardedWave = 0;
             Enemies.Clear();
             Enemies.Kills = 0;
@@ -246,6 +320,16 @@ namespace VividOfFade
             Loot.Clear();
             Fx.Clear();
             Attack.ResetState();
+        }
+
+        void OnApplicationPause(bool paused)
+        {
+            if (paused) Profile.Save(); // スマホでアプリが裏に回ったとき
+        }
+
+        void OnApplicationQuit()
+        {
+            Profile.Save();
         }
 
         void OnDestroy()

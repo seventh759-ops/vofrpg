@@ -15,7 +15,7 @@ namespace VividOfFade
     public enum WeaponKind { None, Wand, Repeater, Fan, Sword, Dagger, Greatblade, Censer, Chain, Brazier }
 
     /// <summary>装備に付く効果。</summary>
-    public enum StatType { DamagePct, AttackSpeedPct, CritChance, CritDamage, MoveSpeedPct, MaxHp, Armor, LightRadius, Pierce, Multishot }
+    public enum StatType { DamagePct, AttackSpeedPct, CritChance, CritDamage, MoveSpeedPct, MaxHp, Armor, LightRadius, Pierce, Multishot, Str, Dex, Int, Vit, Wis, MaxMp }
 
     /// <summary>橙・紫の装備だけが持つ固有効果。</summary>
     public enum UniqueType { None, ExplodeOnKill, HealOnKill, SplitShot }

@@ -70,7 +70,7 @@ namespace VividOfFade
             {
                 var r = new Rect(pad + (i % cols) * (bcell + gap), y + (i / cols) * (bcell + gap), bcell, bcell);
                 var item = i < inv.Bag.Count ? inv.Bag[i] : null;
-                bool better = item != null && IsUpgrade(inv, item, current);
+                bool better = item != null && world.CanEquip(item, out _) && IsUpgrade(inv, item, current);
                 DrawCell(r, item, item != null && item == selectedItem, better, item == null ? (System.Action)null : () =>
                 {
                     selectedItem = item;
@@ -106,7 +106,8 @@ namespace VividOfFade
 
         void DrawBagItem(GameWorld world, Inventory inv, Item item, Rect area, float actionY, float btnH, float gap, float pad)
         {
-            DrawDescription(item, new Rect(area.x, area.y, area.width * 0.55f, area.height));
+            bool canEquip = world.CanEquip(item, out var reason);
+            DrawDescription(item, new Rect(area.x, area.y, area.width * 0.55f, area.height), world);
 
             var candidate = BestCandidate(inv, item, out var slot);
             DrawComparison(world.Player.Stats, candidate, new Rect(area.x + area.width * 0.57f, area.y, area.width * 0.43f, area.height));
@@ -117,15 +118,23 @@ namespace VividOfFade
             if (item.Slot == ItemSlot.Ring)
             {
                 float w = (W - pad * 2f - gap * 3f) / 4f;
-                hud.Button(new Rect(pad, actionY, w, btnH), "EQUIP R1", buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring1));
-                hud.Button(new Rect(pad + (w + gap), actionY, w, btnH), "EQUIP R2", buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring2));
+                if (canEquip)
+                {
+                    hud.Button(new Rect(pad, actionY, w, btnH), "EQUIP R1", buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring1));
+                    hud.Button(new Rect(pad + (w + gap), actionY, w, btnH), "EQUIP R2", buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring2));
+                }
+                else
+                {
+                    Disabled(new Rect(pad, actionY, w * 2f + gap, btnH), reason);
+                }
                 hud.Button(new Rect(pad + (w + gap) * 2f, actionY, w, btnH), lockText, buttonBack, centered, () => item.Locked = !item.Locked);
                 DrawSalvageButton(inv, item, new Rect(pad + (w + gap) * 3f, actionY, w, btnH));
             }
             else
             {
                 float w = (W - pad * 2f - gap * 2f) / 3f;
-                hud.Button(new Rect(pad, actionY, w, btnH), "EQUIP", buttonBack, centered, () => Equip(inv, item, slot));
+                if (canEquip) hud.Button(new Rect(pad, actionY, w, btnH), "EQUIP", buttonBack, centered, () => Equip(inv, item, slot));
+                else Disabled(new Rect(pad, actionY, w, btnH), reason);
                 hud.Button(new Rect(pad + (w + gap), actionY, w, btnH), lockText, buttonBack, centered, () => item.Locked = !item.Locked);
                 DrawSalvageButton(inv, item, new Rect(pad + (w + gap) * 2f, actionY, w, btnH));
             }
@@ -139,12 +148,20 @@ namespace VividOfFade
                 GUI.Label(area, $"{slotLabels[slot]}: empty", hud.SmallStyle);
                 return;
             }
-            DrawDescription(item, area);
+            DrawDescription(item, area, null);
             string text = inv.BagFull ? "BAG FULL" : "UNEQUIP";
             hud.Button(new Rect(pad, actionY, Screen.width - pad * 2f, btnH), text, buttonBack, hud.CenteredStyle, () =>
             {
                 if (inv.Unequip((EquipSlot)slot)) selectedEquip = -1;
             });
+        }
+
+        void Disabled(Rect r, string text)
+        {
+            Hud.Fill(r, new Color(0.5f, 0.1f, 0.1f, 0.35f));
+            var style = new GUIStyle(hud.CenteredStyle);
+            style.normal.textColor = new Color(1f, 0.6f, 0.6f);
+            GUI.Label(r, text, style);
         }
 
         void DrawSalvageButton(Inventory inv, Item item, Rect r)
@@ -227,7 +244,8 @@ namespace VividOfFade
             }
         }
 
-        void DrawDescription(Item item, Rect area)
+        /// <summary>world を渡すと、満たしていない必要条件を赤で示す。</summary>
+        void DrawDescription(Item item, Rect area, GameWorld world)
         {
             float lineH = hud.SmallStyle.fontSize * 1.3f;
             var title = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
@@ -235,6 +253,22 @@ namespace VividOfFade
             GUI.Label(new Rect(area.x, area.y, area.width, lineH * 1.3f), item.Name, title);
 
             float y = area.y + lineH * 1.4f;
+
+            // 必要条件
+            var st = world != null ? world.Player.Stats : null;
+            var req = new GUIStyle(hud.SmallStyle);
+            bool lvOk = st == null || st.Level >= item.ReqLevel;
+            req.normal.textColor = lvOk ? new Color(0.75f, 0.75f, 0.75f) : new Color(1f, 0.45f, 0.45f);
+            string reqText = $"Lv {item.Level}   Req Lv {item.ReqLevel}";
+            if (item.ReqValue > 0)
+            {
+                bool attrOk = st == null || st.Attr[(int)item.ReqAttr] >= item.ReqValue;
+                if (!attrOk) req.normal.textColor = new Color(1f, 0.45f, 0.45f);
+                reqText += $"   {Attributes.ShortName(item.ReqAttr)} {item.ReqValue}";
+            }
+            GUI.Label(new Rect(area.x, y, area.width, lineH), reqText, req);
+            y += lineH;
+
             foreach (var line in item.Describe())
             {
                 if (y + lineH > area.yMax) break;

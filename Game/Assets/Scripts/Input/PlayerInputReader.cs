@@ -33,6 +33,7 @@ namespace VividOfFade
         public bool ConfirmPressed { get; private set; }
         public bool BagPressed { get; private set; }
         public bool CancelPressed { get; private set; }
+        public bool StatsPressed { get; private set; }
         /// <summary>数字キー 1〜3 を押したときの番号（0 始まり）。押していなければ -1。</summary>
         public int NumberPressed { get; private set; } = -1;
 
@@ -126,6 +127,7 @@ namespace VividOfFade
             ConfirmPressed = false;
             BagPressed = false;
             CancelPressed = false;
+            StatsPressed = false;
             NumberPressed = -1;
             var kb = Keyboard.current;
             if (kb != null)
@@ -147,6 +149,7 @@ namespace VividOfFade
                 ConfirmPressed = kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame;
                 BagPressed = kb.bKey.wasPressedThisFrame || kb.tabKey.wasPressedThisFrame;
                 CancelPressed = kb.escapeKey.wasPressedThisFrame;
+                StatsPressed = kb.cKey.wasPressedThisFrame;
                 if (kb.digit1Key.wasPressedThisFrame) NumberPressed = 0;
                 else if (kb.digit2Key.wasPressedThisFrame) NumberPressed = 1;
                 else if (kb.digit3Key.wasPressedThisFrame) NumberPressed = 2;

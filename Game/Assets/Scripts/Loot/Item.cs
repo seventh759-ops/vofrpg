@@ -25,6 +25,12 @@ namespace VividOfFade
         /// <summary>ロック中は一括分解・自動分解の対象にしない。</summary>
         public bool Locked;
 
+        /// <summary>装備に必要なレベル。</summary>
+        public int ReqLevel = 1;
+        /// <summary>武器に必要な能力値（職業の主能力）。0 なら条件なし。</summary>
+        public Attr ReqAttr;
+        public int ReqValue;
+
         /// <summary>武器：基本ダメージ／ランタン：明るさ（マス）／防具：最大体力。指輪は0。</summary>
         public float BaseValue;
 
@@ -49,7 +55,7 @@ namespace VividOfFade
 
         public List<string> Describe()
         {
-            var lines = new List<string> { $"Lv {Level}" };
+            var lines = new List<string>();
             switch (Slot)
             {
                 case ItemSlot.Weapon:
@@ -85,6 +91,12 @@ namespace VividOfFade
                 case StatType.LightRadius: return $"+{v:0.0} Light";
                 case StatType.Pierce: return $"+{v:0} Pierce";
                 case StatType.Multishot: return MultiText(v);
+                case StatType.Str: return $"+{v:0} STR";
+                case StatType.Dex: return $"+{v:0} DEX";
+                case StatType.Int: return $"+{v:0} INT";
+                case StatType.Vit: return $"+{v:0} VIT";
+                case StatType.Wis: return $"+{v:0} WIS";
+                case StatType.MaxMp: return $"+{v:0} Max MP";
                 default: return t.ToString();
             }
         }

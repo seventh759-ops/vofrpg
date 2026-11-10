@@ -42,6 +42,7 @@ namespace VividOfFade
         readonly List<Action> pendingActions = new List<Action>();
 
         BagScreen bag;
+        StatsScreen stats;
         GUIStyle label;
         GUIStyle small;
         GUIStyle centered;
@@ -72,6 +73,15 @@ namespace VividOfFade
             {
                 var t = ToggleRect;
                 return new Rect(t.x, t.y - t.height - Screen.height * 0.01f, t.width, t.height);
+            }
+        }
+
+        Rect StatsButtonRect
+        {
+            get
+            {
+                var b = BagButtonRect;
+                return new Rect(b.x, b.y - b.height - Screen.height * 0.01f, b.width, b.height);
             }
         }
 
@@ -127,6 +137,7 @@ namespace VividOfFade
         void Awake()
         {
             bag = new BagScreen(this);
+            stats = new StatsScreen(this);
         }
 
         void Update()
@@ -164,6 +175,7 @@ namespace VividOfFade
             if (World.ChoosingClass) DrawClassSelect();
             else if (World.Player.IsDead) DrawGameOver();
             else if (World.BagOpen) bag.Draw(World);
+            else if (World.StatsOpen) stats.Draw(World);
 
             if (repaint)
             {
@@ -187,17 +199,34 @@ namespace VividOfFade
             float ratio = player.MaxHp > 0 ? (float)player.Hp / player.MaxHp : 0f;
             Fill(new Rect(hpBack.x, hpBack.y, hpBack.width * ratio, hpBack.height), new Color(0.85f, 0.2f, 0.25f, 0.95f));
 
+            // MP
+            var mpBack = new Rect(m, hpBack.yMax + m * 0.3f, hpBack.width, hpBack.height * 0.6f);
+            Fill(mpBack, new Color(0f, 0f, 0f, 0.6f));
+            float mpRatio = player.MaxMp > 0 ? (float)player.Mp / player.MaxMp : 0f;
+            Fill(new Rect(mpBack.x, mpBack.y, mpBack.width * mpRatio, mpBack.height), new Color(0.3f, 0.5f, 1f, 0.95f));
+
+            // 経験値
+            var ch = Profile.Current;
+            var expBack = new Rect(m, mpBack.yMax + m * 0.3f, hpBack.width, hpBack.height * 0.3f);
+            Fill(expBack, new Color(0f, 0f, 0f, 0.6f));
+            if (ch != null)
+            {
+                float expRatio = Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
+                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(1f, 0.85f, 0.3f, 0.9f));
+            }
+
             // 回避の準備
-            var dodge = new Rect(m, hpBack.yMax + m * 0.4f, hpBack.width * 0.5f, hpBack.height * 0.4f);
+            var dodge = new Rect(m, expBack.yMax + m * 0.3f, hpBack.width * 0.5f, hpBack.height * 0.3f);
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
-            Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.5f, 0.75f, 1f, 0.9f));
+            Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.75f, 0.85f, 1f, 0.9f));
 
             // 右上のボタンと重ならないよう、左側の幅に収めて3行にする
             float lineH = label.fontSize * 1.4f;
             float textW = ToggleRect.x - m * 2f;
             float y = dodge.yMax + m * 0.5f;
-            GUI.Label(new Rect(m, y, textW, lineH), $"HP {player.Hp}/{player.MaxHp}   WAVE {World.Waves.Wave}", label);
-            GUI.Label(new Rect(m, y + lineH, textW, lineH), $"ENEMY {World.Enemies.AliveCount}   KILL {World.Enemies.Kills}", label);
+            int level = ch != null ? ch.Level : 1;
+            GUI.Label(new Rect(m, y, textW, lineH), $"Lv {level}   HP {player.Hp}/{player.MaxHp}   MP {player.Mp}", label);
+            GUI.Label(new Rect(m, y + lineH, textW, lineH), $"WAVE {World.Waves.Wave}   ENEMY {World.Enemies.AliveCount}   KILL {World.Enemies.Kills}", label);
             GUI.Label(new Rect(m, y + lineH * 2f, textW, lineH), $"EMBERS {inv.Embers}   FPS {fps:0}", label);
 
             // 拾った品の通知
@@ -212,7 +241,7 @@ namespace VividOfFade
                 ty += small.fontSize * 1.3f;
             }
 
-            if (World.BagOpen || player.IsDead || World.ChoosingClass) return;
+            if (World.Paused || player.IsDead || World.ChoosingClass) return;
 
             // 右上のボタン
             Button(ToGui(ToggleRect), World.AutoAttack ? "ATK: AUTO" : "ATK: HOLD", new Color(0f, 0f, 0f, 0.55f), centered,
@@ -220,6 +249,10 @@ namespace VividOfFade
             string bagLabel = inv.BagFull ? $"BAG FULL {inv.Bag.Count}" : $"BAG {inv.Bag.Count}/{Inventory.BagCapacity}";
             Button(ToGui(BagButtonRect), bagLabel, inv.BagFull ? new Color(0.5f, 0.1f, 0.1f, 0.7f) : new Color(0f, 0f, 0f, 0.55f), centered,
                 () => World.BagOpen = true);
+            int points = ch != null ? ch.Points : 0;
+            Button(ToGui(StatsButtonRect), points > 0 ? $"STATS +{points}" : "STATS",
+                points > 0 ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.55f), centered,
+                () => World.StatsOpen = true);
 
             // 攻撃ボタン（押している間だけ、のとき）
             if (!World.AutoAttack)
@@ -243,7 +276,7 @@ namespace VividOfFade
             if (!Application.isMobilePlatform)
             {
                 GUI.Label(new Rect(m, Screen.height - lineH * 2.2f, Screen.width, lineH * 2f),
-                    "Move: WASD / drag   Dodge: Space / flick   Bag: B\nAttack (HOLD): J or right click   Toggle: T", small);
+                    "Move: WASD / drag   Dodge: Space / flick   Bag: B   Stats: C\nAttack (HOLD): J or right click   Toggle: T", small);
             }
         }
 
@@ -310,8 +343,9 @@ namespace VividOfFade
                 GUI.Label(new Rect(tx, r.y + inner, tw, nameStyle.fontSize * 1.4f), key + spec.Name, nameStyle);
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, tw, lh), spec.Line1, small);
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh), spec.Line2, small);
+                var ch = Profile.Get(type);
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh * 2f, tw, lh),
-                    $"HP {spec.MaxHp}   Weapon: {ClassInfo.Weapon(spec.Starter).Name}", small);
+                    $"Lv {ch.Level}   Main: {Attributes.ShortName(spec.MainAttr)}   Weapon: {ClassInfo.Weapon(spec.Starter).Name}", small);
                 y += bh + gap;
             }
         }
