@@ -187,16 +187,16 @@ namespace VividOfFade
             // 能力値の効果
             int str = s.Attr[(int)VividOfFade.Attr.Str];
             int dex = s.Attr[(int)VividOfFade.Attr.Dex];
-            int intel = s.Attr[(int)VividOfFade.Attr.Int];
             int vit = s.Attr[(int)VividOfFade.Attr.Vit];
             int wis = s.Attr[(int)VividOfFade.Attr.Wis];
             int main = s.Attr[(int)cls.MainAttr];
             int sub = s.Attr[(int)cls.SubAttr];
 
             s.MaxHp = cls.BaseHp + vit * 8 + (ch.Level - 1) * 6 + bonusHp;
-            s.MaxMp = 20 + intel * 3 + wis * 4 + (ch.Level - 1) * 2 + bonusMp;
+            // MP は WIS とレベルだけで増える（INT は攻撃力だけ。INT と WIS のどちらに振るかで迷うように）
+            s.MaxMp = 20 + wis * 4 + (ch.Level - 1) * 2 + bonusMp;
             s.HpRegen = vit * 0.05f;
-            s.MpRegen = 0.5f + wis * 0.08f;
+            s.MpRegen = 1f + wis * 0.1f + (ch.Level - 1) * 0.02f;
             s.Armor += str * 0.5f;
             atkSpd += dex * 0.004f;
             s.CritChance += dex * 0.002f;

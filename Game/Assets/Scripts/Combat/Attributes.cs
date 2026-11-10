@@ -14,7 +14,7 @@ namespace VividOfFade
         {
             "Physical power, armor",
             "Attack speed, crit",
-            "Magic power, max MP",
+            "Magic power",
             "Max HP, HP regen",
             "Flame power, MP, MP regen",
         };
