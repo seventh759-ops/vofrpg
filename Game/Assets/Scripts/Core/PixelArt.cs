@@ -121,6 +121,145 @@ namespace VividOfFade
             "....kkkk.kkkk...",
         };
 
+        /// <summary>スキルのアイコン（効果の種類ごとの形を、スキルの色で塗る）。</summary>
+        public static Sprite SkillIcon(SkillEffect effect, Color color)
+        {
+            string[] rows;
+            switch (effect)
+            {
+                case SkillEffect.Barrage: rows = IconBarrageRows; break;
+                case SkillEffect.Dash: rows = IconDashRows; break;
+                case SkillEffect.Strike: rows = IconStrikeRows; break;
+                case SkillEffect.Buff: rows = IconBuffRows; break;
+                case SkillEffect.Heal: rows = IconHealRows; break;
+                default: rows = IconNovaRows; break;
+            }
+            Color32 w = new Color(Mathf.Min(1f, color.r * 1.1f + 0.1f), Mathf.Min(1f, color.g * 1.1f + 0.1f), Mathf.Min(1f, color.b * 1.1f + 0.1f), 1f);
+            Color32 k = new Color(color.r * 0.55f, color.g * 0.55f, color.b * 0.55f, 1f);
+            string key = $"Skill_{effect}_{w.r}_{w.g}_{w.b}";
+            return FromArt(key, rows, new Dictionary<char, Color32> { { 'w', w }, { 'k', k } });
+        }
+
+        static readonly string[] IconNovaRows =
+        {
+            "................",
+            ".....kkkkkk.....",
+            "...kkwwwwwwkk...",
+            "..kww......wwk..",
+            "..kw..k..k..wk..",
+            ".kw....kk....wk.",
+            ".kw..k.ww.k..wk.",
+            ".kw...wwww...wk.",
+            ".kw...wwww...wk.",
+            ".kw..k.ww.k..wk.",
+            ".kw....kk....wk.",
+            "..kw..k..k..wk..",
+            "..kww......wwk..",
+            "...kkwwwwwwkk...",
+            ".....kkkkkk.....",
+            "................",
+        };
+
+        static readonly string[] IconBarrageRows =
+        {
+            "................",
+            ".......ww.......",
+            "..w....ww....w..",
+            "...w...ww...w...",
+            "....w..ww..w....",
+            ".....w.ww.w.....",
+            "......wwww......",
+            ".wwwwwwwwwwwwww.",
+            ".wwwwwwwwwwwwww.",
+            "......wwww......",
+            ".....w.ww.w.....",
+            "....w..ww..w....",
+            "...w...ww...w...",
+            "..w....ww....w..",
+            ".......ww.......",
+            "................",
+        };
+
+        static readonly string[] IconDashRows =
+        {
+            "................",
+            "................",
+            "................",
+            "..........w.....",
+            "..........ww....",
+            "...kkwwwwwwww...",
+            "..........wwww..",
+            "wwwwwwwwwwwwwww.",
+            "wwwwwwwwwwwwwww.",
+            "..........wwww..",
+            "...kkwwwwwwww...",
+            "..........ww....",
+            "..........w.....",
+            "................",
+            "................",
+            "................",
+        };
+
+        static readonly string[] IconStrikeRows =
+        {
+            "..............w.",
+            ".............w..",
+            "...........kw...",
+            "..........w.....",
+            "........kw......",
+            ".......w........",
+            ".....wwww.......",
+            "....wwwwww......",
+            "...wwwwwwww.....",
+            "...wwwwwwww.....",
+            "...wwwwwwww.....",
+            "....wwwwww......",
+            ".....wwww.......",
+            "................",
+            "..k..........k..",
+            "kkkkkkkkkkkkkkkk",
+        };
+
+        static readonly string[] IconBuffRows =
+        {
+            ".......ww.......",
+            "......wwww......",
+            ".....wwwwww.....",
+            "....wwwwwwww....",
+            "...wwwwwwwwww...",
+            "..wwww.ww.wwww..",
+            "......wwww......",
+            "......wwww......",
+            "......wwww......",
+            "......wwww......",
+            "......wwww......",
+            "................",
+            "..k..........k..",
+            ".kwk........kwk.",
+            "..k..........k..",
+            "................",
+        };
+
+        static readonly string[] IconHealRows =
+        {
+            "................",
+            "................",
+            "......wwww......",
+            "......wwww......",
+            "......wwww......",
+            "......wwww......",
+            "..wwwwwwwwwwww..",
+            "..wwwwwwwwwwww..",
+            "..wwwwwwwwwwww..",
+            "..wwwwwwwwwwww..",
+            "......wwww......",
+            "......wwww......",
+            "......wwww......",
+            "......wwww......",
+            "................",
+            "................",
+        };
+
         /// <summary>斬撃の扇（120 度、半径 1 ユニット、右向き）。白で作り、色は SpriteRenderer で付ける。</summary>
         public static Sprite SlashArc
         {

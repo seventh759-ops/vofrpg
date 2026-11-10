@@ -37,7 +37,10 @@ namespace VividOfFade
         /// <summary>階段の前の「帰還する／下りる」の画面。</summary>
         public bool ReturnOpen { get; private set; }
 
-        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen;
+        /// <summary>メニューを開いている間もゲームを止める。</summary>
+        public bool MenuOpen { get; private set; }
+
+        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen || MenuOpen;
 
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
         public bool ChoosingClass { get; private set; }
@@ -201,7 +204,12 @@ namespace VividOfFade
             if (Input.BagPressed && !Player.IsDead) OpenPanel(!BagOpen, false, false);
             if (Input.StatsPressed && !Player.IsDead) OpenPanel(false, !StatsOpen, false);
             if (Input.SkillsPressed && !Player.IsDead) OpenPanel(false, false, !SkillsOpen);
-            if (Input.CancelPressed) OpenPanel(false, false, false);
+            if (Input.CancelPressed)
+            {
+                // 何か開いていれば閉じる。何も開いていなければメニューを開く
+                if (BagOpen || StatsOpen || SkillsOpen || MenuOpen) OpenPanel(false, false, false);
+                else if (!ReturnOpen && !Player.IsDead) OpenMenu();
+            }
 
             if (Player.IsDead)
             {
@@ -386,6 +394,13 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>メニューを開く。</summary>
+        public void OpenMenu()
+        {
+            OpenPanel(false, false, false);
+            MenuOpen = true;
+        }
+
         /// <summary>BGM のテーマを次へ。</summary>
         public void NextMusic()
         {
@@ -396,6 +411,7 @@ namespace VividOfFade
         /// <summary>鞄・能力値・スキルの画面のどれか1つだけを開く（全部 false で閉じる）。</summary>
         public void OpenPanel(bool bag, bool stats, bool skills)
         {
+            MenuOpen = false;
             BagOpen = bag;
             StatsOpen = stats;
             SkillsOpen = skills;

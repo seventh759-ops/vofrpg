@@ -45,6 +45,7 @@ namespace VividOfFade
         StatsScreen stats;
         SkillsScreen skills;
         ReturnScreen returnScreen;
+        MenuScreen menu;
         GUIStyle label;
         GUIStyle small;
         GUIStyle centered;
@@ -58,41 +59,15 @@ namespace VividOfFade
 
         // ---- 画面のピクセル座標（左下が原点）。入力の判定と描画の両方で使う ----
 
-        Rect ToggleRect
+        /// <summary>右上の MENU ボタン（鞄・能力値・スキル・設定はここから）。</summary>
+        Rect MenuRect
         {
             get
             {
-                float w = Screen.width * 0.30f;
+                float w = Screen.width * 0.22f;
                 float h = Screen.height * 0.045f;
                 float m = Screen.height * 0.015f;
                 return new Rect(Screen.width - w - m, Screen.height - h - m, w, h);
-            }
-        }
-
-        Rect BagButtonRect
-        {
-            get
-            {
-                var t = ToggleRect;
-                return new Rect(t.x, t.y - t.height - Screen.height * 0.01f, t.width, t.height);
-            }
-        }
-
-        Rect StatsButtonRect
-        {
-            get
-            {
-                var b = BagButtonRect;
-                return new Rect(b.x, b.y - b.height - Screen.height * 0.01f, b.width, b.height);
-            }
-        }
-
-        Rect SkillsButtonRect
-        {
-            get
-            {
-                var b = StatsButtonRect;
-                return new Rect(b.x, b.y - b.height - Screen.height * 0.01f, b.width, b.height);
             }
         }
 
@@ -105,17 +80,18 @@ namespace VividOfFade
             return new Rect(m + slot * (s + gap), m + Screen.height * 0.04f, s, s);
         }
 
-        /// <summary>スキルのボタンの上の「オート」の切り替え。</summary>
+        /// <summary>スキルのボタンの上の細い帯（タップでオート／手動を切り替え。緑ならオート）。</summary>
         Rect SkillAutoRect(int slot)
         {
             var r = SkillRect(slot);
-            return new Rect(r.x, r.yMax + r.height * 0.06f, r.width, r.height * 0.3f);
+            return new Rect(r.x, r.yMax + r.height * 0.05f, r.width, r.height * 0.16f);
         }
 
         void DrawSkillButtons(CharacterData ch)
         {
             if (ch == null) return;
             var player = World.Player;
+            var cost = new GUIStyle(small) { alignment = TextAnchor.LowerRight, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(9, Mathf.RoundToInt(small.fontSize * 0.8f)) };
             for (int i = 0; i < SkillInfo.Slots; i++)
             {
                 int slot = i;
@@ -123,33 +99,35 @@ namespace VividOfFade
                 var r = ToGui(SkillRect(i));
                 if (index < 0 || !SkillInfo.Learned(ClassInfo.Current, index, ch.Level))
                 {
-                    Button(r, "-", new Color(0f, 0f, 0f, 0.35f), centered, () => World.OpenPanel(false, false, true));
+                    Button(r, null, new Color(0f, 0f, 0f, 0.3f), centered, () => World.OpenPanel(false, false, true));
                     continue;
                 }
 
                 var spec = SkillInfo.Get(ClassInfo.Current, index);
                 bool enoughMp = player.Mp >= spec.Mp;
-                var back = enoughMp ? new Color(spec.Color.r * 0.5f, spec.Color.g * 0.5f, spec.Color.b * 0.5f, 0.75f) : new Color(0.4f, 0.1f, 0.1f, 0.6f);
-                Button(r, null, back, centered, () => World.Skills.Press(slot, World.Player));
+                Button(r, null, new Color(0f, 0f, 0f, 0.55f), centered, () => World.Skills.Press(slot, World.Player));
+                float inset = r.width * 0.12f;
+                var iconRect = new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f);
+                var old = GUI.color;
+                GUI.color = enoughMp ? Color.white : new Color(1f, 0.45f, 0.45f, 0.6f);
+                DrawSprite(iconRect, PixelArt.SkillIcon(spec.Effect, spec.Color));
+                GUI.color = old;
 
                 // 待ち時間（上から暗くする）
                 float cd = World.Skills.CooldownRatio(i);
-                if (cd > 0f) Fill(new Rect(r.x, r.y, r.width, r.height * cd), new Color(0f, 0f, 0f, 0.55f));
+                if (cd > 0f) Fill(new Rect(r.x, r.y, r.width, r.height * cd), new Color(0f, 0f, 0f, 0.6f));
 
-                var nameStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
-                GUI.Label(new Rect(r.x, r.y, r.width, r.height * 0.7f), spec.Name, nameStyle);
-                var costStyle = new GUIStyle(small) { alignment = TextAnchor.LowerCenter, fontSize = Mathf.Max(9, Mathf.RoundToInt(small.fontSize * 0.85f)) };
-                costStyle.normal.textColor = enoughMp ? new Color(0.6f, 0.75f, 1f) : new Color(1f, 0.5f, 0.5f);
-                string key = Application.isMobilePlatform ? "" : $"[{i + 1}] ";
-                GUI.Label(new Rect(r.x, r.y, r.width, r.height * 0.95f), $"{key}MP {spec.Mp}", costStyle);
+                // 消費 MP（右下に小さく）
+                cost.normal.textColor = enoughMp ? new Color(0.65f, 0.8f, 1f) : new Color(1f, 0.5f, 0.5f);
+                GUI.Label(new Rect(r.x, r.y, r.width - r.width * 0.06f, r.height - r.height * 0.02f), spec.Mp.ToString(), cost);
 
+                // オート／手動の帯
                 bool auto = ch.SlotAuto[i];
-                Button(ToGui(SkillAutoRect(i)), auto ? "AUTO" : "MANUAL",
-                    auto ? new Color(0.2f, 0.5f, 0.2f, 0.7f) : new Color(0f, 0f, 0f, 0.45f), nameStyle, () =>
-                    {
-                        ch.SlotAuto[slot] = !ch.SlotAuto[slot];
-                        Profile.Save();
-                    });
+                Button(ToGui(SkillAutoRect(i)), null, auto ? new Color(0.3f, 0.85f, 0.4f, 0.85f) : new Color(1f, 1f, 1f, 0.15f), centered, () =>
+                {
+                    ch.SlotAuto[slot] = !ch.SlotAuto[slot];
+                    Profile.Save();
+                });
             }
 
             // かかっている強化
@@ -217,6 +195,7 @@ namespace VividOfFade
             stats = new StatsScreen(this);
             skills = new SkillsScreen(this);
             returnScreen = new ReturnScreen(this);
+            menu = new MenuScreen(this);
         }
 
         void Update()
@@ -263,6 +242,7 @@ namespace VividOfFade
             else if (World.StatsOpen) stats.Draw(World);
             else if (World.SkillsOpen) skills.Draw(World);
             else if (World.ReturnOpen) returnScreen.Draw(World);
+            else if (World.MenuOpen) menu.Draw(World);
 
             if (repaint)
             {
@@ -280,61 +260,52 @@ namespace VividOfFade
             var inv = World.Inventory;
             float m = Screen.height * 0.015f;
 
-            // 体力
-            var hpBack = new Rect(m, m, Screen.width * 0.45f, Screen.height * 0.02f);
+            // 体力と MP（数字はバーの中に）
+            float barW = Screen.width * 0.5f;
+            var hpBack = new Rect(m, m, barW, Screen.height * 0.024f);
             Fill(hpBack, new Color(0f, 0f, 0f, 0.6f));
             float ratio = player.MaxHp > 0 ? (float)player.Hp / player.MaxHp : 0f;
             Fill(new Rect(hpBack.x, hpBack.y, hpBack.width * ratio, hpBack.height), new Color(0.85f, 0.2f, 0.25f, 0.95f));
+            var barText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(9, Mathf.RoundToInt(small.fontSize * 0.85f)) };
+            GUI.Label(hpBack, $"{player.Hp} / {player.MaxHp}", barText);
 
-            // MP
-            var mpBack = new Rect(m, hpBack.yMax + m * 0.3f, hpBack.width, hpBack.height * 0.6f);
+            var mpBack = new Rect(m, hpBack.yMax + m * 0.25f, barW, hpBack.height * 0.75f);
             Fill(mpBack, new Color(0f, 0f, 0f, 0.6f));
             float mpRatio = player.MaxMp > 0 ? (float)player.Mp / player.MaxMp : 0f;
             Fill(new Rect(mpBack.x, mpBack.y, mpBack.width * mpRatio, mpBack.height), new Color(0.3f, 0.5f, 1f, 0.95f));
+            GUI.Label(mpBack, $"{player.Mp} / {player.MaxMp}", barText);
 
-            // 経験値
+            // 経験値と回避（細い線）
             var ch = Profile.Current;
-            var expBack = new Rect(m, mpBack.yMax + m * 0.3f, hpBack.width, hpBack.height * 0.3f);
+            var expBack = new Rect(m, mpBack.yMax + m * 0.25f, barW, hpBack.height * 0.22f);
             Fill(expBack, new Color(0f, 0f, 0f, 0.6f));
             if (ch != null)
             {
                 float expRatio = Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
                 Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(1f, 0.85f, 0.3f, 0.9f));
             }
-
-            // 回避の準備
-            var dodge = new Rect(m, expBack.yMax + m * 0.3f, hpBack.width * 0.5f, hpBack.height * 0.3f);
+            var dodge = new Rect(m, expBack.yMax + m * 0.2f, barW * 0.4f, expBack.height);
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
             Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.75f, 0.85f, 1f, 0.9f));
 
-            // 右上のボタンと重ならないよう、左側の幅に収める
+            // レベルと層だけを1行で
             float lineH = small.fontSize * 1.35f;
-            float textW = ToggleRect.x - m * 2f;
-            float y = dodge.yMax + m * 0.5f;
+            float textW = MenuRect.x - m * 2f;
+            float y = dodge.yMax + m * 0.4f;
             int level = ch != null ? ch.Level : 1;
-            // 1行を短くして、数値が大きくなっても右上のボタンにかからないようにする
             string lvText = ch != null && ch.Level >= Progression.MaxLevel ? $"Lv {level} (MAX)" : $"Lv {level}";
-            string[] hudLines =
-            {
-                $"{lvText}   FLOOR {World.Floors.Floor}" + (World.Floors.IsBossFloor ? " (BOSS)" : ""),
-                $"HP {player.Hp}/{player.MaxHp}",
-                $"MP {player.Mp}/{player.MaxMp}",
-                $"ENEMY {World.Enemies.AliveCount}   KILL {World.Enemies.Kills}",
-                $"EMBERS {inv.Embers}   FPS {fps:0}",
-            };
-            for (int i = 0; i < hudLines.Length; i++)
-            {
-                GUI.Label(new Rect(m, y + lineH * i, textW, lineH), hudLines[i], small);
-            }
+            GUI.Label(new Rect(m, y, textW, lineH), $"{lvText}    FLOOR {World.Floors.Floor}" + (World.Floors.IsBossFloor ? "  BOSS" : ""), small);
+            y += lineH;
             if (player.LightPenalty > 0f)
             {
                 var drained = new GUIStyle(small) { fontStyle = FontStyle.Bold };
                 drained.normal.textColor = new Color(0.8f, 0.6f, 1f);
-                GUI.Label(new Rect(m, y + lineH * hudLines.Length, textW, lineH), "Light drained!", drained);
+                GUI.Label(new Rect(m, y, textW, lineH), "Light drained!", drained);
+                y += lineH;
             }
 
             // 拾った品の通知
-            float ty = y + lineH * 6.4f;
+            float ty = y + lineH * 0.4f;
             foreach (var t in toasts)
             {
                 var c = t.Color;
@@ -350,17 +321,11 @@ namespace VividOfFade
 
             if (World.Paused || player.IsDead || World.ChoosingClass) return;
 
-            // 右上のボタン
-            Button(ToGui(ToggleRect), World.AutoAttack ? "ATK: AUTO" : "ATK: HOLD", new Color(0f, 0f, 0f, 0.55f), centered,
-                () => World.AutoAttack = !World.AutoAttack);
-            string bagLabel = inv.BagFull ? $"BAG FULL {inv.Bag.Count}" : $"BAG {inv.Bag.Count}/{Inventory.BagCapacity}";
-            Button(ToGui(BagButtonRect), bagLabel, inv.BagFull ? new Color(0.5f, 0.1f, 0.1f, 0.7f) : new Color(0f, 0f, 0f, 0.55f), centered,
-                () => World.OpenPanel(true, false, false));
+            // 右上は MENU だけ（ポイントが余っている・鞄が満杯なら「!」）
             int points = ch != null ? ch.Points : 0;
-            Button(ToGui(StatsButtonRect), points > 0 ? $"STATS +{points}" : "STATS",
-                points > 0 ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.55f), centered,
-                () => World.OpenPanel(false, true, false));
-            Button(ToGui(SkillsButtonRect), "SKILLS", new Color(0f, 0f, 0f, 0.55f), centered, () => World.OpenPanel(false, false, true));
+            bool notice = points > 0 || inv.BagFull;
+            Button(ToGui(MenuRect), notice ? "MENU !" : "MENU", notice ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.55f), centered,
+                () => World.OpenMenu());
 
             DrawSkillButtons(ch);
 
@@ -387,13 +352,16 @@ namespace VividOfFade
             {
                 var hint = new GUIStyle(small) { alignment = TextAnchor.LowerRight };
                 hint.normal.textColor = new Color(1f, 1f, 1f, 0.5f);
-                GUI.Label(new Rect(0, Screen.height - lineH * 1.3f, Screen.width - m, lineH), "H: Controls", hint);
+                GUI.Label(new Rect(0, Screen.height - lineH * 1.3f, Screen.width - m, lineH), ShowFps ? $"FPS {fps:0}   H: Controls" : "H: Controls", hint);
                 if (ShowHelp) DrawHelp();
             }
         }
 
         /// <summary>操作の一覧（H で開閉）。</summary>
         public bool ShowHelp;
+
+        /// <summary>FPS を表示する（メニューの設定）。</summary>
+        public bool ShowFps;
 
         static readonly string[] helpLines =
         {
@@ -403,7 +371,7 @@ namespace VividOfFade
             "Attack mode . T  (HOLD: J or right click)",
             "Bag ......... B      Stats ... C",
             "Skill list .. K      Music ... M (on/off)  N (change)",
-            "Close ....... Esc",
+            "Menu ........ Esc (also closes screens)",
         };
 
         void DrawHelp()
@@ -424,7 +392,7 @@ namespace VividOfFade
         {
             var room = World.Room;
             if (room.Minimap == null) return;
-            var below = ToGui(SkillsButtonRect);
+            var below = ToGui(MenuRect);
             float w = Screen.width * 0.34f;
             float h = w * Room.MiniH / Room.MiniW;
             var r = new Rect(Screen.width - w - Screen.height * 0.015f, below.yMax + Screen.height * 0.01f, w, h);

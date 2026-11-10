@@ -49,6 +49,14 @@ namespace VividOfFade
                 Hud.Fill(row, new Color(spec.Color.r, spec.Color.g, spec.Color.b, learned ? 0.12f : 0.04f));
 
                 float inner = rowH * 0.06f;
+
+                // アイコン（左）。文字はその右に並べる
+                float iconSize = Mathf.Min(rowH * 0.55f, W * 0.14f);
+                var old = GUI.color;
+                GUI.color = learned ? Color.white : new Color(1f, 1f, 1f, 0.3f);
+                Hud.DrawSprite(new Rect(row.x + inner, row.y + inner, iconSize, iconSize), PixelArt.SkillIcon(spec.Effect, spec.Color));
+                GUI.color = old;
+                row = new Rect(row.x + iconSize + inner, row.y, row.width - iconSize - inner, row.height);
                 var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold };
                 nameStyle.normal.textColor = learned ? Color.white : new Color(0.55f, 0.55f, 0.55f);
                 int lv = ch.SkillLv[i];

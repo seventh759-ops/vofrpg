@@ -75,6 +75,8 @@ namespace VividOfFade
             bossMode = on;
         }
 
+        public bool Muted => muted;
+
         public void ToggleMute()
         {
             muted = !muted;
