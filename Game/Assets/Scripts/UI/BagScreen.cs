@@ -107,12 +107,17 @@ namespace VividOfFade
         void DrawBagItem(GameWorld world, Inventory inv, Item item, Rect area, float actionY, float btnH, float gap, float pad)
         {
             bool canEquip = world.CanEquip(item, out var reason);
-            DrawDescription(item, new Rect(area.x, area.y, area.width * 0.55f, area.height), world);
-
             var candidate = BestCandidate(inv, item, out var slot);
             var now = world.Player.BaseStats;
             float change = now.Power > 0f ? candidate.Power / now.Power - 1f : 0f;
-            DrawItemDiff(item, inv.Equipped[(int)slot], slot, change, new Rect(area.x + area.width * 0.57f, area.y, area.width * 0.43f, area.height));
+
+            // 1行目：名前（左）と総合の判定（右）を全幅で
+            float headH = hud.LabelStyle.fontSize * 1.6f;
+            DrawName(item, new Rect(area.x, area.y, area.width, headH));
+            DrawVerdict(change, new Rect(area.x, area.y, area.width, headH));
+            var body = new Rect(area.x, area.y + headH, area.width, area.height - headH);
+            DrawDescription(item, new Rect(body.x, body.y, body.width * 0.48f, body.height), world, false);
+            DrawItemDiff(item, inv.Equipped[(int)slot], slot, new Rect(body.x + body.width * 0.5f, body.y, body.width * 0.5f, body.height));
 
             float W = Screen.width;
             var centered = hud.CenteredStyle;
@@ -150,7 +155,7 @@ namespace VividOfFade
                 GUI.Label(area, $"{slotLabels[slot]}: empty", hud.SmallStyle);
                 return;
             }
-            DrawDescription(item, area, null);
+            DrawDescription(item, area, null, true);
             string text = inv.BagFull ? "BAG FULL" : "UNEQUIP";
             hud.Button(new Rect(pad, actionY, Screen.width - pad * 2f, btnH), text, buttonBack, hud.CenteredStyle, () =>
             {
@@ -248,14 +253,15 @@ namespace VividOfFade
         }
 
         /// <summary>world を渡すと、満たしていない必要条件を赤で示す。</summary>
-        void DrawDescription(Item item, Rect area, GameWorld world)
+        void DrawDescription(Item item, Rect area, GameWorld world, bool withName)
         {
             float lineH = hud.SmallStyle.fontSize * 1.3f;
-            var title = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
-            title.normal.textColor = RarityInfo.ColorOf(item.Rarity);
-            GUI.Label(new Rect(area.x, area.y, area.width, lineH * 1.3f), item.Name, title);
-
-            float y = area.y + lineH * 1.4f;
+            float y = area.y;
+            if (withName)
+            {
+                DrawName(item, new Rect(area.x, y, area.width, lineH * 1.3f));
+                y += lineH * 1.4f;
+            }
 
             // 必要条件
             var st = world != null ? world.Player.Stats : null;
@@ -269,14 +275,18 @@ namespace VividOfFade
                 if (!attrOk) req.normal.textColor = new Color(1f, 0.45f, 0.45f);
                 reqText += $"   {Attributes.ShortName(item.ReqAttr)} {item.ReqValue}";
             }
-            GUI.Label(new Rect(area.x, y, area.width, lineH), reqText, req);
-            y += lineH;
+            req.wordWrap = true;
+            float rh = req.CalcHeight(new GUIContent(reqText), area.width);
+            GUI.Label(new Rect(area.x, y, area.width, rh), reqText, req);
+            y += rh;
 
+            var text = new GUIStyle(hud.SmallStyle) { wordWrap = true };
             foreach (var line in item.Describe())
             {
-                if (y + lineH > area.yMax) break;
-                GUI.Label(new Rect(area.x, y, area.width, lineH), line, hud.SmallStyle);
-                y += lineH;
+                float h = text.CalcHeight(new GUIContent(line), area.width);
+                if (y + h > area.yMax) break;
+                GUI.Label(new Rect(area.x, y, area.width, h), line, text);
+                y += h;
             }
         }
 
@@ -286,13 +296,17 @@ namespace VividOfFade
         /// 装備どうしを効果ごとに比べる（今その欄に付けている装備との差）。
         /// 例：+39% Damage と +20% Damage → Damage +19%。片方にしかない効果はそのまま足し引き。
         /// </summary>
-        void DrawItemDiff(Item item, Item equipped, EquipSlot slot, float change, Rect area)
+        void DrawName(Item item, Rect r)
         {
-            float lineH = hud.SmallStyle.fontSize * 1.3f;
-            float y = area.y;
+            var title = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
+            title.normal.textColor = RarityInfo.ColorOf(item.Rarity);
+            GUI.Label(r, item.Name, title);
+        }
 
-            // 総合の判定（強化なしの能力で、付けたら全体でどれだけ強くなるか）
-            var verdict = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
+        /// <summary>総合の判定（強化なしの能力で、付けたら全体でどれだけ強くなるか）。右寄せ。</summary>
+        void DrawVerdict(float change, Rect r)
+        {
+            var verdict = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.UpperRight };
             string text;
             if (change > 0.01f)
             {
@@ -309,8 +323,13 @@ namespace VividOfFade
                 text = "ABOUT THE SAME";
                 verdict.normal.textColor = Color.white;
             }
-            GUI.Label(new Rect(area.x, y, area.width, lineH * 1.4f), text, verdict);
-            y += lineH * 1.5f;
+            GUI.Label(r, text, verdict);
+        }
+
+        void DrawItemDiff(Item item, Item equipped, EquipSlot slot, Rect area)
+        {
+            float lineH = hud.SmallStyle.fontSize * 1.3f;
+            float y = area.y;
             GUI.Label(new Rect(area.x, y, area.width, lineH), equipped == null ? $"vs {slotNames[(int)slot]}: empty" : $"vs {slotNames[(int)slot]}:", hud.SmallStyle);
             y += lineH * 1.2f;
 
@@ -356,14 +375,15 @@ namespace VividOfFade
             if (!any) DiffText(ref y, area, "(same effects)", Color.white);
         }
 
+        /// <summary>長い行は折り返して書く。</summary>
         void DiffText(ref float y, Rect area, string text, Color color)
         {
-            float lineH = hud.SmallStyle.fontSize * 1.3f;
-            if (y + lineH > area.yMax) return;
-            var style = new GUIStyle(hud.SmallStyle);
+            var style = new GUIStyle(hud.SmallStyle) { wordWrap = true };
             style.normal.textColor = color;
-            GUI.Label(new Rect(area.x, y, area.width, lineH), text, style);
-            y += lineH;
+            float h = style.CalcHeight(new GUIContent(text), area.width);
+            if (y + h > area.yMax) return;
+            GUI.Label(new Rect(area.x, y, area.width, h), text, style);
+            y += h;
         }
 
         /// <summary>装備1つの効果を「効果の名前 → 値」にまとめる（基本の数値も含む）。</summary>
