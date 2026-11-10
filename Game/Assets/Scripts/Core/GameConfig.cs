@@ -69,6 +69,7 @@ namespace VividOfFade
         /// （レベルが波に追いつかなくなっても、付けられる装備が落ち続けるように）。
         /// </summary>
         public const int DropLevelAhead = 3;
-        public static int DropLevel(int wave, int characterLevel) => Mathf.Clamp(wave, 1, characterLevel + DropLevelAhead);
+        public static int DropLevel(int wave, int characterLevel) =>
+            Mathf.Clamp(wave, 1, Mathf.Min(characterLevel + DropLevelAhead, Progression.MaxLevel)); // Lv上限を超える装備は出さない
     }
 }

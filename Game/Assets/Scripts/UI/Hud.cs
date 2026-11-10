@@ -169,8 +169,12 @@ namespace VividOfFade
                 pendingActions.Clear();
             }
 
-            DrawNumbers();
-            DrawHud();
+            // 鞄・能力値・職業選択の画面を開いている間は、後ろに透けないよう通常の表示を出さない
+            if (!World.Paused && !World.ChoosingClass)
+            {
+                DrawNumbers();
+                DrawHud();
+            }
 
             if (World.ChoosingClass) DrawClassSelect();
             else if (World.Player.IsDead) DrawGameOver();
