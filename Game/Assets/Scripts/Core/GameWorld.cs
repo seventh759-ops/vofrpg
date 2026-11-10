@@ -17,6 +17,7 @@ namespace VividOfFade
         public LootSystem Loot { get; private set; }
         public FxSystem Fx { get; private set; }
         public Sfx Sfx { get; private set; }
+        public Music Music { get; private set; }
         public Inventory Inventory { get; private set; }
         public PlayerInputReader Input { get; private set; }
         public WaveDirector Waves { get; private set; }
@@ -85,6 +86,7 @@ namespace VividOfFade
             };
             Skills.SkillLearned += name => Hud.Toast($"New skill: {name}", new Color(0.6f, 0.85f, 1f));
             Sfx = gameObject.AddComponent<Sfx>();
+            Music = gameObject.AddComponent<Music>();
             Skills.Init(Enemies, Shots, Fx, Sfx, Room);
 
             Player = AddChild<Player>("Player");
@@ -130,6 +132,8 @@ namespace VividOfFade
             UpdateSlowMo();
             float dt = Mathf.Min(Time.deltaTime, 1f / 20f);
             Input.Poll();
+            if (Input.MusicPressed) Music.ToggleMute();
+            Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
 
             if (ChoosingClass)
             {

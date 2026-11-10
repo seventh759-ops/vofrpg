@@ -35,6 +35,7 @@ namespace VividOfFade
         public bool CancelPressed { get; private set; }
         public bool StatsPressed { get; private set; }
         public bool SkillsPressed { get; private set; }
+        public bool MusicPressed { get; private set; }
         /// <summary>数字キー 1〜3 を押したときの番号（0 始まり）。押していなければ -1。</summary>
         public int NumberPressed { get; private set; } = -1;
 
@@ -130,6 +131,7 @@ namespace VividOfFade
             CancelPressed = false;
             StatsPressed = false;
             SkillsPressed = false;
+            MusicPressed = false;
             NumberPressed = -1;
             var kb = Keyboard.current;
             if (kb != null)
@@ -153,6 +155,7 @@ namespace VividOfFade
                 CancelPressed = kb.escapeKey.wasPressedThisFrame;
                 StatsPressed = kb.cKey.wasPressedThisFrame;
                 SkillsPressed = kb.kKey.wasPressedThisFrame;
+                MusicPressed = kb.mKey.wasPressedThisFrame;
                 if (kb.digit1Key.wasPressedThisFrame) NumberPressed = 0;
                 else if (kb.digit2Key.wasPressedThisFrame) NumberPressed = 1;
                 else if (kb.digit3Key.wasPressedThisFrame) NumberPressed = 2;

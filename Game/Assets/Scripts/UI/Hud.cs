@@ -374,7 +374,7 @@ namespace VividOfFade
             if (!Application.isMobilePlatform)
             {
                 GUI.Label(new Rect(m, Screen.height - lineH * 2.2f, Screen.width, lineH * 2f),
-                    "Move: WASD / drag   Dodge: Space / flick   Skills: 1-3   Bag: B   Stats: C   Skill list: K\nAttack (HOLD): J or right click   Toggle: T", small);
+                    "Move: WASD / drag   Dodge: Space / flick   Skills: 1-3   Bag: B   Stats: C   Skill list: K\nAttack (HOLD): J or right click   Toggle: T   Music: M", small);
             }
         }
 
