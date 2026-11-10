@@ -14,12 +14,20 @@ namespace VividOfFade
 
         public float DodgeReady => 1f - Mathf.Clamp01(dodgeCooldown / GameConfig.DodgeCooldown);
 
+        Vector2 pos;
+
+        /// <summary>論理座標。画面にはクォータービューに変換して描く。</summary>
         public Vector2 Pos
         {
-            get => transform.position;
-            set => transform.position = value;
+            get => pos;
+            set
+            {
+                pos = value;
+                transform.position = Iso.ToScreen(value);
+            }
         }
 
+        // 入力は画面の向き（上を押すと画面の上へ）。移動するときに論理座標へ戻す
         Vector2 facing = Vector2.down;
         Vector2 dashDir;
         float dashTimer;
@@ -41,7 +49,7 @@ namespace VividOfFade
             hurtTimer = 0f;
             fireTimer = 0f;
             Sr.color = Color.white;
-            Sr.sortingOrder = SortOrder.ForY(0f);
+            Sr.sortingOrder = SortOrder.For(Vector2.zero);
         }
 
         /// <summary>装備が変わったとき。最大体力が増えた分は今の体力にも足す。</summary>
@@ -88,12 +96,12 @@ namespace VividOfFade
             }
 
             bool dashing = dashTimer > 0f;
-            Vector2 velocity = dashing ? dashDir * GameConfig.DodgeSpeed : move * Stats.MoveSpeed;
+            Vector2 screenVelocity = dashing ? dashDir * GameConfig.DodgeSpeed : move * Stats.MoveSpeed;
             dashTimer = Mathf.Max(0f, dashTimer - dt);
-            Pos = room.Clamp(Pos + velocity * dt, GameConfig.PlayerRadius);
+            Pos = room.Clamp(Pos + Iso.ToLogical(screenVelocity) * dt, GameConfig.PlayerRadius);
 
-            if (Mathf.Abs(velocity.x) > 0.01f) Sr.flipX = velocity.x < 0f;
-            Sr.sortingOrder = SortOrder.ForY(Pos.y);
+            if (Mathf.Abs(screenVelocity.x) > 0.01f) Sr.flipX = screenVelocity.x < 0f;
+            Sr.sortingOrder = SortOrder.For(Pos);
             if (dashing)
             {
                 Sr.color = new Color(0.7f, 0.85f, 1f, 0.8f);
@@ -115,7 +123,7 @@ namespace VividOfFade
             var target = enemies.FindNearest(Pos, Stats.Light);
             Vector2 aim;
             if (target != null) aim = (target.Pos - Pos).normalized;
-            else if (!AutoAttack) aim = facing; // 押している間は、敵がいなくても向いている方へ撃つ
+            else if (!AutoAttack) aim = Iso.ToLogical(facing).normalized; // 押している間は、敵がいなくても向いている方へ撃つ
             else return;
 
             FireVolley(aim, shots);

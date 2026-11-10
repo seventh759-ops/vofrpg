@@ -13,10 +13,17 @@ namespace VividOfFade
         public int PierceLeft;
         public Enemy LastHit;
 
+        Vector2 pos;
+
+        /// <summary>論理座標。画面にはクォータービューに変換して描く。</summary>
         public Vector2 Pos
         {
-            get => transform.position;
-            set => transform.position = value;
+            get => pos;
+            set
+            {
+                pos = value;
+                transform.position = Iso.ToScreen(value);
+            }
         }
     }
 }

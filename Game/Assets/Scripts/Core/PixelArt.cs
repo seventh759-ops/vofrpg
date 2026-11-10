@@ -111,8 +111,82 @@ namespace VividOfFade
             }
         }
 
-        public static Sprite FloorTile => Bricks("Floor", new Color32(52, 48, 66, 255), new Color32(24, 21, 32, 255));
-        public static Sprite WallTile => Bricks("Wall", new Color32(30, 26, 40, 255), new Color32(12, 10, 18, 255));
+        /// <summary>クォータービューの床（32×16 のひし形）。</summary>
+        public static Sprite IsoFloor => IsoTile("IsoFloor", new Color32(56, 52, 72, 255), new Color32(30, 27, 40, 255));
+        public static Sprite IsoFloorAlt => IsoTile("IsoFloorAlt", new Color32(50, 46, 64, 255), new Color32(30, 27, 40, 255));
+
+        /// <summary>クォータービューの壁ブロック（32×32。上面のひし形と左右の側面）。足元のひし形の中心が原点。</summary>
+        public static Sprite IsoWall
+        {
+            get
+            {
+                const string key = "IsoWall";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int w = 32, h = 32;
+                var px = new Color32[w * h];
+                var clear = new Color32(0, 0, 0, 0);
+                var top = new Color32(74, 66, 96, 255);
+                var left = new Color32(44, 38, 60, 255);
+                var right = new Color32(30, 26, 42, 255);
+                var edge = new Color32(16, 12, 24, 255);
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        float dx = Mathf.Abs(x - 15.5f) / 16f;
+                        // 上面：中心 (15.5, 23.5)、横の半径 16、縦の半径 8
+                        float dTop = dx + Mathf.Abs(y - 23.5f) / 8f;
+                        float lowerEdge = 23.5f - 8f * (1f - dx); // 上面の下側の縁
+                        Color32 c = clear;
+                        if (dTop <= 1f) c = dTop > 0.88f ? edge : top;
+                        else if (y < lowerEdge && y >= lowerEdge - 16f)
+                        {
+                            bool rim = y < lowerEdge - 15f || x == 0 || x == w - 1;
+                            c = rim ? edge : (x < 16 ? left : right);
+                            if (!rim && (int)(lowerEdge - y) % 8 == 0) c = edge; // 石積みの目地
+                        }
+                        px[y * w + x] = c;
+                    }
+                }
+                var tex = MakeTexture(key, w, h, px, TextureWrapMode.Clamp);
+                var sprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 7.5f / h), PixelsPerUnit, 0, SpriteMeshType.FullRect);
+                sprite.name = key;
+                cache[key] = sprite;
+                return sprite;
+            }
+        }
+
+        static Sprite IsoTile(string key, Color32 stone, Color32 edge)
+        {
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            const int w = 32, h = 16;
+            var px = new Color32[w * h];
+            var clear = new Color32(0, 0, 0, 0);
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    float d = Mathf.Abs(x - 15.5f) / 16f + Mathf.Abs(y - 7.5f) / 8f;
+                    if (d > 1f)
+                    {
+                        px[y * w + x] = clear;
+                        continue;
+                    }
+                    if (d > 0.9f)
+                    {
+                        px[y * w + x] = edge;
+                        continue;
+                    }
+                    int n = (int)(Hash(x, y) % 9) - 4;
+                    px[y * w + x] = new Color32(
+                        (byte)Mathf.Clamp(stone.r + n, 0, 255),
+                        (byte)Mathf.Clamp(stone.g + n, 0, 255),
+                        (byte)Mathf.Clamp(stone.b + n, 0, 255),
+                        255);
+                }
+            }
+            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp));
+        }
 
         static readonly string[] PlayerRows =
         {
@@ -232,33 +306,6 @@ namespace VividOfFade
                 }
             }
             return Store(key, MakeTexture(key, w, h, pixels, TextureWrapMode.Clamp));
-        }
-
-        static Sprite Bricks(string key, Color32 stone, Color32 mortar)
-        {
-            if (cache.TryGetValue(key, out var cached)) return cached;
-
-            const int size = 16;
-            var pixels = new Color32[size * size];
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    bool line = y % 8 == 0 || ((y / 8) % 2 == 0 ? x % 8 == 0 : (x + 4) % 8 == 0);
-                    if (line)
-                    {
-                        pixels[y * size + x] = mortar;
-                        continue;
-                    }
-                    int n = (int)(Hash(x, y) % 9) - 4; // わずかなムラ
-                    pixels[y * size + x] = new Color32(
-                        (byte)Mathf.Clamp(stone.r + n, 0, 255),
-                        (byte)Mathf.Clamp(stone.g + n, 0, 255),
-                        (byte)Mathf.Clamp(stone.b + n, 0, 255),
-                        255);
-                }
-            }
-            return Store(key, MakeTexture(key, size, size, pixels, TextureWrapMode.Repeat));
         }
 
         static Texture2D MakeTexture(string name, int w, int h, Color32[] pixels, TextureWrapMode wrap)

@@ -22,7 +22,7 @@ namespace VividOfFade
         {
             var b = free.Count > 0 ? free.Pop() : Create();
             b.Sr.gameObject.SetActive(true);
-            b.Sr.transform.position = pos;
+            b.Sr.transform.position = Iso.ToScreen(pos);
             b.T = 0f;
             b.Duration = duration;
             b.Radius = radius;
@@ -63,7 +63,8 @@ namespace VividOfFade
             float t = Mathf.Clamp01(b.T / b.Duration);
             // スプライトは直径 2 ユニット（32 ドット / 16）
             float r = Mathf.Lerp(0.3f, 1f, Mathf.Sqrt(t)) * b.Radius;
-            b.Sr.transform.localScale = new Vector3(r, r, 1f);
+            // 床の上の円は、クォータービューでは横長の楕円に見える
+            b.Sr.transform.localScale = new Vector3(r * 1.414f, r * 0.707f, 1f);
             var c = b.Color;
             c.a = b.Color.a * (1f - t);
             b.Sr.color = c;

@@ -2,7 +2,10 @@ using UnityEngine;
 
 namespace VividOfFade
 {
-    /// <summary>M1 用の固定の1部屋。中心が原点の長方形で、外周を壁で囲む。</summary>
+    /// <summary>
+    /// 試作用の固定の1部屋。論理座標では中心が原点の長方形で、画面ではひし形の床になる。
+    /// 奥の2辺（画面の上側）に立体の壁を並べる。
+    /// </summary>
     public sealed class Room : MonoBehaviour
     {
         public float HalfW { get; private set; }
@@ -12,18 +15,39 @@ namespace VividOfFade
         {
             HalfW = width * 0.5f;
             HalfH = height * 0.5f;
-            MakeLayer("Wall", PixelArt.WallTile, new Vector2(width + 2, height + 2), SortOrder.Floor);
-            MakeLayer("Floor", PixelArt.FloorTile, new Vector2(width, height), SortOrder.Floor + 1);
+
+            var floor = PixelArt.IsoFloor;
+            var floorAlt = PixelArt.IsoFloorAlt;
+            for (int i = 0; i < width; i++)
+            {
+                for (int j = 0; j < height; j++)
+                {
+                    var p = new Vector2(i - HalfW + 0.5f, j - HalfH + 0.5f);
+                    Place("Floor", (i + j) % 2 == 0 ? floor : floorAlt, p, SortOrder.Floor);
+                }
+            }
+
+            // 奥の壁：右上の辺（x の外側）と左上の辺（y の外側）、それと奥の角
+            var wall = PixelArt.IsoWall;
+            for (int j = 0; j <= height; j++)
+            {
+                var p = new Vector2(HalfW + 0.5f, j - HalfH + 0.5f);
+                Place("Wall", wall, p, SortOrder.For(p));
+            }
+            for (int i = 0; i < width; i++)
+            {
+                var p = new Vector2(i - HalfW + 0.5f, HalfH + 0.5f);
+                Place("Wall", wall, p, SortOrder.For(p));
+            }
         }
 
-        void MakeLayer(string name, Sprite sprite, Vector2 size, int order)
+        void Place(string name, Sprite sprite, Vector2 logical, int order)
         {
             var go = new GameObject(name);
             go.transform.SetParent(transform, false);
+            go.transform.position = Iso.ToScreen(logical);
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
-            sr.drawMode = SpriteDrawMode.Tiled;
-            sr.size = size;
             sr.sortingOrder = order;
         }
 

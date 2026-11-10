@@ -38,7 +38,7 @@ namespace VividOfFade
             p.PierceLeft = pierce;
             p.transform.localScale = crit ? new Vector3(1.5f, 1.5f, 1f) : Vector3.one;
             p.LastHit = null;
-            p.Sr.sortingOrder = SortOrder.ForY(pos.y) + 1;
+            p.Sr.sortingOrder = SortOrder.For(pos) + 1;
             active.Add(p);
         }
 
@@ -50,7 +50,7 @@ namespace VividOfFade
                 p.Life -= dt;
                 Vector2 pos = p.Pos + p.Velocity * dt;
                 p.Pos = pos;
-                p.Sr.sortingOrder = SortOrder.ForY(pos.y) + 1;
+                p.Sr.sortingOrder = SortOrder.For(pos) + 1;
 
                 if (p.Life <= 0f || !room.Contains(pos))
                 {

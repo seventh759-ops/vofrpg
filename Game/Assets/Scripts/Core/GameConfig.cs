@@ -6,11 +6,12 @@ namespace VividOfFade
     public static class GameConfig
     {
         // 部屋（マス）。1マス = 16ドット = 1ユニット
-        public const int RoomWidth = 13;
-        public const int RoomHeight = 21;
+        // 部屋（論理のマス）。クォータービューでは画面上でひし形になる
+        public const int RoomWidth = 16;
+        public const int RoomHeight = 16;
 
-        // 縦画面で横に見えるマス数（内部解像度 180 ドット相当）
-        public const float ViewWidthTiles = 11.25f;
+        // 縦画面で横に見える幅（ユニット。1ユニット = 16 ドット。14 なら内部解像度 224 ドット相当）
+        public const float ViewWidthTiles = 14f;
 
         // プレイヤー（攻撃力などは装備から PlayerStats で計算する）
         public const int PlayerMaxHp = 100;

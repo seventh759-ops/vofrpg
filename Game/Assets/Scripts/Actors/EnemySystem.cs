@@ -68,7 +68,7 @@ namespace VividOfFade
             e.Sr.color = Color.white;
             e.transform.localScale = Vector3.one;
             e.Pos = pos;
-            e.Sr.sortingOrder = SortOrder.ForY(pos.y);
+            e.Sr.sortingOrder = SortOrder.For(pos);
             Active.Add(e);
         }
 
@@ -173,7 +173,7 @@ namespace VividOfFade
                 e.Knock = Vector2.MoveTowards(e.Knock, Vector2.zero, 20f * dt);
                 pos = room.Clamp(pos, e.Radius);
                 e.Pos = pos;
-                e.Sr.sortingOrder = SortOrder.ForY(pos.y);
+                e.Sr.sortingOrder = SortOrder.For(pos);
 
                 if (!player.IsDead && dist < e.Radius + GameConfig.PlayerRadius)
                 {

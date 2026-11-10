@@ -21,10 +21,20 @@ namespace VividOfFade
         public float MagnetSpeed;
         public float Age;
 
+        Vector2 pos;
+
+        /// <summary>地面からの高さ（画面の上方向。飛んでいる間と弾むとき）。</summary>
+        public float Height;
+
+        /// <summary>論理座標。画面にはクォータービューに変換し、高さの分だけ上に描く。</summary>
         public Vector2 Pos
         {
-            get => transform.position;
-            set => transform.position = value;
+            get => pos;
+            set
+            {
+                pos = value;
+                transform.position = Iso.ToScreen(value) + new Vector2(0f, Height);
+            }
         }
     }
 
@@ -108,6 +118,7 @@ namespace VividOfFade
             g.Magnet = false;
             g.MagnetSpeed = 0f;
             g.Age = 0f;
+            g.Height = 0f;
             g.Pos = from;
             g.Sr.color = Color.white;
             g.Beam.enabled = false;
@@ -143,9 +154,9 @@ namespace VividOfFade
                     // 放物線を描いて飛ぶ
                     g.T += dt / g.FlightTime;
                     float t = Mathf.Clamp01(g.T);
-                    Vector2 p = Vector2.Lerp(g.From, g.To, t) + Vector2.up * (4f * t * (1f - t) * 1.2f);
-                    g.Pos = p;
-                    g.Sr.sortingOrder = SortOrder.ForY(g.To.y) + 2;
+                    g.Height = 4f * t * (1f - t) * 1.2f;
+                    g.Pos = Vector2.Lerp(g.From, g.To, t);
+                    g.Sr.sortingOrder = SortOrder.For(g.To) + 2;
                     if (t >= 1f)
                     {
                         g.Landed = true;
@@ -170,6 +181,7 @@ namespace VividOfFade
 
                 if (g.Magnet && canTake)
                 {
+                    g.Height = 0f;
                     g.MagnetSpeed = Mathf.Min(g.MagnetSpeed + 40f * dt, 22f);
                     if (dist > 0.001f) g.Pos += to / dist * Mathf.Min(dist, g.MagnetSpeed * dt);
                     if (dist < GameConfig.PickupRange)
@@ -181,7 +193,8 @@ namespace VividOfFade
                 }
 
                 // 地面で小さく弾む
-                g.Pos = g.To + Vector2.up * (Mathf.Abs(Mathf.Sin(g.Age * 3f)) * 0.08f);
+                g.Height = Mathf.Abs(Mathf.Sin(g.Age * 3f)) * 0.08f;
+                g.Pos = g.To;
             }
         }
 

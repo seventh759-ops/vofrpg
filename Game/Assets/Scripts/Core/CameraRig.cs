@@ -28,19 +28,23 @@ namespace VividOfFade
             shakeTime = duration;
         }
 
+        /// <summary>target は論理座標。画面上の位置に変換して追う。</summary>
         public void Tick(Vector2 target, Room room, float dt)
         {
             float aspect = Mathf.Max(0.1f, cam.aspect);
-            // 縦画面：横幅を固定。横画面（エディタやPC）：縦に14マス見せる
+            // 縦画面：横幅を固定。横画面（エディタやPC）：縦に14ユニット見せる
             float size = aspect < 1f ? GameConfig.ViewWidthTiles / (2f * aspect) : 7f;
             cam.orthographicSize = size;
 
             float halfW = size * aspect;
             float halfH = size;
-            float limitX = room.HalfW + 1f - halfW; // 壁の外側1マスまで
-            float limitY = room.HalfH + 1f - halfH;
-            float x = limitX > 0f ? Mathf.Clamp(target.x, -limitX, limitX) : 0f;
-            float y = limitY > 0f ? Mathf.Clamp(target.y, -limitY, limitY) : 0f;
+            // 部屋のひし形を囲む長方形の中に収める（奥の壁の高さ1ユニット分を足す）
+            Vector2 screen = Iso.ToScreen(target);
+            float extent = room.HalfW + room.HalfH;
+            float limitX = extent * Iso.HalfTileW + 1f - halfW;
+            float limitY = extent * Iso.HalfTileH + 1.5f - halfH;
+            float x = limitX > 0f ? Mathf.Clamp(screen.x, -limitX, limitX) : 0f;
+            float y = limitY > 0f ? Mathf.Clamp(screen.y, -limitY, limitY) : 0f;
 
             Vector3 p = cam.transform.position - (Vector3)lastShake;
             float k = 1f - Mathf.Exp(-10f * dt);

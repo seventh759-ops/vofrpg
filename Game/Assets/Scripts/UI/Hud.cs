@@ -111,7 +111,7 @@ namespace VividOfFade
             if (numbers.Count >= MaxNumbers) numbers.RemoveAt(0);
             numbers.Add(new FloatNumber
             {
-                World = world + new Vector2(UnityEngine.Random.Range(-0.15f, 0.15f), 0.3f),
+                World = Iso.ToScreen(world) + new Vector2(UnityEngine.Random.Range(-0.15f, 0.15f), 0.4f),
                 Text = Mathf.RoundToInt(amount).ToString(),
                 Color = crit ? new Color(1f, 0.85f, 0.2f) : Color.white,
                 Big = crit,
