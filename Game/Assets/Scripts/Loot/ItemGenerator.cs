@@ -67,7 +67,10 @@ namespace VividOfFade
             }
 
             SetRequirements(item);
-            AddAffixes(item, AffixCount(item.Rarity));
+            int affixes = AffixCount(item.Rarity);
+            // 指輪には基本の数値がないので、効果が1つもない指輪は作らない
+            if (item.Slot == ItemSlot.Ring && item.Rarity != Rarity.Relic) affixes = Mathf.Max(1, affixes);
+            AddAffixes(item, affixes);
 
             if (item.Rarity == Rarity.Legendary)
             {

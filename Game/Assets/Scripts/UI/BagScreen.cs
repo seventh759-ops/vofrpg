@@ -286,12 +286,13 @@ namespace VividOfFade
             y += lineH * 1.2f;
 
             float power = now.Power > 0f ? next.Power / now.Power - 1f : 0f;
-            Line(ref y, area, "POWER", power * 100f, "0", "%", true);
+            Line(ref y, area, "POWER", power * 100f, "0.0", "%", true);
             Line(ref y, area, "DMG", next.Damage - now.Damage, "0.0", "", false);
             Line(ref y, area, "ATK/s", next.AttacksPerSecond - now.AttacksPerSecond, "0.0", "", false);
             Line(ref y, area, "SHOTS", next.Shots - now.Shots, "0", "", false);
             Line(ref y, area, "CRIT", (next.CritChance - now.CritChance) * 100f, "0", "%", false);
             Line(ref y, area, "HP", next.MaxHp - now.MaxHp, "0", "", false);
+            Line(ref y, area, "MP", next.MaxMp - now.MaxMp, "0", "", false);
             Line(ref y, area, "ARMOR", next.Armor - now.Armor, "0", "", false);
             Line(ref y, area, "LIGHT", next.Light - now.Light, "0.0", "", false);
             Line(ref y, area, "SPEED", (next.MoveSpeed / now.MoveSpeed - 1f) * 100f, "0", "%", false);

@@ -76,7 +76,8 @@ namespace VividOfFade
             {
                 var spec = ClassInfo.Get(Class);
                 float dps = Damage * (1f + CritChance * (CritMult - 1f)) * Multiplicity / FireInterval;
-                float survive = 1f + MaxHp * 0.002f + Armor * 0.002f;
+                // MP・自然回復も少しだけ数える（スキルが入ったら重みを見直す）
+                float survive = 1f + MaxHp * 0.002f + Armor * 0.002f + MaxMp * 0.0005f + HpRegen * 0.02f + MpRegen * 0.01f;
                 float reach = 1f + (Light - spec.BaseLight) * 0.05f;
                 return dps * survive * reach * (1f + ExplodeMult * 0.5f) * (1f + DoubleStrikeChance)
                     * (1f + DodgeNovaMult * 0.1f) * (1f + LifeSteal * 10f);
