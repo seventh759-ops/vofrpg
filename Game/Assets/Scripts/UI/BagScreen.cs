@@ -109,8 +109,10 @@ namespace VividOfFade
             bool canEquip = world.CanEquip(item, out var reason);
             DrawDescription(item, new Rect(area.x, area.y, area.width * 0.55f, area.height), world);
 
-            BestCandidate(inv, item, out var slot);
-            DrawItemDiff(item, inv.Equipped[(int)slot], slot, new Rect(area.x + area.width * 0.57f, area.y, area.width * 0.43f, area.height));
+            var candidate = BestCandidate(inv, item, out var slot);
+            var now = world.Player.BaseStats;
+            float change = now.Power > 0f ? candidate.Power / now.Power - 1f : 0f;
+            DrawItemDiff(item, inv.Equipped[(int)slot], slot, change, new Rect(area.x + area.width * 0.57f, area.y, area.width * 0.43f, area.height));
 
             float W = Screen.width;
             var centered = hud.CenteredStyle;
@@ -284,10 +286,31 @@ namespace VividOfFade
         /// 装備どうしを効果ごとに比べる（今その欄に付けている装備との差）。
         /// 例：+39% Damage と +20% Damage → Damage +19%。片方にしかない効果はそのまま足し引き。
         /// </summary>
-        void DrawItemDiff(Item item, Item equipped, EquipSlot slot, Rect area)
+        void DrawItemDiff(Item item, Item equipped, EquipSlot slot, float change, Rect area)
         {
             float lineH = hud.SmallStyle.fontSize * 1.3f;
             float y = area.y;
+
+            // 総合の判定（強化なしの能力で、付けたら全体でどれだけ強くなるか）
+            var verdict = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
+            string text;
+            if (change > 0.01f)
+            {
+                text = $"UPGRADE +{change * 100f:0}%";
+                verdict.normal.textColor = up;
+            }
+            else if (change < -0.01f)
+            {
+                text = $"DOWNGRADE {change * 100f:0}%";
+                verdict.normal.textColor = down;
+            }
+            else
+            {
+                text = "ABOUT THE SAME";
+                verdict.normal.textColor = Color.white;
+            }
+            GUI.Label(new Rect(area.x, y, area.width, lineH * 1.4f), text, verdict);
+            y += lineH * 1.5f;
             GUI.Label(new Rect(area.x, y, area.width, lineH), equipped == null ? $"vs {slotNames[(int)slot]}: empty" : $"vs {slotNames[(int)slot]}:", hud.SmallStyle);
             y += lineH * 1.2f;
 
