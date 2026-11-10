@@ -193,8 +193,9 @@ namespace VividOfFade
             int sub = s.Attr[(int)cls.SubAttr];
 
             s.MaxHp = cls.BaseHp + vit * 8 + (ch.Level - 1) * 6 + bonusHp;
-            // MP は WIS とレベルだけで増える（INT は攻撃力だけ。INT と WIS のどちらに振るかで迷うように）
-            s.MaxMp = 20 + wis * 4 + (ch.Level - 1) * 2 + bonusMp;
+            // MP は WIS だけで増える。レベルアップのたびに、そのときの WIS で上限が積み上がる（MpGrown）
+            Progression.EnsureMpGrowth(ch);
+            s.MaxMp = 20 + wis * 2 + ch.MpGrown + bonusMp;
             s.HpRegen = vit * 0.05f;
             s.MpRegen = 1f + wis * 0.1f + (ch.Level - 1) * 0.02f;
             s.Armor += str * 0.5f;

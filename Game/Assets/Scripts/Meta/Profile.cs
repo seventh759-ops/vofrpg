@@ -15,6 +15,11 @@ namespace VividOfFade
         public int Points;
         public int[] Alloc = new int[Attributes.Count]; // 自分で振った能力値
 
+        /// <summary>レベルアップのたびに、そのときの WIS で積み上がった最大 MP。</summary>
+        public int MpGrown;
+        /// <summary>MpGrown を導入する前のセーブを一度だけ見積もり直したか。</summary>
+        public bool MpGrowthReady;
+
         // スキル（覚えるのはレベルで自動。強さは使った回数で上がる）
         public int[] SkillLv = { 1, 1, 1, 1, 1, 1 };
         public int[] SkillUses = new int[SkillInfo.PerClass];
@@ -26,6 +31,7 @@ namespace VividOfFade
             if (Level < 1) Level = 1;
             if (Exp < 0) Exp = 0;
             if (Points < 0) Points = 0;
+            if (MpGrown < 0) MpGrown = 0;
             Alloc = Fit(Alloc, Attributes.Count, 0);
             SkillLv = Fit(SkillLv, SkillInfo.PerClass, 1);
             SkillUses = Fit(SkillUses, SkillInfo.PerClass, 0);

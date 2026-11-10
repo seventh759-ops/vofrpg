@@ -31,6 +31,24 @@ namespace VividOfFade
 
         public static int ExpToNext(int level) => Mathf.RoundToInt(15f * Mathf.Pow(level, 1.7f));
 
+        /// <summary>レベルアップ1回で増える最大 MP（そのときの WIS で決まる）。</summary>
+        public static int MpPerLevel(int wis) => 2 + wis / 3;
+
+        /// <summary>自分で振った分と職業の初期値の WIS（装備は数えない）。</summary>
+        public static int BaseWis(CharacterData c)
+        {
+            var cls = ClassInfo.Get((ClassType)c.ClassId);
+            return cls.BaseStats[(int)Attr.Wis] + c.Alloc[(int)Attr.Wis];
+        }
+
+        /// <summary>MP の積み上げを入れる前のセーブを、今の WIS で見積もり直す（一度だけ）。</summary>
+        public static void EnsureMpGrowth(CharacterData c)
+        {
+            if (c.MpGrowthReady) return;
+            c.MpGrown = (c.Level - 1) * MpPerLevel(BaseWis(c));
+            c.MpGrowthReady = true;
+        }
+
         public static int KillExp(int wave) => 1 + wave;
 
         /// <summary>経験値を足す。上がったレベルの数を返す。</summary>
@@ -43,6 +61,7 @@ namespace VividOfFade
             {
                 c.Exp -= ExpToNext(c.Level);
                 c.Level++;
+                c.MpGrown += MpPerLevel(BaseWis(c)); // 振る前の、今の WIS で決まる
                 c.Points += PointsPerLevel;
                 gained++;
             }

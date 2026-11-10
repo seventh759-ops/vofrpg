@@ -101,7 +101,7 @@ namespace VividOfFade
             string[] lines =
             {
                 $"HP {world.Player.MaxHp}   (+{st.HpRegen:0.0}/s)",
-                $"MP {world.Player.MaxMp}   (+{st.MpRegen:0.0}/s)",
+                $"MP {world.Player.MaxMp}   (+{st.MpRegen:0.0}/s)   next Lv +{Progression.MpPerLevel(Progression.BaseWis(ch))} MP",
                 $"Damage {st.Damage:0.0}   Attacks/s {st.AttacksPerSecond:0.0}",
                 $"Crit {st.CritChance * 100f:0}%  x{st.CritMult:0.00}",
                 $"Armor {st.Armor:0}   Light {st.Light:0.0}   Speed {st.MoveSpeed:0.0}",

@@ -315,6 +315,8 @@ namespace VividOfFade
             ch.Level = 1;
             ch.Exp = 0;
             ch.Points = 0;
+            ch.MpGrown = 0;
+            ch.MpGrowthReady = true;
             for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;
             // 覚えていないスキルはボタンから外す（スキルレベル＝熟練度は残す）
             for (int i = 0; i < ch.Slots.Length; i++)
