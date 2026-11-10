@@ -9,7 +9,7 @@ namespace VividOfFade
     /// </summary>
     public sealed class AttackSystem : MonoBehaviour
     {
-        const float OrbHitRadius = 0.45f;
+        const float OrbHitRadius = 0.65f;
 
         EnemySystem enemies;
         ProjectileSystem shots;
@@ -150,7 +150,9 @@ namespace VividOfFade
             for (int k = 0; k < activeOrbs; k++)
             {
                 float a = orbAngle + k * Mathf.PI * 2f / activeOrbs;
-                Vector2 p = player.Pos + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * st.OrbitRadius;
+                // 輪が呼吸するように内側と外側を行き来する（体のすぐ近くの敵にも当たる）
+                float breathe = 0.35f + 0.65f * (0.5f + 0.5f * Mathf.Sin(orbAngle * 0.7f + k));
+                Vector2 p = player.Pos + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * (st.OrbitRadius * breathe);
                 var sr = orbs[k];
                 sr.transform.position = Iso.ToScreen(p) + new Vector2(0f, 0.25f);
                 sr.sortingOrder = SortOrder.For(p) + 1;

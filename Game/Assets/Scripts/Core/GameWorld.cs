@@ -275,6 +275,34 @@ namespace VividOfFade
             Profile.Save();
         }
 
+        /// <summary>振ったポイントを全部戻す（振り直し）。</summary>
+        public void ResetPoints()
+        {
+            var ch = Profile.Current;
+            if (ch == null) return;
+            for (int i = 0; i < ch.Alloc.Length; i++)
+            {
+                ch.Points += ch.Alloc[i];
+                ch.Alloc[i] = 0;
+            }
+            RefreshStats();
+            Profile.Save();
+            Hud.Toast("Points reset", Color.white);
+        }
+
+        /// <summary>今の職業を Lv1 からやり直す。装備と合わなくなるので、挑戦を終えて職業選択に戻る。</summary>
+        public void ResetLevel()
+        {
+            var ch = Profile.Current;
+            if (ch == null) return;
+            ch.Level = 1;
+            ch.Exp = 0;
+            ch.Points = 0;
+            for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;
+            Profile.Save();
+            ShowClassSelect();
+        }
+
         /// <summary>装備できるか（必要レベルと必要能力値）。できなければ理由を返す。</summary>
         public bool CanEquip(Item item, out string reason)
         {

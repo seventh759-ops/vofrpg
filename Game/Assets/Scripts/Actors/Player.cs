@@ -20,7 +20,7 @@ namespace VividOfFade
         /// <summary>回避した（論理座標の位置）。ボス装備の固有効果に使う。</summary>
         public event System.Action<Vector2> Dodged;
 
-        public float DodgeReady => 1f - Mathf.Clamp01(dodgeCooldown / GameConfig.DodgeCooldown);
+        public float DodgeReady => 1f - Mathf.Clamp01(dodgeCooldown / (Stats != null ? Stats.DodgeCooldown : GameConfig.DodgeCooldown));
 
         Vector2 pos;
 
@@ -101,7 +101,7 @@ namespace VividOfFade
         public bool TakeHit(int damage)
         {
             if (invuln > 0f || IsDead) return false;
-            float reduced = damage * 100f / (100f + Stats.Armor);
+            float reduced = damage * Stats.DamageTaken * 100f / (100f + Stats.Armor);
             Hp = Mathf.Max(0, Hp - Mathf.Max(1, Mathf.RoundToInt(reduced)));
             invuln = GameConfig.HitInvuln;
             hurtTimer = GameConfig.HitInvuln;
@@ -131,7 +131,7 @@ namespace VividOfFade
             {
                 dashDir = dodgeDir.sqrMagnitude > 0.0001f ? dodgeDir.normalized : facing;
                 dashTimer = GameConfig.DodgeTime;
-                dodgeCooldown = GameConfig.DodgeCooldown;
+                dodgeCooldown = Stats.DodgeCooldown;
                 invuln = Mathf.Max(invuln, GameConfig.DodgeInvuln);
                 Dodged?.Invoke(Pos);
             }

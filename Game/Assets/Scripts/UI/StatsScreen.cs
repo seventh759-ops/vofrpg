@@ -14,6 +14,10 @@ namespace VividOfFade
 
         readonly Hud hud;
 
+        // 2回押しで実行する確認（押してから数秒だけ有効）
+        string armed;
+        float armedUntil;
+
         public StatsScreen(Hud hud)
         {
             this.hud = hud;
@@ -70,6 +74,7 @@ namespace VividOfFade
 
                 var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold };
                 if (attr == spec.MainAttr) nameStyle.normal.textColor = new Color(1f, 0.85f, 0.3f);
+                else if (attr == spec.SubAttr) nameStyle.normal.textColor = new Color(0.95f, 0.75f, 0.5f);
                 GUI.Label(new Rect(row.x + pad * 0.3f, row.y, W * 0.18f, rowH * 0.6f), Attributes.ShortName(attr), nameStyle);
                 string gear = fromGear > 0 ? $"  (+{fromGear})" : "";
                 GUI.Label(new Rect(row.x + W * 0.2f, row.y, W * 0.4f, rowH * 0.6f), $"{total}{gear}", label);
@@ -102,12 +107,38 @@ namespace VividOfFade
                 $"Armor {st.Armor:0}   Light {st.Light:0.0}   Speed {st.MoveSpeed:0.0}",
                 kind,
             };
+            float bottomY = H - pad - btnH;
             foreach (var line in lines)
             {
-                if (y + lineH > H - pad) break;
+                if (y + lineH > bottomY - H * 0.01f) break;
                 GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), line, small);
                 y += small.fontSize * 1.4f;
             }
+
+            // 振り直しとレベルのリセット（2回押しで実行）
+            float gap = W * 0.03f;
+            float half = (W - pad * 2f - gap) * 0.5f;
+            ConfirmButton(new Rect(pad, bottomY, half, btnH), "points", "RESET POINTS", world.ResetPoints);
+            ConfirmButton(new Rect(pad + half + gap, bottomY, half, btnH), "level", "RESET LEVEL", world.ResetLevel);
+        }
+
+        void ConfirmButton(Rect r, string id, string text, System.Action action)
+        {
+            bool isArmed = armed == id && Time.unscaledTime < armedUntil;
+            var back = isArmed ? new Color(0.7f, 0.15f, 0.15f, 0.8f) : new Color(1f, 1f, 1f, 0.12f);
+            hud.Button(r, isArmed ? "TAP AGAIN" : text, back, hud.CenteredStyle, () =>
+            {
+                if (armed == id && Time.unscaledTime < armedUntil)
+                {
+                    armed = null;
+                    action();
+                }
+                else
+                {
+                    armed = id;
+                    armedUntil = Time.unscaledTime + 3f;
+                }
+            });
         }
     }
 }

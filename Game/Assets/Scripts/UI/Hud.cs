@@ -375,7 +375,7 @@ namespace VividOfFade
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh), spec.Line2, small);
                 var ch = Profile.Get(type);
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh * 2f, tw, lh),
-                    $"Lv {ch.Level}   Main: {Attributes.ShortName(spec.MainAttr)}   Weapon: {ClassInfo.Weapon(spec.Starter).Name}", small);
+                    $"Lv {ch.Level}   Main: {Attributes.ShortName(spec.MainAttr)} / {Attributes.ShortName(spec.SubAttr)}   Weapon: {ClassInfo.Weapon(spec.Starter).Name}", small);
                 y += bh + gap;
             }
         }

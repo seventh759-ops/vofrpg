@@ -46,6 +46,8 @@ namespace VividOfFade
         public float DodgeNovaMult;       // 回避したときの炎（攻撃力に対する倍率）
         public float DoubleStrikeChance;
         public float LifeSteal;           // 与えたダメージのうち回復する割合
+        public float DamageTaken = 1f;    // 受けるダメージの倍率
+        public float DodgeCooldown;
 
         public float AttacksPerSecond => 1f / FireInterval;
 
@@ -166,6 +168,7 @@ namespace VividOfFade
             int vit = s.Attr[(int)VividOfFade.Attr.Vit];
             int wis = s.Attr[(int)VividOfFade.Attr.Wis];
             int main = s.Attr[(int)cls.MainAttr];
+            int sub = s.Attr[(int)cls.SubAttr];
 
             s.MaxHp = cls.BaseHp + vit * 8 + (ch.Level - 1) * 6 + bonusHp;
             s.MaxMp = 20 + intel * 3 + wis * 4 + (ch.Level - 1) * 2 + bonusMp;
@@ -178,7 +181,9 @@ namespace VividOfFade
             var w = ClassInfo.Weapon(kind);
             s.Kind = w.Attack;
             s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
-            s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f);
+            s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f + sub * 0.01f);
+            s.DamageTaken = cls.DamageTaken;
+            s.DodgeCooldown = GameConfig.DodgeCooldown * cls.DodgeCooldownMult;
             s.FireInterval = w.Interval / (1f + atkSpd);
             s.MoveSpeed = cls.Speed * (1f + moveSpd);
             s.CritChance = Mathf.Min(s.CritChance + w.CritBonus, 0.75f);
@@ -198,11 +203,11 @@ namespace VividOfFade
                     break;
                 case AttackKind.Orbit:
                     s.Orbs = w.Orbs + extra;
-                    s.OrbitRadius = 0.8f + s.Light * 0.15f;
+                    s.OrbitRadius = 1f + s.Light * 0.15f;
                     s.OrbitSpeed = w.OrbitSpeed * (1f + atkSpd);
                     break;
                 case AttackKind.Pulse:
-                    s.PulseRadius = 1f + s.Light * 0.2f + 0.3f * extra;
+                    s.PulseRadius = 1.6f + s.Light * 0.25f + 0.3f * extra;
                     break;
             }
             s.Shots = Mathf.Max(1, s.Shots);

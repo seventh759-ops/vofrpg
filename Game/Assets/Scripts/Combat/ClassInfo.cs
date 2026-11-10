@@ -18,7 +18,10 @@ namespace VividOfFade
         public string Line2;
         public int BaseHp;              // 体力の土台（VIT とレベルで増える）
         public int[] BaseStats;         // 能力値の初期値（STR, DEX, INT, VIT, WIS）
-        public Attr MainAttr;           // 攻撃力が伸びる能力値。武器の必要条件にも使う
+        public Attr MainAttr;           // 攻撃力が伸びる能力値（1ポイントで +2%）。武器の必要条件にも使う
+        public Attr SubAttr;            // 攻撃力が少し伸びる能力値（1ポイントで +1%）
+        public float DamageTaken = 1f;  // 受けるダメージの倍率
+        public float DodgeCooldownMult = 1f;
         public float Speed;
         public float BaseLight;
         public float Crit;
@@ -68,7 +71,7 @@ namespace VividOfFade
                 Type = ClassType.Lampwright, Name = "Lampwright",
                 Line1 = "Hurls fire from afar.",
                 Line2 = "Stronger with wide light.",
-                BaseHp = 50, BaseStats = new[] { 4, 6, 12, 6, 8 }, MainAttr = Attr.Int,
+                BaseHp = 50, BaseStats = new[] { 4, 6, 12, 6, 8 }, MainAttr = Attr.Int, SubAttr = Attr.Wis,
                 Speed = 4.5f, BaseLight = 3f, Crit = 0.05f, Armor = 0f,
                 Starter = WeaponKind.Wand,
                 Weapons = new[] { WeaponKind.Wand, WeaponKind.Repeater, WeaponKind.Fan },
@@ -78,7 +81,8 @@ namespace VividOfFade
                 Type = ClassType.Shadeblade, Name = "Shadeblade",
                 Line1 = "Cuts down crowds up close.",
                 Line2 = "Fast, sharp, fragile.",
-                BaseHp = 60, BaseStats = new[] { 12, 10, 3, 7, 4 }, MainAttr = Attr.Str,
+                BaseHp = 60, BaseStats = new[] { 12, 10, 3, 7, 4 }, MainAttr = Attr.Str, SubAttr = Attr.Dex,
+                DamageTaken = 0.8f, DodgeCooldownMult = 0.7f, // 近接で張り付く分、打たれ強く、よく避けられる
                 Speed = 5.2f, BaseLight = 2.5f, Crit = 0.1f, Armor = 0f,
                 Starter = WeaponKind.Sword,
                 Weapons = new[] { WeaponKind.Sword, WeaponKind.Dagger, WeaponKind.Greatblade },
@@ -88,8 +92,8 @@ namespace VividOfFade
                 Type = ClassType.Warden, Name = "Warden",
                 Line1 = "Circling lights burn all near.",
                 Line2 = "Slow but very tough.",
-                BaseHp = 80, BaseStats = new[] { 6, 4, 6, 12, 10 }, MainAttr = Attr.Wis,
-                Speed = 4f, BaseLight = 3f, Crit = 0.05f, Armor = 15f,
+                BaseHp = 80, BaseStats = new[] { 6, 4, 6, 12, 10 }, MainAttr = Attr.Wis, SubAttr = Attr.Vit,
+                Speed = 4.4f, BaseLight = 3f, Crit = 0.05f, Armor = 15f,
                 Starter = WeaponKind.Censer,
                 Weapons = new[] { WeaponKind.Censer, WeaponKind.Chain, WeaponKind.Brazier },
             },
@@ -107,19 +111,19 @@ namespace VividOfFade
 
             // 影刃：斬撃
             { WeaponKind.Sword, new WeaponSpec { Kind = WeaponKind.Sword, Class = ClassType.Shadeblade, Name = "Sword", Desc = "Wide slash",
-                Attack = AttackKind.Slash, BaseDamage = 12f, Interval = 0.4f, Reach = 1.45f, Arc = 120f, MaxTargets = 4 } },
+                Attack = AttackKind.Slash, BaseDamage = 12f, Interval = 0.4f, Reach = 1.8f, Arc = 120f, MaxTargets = 4 } },
             { WeaponKind.Dagger, new WeaponSpec { Kind = WeaponKind.Dagger, Class = ClassType.Shadeblade, Name = "Dagger", Desc = "Quick stabs, more crits",
-                Attack = AttackKind.Slash, BaseDamage = 8f, Interval = 0.2f, Reach = 1.2f, Arc = 70f, CritBonus = 0.1f, MaxTargets = 2 } },
+                Attack = AttackKind.Slash, BaseDamage = 8f, Interval = 0.2f, Reach = 1.5f, Arc = 70f, CritBonus = 0.1f, MaxTargets = 2 } },
             { WeaponKind.Greatblade, new WeaponSpec { Kind = WeaponKind.Greatblade, Class = ClassType.Shadeblade, Name = "Greatblade", Desc = "Slow, huge sweep",
-                Attack = AttackKind.Slash, BaseDamage = 24f, Interval = 0.7f, Reach = 1.8f, Arc = 180f, MaxTargets = 6 } },
+                Attack = AttackKind.Slash, BaseDamage = 24f, Interval = 0.7f, Reach = 2.2f, Arc = 180f, MaxTargets = 6 } },
 
             // 灯番：回る灯り・周りを焼く
             { WeaponKind.Censer, new WeaponSpec { Kind = WeaponKind.Censer, Class = ClassType.Warden, Name = "Censer", Desc = "2 circling flames",
-                Attack = AttackKind.Orbit, BaseDamage = 8f, Interval = 0.25f, Orbs = 2, OrbitSpeed = 3f } },
+                Attack = AttackKind.Orbit, BaseDamage = 11f, Interval = 0.25f, Orbs = 2, OrbitSpeed = 3f } },
             { WeaponKind.Chain, new WeaponSpec { Kind = WeaponKind.Chain, Class = ClassType.Warden, Name = "Chain Lamps", Desc = "4 fast flames",
-                Attack = AttackKind.Orbit, BaseDamage = 5f, Interval = 0.2f, Orbs = 4, OrbitSpeed = 4.5f } },
+                Attack = AttackKind.Orbit, BaseDamage = 7f, Interval = 0.2f, Orbs = 4, OrbitSpeed = 4.5f } },
             { WeaponKind.Brazier, new WeaponSpec { Kind = WeaponKind.Brazier, Class = ClassType.Warden, Name = "Brazier", Desc = "Burning pulse around you",
-                Attack = AttackKind.Pulse, BaseDamage = 12f, Interval = 0.5f } },
+                Attack = AttackKind.Pulse, BaseDamage = 15f, Interval = 0.5f } },
         };
 
         public static ClassSpec Get(ClassType type) => classes[(int)type];
