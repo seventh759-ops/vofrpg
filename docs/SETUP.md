@@ -31,7 +31,7 @@ git checkout claude/brave-brahmagupta-dnbh9z
 | File → Build Profiles | **Android** を選んで「Switch Platform」 |
 | Edit → Project Settings → Player → Resolution and Presentation | Default Orientation：**Portrait** |
 | Edit → Project Settings → Player → Other Settings | Active Input Handling：**Input System Package (New)**（「Both」でも動く） |
-| Edit → Project Settings → Player | Company Name・Product Name を入れる（Product Name は仮で「Himori」など） |
+| Edit → Project Settings → Player | Company Name・Product Name を入れる（Product Name は「Vivid of Fade」） |
 | Game ビューの解像度 | 「+」で **1080×2340（縦）** を追加して選ぶ |
 | Window → Package Manager | **Input System** と **2D Pixel Perfect**（2D の中に含まれている場合あり）が入っていることを確認 |
 
