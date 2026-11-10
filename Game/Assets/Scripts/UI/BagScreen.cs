@@ -65,7 +65,7 @@ namespace VividOfFade
             y += cell + lineH + H * 0.015f;
             const int cols = 6;
             float bcell = (W - pad * 2f - gap * (cols - 1)) / cols;
-            var current = world.Player.Stats;
+            var current = world.Player.BaseStats; // スキルの強化を含まない能力で比べる
             for (int i = 0; i < Inventory.BagCapacity; i++)
             {
                 var r = new Rect(pad + (i % cols) * (bcell + gap), y + (i / cols) * (bcell + gap), bcell, bcell);
@@ -110,7 +110,7 @@ namespace VividOfFade
             DrawDescription(item, new Rect(area.x, area.y, area.width * 0.55f, area.height), world);
 
             var candidate = BestCandidate(inv, item, out var slot);
-            DrawComparison(world.Player.Stats, candidate, new Rect(area.x + area.width * 0.57f, area.y, area.width * 0.43f, area.height));
+            DrawComparison(world.Player.BaseStats, candidate, new Rect(area.x + area.width * 0.57f, area.y, area.width * 0.43f, area.height));
 
             float W = Screen.width;
             var centered = hud.CenteredStyle;
