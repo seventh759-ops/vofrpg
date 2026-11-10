@@ -63,5 +63,12 @@ namespace VividOfFade
         public static int FountainEmberOrbs(int wave) => Mathf.Min(6 + wave, 16);
         public static int EmberAmount(int wave) => 1 + wave / 10;
         public const float FountainRarityBonus = 0.6f;
+
+        /// <summary>
+        /// 落ちる装備のレベル。波の数が基本だが、自分のレベル＋3 を上限にする
+        /// （レベルが波に追いつかなくなっても、付けられる装備が落ち続けるように）。
+        /// </summary>
+        public const int DropLevelAhead = 3;
+        public static int DropLevel(int wave, int characterLevel) => Mathf.Clamp(wave, 1, characterLevel + DropLevelAhead);
     }
 }

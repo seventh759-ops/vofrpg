@@ -166,7 +166,7 @@ namespace VividOfFade
         {
             if (Waves.Wave <= rewardedWave || !Waves.SpawningDone || Enemies.Active.Count > 0) return;
             rewardedWave = Waves.Wave;
-            Loot.Fountain(lastKillPos, Room, GameConfig.FountainItems(Waves.Wave), Waves.Wave,
+            Loot.Fountain(lastKillPos, Room, GameConfig.FountainItems(Waves.Wave), DropLevel,
                 GameConfig.FountainRarityBonus, GameConfig.FountainEmberOrbs(Waves.Wave), GameConfig.EmberAmount(Waves.Wave));
             Fx.Ring(lastKillPos, 2.5f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.4f);
             Sfx.Fountain();
@@ -186,7 +186,7 @@ namespace VividOfFade
             GainExp(Progression.KillExp(Waves.Wave));
             var stats = Player.Stats;
 
-            if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(Waves.Wave, 0f), Room);
+            if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(DropLevel, 0f), Room);
             if (Random.value < GameConfig.EmberDropChance) Loot.DropEmbers(pos, GameConfig.EmberAmount(Waves.Wave), Room, 0.6f);
             if (stats.HealOnKill > 0) Player.Heal(stats.HealOnKill);
 
@@ -244,6 +244,8 @@ namespace VividOfFade
             reason = null;
             return true;
         }
+
+        int DropLevel => GameConfig.DropLevel(Waves.Wave, Profile.Current != null ? Profile.Current.Level : 1);
 
         void RefreshStats()
         {
