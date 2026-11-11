@@ -33,8 +33,8 @@ namespace VividOfFade
 
             int cost = Boons.Cost(world.Floors.Floor);
             int embers = world.Inventory.Embers;
-            GUI.Label(new Rect(0, H * 0.17f, W, H * 0.035f), Loc.T($"Offer {cost} embers for one boon   (you have {embers})", $"火種 {cost} で加護を1つ   （持っている火種 {embers}）"), centered);
-            GUI.Label(new Rect(0, H * 0.2f, W, H * 0.035f), Loc.T("Boons last until the run ends.", "加護はこの挑戦が終わるまで効きます。"), centered);
+            GUI.Label(new Rect(0, H * 0.17f, W, H * 0.035f), Loc.T($"Offer {cost} embers for one boon   (found this run: {embers})", $"火種 {cost} で加護を1つ   （今回拾った火種 {embers}）"), centered);
+            GUI.Label(new Rect(0, H * 0.2f, W, H * 0.035f), Loc.T("Only embers found this run can be offered. Boons last until the run ends.", "払えるのは今回拾った火種だけ。加護はこの挑戦が終わるまで効きます。"), centered);
 
             float y = H * 0.26f;
             float bh = H * 0.1f;
