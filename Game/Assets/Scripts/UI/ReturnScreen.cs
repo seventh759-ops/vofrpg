@@ -45,7 +45,7 @@ namespace VividOfFade
             title.normal.textColor = new Color(1f, 0.85f, 0.4f);
             float y = pad;
             int next = world.Floors.Floor + 1;
-            GUI.Label(new Rect(pad, y, W, lineH * 1.6f), Loc.T($"Stairs  -  Floor {world.Floors.Floor}", $"階段  -  {world.Floors.Floor}層"), title);
+            Hud.FitLabel(new Rect(pad, y, W, lineH * 1.6f), Loc.T($"Stairs  -  Floor {world.Floors.Floor}", $"階段  -  {world.Floors.Floor}層"), title);
             y += lineH * 1.8f;
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T($"Return home to keep your gear, or descend to floor {next}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), $"帰還して装備を持ち帰るか、{next}層へ下りるか" + (GameConfig.IsBossFloor(next) ? "（ボス）。" : "。")), small);
             y += lineH;

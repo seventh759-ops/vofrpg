@@ -29,7 +29,7 @@ namespace VividOfFade
             Hud.Fill(new Rect(0, 0, W, H), panel);
             var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
             title.normal.textColor = new Color(1f, 0.85f, 0.45f);
-            GUI.Label(new Rect(0, H * 0.1f, W, H * 0.06f), Loc.T("ALTAR", "祭壇"), title);
+            Hud.FitLabel(new Rect(0, H * 0.1f, W, H * 0.06f), Loc.T("ALTAR", "祭壇"), title);
 
             int cost = Boons.Cost(world.Floors.Floor);
             int embers = world.Inventory.Embers;

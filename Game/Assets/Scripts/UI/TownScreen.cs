@@ -70,7 +70,7 @@ namespace VividOfFade
 
             var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
             title.normal.textColor = new Color(1f, 0.85f, 0.45f);
-            GUI.Label(new Rect(0, H * 0.05f, W, H * 0.06f), Loc.T("TOWN", "町"), title);
+            Hud.FitLabel(new Rect(0, H * 0.05f, W, H * 0.06f), Loc.T("TOWN", "町"), title);
             GUI.Label(new Rect(0, H * 0.11f, W, H * 0.035f), $"{ClassTitle(type, ch)}   Lv {ch.Level}", centered);
             var info = new GUIStyle(centered) { fontSize = small.fontSize };
             info.normal.textColor = new Color(1f, 0.85f, 0.5f);
@@ -157,7 +157,7 @@ namespace VividOfFade
             var title = new GUIStyle(label) { fontStyle = FontStyle.Bold };
             float btnH = Screen.height * 0.045f;
             float btnW = W * 0.22f;
-            GUI.Label(new Rect(pad, pad, W - pad * 2f - btnW - W * 0.02f, btnH), titleText, title);
+            Hud.FitLabel(new Rect(pad, pad, W - pad * 2f - btnW - W * 0.02f, btnH), titleText, title);
             hud.Button(new Rect(W - pad - btnW, pad, btnW, btnH), Loc.T("BACK", "戻る"), row, hud.CenteredStyle, () => Open(Panel.Main));
             y = pad + btnH + Screen.height * 0.006f;
             var ember = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };

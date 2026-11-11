@@ -30,7 +30,7 @@ namespace VividOfFade
 
             Hud.Fill(new Rect(0, 0, W, H), panel);
             var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(0, H * 0.1f, W, H * 0.06f), Loc.T("MENU", "メニュー"), title);
+            Hud.FitLabel(new Rect(0, H * 0.1f, W, H * 0.06f), Loc.T("MENU", "メニュー"), title);
 
             var ch = Profile.Current;
             var inv = world.Inventory;

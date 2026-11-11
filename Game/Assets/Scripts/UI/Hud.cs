@@ -586,7 +586,7 @@ namespace VividOfFade
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0f, 0f, 0f, 0.6f));
             float h = Screen.height;
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 3, fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(0, h * 0.38f, Screen.width, h * 0.08f), Loc.T("GAME OVER", "力尽きた"), title);
+            Hud.FitLabel(new Rect(0, h * 0.38f, Screen.width, h * 0.08f), Loc.T("GAME OVER", "力尽きた"), title);
             GUI.Label(new Rect(0, h * 0.47f, Screen.width, h * 0.05f),
                 Loc.T($"FLOOR {World.Floors.Floor}   KILL {World.Enemies.Kills}   EMBERS {World.Inventory.Embers}", $"{World.Floors.Floor}層   撃破 {World.Enemies.Kills}   火種 {World.Inventory.Embers}"), centered);
             GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), Loc.T("Tap / Enter to continue", "タップか Enter で続ける"), centered);
@@ -625,7 +625,7 @@ namespace VividOfFade
             var spec = ClassInfo.Get(type);
 
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(0, H * 0.12f, W, H * 0.06f), Loc.T("Choose a starting floor", "始める層を選ぶ"), title);
+            Hud.FitLabel(new Rect(0, H * 0.12f, W, H * 0.06f), Loc.T("Choose a starting floor", "始める層を選ぶ"), title);
             GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T($"{spec.DisplayName}   Lv {ch.Level}   Best floor {ch.BestFloor}", $"{spec.DisplayName}   Lv {ch.Level}   最深 {ch.BestFloor}層"), centered);
 
             var floors = GameWorld.Checkpoints(ch);
@@ -669,7 +669,7 @@ namespace VividOfFade
 
             var title = new GUIStyle(centered) { fontSize = Mathf.RoundToInt(label.fontSize * 2.6f), fontStyle = FontStyle.Bold };
             title.normal.textColor = new Color(1f, 0.88f, 0.55f);
-            GUI.Label(new Rect(0, H * 0.24f, W, H * 0.08f), "VIVID OF FADE", title);
+            Hud.FitLabel(new Rect(0, H * 0.24f, W, H * 0.08f), "VIVID OF FADE", title);
             var sub = new GUIStyle(centered);
             sub.normal.textColor = new Color(0.8f, 0.78f, 0.9f);
             GUI.Label(new Rect(0, H * 0.32f, W, H * 0.04f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
@@ -699,7 +699,7 @@ namespace VividOfFade
             Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.75f));
 
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(0, H * 0.12f, W, H * 0.06f), "VIVID OF FADE", title);
+            Hud.FitLabel(new Rect(0, H * 0.12f, W, H * 0.06f), "VIVID OF FADE", title);
             GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T("Choose your class", "職業を選ぶ"), centered);
 
             float pad = W * 0.08f;
@@ -777,6 +777,16 @@ namespace VividOfFade
         }
 
         public static Rect ToGui(Rect r) => new Rect(r.x, Screen.height - r.y - r.height, r.width, r.height);
+
+        /// <summary>1行に収まるよう、必要なら文字を小さくして描く（長い見出しが折り返して切れないように）。</summary>
+        public static void FitLabel(Rect guiRect, string text, GUIStyle style)
+        {
+            var s = new GUIStyle(style) { wordWrap = false, clipping = TextClipping.Overflow };
+            var content = new GUIContent(text);
+            float max = guiRect.width * 0.94f;
+            while (s.fontSize > 8 && s.CalcSize(content).x > max) s.fontSize--;
+            GUI.Label(guiRect, content, s);
+        }
 
         public static void Fill(Rect guiRect, Color color)
         {
