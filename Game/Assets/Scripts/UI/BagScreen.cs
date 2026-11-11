@@ -391,14 +391,19 @@ namespace VividOfFade
                 (Loc.T("HP regen", "体力回復"), now.HpRegen, after.HpRegen, "0.0", ""),
                 (Loc.T("MP regen", "MP回復"), now.MpRegen, after.MpRegen, "0.0", ""),
             };
-            // 能力値は変わるものだけ
+            // 能力値は変わるものだけを、最後の1行にまとめる（品によって行の数・高さが変わらないように）
+            var attrLine = new System.Text.StringBuilder();
             for (int i = 0; i < Attributes.Count; i++)
             {
-                if (now.Attr[i] != after.Attr[i]) rows.Add((Attributes.ShortName((Attr)i), now.Attr[i], after.Attr[i], "0", ""));
+                int d = after.Attr[i] - now.Attr[i];
+                if (d == 0) continue;
+                if (attrLine.Length > 0) attrLine.Append("   ");
+                attrLine.Append(Attributes.ShortName((Attr)i)).Append(d > 0 ? " +" : " ").Append(d);
             }
 
             var small = hud.SmallStyle;
-            float rowH = Mathf.Min(small.fontSize * 1.45f, area.height / (rows.Count + 1));
+            // 行の高さはいつも同じ（見出し＋12項目＋能力値の1行）
+            float rowH = Mathf.Min(small.fontSize * 1.45f, area.height / (rows.Count + 2));
             var head = new GUIStyle(small) { alignment = TextAnchor.MiddleRight };
             head.normal.textColor = new Color(0.65f, 0.65f, 0.7f);
             float c0 = area.width * 0.36f, c1 = area.width * 0.2f, c2 = area.width * 0.22f, c3 = area.width * 0.22f;
@@ -426,6 +431,12 @@ namespace VividOfFade
                     GUI.Label(new Rect(area.x + c0 + c1 + c2, y, c3 - area.width * 0.02f, rowH), (d > 0f ? "+" : "") + d.ToString(r.fmt) + r.unit, diff);
                 }
                 y += rowH;
+            }
+            if (attrLine.Length > 0 && y + rowH <= area.yMax + 0.5f)
+            {
+                var attrStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
+                attrStyle.normal.textColor = new Color(1f, 0.85f, 0.5f);
+                Hud.FitLabel(new Rect(area.x + area.width * 0.02f, y, area.width * 0.96f, rowH), attrLine.ToString(), attrStyle);
             }
         }
 
