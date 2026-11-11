@@ -86,27 +86,35 @@ namespace VividOfFade
             hud.Button(new Rect(pad, y, bw, bh), Loc.T("DEPART  -  into the tower", "出撃  -  塔へ"), new Color(0.2f, 0.5f, 0.25f, 0.85f), centered, world.Depart);
             y += bh + gap * 1.5f;
 
-            NpcRow(new Rect(pad, y, bw, bh), Loc.T("Storage Keeper", "倉庫番"),
-                Loc.T($"Storage {Profile.Storage.Count}/{Town.StorageCapacity} (all classes)   Bring {ch.Stash.Count}/{Inventory.BagCapacity}", $"倉庫 {Profile.Storage.Count}/{Town.StorageCapacity}（全職業）   持ち込み {ch.Stash.Count}/{Inventory.BagCapacity}"),
-                () => Open(Panel.Storage));
-            y += bh + gap;
-            NpcRow(new Rect(pad, y, bw, bh), Loc.T("Merchant", "商人"), Loc.T("Potions and gear for embers", "薬と装備を火種で売る"), () => Open(Panel.Merchant));
-            y += bh + gap;
+            // 施設はアイコンのタイル（3列×2段）。6つ目は「職業を変える」
             var adv = AdvancedClasses.Of(type, ch);
-            string masterLine = adv != null ? Loc.T($"Advanced class: {adv.DisplayName}", $"上位職：{adv.DisplayName}")
-                : ch.Level >= AdvancedClasses.ReqLevel ? Loc.T("You can change class now!", "転職できる！")
-                : Loc.T($"Advanced class from Lv {AdvancedClasses.ReqLevel}", $"Lv{AdvancedClasses.ReqLevel}から上位職へ転職");
-            NpcRow(new Rect(pad, y, bw, bh), Loc.T("Master", "転職の師匠"), masterLine, () => Open(Panel.Master),
-                adv == null && ch.Level >= AdvancedClasses.ReqLevel);
-            y += bh + gap;
-            NpcRow(new Rect(pad, y, bw, bh), Loc.T("Porter", "荷運び"),
-                Loc.T($"Carry home {ch.CarrySlots}/{Town.MaxCarrySlots} new items", $"持ち帰り枠 {ch.CarrySlots}/{Town.MaxCarrySlots}"), () => Open(Panel.Porter));
-            y += bh + gap;
-            NpcRow(new Rect(pad, y, bw, bh), Loc.T("Blacksmith", "鍛冶屋"),
-                Loc.T("Enhance Mythic gear (+15) and reroll its effects", "神話（赤）装備の強化と、効果の再抽選"), () => Open(Panel.Smith));
-            y += bh + gap * 1.5f;
-
-            hud.Button(new Rect(pad, y, bw, H * 0.05f), Loc.T("Change class", "職業を変える"), dim, centered, world.ShowClassSelect);
+            bool masterNotice = (adv == null && ch.Level >= AdvancedClasses.ReqLevel) || ThirdClasses.MeetsRequirements(ch);
+            string masterLine = ch.Third ? Loc.T("Reborn", "転生ずみ")
+                : adv != null ? (ThirdClasses.MeetsRequirements(ch) ? Loc.T("Rebirth ready!", "転生できる！") : Loc.T("Rebirth: Lv99 / F100", "転生：Lv99・100層"))
+                : ch.Level >= AdvancedClasses.ReqLevel ? Loc.T("Class change!", "転職できる！")
+                : Loc.T($"From Lv {AdvancedClasses.ReqLevel}", $"Lv{AdvancedClasses.ReqLevel}から");
+            const int cols = 3;
+            float tgap = W * 0.03f;
+            float tw = (bw - tgap * (cols - 1)) / cols;
+            float th = Mathf.Min(tw * 1.1f, H * 0.17f);
+            void Tile(int i, Sprite icon, string name, string line, System.Action onTap, bool notice = false)
+            {
+                var r = new Rect(pad + (i % cols) * (tw + tgap), y + (i / cols) * (th + tgap), tw, th);
+                hud.Button(r, null, notice ? gold : row, centered, onTap);
+                float size = Mathf.Min(r.width * 0.5f, r.height * 0.48f);
+                Hud.DrawSprite(new Rect(r.x + (r.width - size) * 0.5f, r.y + r.height * 0.08f, size, size), icon);
+                var nameStyle = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+                Hud.FitLabel(new Rect(r.x, r.y + r.height * 0.6f, r.width, r.height * 0.2f), name, nameStyle);
+                var lineStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+                lineStyle.normal.textColor = new Color(0.8f, 0.8f, 0.85f);
+                Hud.FitLabel(new Rect(r.x, r.y + r.height * 0.79f, r.width, r.height * 0.17f), line, lineStyle);
+            }
+            Tile(0, PixelArt.TownIcon(0), Loc.T("Storage", "倉庫番"), $"{Profile.Storage.Count}/{Town.StorageCapacity}", () => Open(Panel.Storage));
+            Tile(1, PixelArt.TownIcon(1), Loc.T("Merchant", "商人"), Loc.T("Potions / gear", "薬・装備"), () => Open(Panel.Merchant));
+            Tile(2, PixelArt.TownIcon(2), Loc.T("Master", "師匠"), masterLine, () => Open(Panel.Master), masterNotice);
+            Tile(3, PixelArt.TownIcon(3), Loc.T("Porter", "荷運び"), Loc.T($"Carry {ch.CarrySlots}/{Town.MaxCarrySlots}", $"持ち帰り {ch.CarrySlots}/{Town.MaxCarrySlots}"), () => Open(Panel.Porter));
+            Tile(4, PixelArt.TownIcon(4), Loc.T("Blacksmith", "鍛冶屋"), Loc.T("Mythic only", "神話（赤）だけ"), () => Open(Panel.Smith));
+            Tile(5, PixelArt.PlayerFor(type), Loc.T("Class", "職業"), Loc.T("Change", "変える"), world.ShowClassSelect);
 
             // 案内役（左下）
             float gs = W * 0.2f;
@@ -133,17 +141,6 @@ namespace VividOfFade
             if (ch.HpPotions == 0)
                 return Loc.T("No potions? The merchant has some.", "薬がないのかい？ 商人が売ってるよ。");
             return Loc.T("Ready? The tower is waiting.", "準備はいいかい？ 塔が待ってる。");
-        }
-
-        void NpcRow(Rect r, string name, string line, System.Action onTap, bool highlight = false)
-        {
-            hud.Button(r, null, highlight ? gold : row, hud.CenteredStyle, onTap);
-            float inner = r.height * 0.12f;
-            var nameStyle = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(r.x + inner * 2f, r.y + inner, r.width, r.height * 0.45f), name, nameStyle);
-            var lineStyle = new GUIStyle(hud.SmallStyle);
-            lineStyle.normal.textColor = new Color(0.8f, 0.8f, 0.85f);
-            Hud.FitLabel(new Rect(r.x + inner * 2f, r.y + r.height * 0.5f, r.width - inner * 3f, r.height * 0.45f), line, lineStyle); // 折り返さない
         }
 
         void Open(Panel p)

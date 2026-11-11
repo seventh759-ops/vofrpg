@@ -589,6 +589,103 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>町の施設のアイコン（12ドット）。0 倉庫番・1 商人・2 師匠・3 荷運び・4 鍛冶屋。</summary>
+        public static Sprite TownIcon(int index)
+        {
+            index = Mathf.Clamp(index, 0, TownIconRows.Length - 1);
+            return FromArt("Town" + index, TownIconRows[index], TownIconPalette);
+        }
+
+        static readonly Dictionary<char, Color32> TownIconPalette = new Dictionary<char, Color32>
+        {
+            { 'a', new Color32(255, 210, 90, 255) },
+            { 'b', new Color32(150, 95, 50, 255) },
+            { 'w', new Color32(255, 250, 235, 255) },
+            { 's', new Color32(190, 200, 215, 255) },
+            { 'p', new Color32(140, 90, 200, 255) },
+            { 'g', new Color32(90, 160, 90, 255) },
+            { 'k', new Color32(70, 70, 84, 255) },
+        };
+
+        static readonly string[][] TownIconRows =
+        {
+            new[] // Storage
+            {
+                "............",
+                "..aaaaaaaa..",
+                ".abbbbbbbba.",
+                ".abbbbbbbba.",
+                ".aaaaawaaaa.",
+                ".abbbbwbbba.",
+                ".abbbbbbbba.",
+                ".abbbbbbbba.",
+                ".aaaaaaaaaa.",
+                "............",
+                "............",
+                "............",
+            },
+            new[] // Merchant
+            {
+                "............",
+                ".....aa.....",
+                "....a..a....",
+                ".....bb.....",
+                "....bbbb....",
+                "...bbbbbb...",
+                "..bbbwabbb..",
+                "..bbbaabbb..",
+                "..bbbbbbbb..",
+                "...bbbbbb...",
+                "............",
+                "............",
+            },
+            new[] // Master
+            {
+                "............",
+                "..pppppppp..",
+                "..pppppppp..",
+                "..ppppappp..",
+                "..pppaaapp..",
+                "..ppaaaaap..",
+                "..pppaaapp..",
+                "..ppapppap..",
+                "..pppppppp..",
+                "..wwwwwwww..",
+                "............",
+                "............",
+            },
+            new[] // Porter
+            {
+                "............",
+                ".....bb.....",
+                "....b..b....",
+                "...gggggg...",
+                "..gggggggg..",
+                "..gggaaggg..",
+                "..gggggggg..",
+                "..ggkkkkgg..",
+                "..gggggggg..",
+                "...gggggg...",
+                "............",
+                "............",
+            },
+            new[] // Smith
+            {
+                "............",
+                ".......ss...",
+                "......ss....",
+                ".....bs.....",
+                "....b.......",
+                "...b........",
+                "..ssssssss..",
+                "...ssssss...",
+                "....ssss....",
+                "...kkkkkk...",
+                "..kkkkkkkk..",
+                "............",
+            },
+        };
+
         /// <summary>加護のアイコン（12ドット。Boons の表と同じ順）。a=主の色 b=影 w=光。</summary>
         public static Sprite BoonIcon(int index)
         {
