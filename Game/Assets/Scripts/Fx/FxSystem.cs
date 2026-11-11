@@ -23,7 +23,7 @@ namespace VividOfFade
 
         // レベルアップの羽（頭の上で開いて、上がりながら消える）
         public const float LevelUpDuration = 1.5f;
-        const float WingOpacity = 0.55f; // 羽は半透明（後ろのキャラクターや文字が透けて見える）
+        const float WingOpacity = 0.7f; // 羽は半透明（後ろのキャラクターや文字が透けて見える）
         /// <summary>羽を付ける位置（プレイヤーの論理座標）。GameWorld が毎フレーム入れる。</summary>
         public Vector2 Anchor;
         Transform wingRoot;
@@ -48,8 +48,8 @@ namespace VividOfFade
                     wings[i].sprite = PixelArt.Wing;
                     Lighting.MakeGlow(wings[i]);
                 }
-                hinges[0].localPosition = new Vector3(-0.08f, 0f, 0f);
-                hinges[1].localPosition = new Vector3(0.08f, 0f, 0f);
+                hinges[0].localPosition = new Vector3(-0.22f, 0f, 0f);
+                hinges[1].localPosition = new Vector3(0.22f, 0f, 0f);
             }
             wingRoot.gameObject.SetActive(true);
             wingT = 0f;
@@ -71,7 +71,7 @@ namespace VividOfFade
             open = 1f - (1f - open) * (1f - open) * (1f - open); // 勢いよく開いて、ゆっくり止まる
             float flap = wingT > openTime ? Mathf.Sin((wingT - openTime) * 14f) * 8f * Mathf.Clamp01(1f - (wingT - openTime) * 1.2f) : 0f;
             float angle = Mathf.Lerp(75f, -18f, open) + flap; // 下に畳んだ形から、少し上向きに広げる
-            float scale = Mathf.Lerp(0.45f, 0.85f, open);
+            float scale = Mathf.Lerp(0.6f, 1.2f, open);
             float rise = wingT > fadeFrom ? (wingT - fadeFrom) * 0.8f : 0f;
             float alpha = wingT > fadeFrom ? 1f - (wingT - fadeFrom) / (LevelUpDuration - fadeFrom) : 1f;
 
