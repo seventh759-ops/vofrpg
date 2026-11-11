@@ -466,7 +466,9 @@ namespace VividOfFade
             AltarOpen = false;
             Fx.Ring(Player.Pos, 2f, new Color(1f, 0.8f, 0.4f, 0.9f), 0.5f);
             Sfx.Landed(Rarity.Legendary);
-            Hud.Toast(Loc.T($"Boon: {Boons.Get(boon).DisplayName}", $"加護：{Boons.Get(boon).DisplayName}"), new Color(1f, 0.85f, 0.5f));
+            int stacks = 0;
+            foreach (int b in Player.Boons) if (b == boon) stacks++;
+            Hud.ShowBoonGet(boon, stacks);
         }
 
         /// <summary>次の層へ。地面に残ったドロップは拾える分だけ拾ってから下りる。</summary>

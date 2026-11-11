@@ -215,6 +215,47 @@ namespace VividOfFade
 
         float levelUpTime = -1f;
 
+        // 加護を得たときの表示（画面の上寄りにアイコン・名前・説明。少しして消える）
+        const float BoonGetLife = 2.5f;
+        int boonGetIndex;
+        int boonGetStacks;
+        float boonGetTime = -1f;
+
+        public void ShowBoonGet(int boon, int stacks)
+        {
+            boonGetIndex = boon;
+            boonGetStacks = stacks;
+            boonGetTime = 0f;
+        }
+
+        void DrawBoonGet()
+        {
+            if (boonGetTime < 0f) return;
+            float t = boonGetTime;
+            float alpha = Mathf.Clamp01(t / 0.15f) * Mathf.Clamp01((BoonGetLife - t) / 0.5f);
+            float W = Screen.width, H = Screen.height;
+            var spec = Boons.Get(boonGetIndex);
+            float boxW = W * 0.84f, boxH = H * 0.09f;
+            float pop = 1f + 0.08f * Mathf.Clamp01(1f - t / 0.2f);
+            var box = new Rect((W - boxW * pop) * 0.5f, H * 0.2f, boxW * pop, boxH * pop);
+            Fill(box, new Color(0.08f, 0.06f, 0.12f, 0.85f * alpha));
+            Fill(new Rect(box.x, box.y, box.width, box.height * 0.04f), new Color(1f, 0.8f, 0.35f, alpha));
+            var old = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+            float icon = box.height * 0.75f;
+            DrawSprite(new Rect(box.x + box.height * 0.15f, box.y + box.height * 0.13f, icon, icon), PixelArt.BoonIcon(boonGetIndex));
+            GUI.color = old;
+            float tx = box.x + box.height * 0.15f + icon + box.width * 0.03f;
+            float tw = box.xMax - tx - box.width * 0.03f;
+            var title = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            title.normal.textColor = new Color(1f, 0.88f, 0.5f, alpha);
+            string n = boonGetStacks > 1 ? $"{spec.DisplayName} x{boonGetStacks}" : spec.DisplayName;
+            FitLabel(new Rect(tx, box.y + box.height * 0.08f, tw, box.height * 0.45f), Loc.T("Boon: ", "加護：") + n, title);
+            var desc = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+            desc.normal.textColor = new Color(1f, 1f, 1f, alpha);
+            FitLabel(new Rect(tx, box.y + box.height * 0.5f, tw, box.height * 0.42f), spec.DisplayDesc, desc);
+        }
+
         /// <summary>頭の上の羽の間に「LV UP」を出す（羽と一緒に上がりながら消える）。</summary>
         public void ShowLevelUp() => levelUpTime = 0f;
 
@@ -293,6 +334,7 @@ namespace VividOfFade
             float dt = Time.unscaledDeltaTime;
             if (dt > 0f) fps = Mathf.Lerp(fps, 1f / dt, 0.05f);
             if (bannerTime >= 0f) bannerTime += dt;
+            if (boonGetTime >= 0f && World != null && !World.Paused && (boonGetTime += dt) >= BoonGetLife) boonGetTime = -1f;
             if (levelUpTime >= 0f && World != null && !World.Paused && (levelUpTime += dt) >= FxSystem.LevelUpDuration) levelUpTime = -1f;
 
             for (int i = numbers.Count - 1; i >= 0; i--)
@@ -324,6 +366,7 @@ namespace VividOfFade
             {
                 DrawNumbers();
                 DrawLevelUp();
+                DrawBoonGet();
                 DrawEliteLabels();
                 DrawHud();
             }
