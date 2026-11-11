@@ -25,6 +25,9 @@ namespace VividOfFade
         /// </summary>
         public static Sprite PlayerFor(ClassType type)
         {
+            // 上位職なら、その見た目（色を変えて、目印の小物を足す）
+            var ch = Profile.Get(type);
+            if (ch != null && ch.Advanced >= 0) return AdvancedLook(type, ch.Advanced);
             switch (type)
             {
                 case ClassType.Shadeblade: return Shaded("PlayerHd_Shadeblade", ShadebladeHdRows);
@@ -49,13 +52,83 @@ namespace VividOfFade
             { 'e', Ramp(30, 22, 40, 30, 22, 40, 30, 22, 40, 30, 22, 40) },              // 目
         };
 
-        /// <summary>影を付けずに光らせる素材（ランタン・香炉の火）。</summary>
+        /// <summary>影を付けずに光らせる素材（ランタン・香炉の火、上位職の光る刃・光輪）。</summary>
         static readonly Dictionary<char, Color32> glows = new Dictionary<char, Color32>
         {
             { 'l', new Color32(255, 230, 130, 255) },
             { 'L', new Color32(255, 170, 60, 255) },
             { 'o', new Color32(255, 250, 220, 255) },
+            { 'p', new Color32(200, 130, 255, 255) }, // 紫に光る刃
+            { 'R', new Color32(255, 70, 80, 255) },   // 赤く光る刃
         };
+
+        /// <summary>
+        /// 上位職の見た目。元の職業の絵をもとに、服の色を変え（overrides）、目印の小物を描き足す（paints）。
+        /// どれもこのゲーム用のオリジナルの意匠。
+        /// </summary>
+        static Sprite AdvancedLook(ClassType type, int index)
+        {
+            string key = $"PlayerHd_{type}_Adv{index}";
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            switch (type)
+            {
+                case ClassType.Lampwright when index == 0: // 炎呼び：深紅のローブと金の縁、燃える頭巾の先、橙の火のランタン
+                    return Shaded(key, Edit(LampwrightHdRows, c => c == 'l' ? 'L' : c,
+                            (0, 14, "oL"), (1, 14, "LL"), (2, 14, "LLc")),
+                        Over(('c', Ramp(220, 70, 70, 176, 40, 48, 128, 26, 34, 88, 16, 24)), ('d', Ramp(255, 214, 110, 214, 160, 56, 160, 110, 30, 110, 72, 18))));
+                case ClassType.Lampwright: // 灯台守：白と金のローブ、金の枠のランタン、頭の上の光
+                    return Shaded(key, Edit(LampwrightHdRows, c => c == 'm' ? 'g' : c,
+                            (0, 12, "o"), (0, 17, "o"), (1, 11, "l"), (1, 18, "l")),
+                        Over(('c', Ramp(250, 248, 236, 222, 216, 196, 178, 170, 150, 130, 122, 104)), ('d', Ramp(255, 230, 130, 226, 186, 72, 170, 130, 40, 120, 88, 24))));
+                case ClassType.Shadeblade when index == 0: // 夜狩り：紫がかった黒、角のある頭巾、紫に光る刃
+                    return Shaded(key, Edit(ShadebladeHdRows, c => c == 'm' ? 'p' : c,
+                            (2, 10, "n"), (3, 11, "n"), (4, 11, "n"), (2, 20, "n"), (3, 19, "n"), (4, 19, "n")),
+                        Over(('n', Ramp(110, 80, 150, 72, 50, 108, 50, 34, 78, 32, 22, 52)), ('r', Ramp(190, 120, 255, 150, 80, 220, 106, 52, 170, 72, 34, 120))));
+                case ClassType.Shadeblade: // 血刃：赤黒い服、赤く光る刃、長い襟巻き
+                    return Shaded(key, Edit(ShadebladeHdRows, c => c == 'm' ? 'R' : c,
+                            (12, 7, "rrrr"), (13, 6, "rr"), (14, 5, "r")),
+                        Over(('n', Ramp(120, 52, 62, 86, 34, 44, 60, 22, 30, 40, 14, 20))));
+                case ClassType.Warden when index == 0: // 陽縛り：金と白の陣羽織、頭の上の光輪、光る羽根飾り
+                    return Shaded(key, Edit(WardenHdRows, c => c == 'r' ? 'l' : c,
+                            (0, 12, "ooooooo")),
+                        Over(('v', Ramp(255, 244, 200, 236, 210, 120, 196, 160, 70, 140, 108, 40)), ('m', Ramp(255, 250, 230, 222, 214, 186, 170, 160, 130, 118, 110, 86))));
+                default: // 城壁：濃い青の鎧、左手に大きな盾
+                    return Shaded(key, Edit(WardenHdRows, c => c,
+                            (13, 1, "ggggg"),
+                            (14, 0, "gvvvvvg"), (15, 0, "gvvvvvg"), (16, 0, "gvvgvvg"), (17, 0, "gvgggvg"), (18, 0, "gvvgvvg"),
+                            (19, 0, "gvvgvvg"), (20, 0, "gvvvvvg"), (21, 0, "gvvvvvg"), (22, 0, "gvvvvvg"), (23, 1, "gvvvg"), (24, 2, "ggg")),
+                        Over(('m', Ramp(170, 190, 230, 110, 130, 176, 74, 90, 130, 46, 56, 86)), ('v', Ramp(70, 96, 170, 44, 64, 130, 30, 44, 94, 20, 28, 64))));
+            }
+        }
+
+        /// <summary>絵の文字を置き換え（map）、指定の位置に描き足した（paints）新しい絵を作る。</summary>
+        static string[] Edit(string[] src, System.Func<char, char> map, params (int y, int x, string s)[] paints)
+        {
+            var rows = new char[src.Length][];
+            for (int y = 0; y < src.Length; y++)
+            {
+                rows[y] = src[y].ToCharArray();
+                for (int x = 0; x < rows[y].Length; x++) rows[y][x] = map(rows[y][x]);
+            }
+            foreach (var p in paints)
+            {
+                for (int i = 0; i < p.s.Length; i++)
+                {
+                    int x = p.x + i;
+                    if (p.y >= 0 && p.y < rows.Length && x >= 0 && x < rows[p.y].Length && p.s[i] != ' ') rows[p.y][x] = p.s[i];
+                }
+            }
+            var result = new string[rows.Length];
+            for (int y = 0; y < rows.Length; y++) result[y] = new string(rows[y]);
+            return result;
+        }
+
+        static Dictionary<char, Color32[]> Over(params (char ch, Color32[] ramp)[] list)
+        {
+            var d = new Dictionary<char, Color32[]>();
+            foreach (var e in list) d[e.ch] = e.ramp;
+            return d;
+        }
 
         static Color32[] Ramp(params int[] v)
         {
@@ -68,7 +141,7 @@ namespace VividOfFade
         /// 部品で描いた絵に、濃淡と影と輪郭を付ける。光は左上から：
         /// 左か上が別の部品なら明るい縁、右か下が別の部品なら影、右下の角はさらに暗く、大きな面の右下寄りも暗くする。
         /// </summary>
-        static Sprite Shaded(string key, string[] rows)
+        static Sprite Shaded(string key, string[] rows, Dictionary<char, Color32[]> overrides = null)
         {
             if (cache.TryGetValue(key, out var cached)) return cached;
             int h = rows.Length, w = rows[0].Length;
@@ -94,7 +167,7 @@ namespace VividOfFade
                     {
                         c = glow;
                     }
-                    else if (ramps.TryGetValue(ch, out var ramp))
+                    else if ((overrides != null && overrides.TryGetValue(ch, out var ramp)) || ramps.TryGetValue(ch, out ramp))
                     {
                         bool lit = !Same(x - 1, y, ch) || !Same(x, y - 1, ch);
                         bool dark = !Same(x + 1, y, ch) || !Same(x, y + 1, ch);
