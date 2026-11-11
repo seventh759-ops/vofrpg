@@ -20,6 +20,7 @@ namespace VividOfFade
         Item selectedItem;
         bool bulkOpen; // 一括分解の選択欄を開いている
         int selectedEquip = -1;
+        bool statsTab; // 選んだ品の下を「能力」（付けたら能力がどう変わるか）にする
 
         public BagScreen(Hud hud)
         {
@@ -104,15 +105,26 @@ namespace VividOfFade
             var now = world.Player.BaseStats;
             float change = now.Power > 0f ? candidate.Power / now.Power - 1f : 0f;
 
-            // 1行目：名前を全幅で。総合の判定は右の列（比較）の先頭に置く（長い名前と重ならないように）
+            // 1行目：名前（左）と総合の判定（右）。2行目：「効果」「能力」のタブ
             float headH = hud.LabelStyle.fontSize * 1.6f;
-            DrawName(item, new Rect(area.x, area.y, area.width, headH));
-            var body = new Rect(area.x, area.y + headH, area.width, area.height - headH);
-            DrawDescription(item, new Rect(body.x, body.y, body.width * 0.48f, body.height), world, false);
-            var right = new Rect(body.x + body.width * 0.5f, body.y, body.width * 0.5f, body.height);
-            float verdictH = hud.LabelStyle.fontSize * 1.5f;
-            DrawVerdict(change, new Rect(right.x, right.y, right.width, verdictH));
-            DrawItemDiff(item, inv.Equipped[(int)slot], slot, new Rect(right.x, right.y + verdictH, right.width, right.height - verdictH));
+            DrawName(item, new Rect(area.x, area.y, area.width * 0.6f, headH));
+            DrawVerdict(change, new Rect(area.x + area.width * 0.6f, area.y, area.width * 0.4f, headH), true);
+            float tabH = hud.SmallStyle.fontSize * 2f;
+            float tabW = area.width * 0.25f;
+            var tabY = area.y + headH;
+            hud.Button(new Rect(area.x, tabY, tabW, tabH), Loc.T("EFFECTS", "効果"), statsTab ? new Color(1f, 1f, 1f, 0.06f) : new Color(1f, 1f, 1f, 0.25f), hud.CenteredStyle, () => statsTab = false);
+            hud.Button(new Rect(area.x + tabW + area.width * 0.02f, tabY, tabW, tabH), Loc.T("STATS", "能力"), statsTab ? new Color(1f, 1f, 1f, 0.25f) : new Color(1f, 1f, 1f, 0.06f), hud.CenteredStyle, () => statsTab = true);
+            float top = tabY + tabH + area.height * 0.02f;
+            var body = new Rect(area.x, top, area.width, area.yMax - top);
+            if (statsTab)
+            {
+                DrawStatTable(world.Player, now, candidate, body);
+            }
+            else
+            {
+                DrawDescription(item, new Rect(body.x, body.y, body.width * 0.48f, body.height), world, false);
+                DrawItemDiff(item, inv.Equipped[(int)slot], slot, new Rect(body.x + body.width * 0.5f, body.y, body.width * 0.5f, body.height));
+            }
 
             float W = Screen.width;
             var centered = hud.CenteredStyle;
@@ -330,13 +342,13 @@ namespace VividOfFade
         {
             var title = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
             title.normal.textColor = RarityInfo.ColorOf(item.Rarity);
-            GUI.Label(r, item.Name, title);
+            Hud.FitLabel(r, item.Name, title); // 長い名前は小さくして、右の判定と重ならないように
         }
 
         /// <summary>総合の判定（強化なしの能力で、付けたら全体でどれだけ強くなるか）。比較の列の先頭。</summary>
-        void DrawVerdict(float change, Rect r)
+        void DrawVerdict(float change, Rect r, bool right = false)
         {
-            var verdict = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
+            var verdict = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = right ? TextAnchor.UpperRight : TextAnchor.UpperLeft };
             string text;
             if (change > 0.01f)
             {
@@ -353,8 +365,77 @@ namespace VividOfFade
                 text = Loc.T("ABOUT THE SAME", "ほぼ同じ");
                 verdict.normal.textColor = Color.white;
             }
-            GUI.Label(r, text, verdict);
+            Hud.FitLabel(r, text, verdict);
         }
+
+        /// <summary>
+        /// 「能力」のタブ：今の能力と、この品を付けたときの能力を並べる（能力値の画面と同じ項目。加護も込み）。
+        /// 増える値は緑、減る値は赤。
+        /// </summary>
+        void DrawStatTable(Player player, PlayerStats nowBase, PlayerStats afterBase, Rect area)
+        {
+            var now = WithBoons(nowBase, player);
+            var after = WithBoons(afterBase, player);
+            var rows = new List<(string name, float a, float b, string fmt, string unit)>
+            {
+                (Loc.T("HP", "体力"), now.MaxHp, after.MaxHp, "0", ""),
+                ("MP", now.MaxMp, after.MaxMp, "0", ""),
+                (Loc.T("Damage", "ダメージ"), now.Damage, after.Damage, "0", ""),
+                (Loc.T("Attacks/s", "攻撃/秒"), now.AttacksPerSecond, after.AttacksPerSecond, "0.00", ""),
+                (Loc.T("DPS", "秒間ダメージ"), Dps(now), Dps(after), "0", ""),
+                (Loc.T("Crit", "会心"), now.CritChance * 100f, after.CritChance * 100f, "0", "%"),
+                (Loc.T("Crit dmg", "会心ダメージ"), now.CritMult * 100f, after.CritMult * 100f, "0", "%"),
+                (Loc.T("Armor", "防御"), now.Armor, after.Armor, "0", ""),
+                (Loc.T("Speed", "速さ"), now.MoveSpeed, after.MoveSpeed, "0.0", ""),
+                (Loc.T("Light", "明るさ"), now.Light, after.Light, "0.0", ""),
+                (Loc.T("HP regen", "体力回復"), now.HpRegen, after.HpRegen, "0.0", ""),
+                (Loc.T("MP regen", "MP回復"), now.MpRegen, after.MpRegen, "0.0", ""),
+            };
+            // 能力値は変わるものだけ
+            for (int i = 0; i < Attributes.Count; i++)
+            {
+                if (now.Attr[i] != after.Attr[i]) rows.Add((Attributes.ShortName((Attr)i), now.Attr[i], after.Attr[i], "0", ""));
+            }
+
+            var small = hud.SmallStyle;
+            float rowH = Mathf.Min(small.fontSize * 1.45f, area.height / (rows.Count + 1));
+            var head = new GUIStyle(small) { alignment = TextAnchor.MiddleRight };
+            head.normal.textColor = new Color(0.65f, 0.65f, 0.7f);
+            float c0 = area.width * 0.36f, c1 = area.width * 0.2f, c2 = area.width * 0.22f, c3 = area.width * 0.22f;
+            GUI.Label(new Rect(area.x + c0, area.y, c1, rowH), Loc.T("Now", "今"), head);
+            GUI.Label(new Rect(area.x + c0 + c1, area.y, c2, rowH), Loc.T("Equipped", "付けたら"), head);
+            float y = area.y + rowH;
+            var nameStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+            nameStyle.normal.textColor = new Color(0.8f, 0.8f, 0.85f);
+            var val = new GUIStyle(small) { alignment = TextAnchor.MiddleRight };
+            var diff = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, fontStyle = FontStyle.Bold };
+            for (int i = 0; i < rows.Count && y + rowH <= area.yMax; i++)
+            {
+                var r = rows[i];
+                if (i % 2 == 0) Hud.Fill(new Rect(area.x, y, area.width, rowH), new Color(1f, 1f, 1f, 0.04f));
+                GUI.Label(new Rect(area.x + area.width * 0.02f, y, c0, rowH), r.name, nameStyle);
+                val.normal.textColor = Color.white;
+                GUI.Label(new Rect(area.x + c0, y, c1, rowH), r.a.ToString(r.fmt) + r.unit, val);
+                float d = r.b - r.a;
+                bool same = Mathf.Abs(d) < (r.fmt == "0" ? 0.5f : r.fmt == "0.0" ? 0.05f : 0.005f);
+                val.normal.textColor = same ? Color.white : d > 0f ? up : down;
+                GUI.Label(new Rect(area.x + c0 + c1, y, c2, rowH), r.b.ToString(r.fmt) + r.unit, val);
+                if (!same)
+                {
+                    diff.normal.textColor = d > 0f ? up : down;
+                    GUI.Label(new Rect(area.x + c0 + c1 + c2, y, c3 - area.width * 0.02f, rowH), (d > 0f ? "+" : "") + d.ToString(r.fmt) + r.unit, diff);
+                }
+                y += rowH;
+            }
+        }
+
+        static PlayerStats WithBoons(PlayerStats s, Player player)
+        {
+            foreach (int b in player.Boons) s = s.WithBoon(Boons.Get(b));
+            return s;
+        }
+
+        static float Dps(PlayerStats s) => s.Damage * s.AttacksPerSecond * (1f + s.CritChance * (s.CritMult - 1f));
 
         void DrawItemDiff(Item item, Item equipped, EquipSlot slot, Rect area)
         {
