@@ -43,7 +43,7 @@ namespace VividOfFade
                     hinges[i].SetParent(wingRoot, false);
                     var go = new GameObject("Wing");
                     go.transform.SetParent(hinges[i], false);
-                    go.transform.localPosition = new Vector3(-0.5f, 0.05f, 0f); // 付け根を蝶番に合わせる（羽は幅1ユニット）
+                    go.transform.localPosition = new Vector3(-0.6875f, -0.09f, 0f); // 付け根を蝶番に合わせる（羽は幅 22 ドット）
                     wings[i] = go.AddComponent<SpriteRenderer>();
                     wings[i].sprite = PixelArt.Wing;
                     Lighting.MakeGlow(wings[i]);
@@ -71,7 +71,7 @@ namespace VividOfFade
             open = 1f - (1f - open) * (1f - open) * (1f - open); // 勢いよく開いて、ゆっくり止まる
             float flap = wingT > openTime ? Mathf.Sin((wingT - openTime) * 14f) * 8f * Mathf.Clamp01(1f - (wingT - openTime) * 1.2f) : 0f;
             float angle = Mathf.Lerp(75f, -18f, open) + flap; // 下に畳んだ形から、少し上向きに広げる
-            float scale = Mathf.Lerp(0.6f, 1.2f, open);
+            float scale = Mathf.Lerp(0.5f, 0.95f, open);
             float rise = wingT > fadeFrom ? (wingT - fadeFrom) * 0.8f : 0f;
             float alpha = wingT > fadeFrom ? 1f - (wingT - fadeFrom) / (LevelUpDuration - fadeFrom) : 1f;
 

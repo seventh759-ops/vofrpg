@@ -537,7 +537,7 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>レベルアップの天使の羽（左の羽。右は反転して使う）。付け根は右端の中ほど。</summary>
+        /// <summary>レベルアップの天使の羽（左の羽。右は反転して使う）。細長い形で、付け根は右端の上寄り。</summary>
         public static Sprite Wing => FromArt("Wing", WingRows, new Dictionary<char, Color32>
         {
             { 'o', new Color32(255, 214, 120, 255) },
@@ -547,18 +547,14 @@ namespace VividOfFade
 
         static readonly string[] WingRows =
         {
-            "........oooooo..",
-            ".....oooowwwwwoo",
-            "...oowwwwwwwwwwo",
-            ".oowwwwwwwwwwwwo",
-            "owwwwggwwwwwwwwo",
-            "owwggwwwggwwwwo.",
-            ".owwwggwwwggwwo.",
-            ".oowwwwggwwwwo..",
-            "..owwowwwggwwo..",
-            "...oo.owwwowo...",
-            "......oowo.o....",
-            "........o.......",
+            "............oooooooo..",
+            "........ooooowwwwwwwo.",
+            ".....ooowwwwwwwwwwwwwo",
+            "..ooowwwwgwwwwgwwwwwo.",
+            "oowwwwgwwwwgwwwwwoo...",
+            ".oooowwwogwwwogwoo....",
+            "....oowwo.owwo.oo.....",
+            "......oo...oo.........",
         };
 
         /// <summary>爆発などの広がる輪。白で作り、色は SpriteRenderer で付ける。</summary>
