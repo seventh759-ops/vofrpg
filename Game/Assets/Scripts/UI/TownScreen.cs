@@ -119,7 +119,7 @@ namespace VividOfFade
         {
             var spec = ClassInfo.Get(type);
             var adv = AdvancedClasses.Of(type, ch);
-            return adv != null ? $"{adv.DisplayName} ({spec.DisplayName})" : spec.DisplayName;
+            return adv != null ? adv.DisplayName : spec.DisplayName;
         }
 
         static string Greeting(CharacterData ch)
@@ -178,7 +178,7 @@ namespace VividOfFade
             Header(Loc.T("STORAGE KEEPER", "倉庫番"), ch.Embers, W, pad, out float y);
 
             float lineH = small.fontSize * 1.4f;
-            GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Bring into the next run: {ch.Stash.Count}/{Inventory.BagCapacity}  ({ClassInfo.Get(type).DisplayName})", $"次の挑戦に持ち込む：{ch.Stash.Count}/{Inventory.BagCapacity}（{ClassInfo.Get(type).DisplayName}）"), small);
+            GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Bring into the next run: {ch.Stash.Count}/{Inventory.BagCapacity}  ({AdvancedClasses.NameOf(type)})", $"次の挑戦に持ち込む：{ch.Stash.Count}/{Inventory.BagCapacity}（{AdvancedClasses.NameOf(type)}）"), small);
             y += lineH;
             y = Grid(ch.Stash, Inventory.BagCapacity, y, pad, type) + H * 0.01f;
             GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Storage (shared by all classes): {Profile.Storage.Count}/{Town.StorageCapacity}", $"倉庫（全職業で共有）：{Profile.Storage.Count}/{Town.StorageCapacity}"), small);

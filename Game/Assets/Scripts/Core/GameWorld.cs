@@ -316,6 +316,7 @@ namespace VividOfFade
             if (Input.NextMusicPressed) NextMusic();
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
             Music.SetTitle(OnTitle);
+            Music.SetTown(InTown && ChoosingClass);
 
             potionCooldown = Mathf.Max(0f, potionCooldown - dt);
             if (ChoosingClass)

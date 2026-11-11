@@ -22,6 +22,7 @@ namespace VividOfFade
         int theme = -1;
         int zoneSong;
         bool titleMode;
+        bool townMode;
         AudioClip nextNormal, nextBoss;
 
         /// <summary>テーマの番号 0 は「区画ごと」。1 から先が固定のテーマ。</summary>
@@ -73,11 +74,19 @@ namespace VividOfFade
             ApplySongs();
         }
 
+        /// <summary>町にいる間は町の曲（テーマの設定に関係なく）。</summary>
+        public void SetTown(bool on)
+        {
+            if (on == townMode) return;
+            townMode = on;
+            ApplySongs();
+        }
+
         void ApplySongs()
         {
-            if (titleMode)
+            if (titleMode || townMode)
             {
-                Queue(Get(TitleSong), boss.clip);
+                Queue(Get(titleMode ? TitleSong : TownSong), boss.clip);
                 nextBoss = null;
             }
             else if (theme == ZoneMode)
@@ -343,6 +352,28 @@ namespace VividOfFade
             Bass = BassKind.Sustain, BassVol = 0.15f, PadVol = 0.07f, ArpVol = 0.035f,
             Kick = "x.......x.......", Hat = "",
             KickVol = 0.2f, Echo = 0.4f,
+        };
+
+        /// <summary>町の曲：明るい長調の笛と、はじく分散和音。塔から戻ってひと息つくイメージ。</summary>
+        static readonly Song TownSong = new Song
+        {
+            Name = "town", Bpm = 100f,
+            Chords = new[] { F2, C, Dm, Bb2, F2, C, Bb2, C },
+            Lead = new[]
+            {
+                72, -2, 74, 72, 69, -2, 72, -2,
+                76, -2, -2, 74, 72, -2, -2, -2,
+                74, -2, 77, -2, 76, 74, 72, -2,
+                70, -2, -2, 72, 74, -2, -2, -2,
+                72, -2, 74, 72, 69, -2, 65, -2,
+                67, -2, 69, -2, 72, -2, 76, -2,
+                74, -2, 72, -2, 70, -2, 69, 67,
+                67, -2, -2, -2, -1, -1, -1, -1,
+            },
+            Lead1 = LeadKind.Flute, LeadVol = 0.11f,
+            Bass = BassKind.Roots, BassVol = 0.16f, PadVol = 0.04f, ArpVol = 0.05f,
+            Kick = "x.......x.......", Hat = "..x...x...x...x.",
+            KickVol = 0.22f, HatVol = 0.014f, Echo = 0.25f,
         };
 
         /// <summary>区画の曲のボス戦版：同じ和音と旋律を、速く、四つ打ちと刻む低音で。</summary>

@@ -117,6 +117,13 @@ namespace VividOfFade
             return adv != null ? adv.Skill : locked;
         }
 
+        /// <summary>画面に出す職業の名前（転職していれば上位職の名前）。</summary>
+        public static string NameOf(ClassType type)
+        {
+            var adv = Of(type, Profile.Get(type));
+            return adv != null ? adv.DisplayName : ClassInfo.Get(type).DisplayName;
+        }
+
         public static bool CanChange(CharacterData ch) => ch != null && ch.Advanced < 0 && ch.Level >= ReqLevel && ch.Embers >= Cost;
     }
 }

@@ -626,7 +626,7 @@ namespace VividOfFade
 
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
             Hud.FitLabel(new Rect(0, H * 0.12f, W, H * 0.06f), Loc.T("Choose a starting floor", "始める層を選ぶ"), title);
-            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T($"{spec.DisplayName}   Lv {ch.Level}   Best floor {ch.BestFloor}", $"{spec.DisplayName}   Lv {ch.Level}   最深 {ch.BestFloor}層"), centered);
+            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T($"{AdvancedClasses.NameOf(type)}   Lv {ch.Level}   Best floor {ch.BestFloor}", $"{AdvancedClasses.NameOf(type)}   Lv {ch.Level}   最深 {ch.BestFloor}層"), centered);
 
             var floors = GameWorld.Checkpoints(ch);
             const int cols = 3;
@@ -721,7 +721,7 @@ namespace VividOfFade
                 float tw = r.xMax - tx - inner;
                 float lh = small.fontSize * 1.35f;
                 string key = Application.isMobilePlatform ? "" : $"[{i + 1}] ";
-                GUI.Label(new Rect(tx, r.y + inner, tw, nameStyle.fontSize * 1.4f), key + spec.DisplayName, nameStyle);
+                GUI.Label(new Rect(tx, r.y + inner, tw, nameStyle.fontSize * 1.4f), key + AdvancedClasses.NameOf(type), nameStyle);
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, tw, lh), spec.DisplayLine1, small);
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh), spec.DisplayLine2, small);
                 var ch = Profile.Get(type);
