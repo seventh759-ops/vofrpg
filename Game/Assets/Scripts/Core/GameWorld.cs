@@ -384,6 +384,7 @@ namespace VividOfFade
             Lighting.SetAmbient(zone.AmbientColor, zone.Ambient);
             cameraRig.SetBackground(zone.Background);
             Enemies.SetZone(zone);
+            Music.SetZone(zone.Pattern);
             if (zone.Key != currentZone)
             {
                 currentZone = zone.Key;

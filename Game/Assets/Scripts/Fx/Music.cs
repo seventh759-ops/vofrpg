@@ -5,7 +5,8 @@ namespace VividOfFade
 {
     /// <summary>
     /// 仮の BGM。音のファイルを使わず、コードで曲を組み立てる（どれもこのゲーム用のオリジナルの旋律）。
-    /// 3つのテーマ（通常の曲＋それに合わせたボス戦の曲）から選べる。ボスが出ると切り替わる。
+    /// 最初は「区画ごと」：塔の区画（灰の回廊・苔むす底…）ごとに曲が変わり、ボス戦はその曲を速く激しくした編曲になる。
+    /// ほかに3つのテーマ（通常の曲＋ボス戦の曲）も選べる。曲が変わるときは、いったん小さくしてから切り替える。
     /// 音作り：重ねた鋸波の和音、こもらせたベース、ディレイ（反響）。音量や音程の揺れは控えめにしている。
     /// 本番の曲ができたら AudioClip を差し替える。
     /// </summary>
@@ -19,10 +20,15 @@ namespace VividOfFade
         bool bossMode;
         bool muted;
         int theme = -1;
+        int zoneSong;
+        AudioClip nextNormal, nextBoss;
+
+        /// <summary>テーマの番号 0 は「区画ごと」。1 から先が固定のテーマ。</summary>
+        const int ZoneMode = 0;
         readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
 
-        public static int ThemeCount => Themes.Length;
-        public string ThemeName => theme >= 0 ? Themes[theme].Name : "";
+        public static int ThemeCount => Themes.Length + 1;
+        public string ThemeName => theme == ZoneMode ? Loc.T("By zone", "区画ごと") : theme > 0 ? Themes[theme - 1].Name : "";
 
         void Awake()
         {
@@ -43,16 +49,40 @@ namespace VividOfFade
         /// <summary>テーマを変える（初めて選んだテーマはその場で曲を作る）。</summary>
         public void SetTheme(int index)
         {
-            index = ((index % Themes.Length) + Themes.Length) % Themes.Length;
+            index = ((index % ThemeCount) + ThemeCount) % ThemeCount;
             if (index == theme) return;
             theme = index;
-            var t = Themes[index];
-            normal.clip = Get(t.Normal);
-            boss.clip = Get(t.Boss);
-            normal.Play();
-            boss.Play();
-            normal.volume = 0f;
-            boss.volume = 0f;
+            ApplySongs();
+        }
+
+        /// <summary>区画が変わった（「区画ごと」のときは曲を変える）。</summary>
+        public void SetZone(FloorPattern pattern)
+        {
+            int i = Mathf.Clamp((int)pattern, 0, ZoneSongs.Length - 1);
+            if (i == zoneSong) return;
+            zoneSong = i;
+            if (theme == ZoneMode) ApplySongs();
+        }
+
+        void ApplySongs()
+        {
+            if (theme == ZoneMode)
+            {
+                var song = ZoneSongs[zoneSong];
+                Queue(Get(song), Get(BossOf(song)));
+            }
+            else
+            {
+                var t = Themes[theme - 1];
+                Queue(Get(t.Normal), Get(t.Boss));
+            }
+        }
+
+        /// <summary>次に流す曲を決める。今の曲を小さくしきってから切り替える（Update）。</summary>
+        void Queue(AudioClip n, AudioClip b)
+        {
+            nextNormal = normal.clip != n ? n : null;
+            nextBoss = boss.clip != b ? b : null;
         }
 
         public void NextTheme()
@@ -85,11 +115,21 @@ namespace VividOfFade
         void Update()
         {
             float step = Time.unscaledDeltaTime * Volume / 0.8f;
-            float normalTarget = muted || bossMode ? 0f : Volume;
-            float bossTarget = muted || !bossMode ? 0f : Volume;
+            float normalTarget = muted || bossMode || nextNormal != null ? 0f : Volume;
+            float bossTarget = muted || !bossMode || nextBoss != null ? 0f : Volume;
             normal.volume = Mathf.MoveTowards(normal.volume, normalTarget, step);
             boss.volume = Mathf.MoveTowards(boss.volume, bossTarget, step);
+            if (nextNormal != null && normal.volume <= 0f) Swap(normal, ref nextNormal);
+            if (nextBoss != null && boss.volume <= 0f) Swap(boss, ref nextBoss);
             if (bossMode && boss.volume <= step && !muted) boss.time = 0f; // ボス戦の曲は頭から
+        }
+
+        static void Swap(AudioSource src, ref AudioClip next)
+        {
+            src.clip = next;
+            src.time = 0f;
+            src.Play();
+            next = null;
         }
 
         // ================= 曲のデータ =================
@@ -130,6 +170,156 @@ namespace VividOfFade
         static readonly int[] Dm = { 62, 65, 69 }, Bb = { 58, 62, 65 }, Gm = { 55, 58, 62 }, A = { 57, 61, 64 }, C = { 60, 64, 67 };
         static readonly int[] Em = { 64, 67, 71 }, Cmaj = { 60, 64, 67 }, G = { 62, 67, 71 }, D = { 62, 66, 69 }, B = { 59, 63, 66 };
         static readonly int[] Am = { 57, 60, 64 }, F = { 57, 60, 65 }, C2 = { 55, 60, 64 }, G2 = { 55, 59, 62 }, E = { 56, 59, 64 };
+
+        // 区画ごとの曲で使う和音（先頭が根音）
+        static readonly int[] Cm = { 60, 63, 67 }, Ab = { 56, 60, 63 }, Eb = { 63, 67, 70 }, Bb2 = { 58, 62, 65 }, Fm = { 53, 56, 60 }, G3 = { 55, 59, 62 };
+        static readonly int[] Em2 = { 64, 67, 71 }, F2 = { 65, 69, 72 }, Bm = { 59, 62, 66 }, A2 = { 57, 61, 64 }, Fs = { 54, 58, 61 };
+        static readonly int[] E2 = { 64, 68, 71 }, Fsm = { 66, 69, 73 }, D2 = { 62, 66, 69 };
+
+        /// <summary>区画ごとの曲（FloorPattern の順：灰の回廊・苔むす底・残り火の炉・凍てる墓所・沈んだ書庫・虚ろの淵）。</summary>
+        static readonly Song[] ZoneSongs =
+        {
+            // 灰の回廊：冷たい石の広間。ゆっくりした鐘の旋律と、遠くで鳴る太鼓
+            new Song
+            {
+                Name = "zone_ashen", Bpm = 80f,
+                Chords = new[] { Cm, Ab, Eb, Bb2, Cm, Ab, Fm, G3 },
+                Lead = new[]
+                {
+                    72, -2, -2, -2, 75, -2, 74, -2,
+                    72, -2, -2, -2, -1, -1, 68, -2,
+                    70, -2, -2, -2, 75, -2, 79, -2,
+                    77, -2, -2, -2, -1, -1, -1, -1,
+                    72, -2, -2, -2, 75, -2, 77, -2,
+                    79, -2, 77, -2, 75, -2, -2, -2,
+                    72, -2, -2, 77, -2, -2, 75, -2,
+                    74, -2, -2, -2, 71, -2, -2, -2,
+                },
+                Lead1 = LeadKind.Bell, LeadVol = 0.1f,
+                Bass = BassKind.Sustain, BassVol = 0.16f, PadVol = 0.06f, ArpVol = 0.03f,
+                Kick = "x.......x.......", Clap = "............x...", Hat = "..x...x...x...x.",
+                KickVol = 0.26f, HatVol = 0.016f, Echo = 0.42f,
+            },
+            // 苔むす底：湿った洞。笛の旋律と、しずくのような分散和音
+            new Song
+            {
+                Name = "zone_moss", Bpm = 92f,
+                Chords = new[] { Dm, G3, Dm, G3, Am, C, G3, Dm },
+                Lead = new[]
+                {
+                    69, -2, -2, 71, 72, -2, 71, 69,
+                    67, -2, -2, -2, 71, -2, -2, -2,
+                    69, -2, -2, 71, 72, -2, 74, -2,
+                    76, -2, 74, -2, 71, -2, -2, -2,
+                    72, -2, -2, -2, 76, -2, 74, 72,
+                    71, -2, 72, -2, 67, -2, -2, -2,
+                    71, -2, -2, 74, -2, 72, 71, -2,
+                    69, -2, -2, -2, -1, -1, -1, -1,
+                },
+                Lead1 = LeadKind.Flute, LeadVol = 0.11f,
+                Bass = BassKind.Roots, BassVol = 0.17f, PadVol = 0.045f, ArpVol = 0.045f,
+                Kick = "x.....x...x.....", Hat = "x.x.x.x.x.x.x.x.",
+                KickVol = 0.24f, HatVol = 0.014f, Echo = 0.32f,
+            },
+            // 残り火の炉：鍛冶場。重い低音と、金床を打つような刻み
+            new Song
+            {
+                Name = "zone_forge", Bpm = 104f,
+                Chords = new[] { Em2, Em2, F2, Em2, C, Dm, F2, F2 },
+                Lead = new[]
+                {
+                    76, -2, -1, 76, 77, -2, 76, -2,
+                    74, -2, 72, -2, 71, -2, -2, -2,
+                    72, -2, -1, 72, 74, -2, 72, -2,
+                    71, -2, 69, -2, 67, -2, -2, -2,
+                    72, -2, -2, 76, 79, -2, -2, 77,
+                    77, -2, 76, -2, 74, -2, -2, -2,
+                    72, -2, 74, -2, 76, -2, 77, -2,
+                    76, -2, -2, -2, -1, -1, -1, -1,
+                },
+                Lead1 = LeadKind.Square, LeadVol = 0.075f,
+                Bass = BassKind.Pump, BassVol = 0.2f, PadVol = 0.04f, ArpVol = 0f,
+                Kick = "x..x..x.x..x..x.", Snare = "....x.......x...", Hat = "..x...x...x...x.",
+                KickVol = 0.38f, HatVol = 0.024f, Echo = 0.2f,
+            },
+            // 凍てる墓所：静かな氷の部屋。高い鐘と、ほとんど鳴らない太鼓
+            new Song
+            {
+                Name = "zone_frost", Bpm = 70f,
+                Chords = new[] { Bm, G3, D, A2, Bm, G3, Em2, Fs },
+                Lead = new[]
+                {
+                    83, -2, -2, -2, -2, -2, 81, -2,
+                    79, -2, -2, -2, 78, -2, -2, -2,
+                    81, -2, -2, -2, 85, -2, 86, -2,
+                    85, -2, -2, -2, -1, -1, -1, -1,
+                    86, -2, -2, -2, 85, -2, 83, -2,
+                    81, -2, -2, 79, -2, -2, 78, -2,
+                    79, -2, -2, -2, 83, -2, -2, -2,
+                    82, -2, -2, -2, -1, -1, 78, -2,
+                },
+                Lead1 = LeadKind.Bell, LeadVol = 0.09f,
+                Bass = BassKind.Sustain, BassVol = 0.13f, PadVol = 0.075f, ArpVol = 0.035f,
+                Kick = "x...............", Hat = "",
+                KickVol = 0.2f, Echo = 0.45f,
+            },
+            // 沈んだ書庫：砂岩と古い金。異国風の音階の笛と、手で叩く太鼓のような刻み
+            new Song
+            {
+                Name = "zone_archive", Bpm = 98f,
+                Chords = new[] { Am, Bb2, Am, E2, Dm, Bb2, E2, E2 },
+                Lead = new[]
+                {
+                    69, -2, 71, 72, -2, 71, 69, -2,
+                    70, -2, -2, -2, 74, -2, 72, 70,
+                    69, -2, 72, -2, 76, -2, 77, 76,
+                    76, -2, -2, -2, 74, 72, 71, 68,
+                    74, -2, -2, 77, -2, 76, 74, -2,
+                    72, -2, 74, -2, 77, -2, 76, 74,
+                    76, -2, -2, 74, -2, 72, 71, -2,
+                    68, -2, -2, -2, 71, -2, -2, -2,
+                },
+                Lead1 = LeadKind.Flute, LeadVol = 0.11f,
+                Bass = BassKind.Roots, BassVol = 0.17f, PadVol = 0.04f, ArpVol = 0.04f,
+                Kick = "x.....x.x.......", Snare = "....x..x....x...", Hat = "x..x..x.x..x..x.",
+                KickVol = 0.3f, HatVol = 0.02f, Echo = 0.28f,
+            },
+            // 虚ろの淵：星の消えていく闇。四つ打ちと、澄んだ矩形波の旋律
+            new Song
+            {
+                Name = "zone_void", Bpm = 112f,
+                Chords = new[] { Fsm, D2, A2, E2, Fsm, D2, E2, E2 },
+                Lead = new[]
+                {
+                    78, -2, -2, 76, -2, -2, 73, -2,
+                    74, -2, -2, -2, 69, -2, -2, -2,
+                    73, -2, -2, 76, -2, -2, 81, -2,
+                    80, -2, -2, -2, 76, -2, -2, -2,
+                    78, -2, -2, 81, -2, -2, 85, -2,
+                    83, -2, 81, -2, 78, -2, -2, -2,
+                    76, -2, 78, -2, 80, -2, 83, -2,
+                    80, -2, -2, -2, -1, -1, -1, -1,
+                },
+                Lead1 = LeadKind.Square, LeadVol = 0.07f,
+                Bass = BassKind.Octaves, BassVol = 0.2f, PadVol = 0.055f, ArpVol = 0.04f,
+                Kick = "x...x...x...x...", Clap = "....x.......x...", Hat = "..x...x...x...x.",
+                KickVol = 0.36f, Echo = 0.3f,
+            },
+        };
+
+        /// <summary>区画の曲のボス戦版：同じ和音と旋律を、速く、四つ打ちと刻む低音で。</summary>
+        static Song BossOf(Song s) => new Song
+        {
+            Name = s.Name + "_boss",
+            Bpm = Mathf.Min(150f, Mathf.Max(132f, s.Bpm * 1.35f)),
+            Chords = s.Chords,
+            Lead = s.Lead,
+            Lead1 = s.Lead1 == LeadKind.Square ? LeadKind.Square : LeadKind.Saw,
+            LeadVol = s.Lead1 == LeadKind.Square ? 0.08f : 0.09f,
+            Bass = BassKind.Pump, BassVol = 0.24f, PadVol = 0.04f, ArpVol = 0.05f, ArpSaw = true,
+            Kick = "x...x...x...x...", Snare = "....x.......x...", Hat = "..x...x...x...x.",
+            KickVol = 0.42f, HatVol = 0.025f, Echo = 0.18f,
+        };
 
         static readonly Theme[] Themes =
         {
