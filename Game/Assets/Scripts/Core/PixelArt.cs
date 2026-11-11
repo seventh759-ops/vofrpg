@@ -19,106 +19,213 @@ namespace VividOfFade
         public static Sprite Player => PlayerFor(ClassType.Lampwright);
 
         /// <summary>職業ごとの見た目。同じ形で、外套と手に持つ物の色を変える（仮）。</summary>
+        /// <summary>
+        /// 職業ごとの見た目（32ドット。1マスに収まるよう半分の縮尺で描く）。
+        /// 形は部品（素材の文字）で描き、濃淡・影・輪郭は Shaded で自動で付ける。
+        /// </summary>
         public static Sprite PlayerFor(ClassType type)
         {
-            var pal = new Dictionary<char, Color32>
-            {
-                { 'k', new Color32(27, 20, 36, 255) },
-                { 's', new Color32(242, 201, 160, 255) },
-                { 'e', new Color32(27, 20, 36, 255) },
-                { 'b', new Color32(60, 46, 36, 255) },
-            };
-            string[] rows;
             switch (type)
             {
-                case ClassType.Shadeblade:
-                    // 覆面と短いマントの剣士
-                    rows = ShadebladeRows;
-                    pal['c'] = new Color32(46, 40, 62, 255);
-                    pal['d'] = new Color32(34, 30, 46, 255);
-                    pal['r'] = new Color32(170, 40, 50, 255);
-                    pal['m'] = new Color32(205, 212, 228, 255);
-                    break;
-                case ClassType.Warden:
-                    // 兜と肩当ての鎧。鎖で香炉を下げている
-                    rows = WardenRows;
-                    pal['c'] = new Color32(130, 58, 44, 255);
-                    pal['m'] = new Color32(170, 176, 190, 255);
-                    pal['n'] = new Color32(100, 104, 118, 255);
-                    pal['g'] = new Color32(220, 180, 70, 255);
-                    pal['l'] = new Color32(255, 180, 70, 255);
-                    pal['o'] = new Color32(120, 120, 130, 255);
-                    break;
-                default:
-                    // とがったフードのローブ。ランタンを下げた杖を持つ
-                    rows = LampwrightRows;
-                    pal['c'] = new Color32(59, 74, 138, 255);
-                    pal['d'] = new Color32(40, 50, 100, 255);
-                    pal['l'] = new Color32(255, 214, 96, 255);
-                    pal['o'] = new Color32(110, 76, 44, 255);
-                    break;
+                case ClassType.Shadeblade: return Shaded("PlayerHd_Shadeblade", ShadebladeHdRows);
+                case ClassType.Warden: return Shaded("PlayerHd_Warden", WardenHdRows);
+                default: return Shaded("PlayerHd_Lampwright", LampwrightHdRows);
             }
-            return FromArt($"Player_{type}", rows, pal);
         }
 
-        static readonly string[] LampwrightRows =
+        /// <summary>素材ごとの4段階の色（明るい縁、ふつう、影、深い影）。</summary>
+        static readonly Dictionary<char, Color32[]> ramps = new Dictionary<char, Color32[]>
         {
-            "......k.........",
-            ".....kck....kk..",
-            "....kccck..kllk.",
-            "....kcccck.kllk.",
-            "...kccsssk..kk..",
-            "...kcsesek...o..",
-            "...kcsssck...o..",
-            "....kccck...ko..",
-            "...kccdcck.kso..",
-            "..kccdccddkk.o..",
-            "..kcdcccddk..o..",
-            "..kcdccccdk..o..",
-            "..kccccccdk..o..",
-            ".kccccccccdk.o..",
-            ".kddddddddddk...",
-            "..kkkkkkkkkk....",
+            { 's', Ramp(255, 226, 196, 240, 196, 156, 206, 150, 116, 160, 108, 88) },   // 肌
+            { 'c', Ramp(110, 132, 214, 70, 92, 170, 48, 62, 124, 32, 40, 86) },         // 青いローブ
+            { 'd', Ramp(88, 106, 180, 56, 72, 140, 38, 48, 104, 26, 32, 72) },          // ローブの合わせ
+            { 'w', Ramp(176, 128, 80, 132, 92, 54, 98, 66, 38, 70, 46, 26) },           // 木
+            { 'm', Ramp(236, 240, 250, 184, 192, 210, 132, 140, 160, 92, 98, 116) },    // 鉄
+            { 'g', Ramp(255, 234, 140, 226, 186, 72, 170, 130, 40, 120, 88, 24) },      // 金
+            { 'r', Ramp(236, 96, 96, 192, 54, 60, 140, 34, 42, 96, 22, 30) },           // 赤
+            { 'n', Ramp(96, 90, 120, 66, 60, 88, 46, 42, 64, 32, 28, 46) },             // 黒い布
+            { 'b', Ramp(132, 100, 74, 96, 70, 50, 70, 50, 36, 48, 34, 24) },            // 革・靴
+            { 'v', Ramp(200, 96, 72, 160, 64, 48, 118, 44, 34, 84, 30, 24) },           // 陣羽織
+            { 'e', Ramp(30, 22, 40, 30, 22, 40, 30, 22, 40, 30, 22, 40) },              // 目
         };
 
-        static readonly string[] ShadebladeRows =
+        /// <summary>影を付けずに光らせる素材（ランタン・香炉の火）。</summary>
+        static readonly Dictionary<char, Color32> glows = new Dictionary<char, Color32>
         {
-            "................",
-            "......kkkk......",
-            ".....kddddk.....",
-            "....kddddddk....",
-            "....kdssssdk....",
-            "....kdesesdk....",
-            "....krrrrrrk..mk",
-            "...kccrrrrck.mk.",
-            "..kcccddddcckmk.",
-            ".kccckddddkcmk..",
-            ".kcc.kddddksk...",
-            "..kc.kddddkk....",
-            "..kk.kdkkdk.....",
-            ".....kdk.kdk....",
-            ".....kbk..kbk...",
-            ".....kkk..kkk...",
+            { 'l', new Color32(255, 230, 130, 255) },
+            { 'L', new Color32(255, 170, 60, 255) },
+            { 'o', new Color32(255, 250, 220, 255) },
         };
 
-        static readonly string[] WardenRows =
+        static Color32[] Ramp(params int[] v)
         {
-            "................",
-            ".....kkkkkk.....",
-            "....kmmmmmmk....",
-            "....kmnnnnmk....",
-            "....kmeeeemk....",
-            "...kkmmmmmmkk...",
-            "..kgmkccccckmgk.",
-            "..kmmkccgcckmmk.",
-            "...kkccgggcckk..",
-            "...kcccgcccck.k.",
-            "...kscccccccsko.",
-            "...kknnnnnnkk.k.",
-            "....kccccccck.kl",
-            "....kcck.kcck.kl",
-            "....knnk.knnk...",
-            "....kkkk.kkkk...",
+            var r = new Color32[4];
+            for (int i = 0; i < 4; i++) r[i] = new Color32((byte)v[i * 3], (byte)v[i * 3 + 1], (byte)v[i * 3 + 2], 255);
+            return r;
+        }
+
+        /// <summary>
+        /// 部品で描いた絵に、濃淡と影と輪郭を付ける。光は左上から：
+        /// 左か上が別の部品なら明るい縁、右か下が別の部品なら影、右下の角はさらに暗く、大きな面の右下寄りも暗くする。
+        /// </summary>
+        static Sprite Shaded(string key, string[] rows)
+        {
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            int h = rows.Length, w = rows[0].Length;
+            var outline = new Color32(22, 16, 30, 255);
+            var clear = new Color32(0, 0, 0, 0);
+            var px = new Color32[w * h];
+
+            char At(int x, int y) => x >= 0 && y >= 0 && x < w && y < h && x < rows[y].Length ? rows[y][x] : '.';
+            bool Same(int x, int y, char ch) => At(x, y) == ch;
+
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    char ch = At(x, y);
+                    Color32 c;
+                    if (ch == '.')
+                    {
+                        bool edge = At(x + 1, y) != '.' || At(x - 1, y) != '.' || At(x, y + 1) != '.' || At(x, y - 1) != '.';
+                        c = edge ? outline : clear;
+                    }
+                    else if (glows.TryGetValue(ch, out var glow))
+                    {
+                        c = glow;
+                    }
+                    else if (ramps.TryGetValue(ch, out var ramp))
+                    {
+                        bool lit = !Same(x - 1, y, ch) || !Same(x, y - 1, ch);
+                        bool dark = !Same(x + 1, y, ch) || !Same(x, y + 1, ch);
+                        bool deep = dark && !Same(x + 1, y + 1, ch);
+                        int k = 1;
+                        while (k < 6 && Same(x - k, y - k, ch)) k++;
+                        int j = 1;
+                        while (j < 6 && Same(x + j, y + j, ch)) j++;
+                        int tone = 1;
+                        if (lit && !dark) tone = 0;
+                        else if (deep) tone = 3;
+                        else if (dark || k > j + 2) tone = 2;
+                        c = ramp[tone];
+                    }
+                    else
+                    {
+                        c = clear;
+                    }
+                    px[(h - 1 - y) * w + x] = c; // テクスチャは下から上へ並ぶ
+                }
+            }
+            // 32ドットを1マスに収める（ほかの絵の半分の縮尺）
+            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), w);
+        }
+
+        static readonly string[] LampwrightHdRows =
+        {
+            "..............cc.......mm.......",
+            "..............cc.......mm.......",
+            "..............ccc....mmmmmm.....",
+            "...............cc....mmmmmm.....",
+            ".............cccc....mllllm.....",
+            "...........cccccccc..mloolm.....",
+            "..........cccccccccc.mloolm.....",
+            "..........cccccccccc.mloolm.....",
+            ".........cccccsscccccmllllm.....",
+            ".........cccsssssscccmmmmmm.....",
+            ".........cccsssssscccmmmmmm.....",
+            ".........ccssessesscc..ww.......",
+            ".........ccsssssssscc..ww.......",
+            "..........ccsssssscc...ww.......",
+            "..........ccsssssscc...ww.......",
+            "...........cccccccc....ww.......",
+            "..........cccccccccc...ww.......",
+            ".........ddccccccccccc.ww.......",
+            ".........ddcccccccccccc.ww......",
+            "........dddcccccccccccc.ww......",
+            "........ddccccccccccccc.ww......",
+            ".......dddccccccccccccccww......",
+            ".......dsssccddddccccsssww......",
+            "........sssccddddccccsssww......",
+            "........cccccddddccccsssww......",
+            ".......ccccccddddcccccc.ww......",
+            ".......cccccdddddcccccc.ww......",
+            ".......cccccddddddccccc.ww......",
+            ".......cccccddddddccccc.ww......",
+            "......ccccccddddddccccccww......",
+            "......cccbbbbddddbbbbcccww......",
+            ".........bbbb....bbbb...ww......",
+        };
+
+        static readonly string[] ShadebladeHdRows =
+        {
+            "................................",
+            "................................",
+            "................................",
+            "...............n................",
+            "............nnnnnnn.............",
+            "...........nnnnnnnnn............",
+            "...........nnnnnnnnn..........mm",
+            "..........nnnnsssnnnn........mm.",
+            "..........nnnsssssnnn........mm.",
+            "..........nnsesssesnn.......mm..",
+            "..........nnsssssssnn.......mm..",
+            "..........nrrrrrrrrrn......mm...",
+            "...........rrrrrrrrr.......mm...",
+            "....nnnnnn.rrrrrrrrr......mm....",
+            "....nnnnnn.rrrrrrrrr.....mm.....",
+            "...nnnnnnn.....n....nn...mm.....",
+            "...nnnnnnnn.........nn..mm......",
+            "...nnnnnnnnnnbbbbbnnnn..mm......",
+            "..nnnnnnnnnnnbbbbbnnnn.mm.......",
+            "..nnnnnnnnnnnbbbbbnnnnnmm.......",
+            "..nnnnnn.nnnnbbbbbnnnnmm........",
+            ".nnnnnnn.nnnnnnnnnnnsgs.........",
+            ".nnnnnnn...nnnnnnnnnsbb.........",
+            "...........bbbbbbbbb.bbg........",
+            "...........nnnnnnnnn.bb.g.......",
+            "............nnn.nnn.............",
+            "............nnn.nnn.............",
+            "............nnn.nnn.............",
+            "............nnn.nnn.............",
+            "...........bbbb.bbbb............",
+            "...........bbbb.bbbb............",
+            "...........bbbb.bbbb............",
+        };
+
+        static readonly string[] WardenHdRows =
+        {
+            "................................",
+            "...............r................",
+            "...............r................",
+            "............mmmrmmm.............",
+            "...........mmmmmmmmm............",
+            "...........mmmmmmmmm............",
+            "..........mmmmmmmmmmm...........",
+            "..........mmmmmmmmmmm...........",
+            "..........mmmmmmmmmmm...........",
+            "..........meeeeeeeeem...........",
+            "..........meeeeeeeeem...........",
+            "...........mmmmmmmmm............",
+            "...........mmmmmmmmm............",
+            ".......mmm..mmmmmmm..mmm........",
+            "......ggggg....m....ggggg.......",
+            ".....mmmmmmm.......mmmmmmm......",
+            ".....mmmmmmmvvvvvvvmmmmmmm......",
+            "......vvvmmvvvvgvvvvmmvvv.......",
+            "......vvvmvvvvvgvvvvvmvvv.......",
+            "......vvvvvvvgggggvvvvvvv.......",
+            "......vvvvvvvvvgvvvvvvvvv.......",
+            "......vvvvvvvvvgvvvvvvvvv.......",
+            "......vvvvvvvvvgvvvvvvmmmm......",
+            "......mmmmmmmmmmmmmmmmmmm.m.....",
+            "......mmmmmmmmmmmmmmmm....m.....",
+            ".........vmmmmmvmmmmmv....m.....",
+            "..........mmmmm.mmmmm.....mmmm..",
+            "..........mmmmm.mmmmm.....mLLm..",
+            "..........mmmmm.mmmmm.....mLLm..",
+            ".........bbbbbb.bbbbbb....mmmm..",
+            ".........bbbbbb.bbbbbb.....L....",
+            ".........bbbbbb.bbbbbb..........",
         };
 
         /// <summary>スキルのアイコン（効果の種類ごとの形を、スキルの色で塗る）。</summary>
@@ -703,10 +810,10 @@ namespace VividOfFade
             return tex;
         }
 
-        static Sprite Store(string key, Texture2D tex)
+        static Sprite Store(string key, Texture2D tex, int pixelsPerUnit = PixelsPerUnit)
         {
             var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f),
-                PixelsPerUnit, 0, SpriteMeshType.FullRect);
+                pixelsPerUnit, 0, SpriteMeshType.FullRect);
             sprite.name = key;
             cache[key] = sprite;
             return sprite;
