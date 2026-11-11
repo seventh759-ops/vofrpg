@@ -23,6 +23,7 @@ namespace VividOfFade
 
         // レベルアップの羽（頭の上で開いて、上がりながら消える）
         public const float LevelUpDuration = 1.5f;
+        const float WingOpacity = 0.55f; // 羽は半透明（後ろのキャラクターや文字が透けて見える）
         /// <summary>羽を付ける位置（プレイヤーの論理座標）。GameWorld が毎フレーム入れる。</summary>
         public Vector2 Anchor;
         Transform wingRoot;
@@ -82,7 +83,7 @@ namespace VividOfFade
             int order = SortOrder.For(Anchor) - 1; // キャラクターの後ろ
             for (int i = 0; i < 2; i++)
             {
-                wings[i].color = new Color(1f, 1f, 1f, alpha);
+                wings[i].color = new Color(1f, 1f, 1f, alpha * WingOpacity);
                 wings[i].sortingOrder = order;
             }
         }
