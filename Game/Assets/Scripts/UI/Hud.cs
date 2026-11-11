@@ -768,7 +768,7 @@ namespace VividOfFade
         public void Button(Rect guiRect, string text, Color background, GUIStyle style, Action onTap)
         {
             Fill(guiRect, background);
-            if (text != null) GUI.Label(guiRect, text, style);
+            if (text != null) FitLabel(guiRect, text, style); // 折り返さず、入らなければ文字を小さく
             if (Event.current.type == EventType.Repaint)
             {
                 pendingRects.Add(new Rect(guiRect.x, Screen.height - guiRect.y - guiRect.height, guiRect.width, guiRect.height));

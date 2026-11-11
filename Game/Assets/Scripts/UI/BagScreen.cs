@@ -122,8 +122,8 @@ namespace VividOfFade
                 float w = (W - pad * 2f - gap * 3f) / 4f;
                 if (canEquip)
                 {
-                    hud.Button(new Rect(pad, actionY, w, btnH), Loc.T("EQUIP R1", "指輪1に装備"), buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring1));
-                    hud.Button(new Rect(pad + (w + gap), actionY, w, btnH), Loc.T("EQUIP R2", "指輪2に装備"), buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring2));
+                    hud.Button(new Rect(pad, actionY, w, btnH), Loc.T("EQUIP R1", "指輪1へ"), buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring1));
+                    hud.Button(new Rect(pad + (w + gap), actionY, w, btnH), Loc.T("EQUIP R2", "指輪2へ"), buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring2));
                 }
                 else
                 {
