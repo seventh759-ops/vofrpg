@@ -103,7 +103,7 @@ namespace VividOfFade
                 Loc.T($"Carry home {ch.CarrySlots}/{Town.MaxCarrySlots} new items", $"持ち帰り枠 {ch.CarrySlots}/{Town.MaxCarrySlots}"), () => Open(Panel.Porter));
             y += bh + gap;
             NpcRow(new Rect(pad, y, bw, bh), Loc.T("Blacksmith", "鍛冶屋"),
-                Loc.T("Enhance Mythic gear (+15) and reroll its effects", "神話（赤）装備の強化（+15まで）と、効果の再抽選"), () => Open(Panel.Smith));
+                Loc.T("Enhance Mythic gear (+15) and reroll its effects", "神話（赤）装備の強化と、効果の再抽選"), () => Open(Panel.Smith));
             y += bh + gap * 1.5f;
 
             hud.Button(new Rect(pad, y, bw, H * 0.05f), Loc.T("Change class", "職業を変える"), dim, centered, world.ShowClassSelect);
@@ -143,7 +143,7 @@ namespace VividOfFade
             GUI.Label(new Rect(r.x + inner * 2f, r.y + inner, r.width, r.height * 0.45f), name, nameStyle);
             var lineStyle = new GUIStyle(hud.SmallStyle);
             lineStyle.normal.textColor = new Color(0.8f, 0.8f, 0.85f);
-            GUI.Label(new Rect(r.x + inner * 2f, r.y + r.height * 0.5f, r.width - inner * 3f, r.height * 0.45f), line, lineStyle);
+            Hud.FitLabel(new Rect(r.x + inner * 2f, r.y + r.height * 0.5f, r.width - inner * 3f, r.height * 0.45f), line, lineStyle); // 折り返さない
         }
 
         void Open(Panel p)
