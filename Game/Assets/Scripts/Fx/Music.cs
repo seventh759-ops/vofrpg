@@ -21,6 +21,7 @@ namespace VividOfFade
         bool muted;
         int theme = -1;
         int zoneSong;
+        bool titleMode;
         AudioClip nextNormal, nextBoss;
 
         /// <summary>テーマの番号 0 は「区画ごと」。1 から先が固定のテーマ。</summary>
@@ -64,9 +65,22 @@ namespace VividOfFade
             if (theme == ZoneMode) ApplySongs();
         }
 
+        /// <summary>タイトル画面の間は専用の曲（テーマの設定に関係なく）。</summary>
+        public void SetTitle(bool on)
+        {
+            if (on == titleMode) return;
+            titleMode = on;
+            ApplySongs();
+        }
+
         void ApplySongs()
         {
-            if (theme == ZoneMode)
+            if (titleMode)
+            {
+                Queue(Get(TitleSong), boss.clip);
+                nextBoss = null;
+            }
+            else if (theme == ZoneMode)
             {
                 var song = ZoneSongs[zoneSong];
                 Queue(Get(song), Get(BossOf(song)));
@@ -305,6 +319,30 @@ namespace VividOfFade
                 Kick = "x...x...x...x...", Clap = "....x.......x...", Hat = "..x...x...x...x.",
                 KickVol = 0.36f, Echo = 0.3f,
             },
+        };
+
+        static readonly int[] Fm2 = { 65, 68, 72 }, Db2 = { 61, 65, 68 }, Ab2 = { 68, 72, 75 }, Eb2 = { 63, 67, 70 }, Bbm = { 58, 61, 65 }, C3 = { 60, 64, 67 };
+
+        /// <summary>タイトル画面の曲：ゆっくりした笛の旋律と、広がる和音。灯りの消えゆく塔を見上げるイメージ。</summary>
+        static readonly Song TitleSong = new Song
+        {
+            Name = "title", Bpm = 72f,
+            Chords = new[] { Fm2, Db2, Ab2, Eb2, Fm2, Db2, Bbm, C3 },
+            Lead = new[]
+            {
+                72, -2, -2, -2, 77, -2, -2, 75,
+                73, -2, -2, -2, 72, -2, 68, -2,
+                72, -2, -2, 75, -2, -2, 80, -2,
+                79, -2, -2, -2, -1, -1, 75, -2,
+                77, -2, -2, 79, 80, -2, 79, 77,
+                80, -2, -2, -2, 77, -2, 73, -2,
+                73, -2, 77, -2, -2, 73, 72, 70,
+                72, -2, -2, -2, -1, -1, -1, -1,
+            },
+            Lead1 = LeadKind.Flute, LeadVol = 0.11f,
+            Bass = BassKind.Sustain, BassVol = 0.15f, PadVol = 0.07f, ArpVol = 0.035f,
+            Kick = "x.......x.......", Hat = "",
+            KickVol = 0.2f, Echo = 0.4f,
         };
 
         /// <summary>区画の曲のボス戦版：同じ和音と旋律を、速く、四つ打ちと刻む低音で。</summary>

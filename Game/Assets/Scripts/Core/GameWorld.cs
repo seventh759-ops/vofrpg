@@ -52,6 +52,16 @@ namespace VividOfFade
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
         public bool ChoosingClass { get; private set; }
 
+        /// <summary>タイトル画面（起動したとき）。タップか Enter で職業選択へ。</summary>
+        public bool OnTitle { get; private set; }
+
+        /// <summary>タイトルから職業選択へ。</summary>
+        public void LeaveTitle()
+        {
+            OnTitle = false;
+            Input.ClearQueued();
+        }
+
         /// <summary>町にいる（職業を選んだあと。出撃・倉庫・商人・転職・荷運び）。</summary>
         public bool InTown { get; private set; }
 
@@ -263,6 +273,7 @@ namespace VividOfFade
             StartRun(ClassType.Lampwright, 1, false); // 画面の後ろに出しておくだけ（中断した挑戦は消さない）
             holdSave = false;
             ShowClassSelect();
+            OnTitle = true;
         }
 
         T AddChild<T>(string name) where T : Component
@@ -288,11 +299,16 @@ namespace VividOfFade
             if (Input.HelpPressed) Hud.ShowHelp = !Hud.ShowHelp;
             if (Input.NextMusicPressed) NextMusic();
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
+            Music.SetTitle(OnTitle);
 
             potionCooldown = Mathf.Max(0f, potionCooldown - dt);
             if (ChoosingClass)
             {
-                if (InTown && !PendingClass.HasValue)
+                if (OnTitle)
+                {
+                    if (Input.ConfirmPressed) LeaveTitle();
+                }
+                else if (InTown && !PendingClass.HasValue)
                 {
                     if (Input.CancelPressed) Hud.Town.Back();
                 }

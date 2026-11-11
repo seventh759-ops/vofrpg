@@ -300,7 +300,8 @@ namespace VividOfFade
                 DrawHud();
             }
 
-            if (World.ChoosingClass && World.PendingClass.HasValue) DrawFloorSelect(World.PendingClass.Value);
+            if (World.OnTitle) DrawTitle();
+            else if (World.ChoosingClass && World.PendingClass.HasValue) DrawFloorSelect(World.PendingClass.Value);
             else if (World.ChoosingClass && World.InTown) Town.Draw(World);
             else if (World.ChoosingClass) DrawClassSelect();
             else if (World.Player.IsDead) DrawGameOver();
@@ -629,6 +630,37 @@ namespace VividOfFade
             int rows = (floors.Count + cols - 1) / cols;
             var back = new Rect(pad, y + rows * (bh + gap) + gap, W - pad * 2f, H * 0.05f);
             Button(back, Loc.T("BACK", "戻る"), new Color(1f, 1f, 1f, 0.08f), centered, () => World.CancelFloorSelect());
+        }
+
+        /// <summary>タイトル画面。どこを押しても始まる（言語のボタンだけは別）。</summary>
+        void DrawTitle()
+        {
+            float W = Screen.width;
+            float H = Screen.height;
+            Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0.82f), centered, World.LeaveTitle);
+
+            var title = new GUIStyle(centered) { fontSize = Mathf.RoundToInt(label.fontSize * 2.6f), fontStyle = FontStyle.Bold };
+            title.normal.textColor = new Color(1f, 0.88f, 0.55f);
+            GUI.Label(new Rect(0, H * 0.24f, W, H * 0.08f), "VIVID OF FADE", title);
+            var sub = new GUIStyle(centered);
+            sub.normal.textColor = new Color(0.8f, 0.78f, 0.9f);
+            GUI.Label(new Rect(0, H * 0.32f, W, H * 0.04f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
+
+            // 3人の職業を並べる
+            float s = W * 0.2f;
+            float gap = W * 0.06f;
+            float x0 = (W - s * 3f - gap * 2f) * 0.5f;
+            for (int i = 0; i < ClassInfo.Count; i++) DrawSprite(new Rect(x0 + i * (s + gap), H * 0.42f, s, s), PixelArt.PlayerFor((ClassType)i));
+
+            // 点滅する「タップで始める」
+            var tap = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
+            float a = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 2f));
+            tap.normal.textColor = new Color(1f, 1f, 1f, a);
+            string start = Application.isMobilePlatform ? Loc.T("TAP TO START", "タップで始める") : Loc.T("TAP / ENTER TO START", "タップか Enter で始める");
+            GUI.Label(new Rect(0, H * 0.62f, W, H * 0.05f), start, tap);
+
+            float bw = W * 0.5f;
+            Button(new Rect((W - bw) * 0.5f, H * 0.8f, bw, H * 0.045f), $"Language: {Loc.LanguageName}", new Color(1f, 1f, 1f, 0.1f), centered, () => Loc.Next());
         }
 
         /// <summary>職業を選ぶ画面。3つの大きなボタン（PC は数字キー 1〜3 でも選べる）。</summary>
