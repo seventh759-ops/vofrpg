@@ -103,7 +103,7 @@ namespace VividOfFade
                 Loc.T($"Carry home {ch.CarrySlots}/{Town.MaxCarrySlots} new items", $"持ち帰り枠 {ch.CarrySlots}/{Town.MaxCarrySlots}"), () => Open(Panel.Porter));
             y += bh + gap;
             NpcRow(new Rect(pad, y, bw, bh), Loc.T("Blacksmith", "鍛冶屋"),
-                Loc.T("Enhance gear (+15) and reroll its effects", "装備の強化（+15まで）と、効果の再抽選"), () => Open(Panel.Smith));
+                Loc.T("Enhance Mythic gear (+15) and reroll its effects", "神話（赤）装備の強化（+15まで）と、効果の再抽選"), () => Open(Panel.Smith));
             y += bh + gap * 1.5f;
 
             hud.Button(new Rect(pad, y, bw, H * 0.05f), Loc.T("Change class", "職業を変える"), dim, centered, world.ShowClassSelect);
@@ -536,8 +536,8 @@ namespace VividOfFade
             {
                 selected = null;
                 var wrap = new GUIStyle(small) { wordWrap = true };
-                string help = Loc.T($"Tap an item. Enhancing raises its base value and effects by {Item.EnhanceStep * 100f:0}% per level (up to +{Item.MaxEnhance}). Rerolling draws new effects at the item's level.",
-                    $"品をタップ。強化すると、1段ごとに基本の数値と効果の値が{Item.EnhanceStep * 100f:0}%上がる（+{Item.MaxEnhance}まで）。再抽選すると、その品のレベルで効果を引き直す。");
+                string help = Loc.T($"Only Mythic (red) gear can be worked on. Tap an item. Enhancing raises its base value and effects by {Item.EnhanceStep * 100f:0}% per level (up to +{Item.MaxEnhance}). Rerolling draws new effects at the item's level.",
+                    $"扱えるのは神話（赤）の装備だけ。品をタップ。強化すると、1段ごとに基本の数値と効果の値が{Item.EnhanceStep * 100f:0}%上がる（+{Item.MaxEnhance}まで）。再抽選すると、その品のレベルで効果を引き直す。");
                 GUI.Label(new Rect(pad, y, W - pad * 2f, wrap.CalcHeight(new GUIContent(help), W - pad * 2f)), help, wrap);
                 return;
             }
@@ -557,6 +557,14 @@ namespace VividOfFade
                 if (y + lineH > by - btnH - H * 0.02f) break;
                 GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), line, small);
                 y += lineH;
+            }
+
+            if (!Town.Smithable(item))
+            {
+                var r = new Rect(pad, by, W - pad * 2f, btnH);
+                Hud.Fill(r, dim);
+                Hud.FitLabel(r, Loc.T("Only Mythic (red) gear can be worked on", "神話（赤）の装備だけ扱える"), hud.CenteredStyle);
+                return;
             }
 
             // 強化（すぐ実行）と再抽選（2回押し）

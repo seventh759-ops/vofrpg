@@ -161,8 +161,12 @@ namespace VividOfFade
         /// <summary>効果の再抽選の値段。</summary>
         public static int RerollPrice(Item it) => Mathf.RoundToInt((30f + it.Level * 4f) * RarityCost(it.Rarity));
 
+        /// <summary>鍛冶屋で扱えるのは神話（赤）の装備だけ。</summary>
+        public static bool Smithable(Item it) => it != null && it.Rarity == Rarity.Mythic;
+
         public static bool EnhanceItem(CharacterData ch, Item it)
         {
+            if (!Smithable(it)) return false;
             if (it.Enhance >= Item.MaxEnhance || !Pay(ch, EnhancePrice(it))) return false;
             it.Enhance++;
             Profile.Save();
@@ -171,7 +175,7 @@ namespace VividOfFade
 
         public static bool RerollItem(CharacterData ch, Item it, ClassType type)
         {
-            if (it.Affixes.Count == 0 || !Pay(ch, RerollPrice(it))) return false;
+            if (!Smithable(it) || it.Affixes.Count == 0 || !Pay(ch, RerollPrice(it))) return false;
             ItemGenerator.RerollAffixes(it, type);
             Profile.Save();
             return true;
