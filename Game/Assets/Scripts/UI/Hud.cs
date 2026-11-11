@@ -215,7 +215,7 @@ namespace VividOfFade
 
         float levelUpTime = -1f;
 
-        /// <summary>頭の上に「> LV UP <」を出す（羽と一緒に上がりながら消える）。</summary>
+        /// <summary>頭の上の羽の間に「LV UP」を出す（羽と一緒に上がりながら消える）。</summary>
         public void ShowLevelUp() => levelUpTime = 0f;
 
         void DrawLevelUp()
@@ -226,17 +226,17 @@ namespace VividOfFade
             float t = levelUpTime;
             float rise = t > 1f ? (t - 1f) * 0.8f : 0f;
             float alpha = t > 1f ? 1f - (t - 1f) / (FxSystem.LevelUpDuration - 1f) : Mathf.Clamp01(t / 0.15f);
-            var head = Iso.ToScreen(World.Player.Pos) + new Vector2(0f, 1.35f + rise);
+            var head = Iso.ToScreen(World.Player.Pos) + new Vector2(0f, 0.8f + rise); // 羽の付け根と同じ高さ
             Vector3 sp = cam.WorldToScreenPoint(new Vector3(head.x, head.y, 0f));
-            var style = new GUIStyle(big) { fontSize = Mathf.RoundToInt(big.fontSize * 1.1f) };
+            var style = new GUIStyle(big);
             float pop = 1f + 0.25f * Mathf.Clamp01(1f - t / 0.2f); // 出た瞬間だけ少し大きく
             style.fontSize = Mathf.RoundToInt(style.fontSize * pop);
             float w = style.fontSize * 8f, h = style.fontSize * 1.6f;
             var r = new Rect(sp.x - w * 0.5f, Screen.height - sp.y - h * 0.5f, w, h);
             style.normal.textColor = new Color(0.25f, 0.15f, 0f, alpha * 0.8f); // 影
-            GUI.Label(new Rect(r.x + 2f, r.y + 2f, r.width, r.height), "> LV UP <", style);
+            GUI.Label(new Rect(r.x + 2f, r.y + 2f, r.width, r.height), "LV UP", style);
             style.normal.textColor = new Color(1f, 0.88f, 0.35f, alpha);
-            GUI.Label(r, "> LV UP <", style);
+            GUI.Label(r, "LV UP", style);
         }
 
         string bannerTitle;
