@@ -31,17 +31,26 @@ namespace VividOfFade
 
             if (ch != null)
             {
+                // 必要レベルに届かない装備（転職で Lv1 に戻ったときなど）は外して鞄へ
+                var tooHigh = new List<Item>();
                 for (int i = 0; i < Equipped.Length && i < ch.Loadout.Count; i++)
                 {
                     var it = ch.Loadout[i];
                     if (it == null || it.IsEmptyMarker || !Fits(it, (EquipSlot)i)) continue;
                     it.Carried = true;
+                    if (it.ReqLevel > ch.Level) tooHigh.Add(it);
                     Equipped[i] = it;
                 }
                 foreach (var it in ch.Stash)
                 {
                     if (Bag.Count >= BagCapacity) break;
                     it.Carried = true;
+                    Bag.Add(it);
+                }
+                foreach (var it in tooHigh)
+                {
+                    if (Bag.Count >= BagCapacity) break; // 鞄に入らなければ、付けたままにする（なくさないように）
+                    Equipped[Array.IndexOf(Equipped, it)] = null;
                     Bag.Add(it);
                 }
             }

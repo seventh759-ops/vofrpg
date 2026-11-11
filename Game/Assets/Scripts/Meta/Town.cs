@@ -103,12 +103,20 @@ namespace VividOfFade
             return true;
         }
 
-        /// <summary>転職（1回だけ）。7つ目のスキルを覚える。</summary>
+        /// <summary>
+        /// 転職（1回だけ）。Lv1・経験値0に戻り、振った能力値も戻して、ボーナスのポイントだけを振れる状態にする。
+        /// 7つ目のスキルを覚える。スキルの熟練度・装備・火種・最深層はそのまま。
+        /// </summary>
         public static bool ChangeClass(CharacterData ch, int index)
         {
             if (!AdvancedClasses.CanChange(ch)) return false;
             ch.Embers -= AdvancedClasses.Cost;
             ch.Advanced = Mathf.Clamp(index, 0, 1);
+            ch.Level = 1;
+            ch.Exp = 0;
+            for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;
+            ch.Points = AdvancedClasses.BonusPoints;
+            ch.MpGrown = 0;
             Profile.Save();
             return true;
         }

@@ -354,7 +354,8 @@ namespace VividOfFade
 
             var current = AdvancedClasses.Of(type, ch);
             string status = current != null ? Loc.T($"You are a {current.DisplayName}. Class change is done once.", $"あなたは{current.DisplayName}。転職は1回だけ。")
-                : Loc.T($"From Lv {AdvancedClasses.ReqLevel}, for {AdvancedClasses.Cost} embers. Once only, cannot be undone (except RESET ALL).", $"Lv{AdvancedClasses.ReqLevel}から、火種 {AdvancedClasses.Cost}。1回だけで、戻せない（すべてリセットを除く）。");
+                : Loc.T($"From Lv {AdvancedClasses.ReqLevel}, for {AdvancedClasses.Cost} embers. You go back to Lv 1 (stat points reset) and get {AdvancedClasses.BonusPoints} bonus points. Once only, cannot be undone (except RESET ALL).",
+                    $"Lv{AdvancedClasses.ReqLevel}から、火種 {AdvancedClasses.Cost}。Lv1 に戻り（振った能力値も戻る）、ボーナスで {AdvancedClasses.BonusPoints} ポイント振れる。1回だけで、戻せない（すべてリセットを除く）。");
             var wrap = new GUIStyle(small) { wordWrap = true };
             float sh = wrap.CalcHeight(new GUIContent(status), W - pad * 2f);
             GUI.Label(new Rect(pad, y, W - pad * 2f, sh), status, wrap);
