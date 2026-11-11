@@ -150,14 +150,21 @@ namespace VividOfFade
             armed = null;
         }
 
-        void Header(string titleText, float W, float pad, out float y)
+        /// <summary>見出し（左）と戻るボタン（右）。火種は見出しの下の行に出す（長い見出しとボタンが重ならないように）。</summary>
+        void Header(string titleText, int embers, float W, float pad, out float y)
         {
             var label = hud.LabelStyle;
             var title = new GUIStyle(label) { fontStyle = FontStyle.Bold };
             float btnH = Screen.height * 0.045f;
-            GUI.Label(new Rect(pad, pad, W, btnH), titleText, title);
-            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("BACK", "戻る"), row, hud.CenteredStyle, () => Open(Panel.Main));
-            y = pad + btnH + Screen.height * 0.012f;
+            float btnW = W * 0.22f;
+            GUI.Label(new Rect(pad, pad, W - pad * 2f - btnW - W * 0.02f, btnH), titleText, title);
+            hud.Button(new Rect(W - pad - btnW, pad, btnW, btnH), Loc.T("BACK", "戻る"), row, hud.CenteredStyle, () => Open(Panel.Main));
+            y = pad + btnH + Screen.height * 0.006f;
+            var ember = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };
+            ember.normal.textColor = new Color(1f, 0.85f, 0.5f);
+            float lineH = hud.SmallStyle.fontSize * 1.5f;
+            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T($"Embers {embers}", $"火種 {embers}"), ember);
+            y += lineH + Screen.height * 0.008f;
         }
 
         // ================= 倉庫番 =================
@@ -168,7 +175,7 @@ namespace VividOfFade
             float pad = W * 0.05f;
             var small = hud.SmallStyle;
             var type = ClassInfo.Current;
-            Header(Loc.T($"STORAGE KEEPER   Embers {ch.Embers}", $"倉庫番   火種 {ch.Embers}"), W, pad, out float y);
+            Header(Loc.T("STORAGE KEEPER", "倉庫番"), ch.Embers, W, pad, out float y);
 
             float lineH = small.fontSize * 1.4f;
             GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Bring into the next run: {ch.Stash.Count}/{Inventory.BagCapacity}  ({ClassInfo.Get(type).DisplayName})", $"次の挑戦に持ち込む：{ch.Stash.Count}/{Inventory.BagCapacity}（{ClassInfo.Get(type).DisplayName}）"), small);
@@ -281,7 +288,7 @@ namespace VividOfFade
             float W = Screen.width, H = Screen.height;
             float pad = W * 0.05f;
             var type = ClassInfo.Current;
-            Header(Loc.T($"MERCHANT   Embers {ch.Embers}", $"商人   火種 {ch.Embers}"), W, pad, out float y);
+            Header(Loc.T("MERCHANT", "商人"), ch.Embers, W, pad, out float y);
             float bh = H * 0.1f;
             float gap = H * 0.015f;
             int potion = Town.PotionPrice(ch);
@@ -350,7 +357,7 @@ namespace VividOfFade
             var type = ClassInfo.Current;
             var small = hud.SmallStyle;
             float lineH = small.fontSize * 1.4f;
-            Header(Loc.T($"MASTER   Embers {ch.Embers}", $"転職の師匠   火種 {ch.Embers}"), W, pad, out float y);
+            Header(Loc.T("MASTER", "転職の師匠"), ch.Embers, W, pad, out float y);
 
             var current = AdvancedClasses.Of(type, ch);
             string status = current != null ? Loc.T($"You are a {current.DisplayName}. Class change is done once.", $"あなたは{current.DisplayName}。転職は1回だけ。")
@@ -418,7 +425,7 @@ namespace VividOfFade
         {
             float W = Screen.width, H = Screen.height;
             float pad = W * 0.05f;
-            Header(Loc.T($"PORTER   Embers {ch.Embers}", $"荷運び   火種 {ch.Embers}"), W, pad, out float y);
+            Header(Loc.T("PORTER", "荷運び"), ch.Embers, W, pad, out float y);
             var wrap = new GUIStyle(hud.SmallStyle) { wordWrap = true };
             string text = Loc.T("When you return home, you can bring back this many items found in that run (equipped gear and carried-in items are always kept).",
                 "帰還するとき、その挑戦で拾った品を、この数まで持ち帰れる（装備中の品と持ち込んだ品はいつも持ち帰れる）。");
