@@ -514,15 +514,15 @@ namespace VividOfFade
             var map = new Dictionary<string, float>();
             switch (it.Slot)
             {
-                case ItemSlot.Weapon: map["0 Damage"] = it.BaseValue; break;
-                case ItemSlot.Lantern: map["0 Light"] = it.BaseValue; break;
-                case ItemSlot.Armor: map["0 Max HP"] = it.BaseValue; break;
+                case ItemSlot.Weapon: map["0 Damage"] = it.EffBase; break;
+                case ItemSlot.Lantern: map["0 Light"] = it.EffBase; break;
+                case ItemSlot.Armor: map["0 Max HP"] = it.EffBase; break;
             }
             foreach (var af in it.Affixes)
             {
                 string key = "1 " + af.Stat;
                 map.TryGetValue(key, out float v);
-                map[key] = v + af.Value;
+                map[key] = v + it.Eff(af);
             }
             return map;
         }

@@ -9,7 +9,7 @@ namespace VividOfFade
     /// </summary>
     public sealed class TownScreen
     {
-        enum Panel { Main, Storage, Merchant, Master, Porter }
+        enum Panel { Main, Storage, Merchant, Master, Porter, Smith }
 
         static readonly Color back = new Color(0.03f, 0.03f, 0.06f, 0.92f);
         static readonly Color row = new Color(1f, 1f, 1f, 0.1f);
@@ -54,6 +54,7 @@ namespace VividOfFade
                 case Panel.Merchant: DrawMerchant(world, ch); break;
                 case Panel.Master: DrawMaster(world, ch); break;
                 case Panel.Porter: DrawPorter(ch); break;
+                case Panel.Smith: DrawSmith(ch); break;
                 default: DrawMain(world, ch); break;
             }
         }
@@ -100,6 +101,9 @@ namespace VividOfFade
             y += bh + gap;
             NpcRow(new Rect(pad, y, bw, bh), Loc.T("Porter", "荷運び"),
                 Loc.T($"Carry home {ch.CarrySlots}/{Town.MaxCarrySlots} new items", $"持ち帰り枠 {ch.CarrySlots}/{Town.MaxCarrySlots}"), () => Open(Panel.Porter));
+            y += bh + gap;
+            NpcRow(new Rect(pad, y, bw, bh), Loc.T("Blacksmith", "鍛冶屋"),
+                Loc.T("Enhance gear (+15) and reroll its effects", "装備の強化（+15まで）と、効果の再抽選"), () => Open(Panel.Smith));
             y += bh + gap * 1.5f;
 
             hud.Button(new Rect(pad, y, bw, H * 0.05f), Loc.T("Change class", "職業を変える"), dim, centered, world.ShowClassSelect);
@@ -502,6 +506,94 @@ namespace VividOfFade
                 var s = new GUIStyle(hud.CenteredStyle);
                 s.normal.textColor = new Color(0.6f, 0.6f, 0.6f);
                 GUI.Label(btn, Loc.T("Requirements not met", "条件を満たしていない"), s);
+            }
+        }
+
+        // ================= 鍛冶屋 =================
+
+        void DrawSmith(CharacterData ch)
+        {
+            float W = Screen.width, H = Screen.height;
+            float pad = W * 0.05f;
+            var small = hud.SmallStyle;
+            var type = ClassInfo.Current;
+            float lineH = small.fontSize * 1.4f;
+            Header(Loc.T("BLACKSMITH", "鍛冶屋"), ch.Embers, W, pad, out float y);
+
+            // 装備中の品（前回帰還したときの装備）と、次の挑戦に持ち込む品
+            var equipped = new List<Item>();
+            foreach (var it in ch.Loadout) if (it != null && !it.IsEmptyMarker) equipped.Add(it);
+            GUI.Label(new Rect(pad, y, W, lineH), Loc.T("Equipped", "装備中"), small);
+            y += lineH;
+            y = Grid(equipped, 5, y, pad, type) + H * 0.008f;
+            GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Items you bring: {ch.Stash.Count}/{Inventory.BagCapacity}", $"持ち込む品：{ch.Stash.Count}/{Inventory.BagCapacity}"), small);
+            y += lineH;
+            y = Grid(ch.Stash, Inventory.BagCapacity, y, pad, type) + H * 0.01f;
+
+            float btnH = H * 0.055f;
+            float by = H - pad - btnH;
+            if (selected == null || (!equipped.Contains(selected) && !ch.Stash.Contains(selected)))
+            {
+                selected = null;
+                var wrap = new GUIStyle(small) { wordWrap = true };
+                string help = Loc.T($"Tap an item. Enhancing raises its base value and effects by {Item.EnhanceStep * 100f:0}% per level (up to +{Item.MaxEnhance}). Rerolling draws new effects at the item's level.",
+                    $"品をタップ。強化すると、1段ごとに基本の数値と効果の値が{Item.EnhanceStep * 100f:0}%上がる（+{Item.MaxEnhance}まで）。再抽選すると、その品のレベルで効果を引き直す。");
+                GUI.Label(new Rect(pad, y, W - pad * 2f, wrap.CalcHeight(new GUIContent(help), W - pad * 2f)), help, wrap);
+                return;
+            }
+
+            var item = selected;
+            var name = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
+            name.normal.textColor = RarityInfo.ColorOf(item.Rarity);
+            Hud.FitLabel(new Rect(pad, y, W - pad * 2f, lineH * 1.2f), item.Name, name);
+            y += lineH * 1.2f;
+            var info = new GUIStyle(small);
+            info.normal.textColor = new Color(1f, 0.85f, 0.5f);
+            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH),
+                Loc.T($"Enhance +{item.Enhance}/{Item.MaxEnhance}   (values x{item.EnhanceMult:0.00})", $"強化 +{item.Enhance}/{Item.MaxEnhance}   （値 x{item.EnhanceMult:0.00}）"), info);
+            y += lineH;
+            foreach (var line in item.Describe())
+            {
+                if (y + lineH > by - btnH - H * 0.02f) break;
+                GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), line, small);
+                y += lineH;
+            }
+
+            // 強化（すぐ実行）と再抽選（2回押し）
+            float gap = W * 0.03f;
+            float half = (W - pad * 2f - gap) * 0.5f;
+            var enhanceRect = new Rect(pad, by - btnH - gap * 0.5f, W - pad * 2f, btnH);
+            if (item.Enhance >= Item.MaxEnhance)
+            {
+                Hud.Fill(enhanceRect, dim);
+                GUI.Label(enhanceRect, Loc.T("MAX ENHANCED", "強化は最大"), hud.CenteredStyle);
+            }
+            else
+            {
+                int price = Town.EnhancePrice(item);
+                bool can = ch.Embers >= price;
+                string label = Loc.T($"ENHANCE  +{item.Enhance} → +{item.Enhance + 1}   ({price} embers)", $"強化  +{item.Enhance} → +{item.Enhance + 1}   （火種 {price}）");
+                if (can) hud.Button(enhanceRect, label, gold, hud.CenteredStyle, () =>
+                {
+                    if (Town.EnhanceItem(ch, item)) hud.Toast(item.Name, RarityInfo.ColorOf(item.Rarity));
+                });
+                else
+                {
+                    Hud.Fill(enhanceRect, dim);
+                    Hud.FitLabel(enhanceRect, label, hud.CenteredStyle);
+                }
+            }
+            if (item.Affixes.Count > 0)
+            {
+                int rp = Town.RerollPrice(item);
+                var rr = new Rect(pad, by, W - pad * 2f, btnH);
+                if (ch.Embers >= rp)
+                    Confirm(rr, "reroll", Loc.T($"REROLL EFFECTS   ({rp} embers)", $"効果を再抽選   （火種 {rp}）"), () => Town.RerollItem(ch, item, type));
+                else
+                {
+                    Hud.Fill(rr, dim);
+                    Hud.FitLabel(rr, Loc.T($"REROLL EFFECTS   ({rp} embers)", $"効果を再抽選   （火種 {rp}）"), hud.CenteredStyle);
+                }
             }
         }
 

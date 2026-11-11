@@ -170,6 +170,17 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>
+        /// 効果の再抽選（町の鍛冶屋）。効果の数・珍しさ・レベル・固有効果はそのままで、効果の種類と値を引き直す。
+        /// </summary>
+        public static void RerollAffixes(Item item, ClassType type)
+        {
+            ClassInfo.Current = type; // 職業ごとに出る効果が違う（貫通は灯術師だけ）
+            int n = item.Affixes.Count;
+            item.Affixes.Clear();
+            AddAffixes(item, n);
+        }
+
         static void AddAffixes(Item item, int count)
         {
             var candidates = new List<StatType>(allStats);

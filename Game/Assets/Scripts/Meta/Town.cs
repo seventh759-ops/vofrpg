@@ -139,6 +139,44 @@ namespace VividOfFade
             return true;
         }
 
+        // ---- 鍛冶屋：強化と効果の再抽選 ----
+
+        static float RarityCost(Rarity r)
+        {
+            switch (r)
+            {
+                case Rarity.Common: return 0.5f;
+                case Rarity.Magic: return 0.7f;
+                case Rarity.Rare: return 1f;
+                case Rarity.Legendary: return 1.5f;
+                case Rarity.Relic: return 2f;
+                default: return 3f;
+            }
+        }
+
+        /// <summary>次の強化の値段（高いレベル・珍しい品・強化が進んだ品ほど高い）。</summary>
+        public static int EnhancePrice(Item it) =>
+            Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * Mathf.Pow(it.Enhance + 1, 1.4f));
+
+        /// <summary>効果の再抽選の値段。</summary>
+        public static int RerollPrice(Item it) => Mathf.RoundToInt((30f + it.Level * 4f) * RarityCost(it.Rarity));
+
+        public static bool EnhanceItem(CharacterData ch, Item it)
+        {
+            if (it.Enhance >= Item.MaxEnhance || !Pay(ch, EnhancePrice(it))) return false;
+            it.Enhance++;
+            Profile.Save();
+            return true;
+        }
+
+        public static bool RerollItem(CharacterData ch, Item it, ClassType type)
+        {
+            if (it.Affixes.Count == 0 || !Pay(ch, RerollPrice(it))) return false;
+            ItemGenerator.RerollAffixes(it, type);
+            Profile.Save();
+            return true;
+        }
+
         /// <summary>その武器を今の職業で使えないか（ほかの職業の武器）。</summary>
         public static bool OtherClassWeapon(Item item, ClassType type) =>
             item.Slot == ItemSlot.Weapon && ClassInfo.Weapon(item.Weapon).Class != type;

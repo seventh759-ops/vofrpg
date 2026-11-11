@@ -137,18 +137,19 @@ namespace VividOfFade
                 {
                     case ItemSlot.Weapon:
                         kind = item.Weapon;
-                        baseDamage = item.BaseValue;
+                        baseDamage = item.EffBase;
                         break;
                     case ItemSlot.Lantern:
-                        s.Light += item.BaseValue;
+                        s.Light += item.EffBase;
                         break;
                     case ItemSlot.Armor:
-                        bonusHp += Mathf.RoundToInt(item.BaseValue);
+                        bonusHp += Mathf.RoundToInt(item.EffBase);
                         break;
                 }
 
-                foreach (var a in item.Affixes)
+                foreach (var a0 in item.Affixes)
                 {
+                    var a = new Affix(a0.Stat, item.Eff(a0)); // 強化込みの値
                     switch (a.Stat)
                     {
                         case StatType.DamagePct: dmgPct += a.Value; break;

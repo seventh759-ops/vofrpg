@@ -37,6 +37,18 @@ namespace VividOfFade
         /// <summary>武器：基本ダメージ／ランタン：明るさ（マス）／防具：最大体力。指輪は0。</summary>
         public float BaseValue;
 
+        /// <summary>町の鍛冶屋での強化（+0〜+15）。1段ごとに基本の数値と効果の値が +6%（弾・貫通の数は変わらない）。</summary>
+        public int Enhance;
+        public const int MaxEnhance = 15;
+        public const float EnhanceStep = 0.06f;
+        public float EnhanceMult => 1f + EnhanceStep * Enhance;
+
+        /// <summary>強化込みの基本の数値。</summary>
+        public float EffBase => BaseValue * EnhanceMult;
+
+        /// <summary>強化込みの効果の値（数で数える効果は強化しない）。</summary>
+        public float Eff(Affix a) => a.Stat == StatType.Pierce || a.Stat == StatType.Multishot ? a.Value : a.Value * EnhanceMult;
+
         public List<Affix> Affixes = new List<Affix>();
         public List<UniqueType> Uniques = new List<UniqueType>();
 
@@ -51,6 +63,8 @@ namespace VividOfFade
         {
             if (Affixes == null) Affixes = new List<Affix>();
             if (Uniques == null) Uniques = new List<UniqueType>();
+            if (Enhance < 0) Enhance = 0;
+            if (Enhance > MaxEnhance) Enhance = MaxEnhance;
         }
 
         public string BaseName
@@ -67,7 +81,7 @@ namespace VividOfFade
             }
         }
 
-        public string Name => Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}";
+        public string Name => (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
 
         public List<string> Describe()
         {
@@ -75,17 +89,17 @@ namespace VividOfFade
             switch (Slot)
             {
                 case ItemSlot.Weapon:
-                    lines.Add(Loc.T($"Damage {BaseValue:0}", $"ダメージ {BaseValue:0}"));
+                    lines.Add(Loc.T($"Damage {EffBase:0}", $"ダメージ {EffBase:0}"));
                     lines.Add(ClassInfo.Weapon(Weapon).DisplayDesc);
                     break;
                 case ItemSlot.Lantern:
-                    lines.Add(Loc.T($"Light +{BaseValue:0.0}", $"明るさ +{BaseValue:0.0}"));
+                    lines.Add(Loc.T($"Light +{EffBase:0.0}", $"明るさ +{EffBase:0.0}"));
                     break;
                 case ItemSlot.Armor:
-                    lines.Add(Loc.T($"Max HP +{BaseValue:0}", $"最大体力 +{BaseValue:0}"));
+                    lines.Add(Loc.T($"Max HP +{EffBase:0}", $"最大体力 +{EffBase:0}"));
                     break;
             }
-            foreach (var a in Affixes) lines.Add(StatText.Format(a.Stat, a.Value));
+            foreach (var a in Affixes) lines.Add(StatText.Format(a.Stat, Eff(a)));
             foreach (var u in Uniques) lines.Add("* " + StatText.Unique(u));
             return lines;
         }
