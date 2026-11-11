@@ -137,10 +137,7 @@ namespace VividOfFade
             // 加護（祭壇で得たもの）。同じものはまとめて「x2」、折り返して全部見せる
             GUI.Label(new Rect(pad, y, W, lineH), Loc.T("BOONS", "加護"), head);
             y += lineH * 1.1f;
-            var wrap = new GUIStyle(small) { wordWrap = true };
-            string boons = BoonLine(world.Player);
-            float bh = wrap.CalcHeight(new GUIContent(boons), W - pad * 2f);
-            GUI.Label(new Rect(pad, y, W - pad * 2f, Mathf.Min(bh, bottomY - y - H * 0.01f)), boons, wrap);
+            DrawBoons(world.Player, new Rect(pad, y, W - pad * 2f, bottomY - y - H * 0.01f));
 
             // 振り直しとレベルのリセット（2回押しで実行）
             float gap = W * 0.03f;
@@ -149,10 +146,18 @@ namespace VividOfFade
             ConfirmButton(new Rect(pad + half + gap, bottomY, half, btnH), "level", Loc.T("RESET ALL", "すべてリセット"), world.ResetLevel);
         }
 
-        static string BoonLine(Player p)
+        /// <summary>
+        /// 加護の一覧。説明付きで1行ずつ並べ、入りきらなければ名前と数だけを2列・3列に詰める（あふれないように）。
+        /// </summary>
+        void DrawBoons(Player p, Rect area)
         {
-            if (p.Boons.Count == 0) return Loc.T("None yet. Offer embers at an altar.", "まだない。祭壇で火種を払うと得られる。");
-            // 得た順に、同じ加護は数をまとめる。説明も付ける
+            var small = hud.SmallStyle;
+            float lineH = small.fontSize * 1.35f;
+            if (p.Boons.Count == 0)
+            {
+                GUI.Label(new Rect(area.x, area.y, area.width, lineH), Loc.T("None yet. Offer embers at an altar.", "まだない。祭壇で火種を払うと得られる。"), small);
+                return;
+            }
             var order = new System.Collections.Generic.List<int>();
             var count = new System.Collections.Generic.Dictionary<int, int>();
             foreach (int b in p.Boons)
@@ -160,16 +165,34 @@ namespace VividOfFade
                 if (!count.ContainsKey(b)) { order.Add(b); count[b] = 0; }
                 count[b]++;
             }
-            var sb = new System.Text.StringBuilder();
-            foreach (int b in order)
+
+            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+            int maxRows = Mathf.Max(1, Mathf.FloorToInt(area.height / lineH));
+            if (order.Count <= maxRows)
             {
-                var spec = Boons.Get(b);
-                if (sb.Length > 0) sb.Append('\n');
-                sb.Append("- ").Append(spec.DisplayName);
-                if (count[b] > 1) sb.Append(" x").Append(count[b]);
-                sb.Append("  -  ").Append(spec.DisplayDesc);
+                // 説明付き
+                for (int i = 0; i < order.Count; i++)
+                {
+                    var spec = Boons.Get(order[i]);
+                    string n = count[order[i]] > 1 ? $"{spec.DisplayName} x{count[order[i]]}" : spec.DisplayName;
+                    Hud.FitLabel(new Rect(area.x, area.y + i * lineH, area.width, lineH), $"- {n}  -  {spec.DisplayDesc}", style);
+                }
+                return;
             }
-            return sb.ToString();
+            // 名前と数だけを、入る列数で並べる
+            int cols = 2;
+            while (cols < 4 && Mathf.CeilToInt(order.Count / (float)cols) > maxRows) cols++;
+            float colW = area.width / cols;
+            var name = new GUIStyle(style);
+            name.normal.textColor = new Color(1f, 0.9f, 0.7f);
+            for (int i = 0; i < order.Count; i++)
+            {
+                int row = i / cols, col = i % cols;
+                if (row >= maxRows) break;
+                var spec = Boons.Get(order[i]);
+                string n = count[order[i]] > 1 ? $"{spec.DisplayName} x{count[order[i]]}" : spec.DisplayName;
+                Hud.FitLabel(new Rect(area.x + col * colW, area.y + row * lineH, colW - area.width * 0.01f, lineH), n, name);
+            }
         }
 
         void ConfirmButton(Rect r, string id, string text, System.Action action)
