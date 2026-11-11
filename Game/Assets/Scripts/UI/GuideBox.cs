@@ -33,6 +33,14 @@ namespace VividOfFade
             if (current == null) Next();
         }
 
+        /// <summary>何度でも話す（1層の案内役に近づいたとき）。話している途中なら何もしない。</summary>
+        public void Say(params string[] text)
+        {
+            if (current != null) return;
+            foreach (var t in text) lines.Enqueue(t);
+            Next();
+        }
+
         public void Next()
         {
             current = lines.Count > 0 ? lines.Dequeue() : null;

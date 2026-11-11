@@ -159,6 +159,22 @@ namespace VividOfFade
         SpriteRenderer stairs;
         SpriteRenderer altar;
         SpriteRenderer guideNpc; // 1層目のはじめの部屋に立つ案内役
+        Vector2 guidePos;
+        bool guideLatch;         // 話し終えたら、一度離れるまで話さない
+        int guideTip;            // 次に話す豆知識
+
+        /// <summary>1層の案内役に近づくと話す豆知識（順番に1つずつ）。</summary>
+        static readonly string[][] guideTips =
+        {
+            new[] { "Elites drop a flood of loot. Their names tell you what they do.", "精鋭はドロップがあふれる。名前で性質がわかるよ。" },
+            new[] { "Return home at the stairs to keep what you found. Die, and the new loot is gone.", "階段で帰還すれば拾った物を持ち帰れる。死んだら新しい物はなくなる。" },
+            new[] { "Embers buy boons at altars, and potions and gear in town.", "火種は祭壇で加護に、町で薬や装備に変えられる。" },
+            new[] { "Every 5 floors a boss waits. Beat it and you can start beyond it.", "5層ごとにボスがいる。倒せば、その先から始められる。" },
+            new[] { "Tap the strip above a skill button to cast it automatically.", "スキルのボタンの上の帯を押すと、オートで使ってくれる。" },
+            new[] { "At Lv 30, the master in town can make you an advanced class.", "Lv30 になったら、町の師匠で上位職に転職できる。" },
+            new[] { "A Shroud drains your light. Take it out first.", "覆いは灯りを奪う。先に倒しな。" },
+            new[] { "The storage in town is shared by every class.", "町の倉庫は、どの職業でも使えるよ。" },
+        };
         bool altarLatch;
         bool holdSave; // 起動中・再開の準備中は、中断の保存をしない（上書きを防ぐ）
         float slowMoTimer;
@@ -361,6 +377,7 @@ namespace VividOfFade
                 CheckRoomCleared();
                 CheckStairs();
                 CheckAltar();
+                CheckGuideNpc();
                 CheckEliteTip();
             }
 
@@ -526,6 +543,8 @@ namespace VividOfFade
                 Vector2 gp = Room.Clamp(Room.StartPos + new Vector2(1.4f, 1.4f), 0.5f);
                 guideNpc.transform.position = Iso.ToScreen(gp) + new Vector2(0f, 0.15f);
                 guideNpc.sortingOrder = SortOrder.For(gp);
+                guidePos = gp;
+                guideLatch = false;
             }
             SaveRun(); // 層の最初で、挑戦の状態を保存する
 
@@ -742,6 +761,19 @@ namespace VividOfFade
                 slowMoTimer = 0.6f; // 一瞬スローにする
                 Time.timeScale = 0.3f;
             }
+        }
+
+        /// <summary>1層の案内役に近づいたら、豆知識を1つ話す（何度でも。離れてまた近づくと次の話）。</summary>
+        void CheckGuideNpc()
+        {
+            if (!guideNpc.enabled) return;
+            float d = (Player.Pos - guidePos).magnitude;
+            if (d > 2.2f) guideLatch = false;
+            if (guideLatch || d > 1.1f || Hud.Guide.Active) return;
+            guideLatch = true;
+            var tip = guideTips[guideTip % guideTips.Length];
+            guideTip++;
+            Hud.Guide.Say(Loc.T(tip[0], tip[1]));
         }
 
         /// <summary>案内役の説明（その場面が初めてのときだけ）。</summary>
