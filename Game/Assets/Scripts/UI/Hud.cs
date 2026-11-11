@@ -633,7 +633,7 @@ namespace VividOfFade
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh), spec.DisplayLine2, small);
                 var ch = Profile.Get(type);
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh * 2f, tw, lh),
-                    Loc.T($"Lv {ch.Level}   Best floor {ch.BestFloor}   Main: {Attributes.ShortName(spec.MainAttr)} / {Attributes.ShortName(spec.SubAttr)}", $"Lv {ch.Level}   最深 {ch.BestFloor}層   主能力 {Attributes.ShortName(spec.MainAttr)} / {Attributes.ShortName(spec.SubAttr)}"), small);
+                    Loc.T($"Lv {ch.Level}   Best {ch.BestFloor}F   {Attributes.ShortName(spec.MainAttr)}/{Attributes.ShortName(spec.SubAttr)}", $"Lv {ch.Level}   最深 {ch.BestFloor}層   {Attributes.ShortName(spec.MainAttr)}/{Attributes.ShortName(spec.SubAttr)}"), small);
                 y += bh + gap;
             }
 

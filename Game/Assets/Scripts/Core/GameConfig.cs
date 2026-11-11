@@ -57,17 +57,17 @@ namespace VividOfFade
 
         // ボス（10波ごと）
         public static bool IsBossWave(int wave) => wave > 0 && wave % 10 == 0;
-        public const float BossHpMult = 80f;          // 同じ波の雑魚の何倍か
-        public const float BossDamageMult = 2f;
+        public const float BossHpMult = 120f;          // 同じ波の雑魚の何倍か
+        public const float BossDamageMult = 2.5f;
         public const float BossScale = 3f;
-        public const float BossSpeed = 1.1f;
-        public const float BossSlamInterval = 4f;
+        public const float BossSpeed = 1.25f;
+        public const float BossSlamInterval = 3.4f;
         public const float BossWindup = 0.8f;
-        public const float BossSlamRadius = 2.2f;
+        public const float BossSlamRadius = 2.6f;
         public static readonly Color BossTint = new Color(1f, 0.45f, 0.45f, 1f);
         public const float MythicChance = 0.15f;
         public const float BossEnragedSpeedMult = 1.7f;   // 体力が半分を切ったら
-        public const float BossEnragedSlamInterval = 2.5f;
+        public const float BossEnragedSlamInterval = 2f;
 
         // 精鋭（第3波から。1波あたり 1 + 波/10 体くらい）
         public const int EliteFirstWave = 3;
