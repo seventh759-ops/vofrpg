@@ -3,7 +3,7 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>職業・レベル・能力値・装備から計算したプレイヤーの能力。どれかが変わるたびに作り直す。</summary>
-    public sealed class PlayerStats
+    public sealed partial class PlayerStats
     {
         public ClassType Class;
         public AttackKind Kind;

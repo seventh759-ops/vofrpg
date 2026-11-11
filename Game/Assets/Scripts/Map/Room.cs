@@ -49,6 +49,9 @@ namespace VividOfFade
         public readonly List<RoomArea> Areas = new List<RoomArea>();
         public Vector2 StartPos { get; private set; }
         public Vector2 StairsPos { get; private set; }
+        /// <summary>祭壇の位置（ボスの層にはない）。</summary>
+        public bool HasAltar { get; private set; }
+        public Vector2 AltarPos { get; private set; }
         public RoomArea BossArea { get; private set; }
         /// <summary>この層の区画（見た目）。</summary>
         public ZoneSpec Zone { get; private set; }
@@ -183,6 +186,19 @@ namespace VividOfFade
                 far = a;
             }
             StairsPos = far.Center;
+
+            // 祭壇：はじめの部屋と階段の部屋以外の、どこかの部屋の隅寄り
+            var candidates = new List<RoomArea>();
+            foreach (var a in Areas)
+            {
+                if (a != start && a != far) candidates.Add(a);
+            }
+            HasAltar = candidates.Count > 0;
+            if (HasAltar)
+            {
+                var room = candidates[rng.Next(candidates.Count)];
+                AltarPos = new Vector2(room.X + 1.5f + rng.Next(Mathf.Max(1, room.W - 3)), room.Y + room.H - 1.5f);
+            }
         }
 
         void BuildBossFloor(System.Random rng)
@@ -197,6 +213,7 @@ namespace VividOfFade
             StartPos = start.Center;
             StairsPos = boss.Center; // ボスを倒すと現れる
             BossArea = boss;
+            HasAltar = false;
         }
 
         void Carve(RoomArea a)

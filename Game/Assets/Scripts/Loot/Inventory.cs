@@ -64,6 +64,44 @@ namespace VividOfFade
             ch.Embers += Embers;
         }
 
+        /// <summary>中断のために、今の装備・鞄・火種を書き出す。</summary>
+        public void SaveRun(RunSave run)
+        {
+            run.Equipped.Clear();
+            foreach (var it in Equipped) run.Equipped.Add(it ?? Item.EmptyMarker());
+            run.Bag.Clear();
+            run.BagCarried.Clear();
+            foreach (var it in Bag)
+            {
+                run.Bag.Add(it);
+                run.BagCarried.Add(it.Carried);
+            }
+            run.Embers = Embers;
+        }
+
+        /// <summary>中断した挑戦の装備・鞄・火種に戻す。</summary>
+        public void RestoreRun(RunSave run)
+        {
+            Array.Clear(Equipped, 0, Equipped.Length);
+            Bag.Clear();
+            for (int i = 0; i < Equipped.Length && i < run.Equipped.Count; i++)
+            {
+                var it = run.Equipped[i];
+                if (it == null || it.IsEmptyMarker || !Fits(it, (EquipSlot)i)) continue;
+                it.Carried = true; // 装備中の品は帰還でいつも持ち帰れる
+                Equipped[i] = it;
+            }
+            for (int i = 0; i < run.Bag.Count && Bag.Count < BagCapacity; i++)
+            {
+                var it = run.Bag[i];
+                if (it == null || it.IsEmptyMarker) continue;
+                it.Carried = i < run.BagCarried.Count && run.BagCarried[i];
+                Bag.Add(it);
+            }
+            Embers = run.Embers;
+            Changed?.Invoke();
+        }
+
         /// <summary>今回拾った品（持ち込んだ品ではない）。</summary>
         public List<Item> NewThisRun()
         {

@@ -69,11 +69,16 @@ namespace VividOfFade
         float mp;
         float regenHp; // 体力の自然回復の端数
 
+        /// <summary>祭壇で得た加護（番号）。挑戦のあいだずっと効く。</summary>
+        public readonly System.Collections.Generic.List<int> Boons = new System.Collections.Generic.List<int>();
+
         public void ResetState(PlayerStats stats)
         {
             buffs.Clear();
+            Boons.Clear();
             BaseStats = stats;
-            Stats = stats;
+            RebuildStats();
+            stats = Stats;
             MaxHp = stats.MaxHp;
             Hp = MaxHp;
             MaxMp = stats.MaxMp;
@@ -92,13 +97,38 @@ namespace VividOfFade
         /// <summary>装備が変わったとき。最大体力が増えた分は今の体力にも足す。</summary>
         public void ApplyStats(PlayerStats stats)
         {
-            int gained = stats.MaxHp - MaxHp;
-            int gainedMp = stats.MaxMp - MaxMp;
             BaseStats = stats;
             RebuildStats();
-            MaxHp = stats.MaxHp;
+            ResizePools();
+        }
+
+        /// <summary>加護を得る。体力・MP の上限が増えた分は今の値にも足す。</summary>
+        public void AddBoon(int index)
+        {
+            Boons.Add(index);
+            RebuildStats();
+            ResizePools();
+        }
+
+        /// <summary>中断した挑戦を再開するとき、加護と体力・MP の割合を戻す。</summary>
+        public void RestoreRun(System.Collections.Generic.List<int> boons, float hpRatio, float mpRatio)
+        {
+            Boons.Clear();
+            Boons.AddRange(boons);
+            RebuildStats();
+            MaxHp = Stats.MaxHp;
+            MaxMp = Stats.MaxMp;
+            Hp = Mathf.Clamp(Mathf.RoundToInt(MaxHp * hpRatio), 1, MaxHp);
+            mp = Mathf.Clamp(MaxMp * mpRatio, 0f, MaxMp);
+        }
+
+        void ResizePools()
+        {
+            int gained = Stats.MaxHp - MaxHp;
+            int gainedMp = Stats.MaxMp - MaxMp;
+            MaxHp = Stats.MaxHp;
             Hp = Mathf.Clamp(Hp + Mathf.Max(0, gained), IsDead ? 0 : 1, MaxHp);
-            MaxMp = stats.MaxMp;
+            MaxMp = Stats.MaxMp;
             mp = Mathf.Clamp(mp + Mathf.Max(0, gainedMp), 0f, MaxMp);
         }
 
@@ -120,6 +150,7 @@ namespace VividOfFade
         void RebuildStats()
         {
             var s = BaseStats;
+            foreach (int k in Boons) s = s.WithBoon(VividOfFade.Boons.Get(k));
             foreach (var b in buffs) s = s.WithBuff(b.Spec, b.Power);
             Stats = s;
         }

@@ -471,6 +471,37 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>祭壇（石の台の上に火が灯る）。足元が原点。</summary>
+        public static Sprite Altar => FromArt("Altar", AltarRows, new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(16, 12, 22, 255) },
+            { 'y', new Color32(255, 230, 140, 255) },
+            { 'r', new Color32(255, 130, 50, 255) },
+            { 's', new Color32(120, 112, 140, 255) },
+            { 'd', new Color32(80, 74, 98, 255) },
+            { 'g', new Color32(220, 180, 70, 255) },
+        });
+
+        static readonly string[] AltarRows =
+        {
+            ".......y........",
+            "......yry.......",
+            ".....yrrry......",
+            ".....yrrry......",
+            "......yry.......",
+            "....kkkkkkkk....",
+            "...kggggggggk...",
+            "...kssssssssk...",
+            "....kssssssk....",
+            "....kdsssdsk....",
+            "....ksdssdsk....",
+            "....ksssssdk....",
+            "...kssssssssk...",
+            "..kddddddddddk..",
+            "..kkkkkkkkkkkk..",
+            "................",
+        };
+
         /// <summary>下り階段（床のひし形に、段の線と金色の縁）。</summary>
         public static Sprite Stairs
         {

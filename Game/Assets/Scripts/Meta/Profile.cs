@@ -33,6 +33,7 @@ namespace VividOfFade
         public int CarrySlots = 3;                    // 今回拾った品から持ち帰れる数
         public int BestFloor;                         // たどり着いた一番深い層
         public int BossCleared;                       // 倒した一番深いボスの層（その次の層がチェックポイント）
+        public RunSave Run = new RunSave();           // 中断した挑戦
 
         public void Repair()
         {
@@ -45,6 +46,8 @@ namespace VividOfFade
             if (CarrySlots < 1) CarrySlots = 3;
             foreach (var it in Loadout) it?.Repair();
             foreach (var it in Stash) it?.Repair();
+            if (Run == null) Run = new RunSave();
+            Run.Repair();
             Stash.RemoveAll(it => it == null || it.IsEmptyMarker);
             Alloc = Fit(Alloc, Attributes.Count, 0);
             SkillLv = Fit(SkillLv, SkillInfo.PerClass, 1);
@@ -69,6 +72,31 @@ namespace VividOfFade
             var result = new int[length];
             for (int i = 0; i < length; i++) result[i] = source != null && i < source.Length ? source[i] : fill;
             return result;
+        }
+    }
+
+    /// <summary>中断した挑戦（アプリを閉じても、その層の最初から続けられる）。</summary>
+    [Serializable]
+    public sealed class RunSave
+    {
+        public bool Active;
+        public int Floor = 1;
+        public List<Item> Equipped = new List<Item>(); // 5つ（空きは Level 0 の印）
+        public List<Item> Bag = new List<Item>();
+        public List<bool> BagCarried = new List<bool>(); // 鞄の品が前の挑戦から持ち込んだ物か
+        public int Embers;
+        public List<int> Boons = new List<int>();
+        public float HpRatio = 1f;
+        public float MpRatio = 1f;
+
+        public void Repair()
+        {
+            if (Equipped == null) Equipped = new List<Item>();
+            if (Bag == null) Bag = new List<Item>();
+            if (BagCarried == null) BagCarried = new List<bool>();
+            if (Boons == null) Boons = new List<int>();
+            foreach (var it in Equipped) it?.Repair();
+            foreach (var it in Bag) it?.Repair();
         }
     }
 

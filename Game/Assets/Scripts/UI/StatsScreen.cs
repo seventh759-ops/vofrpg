@@ -106,6 +106,7 @@ namespace VividOfFade
                 $"Crit {st.CritChance * 100f:0}%  x{st.CritMult:0.00}",
                 $"Armor {st.Armor:0}   Light {world.Player.EffectiveLight:0.0}   Speed {st.MoveSpeed:0.0}",
                 kind,
+                BoonLine(world.Player),
             };
             float bottomY = H - pad - btnH;
             foreach (var line in lines)
@@ -120,6 +121,18 @@ namespace VividOfFade
             float half = (W - pad * 2f - gap) * 0.5f;
             ConfirmButton(new Rect(pad, bottomY, half, btnH), "points", "RESET POINTS", world.ResetPoints);
             ConfirmButton(new Rect(pad + half + gap, bottomY, half, btnH), "level", "RESET ALL", world.ResetLevel);
+        }
+
+        static string BoonLine(Player p)
+        {
+            if (p.Boons.Count == 0) return "Boons: none";
+            var sb = new System.Text.StringBuilder("Boons: ");
+            for (int i = 0; i < p.Boons.Count; i++)
+            {
+                if (i > 0) sb.Append(", ");
+                sb.Append(Boons.Get(p.Boons[i]).Name);
+            }
+            return sb.ToString();
         }
 
         void ConfirmButton(Rect r, string id, string text, System.Action action)

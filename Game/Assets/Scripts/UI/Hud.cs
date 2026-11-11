@@ -46,6 +46,7 @@ namespace VividOfFade
         SkillsScreen skills;
         ReturnScreen returnScreen;
         MenuScreen menu;
+        AltarScreen altarScreen;
         GUIStyle label;
         GUIStyle small;
         GUIStyle centered;
@@ -227,6 +228,7 @@ namespace VividOfFade
             skills = new SkillsScreen(this);
             returnScreen = new ReturnScreen(this);
             menu = new MenuScreen(this);
+            altarScreen = new AltarScreen(this);
         }
 
         void Update()
@@ -275,6 +277,7 @@ namespace VividOfFade
             else if (World.SkillsOpen) skills.Draw(World);
             else if (World.ReturnOpen) returnScreen.Draw(World);
             else if (World.MenuOpen) menu.Draw(World);
+            else if (World.AltarOpen) altarScreen.Draw(World);
 
             if (repaint)
             {
@@ -443,6 +446,7 @@ namespace VividOfFade
             }
             float s = Mathf.Max(3f, w * 0.035f);
             if (World.Floors.StairsOpen) Fill(Dot(room.StairsPos, s * 1.3f), new Color(1f, 0.8f, 0.3f));
+            if (room.HasAltar && !World.AltarUsed) Fill(Dot(room.AltarPos, s), new Color(1f, 0.5f, 0.2f));
             Fill(Dot(World.Player.Pos, s), Color.white);
         }
 
@@ -531,6 +535,18 @@ namespace VividOfFade
             float bw = (W - pad * 2f - gap * (cols - 1)) / cols;
             float bh = H * 0.07f;
             float y = H * 0.27f;
+
+            // 中断した挑戦があれば、いちばん上に「続きから」
+            if (ch.Run.Active)
+            {
+                Button(new Rect(pad, y, W - pad * 2f, bh), $"CONTINUE  -  Floor {ch.Run.Floor}", new Color(0.2f, 0.5f, 0.25f, 0.85f), centered,
+                    () => World.ResumeRun(type));
+                y += bh + gap;
+                var warn = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+                warn.normal.textColor = new Color(1f, 0.7f, 0.5f);
+                GUI.Label(new Rect(0, y, W, small.fontSize * 1.5f), "Starting a new run abandons the suspended one.", warn);
+                y += small.fontSize * 2f;
+            }
             for (int i = 0; i < floors.Count; i++)
             {
                 int floor = floors[i];

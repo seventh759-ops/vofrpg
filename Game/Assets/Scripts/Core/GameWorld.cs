@@ -40,7 +40,14 @@ namespace VividOfFade
         /// <summary>メニューを開いている間もゲームを止める。</summary>
         public bool MenuOpen { get; private set; }
 
-        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen || MenuOpen;
+        /// <summary>祭壇の画面（加護を選ぶ）。</summary>
+        public bool AltarOpen { get; private set; }
+        /// <summary>この層の祭壇に並んだ加護（番号）。</summary>
+        public readonly List<int> AltarOffers = new List<int>();
+        /// <summary>この層の祭壇はもう使った。</summary>
+        public bool AltarUsed { get; private set; }
+
+        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen || MenuOpen || AltarOpen;
 
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
         public bool ChoosingClass { get; private set; }
@@ -60,7 +67,7 @@ namespace VividOfFade
         public void ChooseClass(ClassType type)
         {
             var ch = Profile.Get(type);
-            if (Checkpoints(ch).Count > 1) PendingClass = type;
+            if (Checkpoints(ch).Count > 1 || ch.Run.Active) PendingClass = type;
             else StartRun(type, 1);
         }
 
@@ -74,6 +81,9 @@ namespace VividOfFade
         bool roomRewardPending;
         bool stairsLatch;     // 階段の画面を閉じたら、一度離れるまで出さない
         SpriteRenderer stairs;
+        SpriteRenderer altar;
+        bool altarLatch;
+        bool holdSave; // 起動中・再開の準備中は、中断の保存をしない（上書きを防ぐ）
         float slowMoTimer;
         bool exploding;
         float lifeStealPool; // 与えたダメージから回復する分の端数
@@ -94,6 +104,11 @@ namespace VividOfFade
             stairs = stairsGo.AddComponent<SpriteRenderer>();
             stairs.sprite = PixelArt.Stairs;
             Lighting.MakeGlow(stairs);
+            var altarGo = new GameObject("Altar");
+            altarGo.transform.SetParent(transform, false);
+            altar = altarGo.AddComponent<SpriteRenderer>();
+            altar.sprite = PixelArt.Altar;
+            Lighting.MakeGlow(altar);
 
             Enemies = AddChild<EnemySystem>("Enemies");
             Enemies.Init();
@@ -163,7 +178,9 @@ namespace VividOfFade
 
             Floors = new FloorDirector();
             Floors.RoomActivated += () => roomRewardPending = true;
-            StartRun(ClassType.Lampwright);
+            holdSave = true;
+            StartRun(ClassType.Lampwright, 1, false); // 画面の後ろに出しておくだけ（中断した挑戦は消さない）
+            holdSave = false;
             ShowClassSelect();
         }
 
@@ -207,17 +224,13 @@ namespace VividOfFade
             if (Input.CancelPressed)
             {
                 // 何か開いていれば閉じる。何も開いていなければメニューを開く
-                if (BagOpen || StatsOpen || SkillsOpen || MenuOpen) OpenPanel(false, false, false);
+                if (BagOpen || StatsOpen || SkillsOpen || MenuOpen || AltarOpen) OpenPanel(false, false, false);
                 else if (!ReturnOpen && !Player.IsDead) OpenMenu();
             }
 
             if (Player.IsDead)
             {
-                if (Input.ConfirmPressed)
-                {
-                    Profile.Save();
-                    ShowClassSelect();
-                }
+                if (Input.ConfirmPressed) EndRunByDeath();
             }
             else if (!Paused)
             {
@@ -234,6 +247,7 @@ namespace VividOfFade
                 Fx.Tick(dt);
                 CheckRoomCleared();
                 CheckStairs();
+                CheckAltar();
             }
 
             Player.LightPenalty = Enemies.ShroudNear ? GameConfig.ShroudPenalty : 0f;
@@ -275,6 +289,34 @@ namespace VividOfFade
             if (stairsLatch || d > GameConfig.StairsRadius) return;
             stairsLatch = true;
             ReturnOpen = true;
+        }
+
+        /// <summary>祭壇に乗ったら、加護を選ぶ画面を出す（1つの層で1回だけ選べる）。</summary>
+        void CheckAltar()
+        {
+            altar.enabled = Room.HasAltar;
+            if (!Room.HasAltar) return;
+            altar.color = AltarUsed ? new Color(0.45f, 0.45f, 0.5f) : Color.white;
+            float d = (Player.Pos - Room.AltarPos).magnitude;
+            if (d > 1.5f) altarLatch = false;
+            if (AltarUsed || altarLatch || d > GameConfig.StairsRadius) return;
+            altarLatch = true;
+            OpenPanel(false, false, false);
+            AltarOpen = true;
+        }
+
+        /// <summary>祭壇で加護を1つ選ぶ。火種が足りなければ何もしない。</summary>
+        public void BuyBoon(int boon)
+        {
+            int cost = Boons.Cost(Floors.Floor);
+            if (AltarUsed || Inventory.Embers < cost) return;
+            Inventory.Embers -= cost;
+            Player.AddBoon(boon);
+            AltarUsed = true;
+            AltarOpen = false;
+            Fx.Ring(Player.Pos, 2f, new Color(1f, 0.8f, 0.4f, 0.9f), 0.5f);
+            Sfx.Landed(Rarity.Legendary);
+            Hud.Toast($"Boon: {Boons.Get(boon).Name}", new Color(1f, 0.85f, 0.5f));
         }
 
         /// <summary>次の層へ。地面に残ったドロップは拾える分だけ拾ってから下りる。</summary>
@@ -321,6 +363,27 @@ namespace VividOfFade
             stairs.sortingOrder = SortOrder.Floor + 2;
             stairs.enabled = Floors.StairsOpen;
             stairsLatch = false;
+
+            // 祭壇：並べる加護を3つ選んでおく
+            AltarUsed = false;
+            AltarOpen = false;
+            altarLatch = false;
+            AltarOffers.Clear();
+            if (Room.HasAltar)
+            {
+                altar.transform.position = Iso.ToScreen(Room.AltarPos);
+                altar.sortingOrder = SortOrder.For(Room.AltarPos);
+                var pool = new List<int>();
+                for (int k = 0; k < Boons.Count; k++) pool.Add(k);
+                for (int k = 0; k < Boons.OffersPerAltar && pool.Count > 0; k++)
+                {
+                    int pick = Random.Range(0, pool.Count);
+                    AltarOffers.Add(pool[pick]);
+                    pool.RemoveAt(pick);
+                }
+            }
+            altar.enabled = Room.HasAltar;
+            SaveRun(); // 層の最初で、挑戦の状態を保存する
 
             var ch = Profile.Current;
             if (ch != null && floor > ch.BestFloor)
@@ -428,6 +491,7 @@ namespace VividOfFade
         public void OpenPanel(bool bag, bool stats, bool skills)
         {
             MenuOpen = false;
+            AltarOpen = false;
             BagOpen = bag;
             StatsOpen = stats;
             SkillsOpen = skills;
@@ -543,8 +607,7 @@ namespace VividOfFade
         {
             if (Player.IsDead && !ChoosingClass)
             {
-                Profile.Save();
-                ShowClassSelect();
+                EndRunByDeath();
                 return;
             }
             Hud.HandleTap(startPos);
@@ -559,9 +622,10 @@ namespace VividOfFade
         }
 
         /// <summary>選んだ職業で挑戦を始める。</summary>
-        public void StartRun(ClassType type, int startFloor = 1)
+        public void StartRun(ClassType type, int startFloor = 1, bool fresh = true)
         {
             PendingClass = null;
+            if (fresh) ClearRun(Profile.Get(type)); // 新しく始めると、中断した挑戦は消える
             ClassInfo.Current = type;
             Profile.Select(type);
             ChoosingClass = false;
@@ -580,6 +644,7 @@ namespace VividOfFade
             if (ch == null) return;
             if (chosen.Count > ch.CarrySlots) chosen = chosen.GetRange(0, ch.CarrySlots);
             Inventory.SaveForReturn(ch, chosen);
+            ClearRun(ch);
             Profile.Save();
             ShowClassSelect();
             Hud.Toast($"Returned home with {chosen.Count} new items", new Color(0.7f, 1f, 0.7f));
@@ -604,12 +669,68 @@ namespace VividOfFade
 
         void OnApplicationPause(bool paused)
         {
-            if (paused) Profile.Save(); // スマホでアプリが裏に回ったとき
+            if (!paused) return;
+            SaveRun(); // スマホでアプリが裏に回ったとき
+            Profile.Save();
         }
 
         void OnApplicationQuit()
         {
+            SaveRun();
             Profile.Save();
+        }
+
+        /// <summary>
+        /// 今の挑戦を中断用に保存する（層・装備・鞄・火種・加護・体力の割合）。再開はその層の最初から。
+        /// 職業選択中・死亡後は保存しない。
+        /// </summary>
+        void SaveRun()
+        {
+            var ch = Profile.Current;
+            if (holdSave || ch == null || ChoosingClass || Player.IsDead) return;
+            var run = ch.Run;
+            run.Active = true;
+            run.Floor = Floors.Floor;
+            Inventory.SaveRun(run);
+            run.Boons.Clear();
+            run.Boons.AddRange(Player.Boons);
+            run.HpRatio = Player.MaxHp > 0 ? (float)Player.Hp / Player.MaxHp : 1f;
+            run.MpRatio = Player.MaxMp > 0 ? (float)Player.Mp / Player.MaxMp : 1f;
+            Profile.Save();
+        }
+
+        /// <summary>死んだ：中断した挑戦を消して、職業選択へ。</summary>
+        void EndRunByDeath()
+        {
+            ClearRun(Profile.Current);
+            Profile.Save();
+            ShowClassSelect();
+        }
+
+        /// <summary>中断した挑戦を消す（死亡・帰還・新しく始めたとき）。</summary>
+        void ClearRun(CharacterData ch)
+        {
+            if (ch == null) return;
+            ch.Run = new RunSave();
+        }
+
+        /// <summary>中断した挑戦を、保存した層の最初から続ける。</summary>
+        public void ResumeRun(ClassType type)
+        {
+            var ch = Profile.Get(type);
+            if (!ch.Run.Active)
+            {
+                StartRun(type, 1);
+                return;
+            }
+            var run = ch.Run;
+            holdSave = true;
+            StartRun(type, run.Floor, false);
+            Inventory.RestoreRun(run);
+            Player.RestoreRun(run.Boons, run.HpRatio, run.MpRatio);
+            holdSave = false;
+            SaveRun();
+            Hud.Toast($"Resumed on floor {run.Floor}", new Color(0.7f, 1f, 0.7f));
         }
 
         void OnDestroy()
