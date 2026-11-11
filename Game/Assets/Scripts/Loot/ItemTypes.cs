@@ -34,10 +34,11 @@ namespace VividOfFade
         };
 
         static readonly string[] labels = { "Common", "Magic", "Rare", "Legendary", "Relic", "Mythic" };
+        static readonly string[] labelsJa = { "並", "良", "稀", "伝承", "灯宝", "神話" };
         static readonly int[] salvage = { 1, 3, 8, 20, 50, 100 };
 
         public static Color ColorOf(Rarity r) => colors[(int)r];
-        public static string LabelOf(Rarity r) => labels[(int)r];
+        public static string LabelOf(Rarity r) => Loc.Ja ? labelsJa[(int)r] : labels[(int)r];
         public static int SalvageOf(Rarity r) => salvage[(int)r];
     }
 }

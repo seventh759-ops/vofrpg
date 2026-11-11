@@ -20,7 +20,16 @@ namespace VividOfFade
         };
 
         public static string ShortName(Attr a) => shortNames[(int)a];
-        public static string Effect(Attr a) => effects[(int)a];
+        static readonly string[] effectsJa =
+        {
+            "物理の攻撃力、防御",
+            "攻撃の速さ、会心",
+            "魔法の攻撃力",
+            "最大体力、体力の回復",
+            "灯りの攻撃力、MP、MPの回復",
+        };
+
+        public static string Effect(Attr a) => Loc.Ja ? effectsJa[(int)a] : effects[(int)a];
     }
 
     /// <summary>レベルと経験値。数値は仮。</summary>

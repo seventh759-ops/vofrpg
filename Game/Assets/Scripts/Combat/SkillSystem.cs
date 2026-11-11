@@ -116,7 +116,7 @@ namespace VividOfFade
             if (ch.SkillUses[index] < SkillInfo.UsesToNext(ch.SkillLv[index])) return;
             ch.SkillUses[index] = 0;
             ch.SkillLv[index]++;
-            SkillLeveled?.Invoke(spec.Name, ch.SkillLv[index]);
+            SkillLeveled?.Invoke(spec.DisplayName, ch.SkillLv[index]);
         }
 
         /// <summary>レベルが上がったときに呼ぶ。新しく覚えたスキルを空いているボタンへ付ける。</summary>
@@ -126,7 +126,7 @@ namespace VividOfFade
             {
                 var spec = SkillInfo.Get(ClassInfo.Current, i);
                 if (oldLevel >= spec.ReqLevel || ch.Level < spec.ReqLevel) continue;
-                SkillLearned?.Invoke(spec.Name);
+                SkillLearned?.Invoke(spec.DisplayName);
                 if (Array.IndexOf(ch.Slots, i) >= 0) continue;
                 int empty = Array.IndexOf(ch.Slots, -1);
                 if (empty >= 0) ch.Slots[empty] = i;

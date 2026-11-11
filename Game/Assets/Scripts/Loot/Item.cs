@@ -59,15 +59,15 @@ namespace VividOfFade
             {
                 switch (Slot)
                 {
-                    case ItemSlot.Weapon: return ClassInfo.Weapon(Weapon).Name;
-                    case ItemSlot.Lantern: return "Lantern";
-                    case ItemSlot.Armor: return "Coat";
-                    default: return "Ring";
+                    case ItemSlot.Weapon: return ClassInfo.Weapon(Weapon).DisplayName;
+                    case ItemSlot.Lantern: return Loc.T("Lantern", "ランタン");
+                    case ItemSlot.Armor: return Loc.T("Coat", "外套");
+                    default: return Loc.T("Ring", "指輪");
                 }
             }
         }
 
-        public string Name => $"{RarityInfo.LabelOf(Rarity)} {BaseName}";
+        public string Name => Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}";
 
         public List<string> Describe()
         {
@@ -75,14 +75,14 @@ namespace VividOfFade
             switch (Slot)
             {
                 case ItemSlot.Weapon:
-                    lines.Add($"Damage {BaseValue:0}");
-                    lines.Add(ClassInfo.Weapon(Weapon).Desc);
+                    lines.Add(Loc.T($"Damage {BaseValue:0}", $"ダメージ {BaseValue:0}"));
+                    lines.Add(ClassInfo.Weapon(Weapon).DisplayDesc);
                     break;
                 case ItemSlot.Lantern:
-                    lines.Add($"Light +{BaseValue:0.0}");
+                    lines.Add(Loc.T($"Light +{BaseValue:0.0}", $"明るさ +{BaseValue:0.0}"));
                     break;
                 case ItemSlot.Armor:
-                    lines.Add($"Max HP +{BaseValue:0}");
+                    lines.Add(Loc.T($"Max HP +{BaseValue:0}", $"最大体力 +{BaseValue:0}"));
                     break;
             }
             foreach (var a in Affixes) lines.Add(StatText.Format(a.Stat, a.Value));
@@ -97,22 +97,22 @@ namespace VividOfFade
         {
             switch (t)
             {
-                case StatType.DamagePct: return $"+{v * 100f:0}% Damage";
-                case StatType.AttackSpeedPct: return $"+{v * 100f:0}% Attack Speed";
-                case StatType.CritChance: return $"+{v * 100f:0}% Crit Chance";
-                case StatType.CritDamage: return $"+{v * 100f:0}% Crit Damage";
-                case StatType.MoveSpeedPct: return $"+{v * 100f:0}% Move Speed";
-                case StatType.MaxHp: return $"+{v:0} Max HP";
-                case StatType.Armor: return $"+{v:0} Armor";
-                case StatType.LightRadius: return $"+{v:0.0} Light";
-                case StatType.Pierce: return $"+{v:0} Pierce";
+                case StatType.DamagePct: return Loc.T($"+{v * 100f:0}% Damage", $"ダメージ +{v * 100f:0}%");
+                case StatType.AttackSpeedPct: return Loc.T($"+{v * 100f:0}% Attack Speed", $"攻撃速度 +{v * 100f:0}%");
+                case StatType.CritChance: return Loc.T($"+{v * 100f:0}% Crit Chance", $"会心率 +{v * 100f:0}%");
+                case StatType.CritDamage: return Loc.T($"+{v * 100f:0}% Crit Damage", $"会心ダメージ +{v * 100f:0}%");
+                case StatType.MoveSpeedPct: return Loc.T($"+{v * 100f:0}% Move Speed", $"移動速度 +{v * 100f:0}%");
+                case StatType.MaxHp: return Loc.T($"+{v:0} Max HP", $"最大体力 +{v:0}");
+                case StatType.Armor: return Loc.T($"+{v:0} Armor", $"防御 +{v:0}");
+                case StatType.LightRadius: return Loc.T($"+{v:0.0} Light", $"明るさ +{v:0.0}");
+                case StatType.Pierce: return Loc.T($"+{v:0} Pierce", $"貫通 +{v:0}");
                 case StatType.Multishot: return MultiText(v);
                 case StatType.Str: return $"+{v:0} STR";
                 case StatType.Dex: return $"+{v:0} DEX";
                 case StatType.Int: return $"+{v:0} INT";
                 case StatType.Vit: return $"+{v:0} VIT";
                 case StatType.Wis: return $"+{v:0} WIS";
-                case StatType.MaxMp: return $"+{v:0} Max MP";
+                case StatType.MaxMp: return Loc.T($"+{v:0} Max MP", $"最大MP +{v:0}");
                 default: return t.ToString();
             }
         }
@@ -122,9 +122,9 @@ namespace VividOfFade
         {
             switch (ClassInfo.Current)
             {
-                case ClassType.Shadeblade: return $"+{v * 15f:0} deg Arc, +{v:0} Target";
-                case ClassType.Warden: return $"+{v:0} Flame";
-                default: return $"+{v:0} Projectile";
+                case ClassType.Shadeblade: return Loc.T($"+{v * 15f:0} deg Arc, +{v:0} Target", $"斬る広さ +{v * 15f:0}度、当たる数 +{v:0}");
+                case ClassType.Warden: return Loc.T($"+{v:0} Flame", $"灯り +{v:0}");
+                default: return Loc.T($"+{v:0} Projectile", $"弾 +{v:0}");
             }
         }
 
@@ -132,12 +132,12 @@ namespace VividOfFade
         {
             switch (u)
             {
-                case UniqueType.ExplodeOnKill: return "Enemies explode on death";
-                case UniqueType.HealOnKill: return "Heal 1 HP on kill";
-                case UniqueType.SplitShot: return MultiText(2f) + " (unique)";
-                case UniqueType.DodgeNova: return "Dodging releases a burst of flame";
-                case UniqueType.DoubleStrike: return "25% chance to attack again";
-                case UniqueType.Vampiric: return "Heal 1% of damage dealt";
+                case UniqueType.ExplodeOnKill: return Loc.T("Enemies explode on death", "倒した敵が爆発する");
+                case UniqueType.HealOnKill: return Loc.T("Heal 1 HP on kill", "倒すと体力1回復");
+                case UniqueType.SplitShot: return MultiText(2f) + Loc.T(" (unique)", "（固有）");
+                case UniqueType.DodgeNova: return Loc.T("Dodging releases a burst of flame", "回避すると炎が弾ける");
+                case UniqueType.DoubleStrike: return Loc.T("25% chance to attack again", "25%でもう一度攻撃");
+                case UniqueType.Vampiric: return Loc.T("Heal 1% of damage dealt", "与えたダメージの1%を回復");
                 default: return "";
             }
         }

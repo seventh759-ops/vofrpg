@@ -16,6 +16,11 @@ namespace VividOfFade
         public string Name;
         public string Line1;
         public string Line2;
+        public string NameJa, Line1Ja, Line2Ja;
+
+        public string DisplayName => Loc.T(Name, NameJa);
+        public string DisplayLine1 => Loc.T(Line1, Line1Ja);
+        public string DisplayLine2 => Loc.T(Line2, Line2Ja);
         public int BaseHp;              // 体力の土台（VIT とレベルで増える）
         public int[] BaseStats;         // 能力値の初期値（STR, DEX, INT, VIT, WIS）
         public Attr MainAttr;           // 攻撃力が伸びる能力値（1ポイントで +2%）。武器の必要条件にも使う
@@ -37,7 +42,11 @@ namespace VividOfFade
         public ClassType Class;
         public string Name;
         public string Desc;
+        public string NameJa, DescJa;
         public AttackKind Attack;
+
+        public string DisplayName => Loc.T(Name, NameJa);
+        public string DisplayDesc => Loc.T(Desc, DescJa);
         public float BaseDamage;
         public float Interval;          // 攻撃の間隔（秒）。回る灯りは当たり判定の間隔
         public float Mult = 1f;
@@ -68,7 +77,7 @@ namespace VividOfFade
         {
             new ClassSpec
             {
-                Type = ClassType.Lampwright, Name = "Lampwright",
+                Type = ClassType.Lampwright, Name = "Lampwright", NameJa = "灯術師", Line1Ja = "遠くから火を放つ。", Line2Ja = "灯りが広いほど強い。",
                 Line1 = "Hurls fire from afar.",
                 Line2 = "Stronger with wide light.",
                 BaseHp = 50, BaseStats = new[] { 4, 6, 12, 6, 8 }, MainAttr = Attr.Int, SubAttr = Attr.Wis,
@@ -78,7 +87,7 @@ namespace VividOfFade
             },
             new ClassSpec
             {
-                Type = ClassType.Shadeblade, Name = "Shadeblade",
+                Type = ClassType.Shadeblade, Name = "Shadeblade", NameJa = "影刃", Line1Ja = "近くの群れをまとめて斬る。", Line2Ja = "速く鋭いが、打たれ弱い。",
                 Line1 = "Cuts down crowds up close.",
                 Line2 = "Fast, sharp, fragile.",
                 BaseHp = 60, BaseStats = new[] { 12, 10, 3, 7, 4 }, MainAttr = Attr.Str, SubAttr = Attr.Dex,
@@ -89,7 +98,7 @@ namespace VividOfFade
             },
             new ClassSpec
             {
-                Type = ClassType.Warden, Name = "Warden",
+                Type = ClassType.Warden, Name = "Warden", NameJa = "灯番", Line1Ja = "周りを回る灯りで焼き払う。", Line2Ja = "足は遅いが、とても頑丈。",
                 Line1 = "Circling lights burn all near.",
                 Line2 = "Slow but very tough.",
                 BaseHp = 80, BaseStats = new[] { 6, 4, 6, 12, 10 }, MainAttr = Attr.Wis, SubAttr = Attr.Vit,
@@ -102,27 +111,27 @@ namespace VividOfFade
         static readonly Dictionary<WeaponKind, WeaponSpec> weapons = new Dictionary<WeaponKind, WeaponSpec>
         {
             // 灯術師：火の玉
-            { WeaponKind.Wand, new WeaponSpec { Kind = WeaponKind.Wand, Class = ClassType.Lampwright, Name = "Wand", Desc = "Piercing shot",
+            { WeaponKind.Wand, new WeaponSpec { Kind = WeaponKind.Wand, Class = ClassType.Lampwright, Name = "Wand", NameJa = "杖", DescJa = "貫通する火の玉", Desc = "Piercing shot",
                 Attack = AttackKind.Projectile, BaseDamage = 10f, Interval = 0.18f, Pierce = 1 } },
-            { WeaponKind.Repeater, new WeaponSpec { Kind = WeaponKind.Repeater, Class = ClassType.Lampwright, Name = "Repeater", Desc = "Rapid shots",
+            { WeaponKind.Repeater, new WeaponSpec { Kind = WeaponKind.Repeater, Class = ClassType.Lampwright, Name = "Repeater", NameJa = "連射杖", DescJa = "すばやい連射", Desc = "Rapid shots",
                 Attack = AttackKind.Projectile, BaseDamage = 6f, Interval = 0.11f, Mult = 0.6f } },
-            { WeaponKind.Fan, new WeaponSpec { Kind = WeaponKind.Fan, Class = ClassType.Lampwright, Name = "Fan Staff", Desc = "3-way shots",
+            { WeaponKind.Fan, new WeaponSpec { Kind = WeaponKind.Fan, Class = ClassType.Lampwright, Name = "Fan Staff", NameJa = "扇杖", DescJa = "3方向に撃つ", Desc = "3-way shots",
                 Attack = AttackKind.Projectile, BaseDamage = 7f, Interval = 0.3f, Mult = 0.8f, Shots = 3, Spread = 22f } },
 
             // 影刃：斬撃
-            { WeaponKind.Sword, new WeaponSpec { Kind = WeaponKind.Sword, Class = ClassType.Shadeblade, Name = "Sword", Desc = "Wide slash",
+            { WeaponKind.Sword, new WeaponSpec { Kind = WeaponKind.Sword, Class = ClassType.Shadeblade, Name = "Sword", NameJa = "剣", DescJa = "広く斬る", Desc = "Wide slash",
                 Attack = AttackKind.Slash, BaseDamage = 12f, Interval = 0.4f, Reach = 1.8f, Arc = 120f, MaxTargets = 4 } },
-            { WeaponKind.Dagger, new WeaponSpec { Kind = WeaponKind.Dagger, Class = ClassType.Shadeblade, Name = "Dagger", Desc = "Quick stabs, more crits",
+            { WeaponKind.Dagger, new WeaponSpec { Kind = WeaponKind.Dagger, Class = ClassType.Shadeblade, Name = "Dagger", NameJa = "短剣", DescJa = "すばやく突く。会心が出やすい", Desc = "Quick stabs, more crits",
                 Attack = AttackKind.Slash, BaseDamage = 8f, Interval = 0.2f, Reach = 1.5f, Arc = 70f, CritBonus = 0.1f, MaxTargets = 2 } },
-            { WeaponKind.Greatblade, new WeaponSpec { Kind = WeaponKind.Greatblade, Class = ClassType.Shadeblade, Name = "Greatblade", Desc = "Slow, huge sweep",
+            { WeaponKind.Greatblade, new WeaponSpec { Kind = WeaponKind.Greatblade, Class = ClassType.Shadeblade, Name = "Greatblade", NameJa = "大剣", DescJa = "遅いが、大きく薙ぎ払う", Desc = "Slow, huge sweep",
                 Attack = AttackKind.Slash, BaseDamage = 24f, Interval = 0.7f, Reach = 2.2f, Arc = 180f, MaxTargets = 6 } },
 
             // 灯番：回る灯り・周りを焼く
-            { WeaponKind.Censer, new WeaponSpec { Kind = WeaponKind.Censer, Class = ClassType.Warden, Name = "Censer", Desc = "2 circling flames",
+            { WeaponKind.Censer, new WeaponSpec { Kind = WeaponKind.Censer, Class = ClassType.Warden, Name = "Censer", NameJa = "香炉", DescJa = "回る灯り2つ", Desc = "2 circling flames",
                 Attack = AttackKind.Orbit, BaseDamage = 11f, Interval = 0.25f, Orbs = 2, OrbitSpeed = 3f } },
-            { WeaponKind.Chain, new WeaponSpec { Kind = WeaponKind.Chain, Class = ClassType.Warden, Name = "Chain Lamps", Desc = "4 fast flames",
+            { WeaponKind.Chain, new WeaponSpec { Kind = WeaponKind.Chain, Class = ClassType.Warden, Name = "Chain Lamps", NameJa = "鎖灯", DescJa = "速く回る灯り4つ", Desc = "4 fast flames",
                 Attack = AttackKind.Orbit, BaseDamage = 7f, Interval = 0.2f, Orbs = 4, OrbitSpeed = 4.5f } },
-            { WeaponKind.Brazier, new WeaponSpec { Kind = WeaponKind.Brazier, Class = ClassType.Warden, Name = "Brazier", Desc = "Burning pulse around you",
+            { WeaponKind.Brazier, new WeaponSpec { Kind = WeaponKind.Brazier, Class = ClassType.Warden, Name = "Brazier", NameJa = "火鉢", DescJa = "周りを一度に焼く", Desc = "Burning pulse around you",
                 Attack = AttackKind.Pulse, BaseDamage = 15f, Interval = 0.5f } },
         };
 

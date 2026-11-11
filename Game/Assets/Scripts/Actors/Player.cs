@@ -29,7 +29,7 @@ namespace VividOfFade
 
         /// <summary>かかっている強化（HUD の表示用）。</summary>
         public int BuffCount => buffs.Count;
-        public string BuffName(int i) => buffs[i].Spec.Name;
+        public string BuffName(int i) => buffs[i].Spec.DisplayName;
         public float BuffRemaining(int i) => buffs[i].Remaining;
 
         /// <summary>向いている方向（論理座標）。押している間だけ攻撃で、敵がいないときに使う。</summary>

@@ -332,13 +332,13 @@ namespace VividOfFade
             float y = dodge.yMax + m * 0.4f;
             int level = ch != null ? ch.Level : 1;
             string lvText = ch != null && ch.Level >= Progression.MaxLevel ? $"Lv {level} (MAX)" : $"Lv {level}";
-            GUI.Label(new Rect(m, y, textW, lineH), $"{lvText}    FLOOR {World.Floors.Floor}" + (World.Floors.IsBossFloor ? "  BOSS" : ""), small);
+            GUI.Label(new Rect(m, y, textW, lineH), Loc.T($"{lvText}    FLOOR {World.Floors.Floor}", $"{lvText}    {World.Floors.Floor}層") + (World.Floors.IsBossFloor ? Loc.T("  BOSS", "  ボス") : ""), small);
             y += lineH;
             if (player.LightPenalty > 0f)
             {
                 var drained = new GUIStyle(small) { fontStyle = FontStyle.Bold };
                 drained.normal.textColor = new Color(0.8f, 0.6f, 1f);
-                GUI.Label(new Rect(m, y, textW, lineH), "Light drained!", drained);
+                GUI.Label(new Rect(m, y, textW, lineH), Loc.T("Light drained!", "灯りを奪われている！"), drained);
                 y += lineH;
             }
 
@@ -363,7 +363,7 @@ namespace VividOfFade
             // 右上は MENU だけ（ポイントが余っている・鞄が満杯なら「!」）
             int points = ch != null ? ch.Points : 0;
             bool notice = points > 0 || inv.BagFull;
-            Button(ToGui(MenuRect), notice ? "MENU !" : "MENU", notice ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.55f), centered,
+            Button(ToGui(MenuRect), notice ? Loc.T("MENU !", "メニュー !") : Loc.T("MENU", "メニュー"), notice ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.55f), centered,
                 () => World.OpenMenu());
 
             DrawSkillButtons(ch);
@@ -391,7 +391,7 @@ namespace VividOfFade
             {
                 var hint = new GUIStyle(small) { alignment = TextAnchor.LowerRight };
                 hint.normal.textColor = new Color(1f, 1f, 1f, 0.5f);
-                GUI.Label(new Rect(0, Screen.height - lineH * 1.3f, Screen.width - m, lineH), ShowFps ? $"FPS {fps:0}   H: Controls" : "H: Controls", hint);
+                GUI.Label(new Rect(0, Screen.height - lineH * 1.3f, Screen.width - m, lineH), ShowFps ? $"FPS {fps:0}   " + Loc.T("H: Controls", "H：操作") : Loc.T("H: Controls", "H：操作"), hint);
                 if (ShowHelp) DrawHelp();
             }
         }
@@ -413,8 +413,20 @@ namespace VividOfFade
             "Menu ........ Esc (also closes screens)",
         };
 
+        static readonly string[] helpLinesJa =
+        {
+            "移動 ........ WASD / 矢印（スマホ：押してずらす）",
+            "回避 ........ Space（スマホ：はじく）",
+            "スキル ...... 1 / 2 / 3",
+            "攻撃モード .. T（押す間：J か右クリック）",
+            "鞄 .......... B      能力値 ... C",
+            "スキル一覧 .. K      音楽 ... M（オン/オフ）  N（変える）",
+            "メニュー .... Esc（画面を閉じるのも）",
+        };
+
         void DrawHelp()
         {
+            var helpLines = Loc.Ja ? helpLinesJa : Hud.helpLines;
             float w = Screen.width * 0.86f;
             float lh = small.fontSize * 1.45f;
             float h = lh * (helpLines.Length + 1.2f);
@@ -463,7 +475,7 @@ namespace VividOfFade
             var r = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.72f, w, h);
             Fill(r, new Color(0f, 0f, 0f, 0.7f));
             Fill(new Rect(r.x, r.y, r.width * Mathf.Clamp01(boss.Hp / boss.MaxHp), r.height), new Color(0.9f, 0.2f, 0.25f, 0.95f));
-            GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), $"BOSS  -  FLOOR {World.Floors.Floor}", small);
+            GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), Loc.T($"BOSS  -  FLOOR {World.Floors.Floor}", $"ボス  -  {World.Floors.Floor}層"), small);
         }
 
         /// <summary>精鋭の頭の上に、名前と小さな体力バー。</summary>
@@ -512,11 +524,19 @@ namespace VividOfFade
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0f, 0f, 0f, 0.6f));
             float h = Screen.height;
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 3, fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(0, h * 0.38f, Screen.width, h * 0.08f), "GAME OVER", title);
+            GUI.Label(new Rect(0, h * 0.38f, Screen.width, h * 0.08f), Loc.T("GAME OVER", "力尽きた"), title);
             GUI.Label(new Rect(0, h * 0.47f, Screen.width, h * 0.05f),
-                $"FLOOR {World.Floors.Floor}   KILL {World.Enemies.Kills}   EMBERS {World.Inventory.Embers}", centered);
-            GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), "Tap / Enter to continue", centered);
+                Loc.T($"FLOOR {World.Floors.Floor}   KILL {World.Enemies.Kills}   EMBERS {World.Inventory.Embers}", $"{World.Floors.Floor}層   撃破 {World.Enemies.Kills}   火種 {World.Inventory.Embers}"), centered);
+            GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), Loc.T("Tap / Enter to continue", "タップか Enter で続ける"), centered);
         }
+
+        static readonly string[] greetingsEn =
+        {
+            "Welcome, bearer of light. Ready to head down the tower?",
+            "Pick a class. Lampwright fights from afar, Shadeblade up close, Warden burns all around.",
+            "Embers become boons at the altars. Hold back, and you will not get deep.",
+            "Beat a boss and you can start beyond it. Remember that.",
+        };
 
         static readonly string[] greetings =
         {
@@ -528,8 +548,9 @@ namespace VividOfFade
 
         string GuideGreeting()
         {
-            int i = (int)(Time.unscaledTime / 6f) % greetings.Length;
-            return greetings[i];
+            var list = Loc.Ja ? greetings : greetingsEn;
+            int i = (int)(Time.unscaledTime / 6f) % list.Length;
+            return list[i];
         }
 
         /// <summary>開始する層を選ぶ画面（1層と、倒したボスの次の層）。PC は数字キーでも選べる。</summary>
@@ -542,8 +563,8 @@ namespace VividOfFade
             var spec = ClassInfo.Get(type);
 
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(0, H * 0.12f, W, H * 0.06f), "Choose a starting floor", title);
-            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), $"{spec.Name}   Lv {ch.Level}   Best floor {ch.BestFloor}", centered);
+            GUI.Label(new Rect(0, H * 0.12f, W, H * 0.06f), Loc.T("Choose a starting floor", "始める層を選ぶ"), title);
+            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T($"{spec.DisplayName}   Lv {ch.Level}   Best floor {ch.BestFloor}", $"{spec.DisplayName}   Lv {ch.Level}   最深 {ch.BestFloor}層"), centered);
 
             var floors = GameWorld.Checkpoints(ch);
             const int cols = 3;
@@ -556,12 +577,12 @@ namespace VividOfFade
             // 中断した挑戦があれば、いちばん上に「続きから」
             if (ch.Run.Active)
             {
-                Button(new Rect(pad, y, W - pad * 2f, bh), $"CONTINUE  -  Floor {ch.Run.Floor}", new Color(0.2f, 0.5f, 0.25f, 0.85f), centered,
+                Button(new Rect(pad, y, W - pad * 2f, bh), Loc.T($"CONTINUE  -  Floor {ch.Run.Floor}", $"続きから  -  {ch.Run.Floor}層"), new Color(0.2f, 0.5f, 0.25f, 0.85f), centered,
                     () => World.ResumeRun(type));
                 y += bh + gap;
                 var warn = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
                 warn.normal.textColor = new Color(1f, 0.7f, 0.5f);
-                GUI.Label(new Rect(0, y, W, small.fontSize * 1.5f), "Starting a new run abandons the suspended one.", warn);
+                GUI.Label(new Rect(0, y, W, small.fontSize * 1.5f), Loc.T("Starting a new run abandons the suspended one.", "新しく始めると、中断中の挑戦は消えます。"), warn);
                 y += small.fontSize * 2f;
             }
             for (int i = 0; i < floors.Count; i++)
@@ -569,12 +590,12 @@ namespace VividOfFade
                 int floor = floors[i];
                 var r = new Rect(pad + (i % cols) * (bw + gap), y + (i / cols) * (bh + gap), bw, bh);
                 string key = Application.isMobilePlatform || i >= 9 ? "" : $"[{i + 1}] ";
-                Button(r, $"{key}Floor {floor}", i == floors.Count - 1 ? new Color(0.5f, 0.4f, 0.1f, 0.7f) : new Color(1f, 1f, 1f, 0.12f), centered,
+                Button(r, Loc.T($"{key}Floor {floor}", $"{key}{floor}層"), i == floors.Count - 1 ? new Color(0.5f, 0.4f, 0.1f, 0.7f) : new Color(1f, 1f, 1f, 0.12f), centered,
                     () => World.StartRun(type, floor));
             }
             int rows = (floors.Count + cols - 1) / cols;
             var back = new Rect(pad, y + rows * (bh + gap) + gap, W - pad * 2f, H * 0.05f);
-            Button(back, "BACK", new Color(1f, 1f, 1f, 0.08f), centered, () => World.CancelFloorSelect());
+            Button(back, Loc.T("BACK", "戻る"), new Color(1f, 1f, 1f, 0.08f), centered, () => World.CancelFloorSelect());
         }
 
         /// <summary>職業を選ぶ画面。3つの大きなボタン（PC は数字キー 1〜3 でも選べる）。</summary>
@@ -586,7 +607,7 @@ namespace VividOfFade
 
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
             GUI.Label(new Rect(0, H * 0.12f, W, H * 0.06f), "VIVID OF FADE", title);
-            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), "Choose your class", centered);
+            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T("Choose your class", "職業を選ぶ"), centered);
 
             float pad = W * 0.08f;
             float bh = H * 0.15f;
@@ -607,12 +628,12 @@ namespace VividOfFade
                 float tw = r.xMax - tx - inner;
                 float lh = small.fontSize * 1.35f;
                 string key = Application.isMobilePlatform ? "" : $"[{i + 1}] ";
-                GUI.Label(new Rect(tx, r.y + inner, tw, nameStyle.fontSize * 1.4f), key + spec.Name, nameStyle);
-                GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, tw, lh), spec.Line1, small);
-                GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh), spec.Line2, small);
+                GUI.Label(new Rect(tx, r.y + inner, tw, nameStyle.fontSize * 1.4f), key + spec.DisplayName, nameStyle);
+                GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, tw, lh), spec.DisplayLine1, small);
+                GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh), spec.DisplayLine2, small);
                 var ch = Profile.Get(type);
                 GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh * 2f, tw, lh),
-                    $"Lv {ch.Level}   Best floor {ch.BestFloor}   Main: {Attributes.ShortName(spec.MainAttr)} / {Attributes.ShortName(spec.SubAttr)}", small);
+                    Loc.T($"Lv {ch.Level}   Best floor {ch.BestFloor}   Main: {Attributes.ShortName(spec.MainAttr)} / {Attributes.ShortName(spec.SubAttr)}", $"Lv {ch.Level}   最深 {ch.BestFloor}層   主能力 {Attributes.ShortName(spec.MainAttr)} / {Attributes.ShortName(spec.SubAttr)}"), small);
                 y += bh + gap;
             }
 
@@ -627,8 +648,12 @@ namespace VividOfFade
             GUI.Label(new Rect(bubble.x + W * 0.02f, bubble.y, bubble.width - W * 0.04f, bubble.height), GuideGreeting(), say);
 
             // BGM の切り替え（N キーでも）
-            var musicRect = new Rect(pad, y + gap, W - pad * 2f, H * 0.045f);
-            Button(musicRect, $"BGM: {World.Music.ThemeName}   (tap to change)", new Color(1f, 1f, 1f, 0.1f), centered, () => World.NextMusic());
+            // BGM と言語は1行に並べる（下の案内役と重ならないように）
+            float half = (W - pad * 2f - W * 0.02f) * 0.5f;
+            var musicRect = new Rect(pad, y + gap * 0.5f, half, H * 0.045f);
+            Button(musicRect, $"BGM: {World.Music.ThemeName}", new Color(1f, 1f, 1f, 0.1f), centered, () => World.NextMusic());
+            var langRect = new Rect(musicRect.xMax + W * 0.02f, musicRect.y, half, musicRect.height);
+            Button(langRect, $"Language: {Loc.LanguageName}", new Color(1f, 1f, 1f, 0.1f), centered, () => Loc.Next());
         }
 
         void EnsureStyles()

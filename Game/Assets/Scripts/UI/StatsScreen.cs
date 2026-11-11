@@ -42,8 +42,8 @@ namespace VividOfFade
 
             var spec = ClassInfo.Get(st.Class);
             var title = new GUIStyle(label) { fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(pad, pad, W, btnH), $"{spec.Name}   Lv {ch.Level}", title);
-            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), "CLOSE", buttonBack, centered, () => world.StatsOpen = false);
+            GUI.Label(new Rect(pad, pad, W, btnH), $"{spec.DisplayName}   Lv {ch.Level}", title);
+            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.StatsOpen = false);
 
             // 経験値
             float y = pad + btnH + H * 0.015f;
@@ -58,7 +58,7 @@ namespace VividOfFade
             // 能力値
             var pointsStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold };
             pointsStyle.normal.textColor = ch.Points > 0 ? new Color(1f, 0.85f, 0.3f) : Color.white;
-            GUI.Label(new Rect(pad, y, W, lineH), $"Points: {ch.Points}", pointsStyle);
+            GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Points: {ch.Points}", $"ポイント：{ch.Points}"), pointsStyle);
             y += lineH * 1.3f;
 
             float rowH = H * 0.06f;
@@ -93,18 +93,18 @@ namespace VividOfFade
             string kind;
             switch (st.Kind)
             {
-                case AttackKind.Slash: kind = $"Slash  reach {st.Reach:0.0}  arc {st.ArcDeg:0}  targets {st.MaxTargets}"; break;
-                case AttackKind.Orbit: kind = $"Flames x{st.Orbs}"; break;
-                case AttackKind.Pulse: kind = $"Pulse  radius {st.PulseRadius:0.0}"; break;
-                default: kind = $"Shots x{st.Shots}  pierce {st.Pierce}"; break;
+                case AttackKind.Slash: kind = Loc.T($"Slash  reach {st.Reach:0.0}  arc {st.ArcDeg:0}  targets {st.MaxTargets}", $"斬撃  届く距離 {st.Reach:0.0}  広さ {st.ArcDeg:0}度  当たる数 {st.MaxTargets}"); break;
+                case AttackKind.Orbit: kind = Loc.T($"Flames x{st.Orbs}", $"回る灯り x{st.Orbs}"); break;
+                case AttackKind.Pulse: kind = Loc.T($"Pulse  radius {st.PulseRadius:0.0}", $"周りを焼く  範囲 {st.PulseRadius:0.0}"); break;
+                default: kind = Loc.T($"Shots x{st.Shots}  pierce {st.Pierce}", $"弾 x{st.Shots}  貫通 {st.Pierce}"); break;
             }
             string[] lines =
             {
-                $"HP {world.Player.MaxHp}   (+{st.HpRegen:0.0}/s)",
-                $"MP {world.Player.MaxMp}   (+{st.MpRegen:0.0}/s)   next Lv +{Progression.MpPerLevel(Progression.BaseWis(ch))} MP",
-                $"Damage {st.Damage:0.0}   Attacks/s {st.AttacksPerSecond:0.0}",
-                $"Crit {st.CritChance * 100f:0}%  x{st.CritMult:0.00}",
-                $"Armor {st.Armor:0}   Light {world.Player.EffectiveLight:0.0}   Speed {st.MoveSpeed:0.0}",
+                Loc.T($"HP {world.Player.MaxHp}   (+{st.HpRegen:0.0}/s)", $"体力 {world.Player.MaxHp}   (+{st.HpRegen:0.0}/秒)"),
+                Loc.T($"MP {world.Player.MaxMp}   (+{st.MpRegen:0.0}/s)   next Lv +{Progression.MpPerLevel(Progression.BaseWis(ch))} MP", $"MP {world.Player.MaxMp}   (+{st.MpRegen:0.0}/秒)   次のLvで +{Progression.MpPerLevel(Progression.BaseWis(ch))}"),
+                Loc.T($"Damage {st.Damage:0.0}   Attacks/s {st.AttacksPerSecond:0.0}", $"ダメージ {st.Damage:0.0}   攻撃/秒 {st.AttacksPerSecond:0.0}"),
+                Loc.T($"Crit {st.CritChance * 100f:0}%  x{st.CritMult:0.00}", $"会心 {st.CritChance * 100f:0}%  x{st.CritMult:0.00}"),
+                Loc.T($"Armor {st.Armor:0}   Light {world.Player.EffectiveLight:0.0}   Speed {st.MoveSpeed:0.0}", $"防御 {st.Armor:0}   明るさ {world.Player.EffectiveLight:0.0}   速さ {st.MoveSpeed:0.0}"),
                 kind,
                 BoonLine(world.Player),
             };
@@ -119,18 +119,18 @@ namespace VividOfFade
             // 振り直しとレベルのリセット（2回押しで実行）
             float gap = W * 0.03f;
             float half = (W - pad * 2f - gap) * 0.5f;
-            ConfirmButton(new Rect(pad, bottomY, half, btnH), "points", "RESET POINTS", world.ResetPoints);
-            ConfirmButton(new Rect(pad + half + gap, bottomY, half, btnH), "level", "RESET ALL", world.ResetLevel);
+            ConfirmButton(new Rect(pad, bottomY, half, btnH), "points", Loc.T("RESET POINTS", "ポイントを振り直す"), world.ResetPoints);
+            ConfirmButton(new Rect(pad + half + gap, bottomY, half, btnH), "level", Loc.T("RESET ALL", "すべてリセット"), world.ResetLevel);
         }
 
         static string BoonLine(Player p)
         {
-            if (p.Boons.Count == 0) return "Boons: none";
-            var sb = new System.Text.StringBuilder("Boons: ");
+            if (p.Boons.Count == 0) return Loc.T("Boons: none", "加護：なし");
+            var sb = new System.Text.StringBuilder(Loc.T("Boons: ", "加護："));
             for (int i = 0; i < p.Boons.Count; i++)
             {
                 if (i > 0) sb.Append(", ");
-                sb.Append(Boons.Get(p.Boons[i]).Name);
+                sb.Append(Boons.Get(p.Boons[i]).DisplayName);
             }
             return sb.ToString();
         }
@@ -139,7 +139,7 @@ namespace VividOfFade
         {
             bool isArmed = armed == id && Time.unscaledTime < armedUntil;
             var back = isArmed ? new Color(0.7f, 0.15f, 0.15f, 0.8f) : new Color(1f, 1f, 1f, 0.12f);
-            hud.Button(r, isArmed ? "TAP AGAIN" : text, back, hud.CenteredStyle, () =>
+            hud.Button(r, isArmed ? Loc.T("TAP AGAIN", "もう一度押す") : text, back, hud.CenteredStyle, () =>
             {
                 if (armed == id && Time.unscaledTime < armedUntil)
                 {

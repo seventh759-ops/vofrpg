@@ -124,7 +124,7 @@ namespace VividOfFade
             Enemies.BossSlam += OnBossSlam;
             Enemies.BossEnraged += () =>
             {
-                Hud.Toast("The boss is enraged!", new Color(1f, 0.4f, 0.3f));
+                Hud.Toast(Loc.T("The boss is enraged!", "ボスが怒り狂った！"), new Color(1f, 0.4f, 0.3f));
                 cameraRig.Shake(0.2f, 0.4f);
             };
             Enemies.EliteKilled += OnEliteKilled;
@@ -150,9 +150,9 @@ namespace VividOfFade
             };
             Skills.SkillLearned += name =>
             {
-                Hud.Toast($"New skill: {name}", new Color(0.6f, 0.85f, 1f));
-                Guide("skill", "新しいスキルだ。左下のボタンで使える（PC は 1〜3 キー）。",
-                    "ボタンの上の帯を押すと、オートで勝手に使ってくれる。使うほど強くなるよ。");
+                Hud.Toast(Loc.T($"New skill: {name}", $"新しいスキル：{name}"), new Color(0.6f, 0.85f, 1f));
+                Guide("skill", Loc.T("A new skill! Use it with the buttons at the bottom left (1-3 on PC).", "新しいスキルだ。左下のボタンで使える（PC は 1〜3 キー）。"),
+                    Loc.T("Tap the strip above a button to cast it automatically. Skills grow stronger the more you use them.", "ボタンの上の帯を押すと、オートで勝手に使ってくれる。使うほど強くなるよ。"));
             };
             Sfx = gameObject.AddComponent<Sfx>();
             Music = gameObject.AddComponent<Music>();
@@ -190,8 +190,8 @@ namespace VividOfFade
             Floors.RoomActivated += () =>
             {
                 roomRewardPending = true;
-                Guide("enemies", "部屋に入ると敵が湧く。灯りの届く所まで来たら、勝手に攻撃してくれるよ。",
-                    "囲まれたら回避（Space か、画面をはじく）。全滅させると、ドロップがあふれ出す。");
+                Guide("enemies", Loc.T("Enemies appear when you enter a room. You attack on your own once they reach your light.", "部屋に入ると敵が湧く。灯りの届く所まで来たら、勝手に攻撃してくれるよ。"),
+                    Loc.T("If you get surrounded, dodge (Space, or flick the screen). Clear the room and the loot comes pouring out.", "囲まれたら回避（Space か、画面をはじく）。全滅させると、ドロップがあふれ出す。"));
             };
             holdSave = true;
             StartRun(ClassType.Lampwright, 1, false); // 画面の後ろに出しておくだけ（中断した挑戦は消さない）
@@ -252,7 +252,7 @@ namespace VividOfFade
 
             if (Player.IsDead)
             {
-                Guide("death", "あらら、やられちゃったね。", "今回拾った物はなくなるけど、レベルは残る。帰還してから死ねば、装備も守れるよ。");
+                Guide("death", Loc.T("Oops, you went down.", "あらら、やられちゃったね。"), Loc.T("What you found this run is lost, but your level stays. Return home first and your gear is safe.", "今回拾った物はなくなるけど、レベルは残る。帰還してから死ねば、装備も守れるよ。"));
                 if (!talking && Input.ConfirmPressed) EndRunByDeath();
             }
             else if (!Paused)
@@ -309,8 +309,8 @@ namespace VividOfFade
             stairs.enabled = Floors.StairsOpen;
             if (!Floors.StairsOpen) return;
             float d = (Player.Pos - Room.StairsPos).magnitude;
-            if (d < 5f) Guide("stairs", "階段だ。乗ると、下りるか、帰還するかを選べる。",
-                "帰還すれば装備と火種を持ち帰れる。下りれば、もっといい物が出るけど……死んだら全部なくすよ。");
+            if (d < 5f) Guide("stairs", Loc.T("The stairs. Step on them to descend or return home.", "階段だ。乗ると、下りるか、帰還するかを選べる。"),
+                Loc.T("Returning keeps your gear and embers. Going deeper finds better loot... but die, and it is all gone.", "帰還すれば装備と火種を持ち帰れる。下りれば、もっといい物が出るけど……死んだら全部なくすよ。"));
             if (d > 1.5f) stairsLatch = false;
             if (stairsLatch || d > GameConfig.StairsRadius) return;
             stairsLatch = true;
@@ -325,8 +325,8 @@ namespace VividOfFade
             foreach (var e in Enemies.Active)
             {
                 if (e.Dying || e.Elite == EliteKind.None || (e.Pos - Player.Pos).sqrMagnitude > r * r) continue;
-                Guide("elite", "名前の付いた大きいのは精鋭。硬いけど、倒せばドロップがあふれる。",
-                    "紫の Shroud は近くにいると灯りを奪う。灯りが狭まったら、先に片付けな。");
+                Guide("elite", Loc.T("The big ones with names are elites. Tough, but they drop a flood of loot.", "名前の付いた大きいのは精鋭。硬いけど、倒せばドロップがあふれる。"),
+                    Loc.T("A purple Shroud drains your light when close. If your light shrinks, take it out first.", "紫の「覆い」は近くにいると灯りを奪う。灯りが狭まったら、先に片付けな。"));
                 return;
             }
         }
@@ -338,8 +338,8 @@ namespace VividOfFade
             if (!Room.HasAltar) return;
             altar.color = AltarUsed ? new Color(0.45f, 0.45f, 0.5f) : Color.white;
             float d = (Player.Pos - Room.AltarPos).magnitude;
-            if (d < 5f) Guide("altar", "祭壇だよ。火種を払うと、この挑戦のあいだずっと効く加護をくれる。",
-                "1つの層で1回だけ。どれを選ぶかで、戦い方が変わるよ。");
+            if (d < 5f) Guide("altar", Loc.T("An altar. Offer embers for a boon that lasts the whole run.", "祭壇だよ。火種を払うと、この挑戦のあいだずっと効く加護をくれる。"),
+                Loc.T("Once per floor. Your pick changes how you fight.", "1つの層で1回だけ。どれを選ぶかで、戦い方が変わるよ。"));
             if (d > 1.5f) altarLatch = false;
             if (AltarUsed || altarLatch || d > GameConfig.StairsRadius) return;
             altarLatch = true;
@@ -358,7 +358,7 @@ namespace VividOfFade
             AltarOpen = false;
             Fx.Ring(Player.Pos, 2f, new Color(1f, 0.8f, 0.4f, 0.9f), 0.5f);
             Sfx.Landed(Rarity.Legendary);
-            Hud.Toast($"Boon: {Boons.Get(boon).Name}", new Color(1f, 0.85f, 0.5f));
+            Hud.Toast(Loc.T($"Boon: {Boons.Get(boon).DisplayName}", $"加護：{Boons.Get(boon).DisplayName}"), new Color(1f, 0.85f, 0.5f));
         }
 
         /// <summary>次の層へ。地面に残ったドロップは拾える分だけ拾ってから下りる。</summary>
@@ -367,7 +367,7 @@ namespace VividOfFade
             Loot.CollectAll(Inventory);
             ReturnOpen = false;
             EnterFloor(Floors.Floor + 1);
-            Hud.Toast($"FLOOR {Floors.Floor}" + (Floors.IsBossFloor ? "  -  BOSS" : ""), new Color(1f, 0.85f, 0.5f));
+            Hud.Toast(Loc.T($"FLOOR {Floors.Floor}", $"{Floors.Floor}層") + (Floors.IsBossFloor ? Loc.T("  -  BOSS", "  -  ボス") : ""), new Color(1f, 0.85f, 0.5f));
         }
 
         /// <summary>階段の画面を閉じて、この層に残る。</summary>
@@ -387,7 +387,7 @@ namespace VividOfFade
             if (zone.Key != currentZone)
             {
                 currentZone = zone.Key;
-                Hud.ShowBanner($"FLOOR {floor}  -  {zone.Title}", zone.Subtitle, zone.Accent);
+                Hud.ShowBanner(Loc.T($"FLOOR {floor}  -  {zone.Title}", $"{floor}層  -  {zone.Title}"), zone.DisplaySubtitle, zone.Accent);
             }
         }
 
@@ -399,8 +399,8 @@ namespace VividOfFade
             Fx.Clear();
             roomRewardPending = false;
             Floors.Begin(floor, Room);
-            if (Floors.IsBossFloor) Guide("boss", "この層の奥にはボスがいる。赤い輪が広がったら、輪の外へ逃げるか回避！",
-                "倒せば階段が現れて、次からはその先の層から始められるようになるよ。");
+            if (Floors.IsBossFloor) Guide("boss", Loc.T("A boss waits deep in this floor. When the red ring spreads, get outside it or dodge!", "この層の奥にはボスがいる。赤い輪が広がったら、輪の外へ逃げるか回避！"),
+                Loc.T("Beat it and the stairs appear. Next time you can start from the floor beyond.", "倒せば階段が現れて、次からはその先の層から始められるようになるよ。"));
             ApplyZone(Room.Zone, floor);
             Player.Pos = Room.StartPos;
             stairs.transform.position = Iso.ToScreen(Room.StairsPos);
@@ -481,7 +481,7 @@ namespace VividOfFade
             if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
             Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
             cameraRig.Shake(0.3f, 0.5f);
-            Hud.Toast("BOSS DEFEATED!", new Color(1f, 0.5f, 0.4f));
+            Hud.Toast(Loc.T("BOSS DEFEATED!", "ボスを倒した！"), new Color(1f, 0.5f, 0.4f));
             GainExp(Progression.KillExp(Floors.Tier) * 30);
             Floors.OpenStairs();
             var ch = Profile.Current;
@@ -489,9 +489,9 @@ namespace VividOfFade
             {
                 ch.BossCleared = Floors.Floor;
                 Profile.Save();
-                Hud.Toast($"Checkpoint unlocked: floor {Floors.Floor + 1}", new Color(0.7f, 1f, 0.7f));
+                Hud.Toast(Loc.T($"Checkpoint unlocked: floor {Floors.Floor + 1}", $"{Floors.Floor + 1}層から始められるようになった"), new Color(0.7f, 1f, 0.7f));
             }
-            Hud.Toast("The stairs have appeared", new Color(1f, 0.85f, 0.5f));
+            Hud.Toast(Loc.T("The stairs have appeared", "階段が現れた"), new Color(1f, 0.85f, 0.5f));
         }
 
         /// <summary>ボス装備の固有効果：回避した場所で炎が弾ける。</summary>
@@ -562,9 +562,9 @@ namespace VividOfFade
             Player.Refill();
             Fx.Ring(Player.Pos, 2f, new Color(1f, 0.95f, 0.6f, 0.9f), 0.5f);
             Sfx.Landed(Rarity.Legendary);
-            Hud.Toast($"LEVEL UP!  Lv {ch.Level}  (+{gained * Progression.PointsPerLevel} points)", new Color(1f, 0.95f, 0.5f));
-            Guide("levelup", "レベルが上がった！ ポイントは C キーか MENU の STATS で振れる。",
-                "MP が欲しいなら、早めに WIS を少し振っておくといい。レベルアップのたびに伸びが変わるからね。");
+            Hud.Toast(Loc.T($"LEVEL UP!  Lv {ch.Level}  (+{gained * Progression.PointsPerLevel} points)", $"レベルアップ！  Lv {ch.Level}  （ポイント +{gained * Progression.PointsPerLevel}）"), new Color(1f, 0.95f, 0.5f));
+            Guide("levelup", Loc.T("Level up! Spend points with the C key or STATS in the MENU.", "レベルが上がった！ ポイントは C キーかメニューの「能力値」で振れる。"),
+                Loc.T("Want more MP? Put a little into WIS early. It changes how much you gain each level.", "MP が欲しいなら、早めに WIS を少し振っておくといい。レベルアップのたびに伸びが変わるからね。"));
             Profile.Save();
         }
 
@@ -591,7 +591,7 @@ namespace VividOfFade
             }
             RefreshStats();
             Profile.Save();
-            Hud.Toast("Points reset", Color.white);
+            Hud.Toast(Loc.T("Points reset", "ポイントを振り直した"), Color.white);
         }
 
         /// <summary>
@@ -652,8 +652,8 @@ namespace VividOfFade
         {
             Sfx.Pickup();
             Hud.Toast(item.Name, RarityInfo.ColorOf(item.Rarity));
-            Guide("loot", "お、装備を拾ったね。B キーか MENU の BAG で鞄を開けるよ。",
-                "緑の UPGRADE なら付け替え時。いらない物は分解すると火種になる。");
+            Guide("loot", Loc.T("Oh, you found some gear. Open your bag with the B key or BAG in the MENU.", "お、装備を拾ったね。B キーかメニューの「鞄」で開けるよ。"),
+                Loc.T("A green UPGRADE means it is time to swap. Salvage what you do not need for embers.", "緑の「強くなる」なら付け替え時。いらない物は分解すると火種になる。"));
         }
 
         void UpdateSlowMo()
@@ -702,9 +702,9 @@ namespace VividOfFade
             Input.ClearQueued();
             if (!holdSave && startFloor <= 1)
             {
-                Guide("welcome", "やあ。ここは灯りの届かない塔。底へ下りながら、敵を倒して装備を集めるんだ。",
-                    "画面を押してずらすと歩ける（PC は WASD）。攻撃は灯りの届く敵へ勝手に飛ぶよ。",
-                    "部屋をまわって、どこかにある階段を探しな。右上の地図に、見た場所が描かれていく。");
+                Guide("welcome", Loc.T("Hey there. This is a tower where no light reaches. Head down, defeat enemies, and collect gear.", "やあ。ここは灯りの届かない塔。底へ下りながら、敵を倒して装備を集めるんだ。"),
+                    Loc.T("Press and drag to walk (WASD on PC). Your attacks fly at enemies within your light on their own.", "画面を押してずらすと歩ける（PC は WASD）。攻撃は灯りの届く敵へ勝手に飛ぶよ。"),
+                    Loc.T("Explore the rooms and find the stairs. The map at the top right fills in as you look around.", "部屋をまわって、どこかにある階段を探しな。右上の地図に、見た場所が描かれていく。"));
             }
         }
 
@@ -718,7 +718,7 @@ namespace VividOfFade
             ClearRun(ch);
             Profile.Save();
             ShowClassSelect();
-            Hud.Toast($"Returned home with {chosen.Count} new items", new Color(0.7f, 1f, 0.7f));
+            Hud.Toast(Loc.T($"Returned home with {chosen.Count} new items", $"新しい品 {chosen.Count} 個を持ち帰った"), new Color(0.7f, 1f, 0.7f));
         }
 
         void ClearField()
@@ -801,7 +801,7 @@ namespace VividOfFade
             Player.RestoreRun(run.Boons, run.HpRatio, run.MpRatio);
             holdSave = false;
             SaveRun();
-            Hud.Toast($"Resumed on floor {run.Floor}", new Color(0.7f, 1f, 0.7f));
+            Hud.Toast(Loc.T($"Resumed on floor {run.Floor}", $"{run.Floor}層から再開"), new Color(0.7f, 1f, 0.7f));
         }
 
         void OnDestroy()

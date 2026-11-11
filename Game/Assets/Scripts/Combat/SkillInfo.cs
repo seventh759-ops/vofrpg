@@ -18,7 +18,11 @@ namespace VividOfFade
     {
         public string Name;
         public string Desc;
+        public string NameJa, DescJa;
         public int ReqLevel;
+
+        public string DisplayName => Loc.T(Name, NameJa);
+        public string DisplayDesc => Loc.T(Desc, DescJa);
         public int Mp;
         public float Cooldown;
         public SkillEffect Effect;
@@ -55,49 +59,49 @@ namespace VividOfFade
             // 灯術師（Lampwright）
             new[]
             {
-                new SkillSpec { Name = "Flame Ring", Desc = "Burst of fire around you.", ReqLevel = 1, Mp = 8, Cooldown = 3f,
+                new SkillSpec { Name = "Flame Ring", NameJa = "火の輪", DescJa = "周りに火を放つ。", Desc = "Burst of fire around you.", ReqLevel = 1, Mp = 8, Cooldown = 3f,
                     Effect = SkillEffect.Nova, Mult = 1.6f, Radius = 2.2f },
-                new SkillSpec { Name = "Fire Barrage", Desc = "12 fireballs in all directions.", ReqLevel = 5, Mp = 12, Cooldown = 5f,
+                new SkillSpec { Name = "Fire Barrage", NameJa = "火の弾幕", DescJa = "全方向に火の玉を12発。", Desc = "12 fireballs in all directions.", ReqLevel = 5, Mp = 12, Cooldown = 5f,
                     Effect = SkillEffect.Barrage, Mult = 0.8f, Count = 12, AllAround = true },
-                new SkillSpec { Name = "Flare", Desc = "Light +3 and damage +20% for 6s.", ReqLevel = 10, Mp = 15, Cooldown = 15f,
+                new SkillSpec { Name = "Flare", NameJa = "照らし", DescJa = "6秒、明るさ+3・ダメージ+20%。", Desc = "Light +3 and damage +20% for 6s.", ReqLevel = 10, Mp = 15, Cooldown = 15f,
                     Effect = SkillEffect.Buff, Duration = 6f, BuffLight = 3f, BuffDamage = 0.2f, Color = new Color(1f, 0.95f, 0.6f, 0.9f) },
-                new SkillSpec { Name = "Meteor", Desc = "Falls on the nearest enemy after a moment.", ReqLevel = 18, Mp = 20, Cooldown = 6f,
+                new SkillSpec { Name = "Meteor", NameJa = "流星", DescJa = "一番近い敵に、少し遅れて落ちる。", Desc = "Falls on the nearest enemy after a moment.", ReqLevel = 18, Mp = 20, Cooldown = 6f,
                     Effect = SkillEffect.Strike, Mult = 4f, Radius = 1.6f, Delay = 0.6f, Range = 8f },
-                new SkillSpec { Name = "Ember Shield", Desc = "Armor +50, damage taken -30% for 6s.", ReqLevel = 26, Mp = 20, Cooldown = 18f,
+                new SkillSpec { Name = "Ember Shield", NameJa = "残り火の守り", DescJa = "6秒、防御+50・被ダメージ-30%。", Desc = "Armor +50, damage taken -30% for 6s.", ReqLevel = 26, Mp = 20, Cooldown = 18f,
                     Effect = SkillEffect.Buff, Duration = 6f, BuffArmor = 50f, BuffTaken = 0.7f, Color = new Color(1f, 0.5f, 0.2f, 0.9f) },
-                new SkillSpec { Name = "Inferno", Desc = "Huge ring of fire.", ReqLevel = 35, Mp = 40, Cooldown = 12f,
+                new SkillSpec { Name = "Inferno", NameJa = "業火", DescJa = "とても大きな火の輪。", Desc = "Huge ring of fire.", ReqLevel = 35, Mp = 40, Cooldown = 12f,
                     Effect = SkillEffect.Nova, Mult = 3f, Radius = 4f },
             },
             // 影刃（Shadeblade）
             new[]
             {
-                new SkillSpec { Name = "Whirlwind", Desc = "Spin and cut everything around you.", ReqLevel = 1, Mp = 6, Cooldown = 3f,
+                new SkillSpec { Name = "Whirlwind", NameJa = "旋風", DescJa = "回転して周りを斬る。", Desc = "Spin and cut everything around you.", ReqLevel = 1, Mp = 6, Cooldown = 3f,
                     Effect = SkillEffect.Nova, Mult = 2f, Radius = 1.8f, Color = new Color(0.85f, 0.9f, 1f, 0.9f) },
-                new SkillSpec { Name = "Shadow Dash", Desc = "Dash through enemies, cutting them.", ReqLevel = 5, Mp = 10, Cooldown = 4f,
+                new SkillSpec { Name = "Shadow Dash", NameJa = "影走り", DescJa = "敵の中を突き抜けて斬る。", Desc = "Dash through enemies, cutting them.", ReqLevel = 5, Mp = 10, Cooldown = 4f,
                     Effect = SkillEffect.Dash, Mult = 2.5f, Radius = 0.9f, Range = 4f, Color = new Color(0.6f, 0.5f, 0.9f, 0.9f) },
-                new SkillSpec { Name = "Frenzy", Desc = "Attack speed +50% for 6s.", ReqLevel = 10, Mp = 12, Cooldown = 14f,
+                new SkillSpec { Name = "Frenzy", NameJa = "狂乱", DescJa = "6秒、攻撃速度+50%。", Desc = "Attack speed +50% for 6s.", ReqLevel = 10, Mp = 12, Cooldown = 14f,
                     Effect = SkillEffect.Buff, Duration = 6f, BuffAttackSpeed = 0.5f, Color = new Color(1f, 0.35f, 0.35f, 0.9f) },
-                new SkillSpec { Name = "Crescent Wave", Desc = "5 flying blades toward the enemy.", ReqLevel = 18, Mp = 15, Cooldown = 5f,
+                new SkillSpec { Name = "Crescent Wave", NameJa = "三日月の刃", DescJa = "敵へ飛ぶ斬撃を5つ。", Desc = "5 flying blades toward the enemy.", ReqLevel = 18, Mp = 15, Cooldown = 5f,
                     Effect = SkillEffect.Barrage, Mult = 1.5f, Count = 5, Color = new Color(0.85f, 0.9f, 1f, 0.9f) },
-                new SkillSpec { Name = "Second Wind", Desc = "Recover 30% of max HP.", ReqLevel = 26, Mp = 20, Cooldown = 20f,
+                new SkillSpec { Name = "Second Wind", NameJa = "立て直し", DescJa = "最大体力の30%を回復。", Desc = "Recover 30% of max HP.", ReqLevel = 26, Mp = 20, Cooldown = 20f,
                     Effect = SkillEffect.Heal, HealPct = 0.3f, Color = new Color(0.5f, 1f, 0.6f, 0.9f) },
-                new SkillSpec { Name = "Thousand Cuts", Desc = "A storm of blades around you.", ReqLevel = 35, Mp = 35, Cooldown = 10f,
+                new SkillSpec { Name = "Thousand Cuts", NameJa = "千の斬撃", DescJa = "周りに刃の嵐。", Desc = "A storm of blades around you.", ReqLevel = 35, Mp = 35, Cooldown = 10f,
                     Effect = SkillEffect.Nova, Mult = 5f, Radius = 2.6f, Color = new Color(0.85f, 0.9f, 1f, 0.9f) },
             },
             // 灯番（Warden）
             new[]
             {
-                new SkillSpec { Name = "Holy Pulse", Desc = "Wave of light around you.", ReqLevel = 1, Mp = 8, Cooldown = 3f,
+                new SkillSpec { Name = "Holy Pulse", NameJa = "聖なる波動", DescJa = "周りに光の波。", Desc = "Wave of light around you.", ReqLevel = 1, Mp = 8, Cooldown = 3f,
                     Effect = SkillEffect.Nova, Mult = 1.5f, Radius = 2.4f, Color = new Color(1f, 0.9f, 0.5f, 0.9f) },
-                new SkillSpec { Name = "Mend", Desc = "Recover 25% of max HP.", ReqLevel = 5, Mp = 12, Cooldown = 10f,
+                new SkillSpec { Name = "Mend", NameJa = "癒やし", DescJa = "最大体力の25%を回復。", Desc = "Recover 25% of max HP.", ReqLevel = 5, Mp = 12, Cooldown = 10f,
                     Effect = SkillEffect.Heal, HealPct = 0.25f, Color = new Color(0.5f, 1f, 0.6f, 0.9f) },
-                new SkillSpec { Name = "Lantern Ward", Desc = "Armor +60, damage taken -40% for 6s.", ReqLevel = 10, Mp = 15, Cooldown = 16f,
+                new SkillSpec { Name = "Lantern Ward", NameJa = "灯りの守り", DescJa = "6秒、防御+60・被ダメージ-40%。", Desc = "Armor +60, damage taken -40% for 6s.", ReqLevel = 10, Mp = 15, Cooldown = 16f,
                     Effect = SkillEffect.Buff, Duration = 6f, BuffArmor = 60f, BuffTaken = 0.6f, Color = new Color(1f, 0.85f, 0.4f, 0.9f) },
-                new SkillSpec { Name = "Kindle", Desc = "+3 flames and damage +20% for 8s.", ReqLevel = 18, Mp = 18, Cooldown = 18f,
+                new SkillSpec { Name = "Kindle", NameJa = "灯し足し", DescJa = "8秒、灯り+3・ダメージ+20%。", Desc = "+3 flames and damage +20% for 8s.", ReqLevel = 18, Mp = 18, Cooldown = 18f,
                     Effect = SkillEffect.Buff, Duration = 8f, BuffExtra = 3, BuffDamage = 0.2f },
-                new SkillSpec { Name = "Flame Pillar", Desc = "Pillar of fire on the nearest enemy.", ReqLevel = 26, Mp = 22, Cooldown = 7f,
+                new SkillSpec { Name = "Flame Pillar", NameJa = "火柱", DescJa = "一番近い敵に火柱。", Desc = "Pillar of fire on the nearest enemy.", ReqLevel = 26, Mp = 22, Cooldown = 7f,
                     Effect = SkillEffect.Strike, Mult = 3f, Radius = 2f, Delay = 0.5f, Range = 7f },
-                new SkillSpec { Name = "Judgment", Desc = "Vast wave of light; heals 20%.", ReqLevel = 35, Mp = 45, Cooldown = 14f,
+                new SkillSpec { Name = "Judgment", NameJa = "裁き", DescJa = "とても広い光の波。体力20%回復。", Desc = "Vast wave of light; heals 20%.", ReqLevel = 35, Mp = 45, Cooldown = 14f,
                     Effect = SkillEffect.Nova, Mult = 3f, Radius = 4.5f, HealPct = 0.2f, Color = new Color(1f, 0.95f, 0.7f, 0.9f) },
             },
         };

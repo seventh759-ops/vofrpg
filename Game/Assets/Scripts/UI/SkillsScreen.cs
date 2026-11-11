@@ -33,8 +33,8 @@ namespace VividOfFade
 
             Hud.Fill(new Rect(0, 0, W, H), panel);
             var title = new GUIStyle(label) { fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(pad, pad, W, btnH), $"SKILLS   Lv {ch.Level}", title);
-            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), "CLOSE", buttonBack, centered, () => world.OpenPanel(false, false, false));
+            GUI.Label(new Rect(pad, pad, W, btnH), Loc.T($"SKILLS   Lv {ch.Level}", $"スキル   Lv {ch.Level}"), title);
+            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.OpenPanel(false, false, false));
 
             float y = pad + btnH + H * 0.015f;
             float rowH = (H - y - pad) / SkillInfo.PerClass - H * 0.008f;
@@ -60,17 +60,17 @@ namespace VividOfFade
                 var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold };
                 nameStyle.normal.textColor = learned ? Color.white : new Color(0.55f, 0.55f, 0.55f);
                 int lv = ch.SkillLv[i];
-                string header = learned ? $"{spec.Name}   Lv {lv}" : $"{spec.Name}   (learn at Lv {spec.ReqLevel})";
+                string header = learned ? $"{spec.DisplayName}   Lv {lv}" : Loc.T($"{spec.DisplayName}   (learn at Lv {spec.ReqLevel})", $"{spec.DisplayName}   （Lv {spec.ReqLevel}で覚える）");
                 GUI.Label(new Rect(row.x + inner, row.y + inner, row.width, lineH * 1.2f), header, nameStyle);
 
                 var text = new GUIStyle(small);
                 text.normal.textColor = learned ? new Color(0.85f, 0.85f, 0.85f) : new Color(0.5f, 0.5f, 0.5f);
                 float ty = row.y + inner + lineH * 1.25f;
-                GUI.Label(new Rect(row.x + inner, ty, row.width - inner * 2f, lineH), spec.Desc, text);
+                GUI.Label(new Rect(row.x + inner, ty, row.width - inner * 2f, lineH), spec.DisplayDesc, text);
                 ty += lineH;
                 float cd = spec.Cooldown * SkillInfo.CooldownMult(lv);
-                string power = $"Power x{SkillInfo.Power(lv):0.0}";
-                GUI.Label(new Rect(row.x + inner, ty, row.width - inner * 2f, lineH), $"MP {spec.Mp}   Cooldown {cd:0.0}s   {power}", text);
+                string power = Loc.T($"Power x{SkillInfo.Power(lv):0.0}", $"威力 x{SkillInfo.Power(lv):0.0}");
+                GUI.Label(new Rect(row.x + inner, ty, row.width - inner * 2f, lineH), Loc.T($"MP {spec.Mp}   Cooldown {cd:0.0}s   {power}", $"MP {spec.Mp}   待ち時間 {cd:0.0}秒   {power}"), text);
                 ty += lineH;
 
                 // 熟練度（使った回数）

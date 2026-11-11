@@ -168,10 +168,10 @@ namespace VividOfFade
         {
             switch (kind)
             {
-                case EliteKind.Swift: return "Swift";
-                case EliteKind.Hardened: return "Hardened";
-                case EliteKind.Splitter: return "Splitter";
-                case EliteKind.Shroud: return "Shroud";
+                case EliteKind.Swift: return Loc.T("Swift", "俊足");
+                case EliteKind.Hardened: return Loc.T("Hardened", "堅牢");
+                case EliteKind.Splitter: return Loc.T("Splitter", "分裂");
+                case EliteKind.Shroud: return Loc.T("Shroud", "覆い");
                 default: return "";
             }
         }

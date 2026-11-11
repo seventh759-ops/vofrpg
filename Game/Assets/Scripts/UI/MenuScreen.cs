@@ -30,7 +30,7 @@ namespace VividOfFade
 
             Hud.Fill(new Rect(0, 0, W, H), panel);
             var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(0, H * 0.1f, W, H * 0.06f), "MENU", title);
+            GUI.Label(new Rect(0, H * 0.1f, W, H * 0.06f), Loc.T("MENU", "メニュー"), title);
 
             var ch = Profile.Current;
             var inv = world.Inventory;
@@ -40,30 +40,32 @@ namespace VividOfFade
             float bw = W - pad * 2f;
             float bh = H * 0.075f;
             float y = H * 0.2f;
-            hud.Button(new Rect(pad, y, bw, bh), $"BAG   {inv.Bag.Count}/{Inventory.BagCapacity}   Embers {inv.Embers}",
+            hud.Button(new Rect(pad, y, bw, bh), Loc.T($"BAG   {inv.Bag.Count}/{Inventory.BagCapacity}   Embers {inv.Embers}", $"鞄   {inv.Bag.Count}/{Inventory.BagCapacity}   火種 {inv.Embers}"),
                 inv.BagFull ? highlight : main, centered, () => world.OpenPanel(true, false, false));
             y += bh + gap;
-            hud.Button(new Rect(pad, y, bw, bh), points > 0 ? $"STATS   +{points} points" : "STATS",
+            hud.Button(new Rect(pad, y, bw, bh), points > 0 ? Loc.T($"STATS   +{points} points", $"能力値   ポイント +{points}") : Loc.T("STATS", "能力値"),
                 points > 0 ? highlight : main, centered, () => world.OpenPanel(false, true, false));
             y += bh + gap;
-            hud.Button(new Rect(pad, y, bw, bh), "SKILLS", main, centered, () => world.OpenPanel(false, false, true));
+            hud.Button(new Rect(pad, y, bw, bh), Loc.T("SKILLS", "スキル"), main, centered, () => world.OpenPanel(false, false, true));
             y += bh + gap * 2f;
 
             // 設定（2列）
             float half = (bw - gap) * 0.5f;
             float sh = H * 0.055f;
-            hud.Button(new Rect(pad, y, half, sh), world.AutoAttack ? "Attack: AUTO" : "Attack: HOLD", sub, centered,
+            hud.Button(new Rect(pad, y, half, sh), world.AutoAttack ? Loc.T("Attack: AUTO", "攻撃：自動") : Loc.T("Attack: HOLD", "攻撃：押す間"), sub, centered,
                 () => world.AutoAttack = !world.AutoAttack);
-            hud.Button(new Rect(pad + half + gap, y, half, sh), world.Music.Muted ? "Music: OFF" : "Music: ON", sub, centered,
+            hud.Button(new Rect(pad + half + gap, y, half, sh), world.Music.Muted ? Loc.T("Music: OFF", "音楽：オフ") : Loc.T("Music: ON", "音楽：オン"), sub, centered,
                 () => world.Music.ToggleMute());
             y += sh + gap;
             hud.Button(new Rect(pad, y, half, sh), $"BGM: {world.Music.ThemeName}", sub, centered, () => world.NextMusic());
-            hud.Button(new Rect(pad + half + gap, y, half, sh), hud.ShowFps ? "FPS: ON" : "FPS: OFF", sub, centered,
+            hud.Button(new Rect(pad + half + gap, y, half, sh), hud.ShowFps ? Loc.T("FPS: ON", "FPS：表示") : Loc.T("FPS: OFF", "FPS：非表示"), sub, centered,
                 () => hud.ShowFps = !hud.ShowFps);
+            y += sh + gap;
+            hud.Button(new Rect(pad, y, bw, sh), $"Language: {Loc.LanguageName}", sub, centered, () => Loc.Next());
             y += sh + gap;
             if (!Application.isMobilePlatform)
             {
-                hud.Button(new Rect(pad, y, bw, sh), "Controls (H)", sub, centered, () =>
+                hud.Button(new Rect(pad, y, bw, sh), Loc.T("Controls (H)", "操作の一覧（H）"), sub, centered, () =>
                 {
                     hud.ShowHelp = true;
                     world.OpenPanel(false, false, false);
@@ -72,7 +74,7 @@ namespace VividOfFade
             }
 
             y += gap;
-            hud.Button(new Rect(pad, y, bw, sh), "CLOSE", sub, centered, () => world.OpenPanel(false, false, false));
+            hud.Button(new Rect(pad, y, bw, sh), Loc.T("CLOSE", "閉じる"), sub, centered, () => world.OpenPanel(false, false, false));
         }
     }
 }

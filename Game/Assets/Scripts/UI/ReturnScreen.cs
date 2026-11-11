@@ -45,16 +45,16 @@ namespace VividOfFade
             title.normal.textColor = new Color(1f, 0.85f, 0.4f);
             float y = pad;
             int next = world.Floors.Floor + 1;
-            GUI.Label(new Rect(pad, y, W, lineH * 1.6f), $"Stairs  -  Floor {world.Floors.Floor}", title);
+            GUI.Label(new Rect(pad, y, W, lineH * 1.6f), Loc.T($"Stairs  -  Floor {world.Floors.Floor}", $"階段  -  {world.Floors.Floor}層"), title);
             y += lineH * 1.8f;
-            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), $"Return home to keep your gear, or descend to floor {next}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), small);
+            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T($"Return home to keep your gear, or descend to floor {next}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), $"帰還して装備を持ち帰るか、{next}層へ下りるか" + (GameConfig.IsBossFloor(next) ? "（ボス）。" : "。")), small);
             y += lineH;
-            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), "Equipped gear and carried-in items are always kept.", small);
+            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T("Equipped gear and carried-in items are always kept.", "装備中の品と、持ち込んだ品はいつも持ち帰れます。"), small);
             y += lineH;
             var pick = new GUIStyle(small) { fontStyle = FontStyle.Bold };
             pick.normal.textColor = new Color(0.7f, 1f, 0.7f);
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH),
-                $"Pick new items to bring back: {chosen.Count} / {ch.CarrySlots}   Embers +{inv.Embers}", pick);
+                Loc.T($"Pick new items to bring back: {chosen.Count} / {ch.CarrySlots}   Embers +{inv.Embers}", $"持ち帰る新しい品を選ぶ：{chosen.Count} / {ch.CarrySlots}   火種 +{inv.Embers}"), pick);
             y += lineH * 1.4f;
 
             // 今回拾った品（タップで選ぶ／外す）
@@ -62,7 +62,7 @@ namespace VividOfFade
             float cell = (W - pad * 2f - gap * (cols - 1)) / cols;
             if (candidates.Count == 0)
             {
-                GUI.Label(new Rect(pad, y, W, lineH), "(No new items in the bag)", small);
+                GUI.Label(new Rect(pad, y, W, lineH), Loc.T("(No new items in the bag)", "（鞄に新しい品はありません）"), small);
                 y += lineH * 1.5f;
             }
             for (int i = 0; i < candidates.Count; i++)
@@ -102,20 +102,20 @@ namespace VividOfFade
             // 帰還する／下りる／とどまる
             float third = (W - pad * 2f - gap * 2f) / 3f;
             float by = H - pad - btnH;
-            hud.Button(new Rect(pad, by, third, btnH), $"RETURN ({chosen.Count})", new Color(0.2f, 0.5f, 0.25f, 0.85f), centered, () =>
+            hud.Button(new Rect(pad, by, third, btnH), Loc.T($"RETURN ({chosen.Count})", $"帰還 ({chosen.Count})"), new Color(0.2f, 0.5f, 0.25f, 0.85f), centered, () =>
             {
                 var list = new List<Item>(chosen);
                 chosen.Clear();
                 focused = null;
                 world.ReturnHome(list);
             });
-            hud.Button(new Rect(pad + third + gap, by, third, btnH), "DESCEND", new Color(0.5f, 0.35f, 0.15f, 0.85f), centered, () =>
+            hud.Button(new Rect(pad + third + gap, by, third, btnH), Loc.T("DESCEND", "下りる"), new Color(0.5f, 0.35f, 0.15f, 0.85f), centered, () =>
             {
                 chosen.Clear();
                 focused = null;
                 world.Descend();
             });
-            hud.Button(new Rect(pad + (third + gap) * 2f, by, third, btnH), "STAY", buttonBack, centered, () =>
+            hud.Button(new Rect(pad + (third + gap) * 2f, by, third, btnH), Loc.T("STAY", "とどまる"), buttonBack, centered, () =>
             {
                 focused = null;
                 world.StayOnFloor();

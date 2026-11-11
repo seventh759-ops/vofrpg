@@ -105,6 +105,7 @@ namespace VividOfFade
     {
         public int Version = 1;
         public int MusicTheme;
+        public int Language;                                  // 0 = English（デフォルト）, 1 = 日本語
         public List<string> TipsSeen = new List<string>(); // 案内役が説明し終えた場面
         public List<CharacterData> Characters = new List<CharacterData>();
     }
@@ -167,6 +168,21 @@ namespace VividOfFade
             {
                 EnsureLoaded();
                 data.MusicTheme = value;
+            }
+        }
+
+        /// <summary>表示の言語（Loc で使う）。</summary>
+        public static int LanguageSetting
+        {
+            get
+            {
+                EnsureLoaded();
+                return data.Language;
+            }
+            set
+            {
+                EnsureLoaded();
+                data.Language = value;
             }
         }
 

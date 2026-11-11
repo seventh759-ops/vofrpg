@@ -43,8 +43,8 @@ namespace VividOfFade
 
             // 見出しと閉じるボタン
             float btnH = H * 0.045f;
-            GUI.Label(new Rect(pad, pad, W, btnH), $"BAG {inv.Bag.Count}/{Inventory.BagCapacity}   EMBERS {inv.Embers}", hud.LabelStyle);
-            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), "CLOSE", buttonBack, centered, () => world.BagOpen = false);
+            GUI.Label(new Rect(pad, pad, W, btnH), Loc.T($"BAG {inv.Bag.Count}/{Inventory.BagCapacity}   EMBERS {inv.Embers}", $"鞄 {inv.Bag.Count}/{Inventory.BagCapacity}   火種 {inv.Embers}"), hud.LabelStyle);
+            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.BagOpen = false);
 
             // 装備欄
             float y = pad + btnH + H * 0.02f;
@@ -59,7 +59,7 @@ namespace VividOfFade
                     selectedEquip = index;
                     selectedItem = null;
                 });
-                GUI.Label(new Rect(r.x, r.yMax, r.width, lineH), slotLabels[i], CenteredSmall());
+                GUI.Label(new Rect(r.x, r.yMax, r.width, lineH), SlotLabel(i), CenteredSmall());
             }
 
             // 鞄
@@ -83,7 +83,7 @@ namespace VividOfFade
             // 下の段：一括分解（押すと選択欄が開く）と、拾ったときの自動分解
             float bottomY = H - pad - btnH;
             float half = (W - pad * 2f - gap) * 0.5f;
-            hud.Button(new Rect(pad, bottomY, half, btnH), "BULK SALVAGE", bulkOpen ? new Color(1f, 1f, 1f, 0.3f) : buttonBack, centered,
+            hud.Button(new Rect(pad, bottomY, half, btnH), Loc.T("BULK SALVAGE", "まとめて分解"), bulkOpen ? new Color(1f, 1f, 1f, 0.3f) : buttonBack, centered,
                 () => bulkOpen = !bulkOpen);
             hud.Button(new Rect(pad + half + gap, bottomY, half, btnH), AutoLabel(inv.AutoSalvageMax), buttonBack, centered,
                 () => inv.CycleAutoSalvage());
@@ -94,7 +94,7 @@ namespace VividOfFade
             if (bulkOpen) DrawBulkMenu(inv, current, new Rect(pad, y, W - pad * 2f, bottomY - gap - y), btnH, gap);
             else if (selectedItem != null) DrawBagItem(world, inv, selectedItem, detail, actionY, btnH, gap, pad);
             else if (selectedEquip >= 0) DrawEquipped(inv, selectedEquip, detail, actionY, btnH, pad);
-            else GUI.Label(detail, "Tap an item to see details.", small);
+            else GUI.Label(detail, Loc.T("Tap an item to see details.", "品をタップすると詳しく見られます。"), small);
         }
 
         void DrawBagItem(GameWorld world, Inventory inv, Item item, Rect area, float actionY, float btnH, float gap, float pad)
@@ -114,14 +114,14 @@ namespace VividOfFade
 
             float W = Screen.width;
             var centered = hud.CenteredStyle;
-            string lockText = item.Locked ? "UNLOCK" : "LOCK";
+            string lockText = item.Locked ? Loc.T("UNLOCK", "ロック解除") : Loc.T("LOCK", "ロック");
             if (item.Slot == ItemSlot.Ring)
             {
                 float w = (W - pad * 2f - gap * 3f) / 4f;
                 if (canEquip)
                 {
-                    hud.Button(new Rect(pad, actionY, w, btnH), "EQUIP R1", buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring1));
-                    hud.Button(new Rect(pad + (w + gap), actionY, w, btnH), "EQUIP R2", buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring2));
+                    hud.Button(new Rect(pad, actionY, w, btnH), Loc.T("EQUIP R1", "指輪1に装備"), buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring1));
+                    hud.Button(new Rect(pad + (w + gap), actionY, w, btnH), Loc.T("EQUIP R2", "指輪2に装備"), buttonBack, centered, () => Equip(inv, item, EquipSlot.Ring2));
                 }
                 else
                 {
@@ -133,7 +133,7 @@ namespace VividOfFade
             else
             {
                 float w = (W - pad * 2f - gap * 2f) / 3f;
-                if (canEquip) hud.Button(new Rect(pad, actionY, w, btnH), "EQUIP", buttonBack, centered, () => Equip(inv, item, slot));
+                if (canEquip) hud.Button(new Rect(pad, actionY, w, btnH), Loc.T("EQUIP", "装備"), buttonBack, centered, () => Equip(inv, item, slot));
                 else Disabled(new Rect(pad, actionY, w, btnH), reason);
                 hud.Button(new Rect(pad + (w + gap), actionY, w, btnH), lockText, buttonBack, centered, () => item.Locked = !item.Locked);
                 DrawSalvageButton(inv, item, new Rect(pad + (w + gap) * 2f, actionY, w, btnH));
@@ -145,11 +145,11 @@ namespace VividOfFade
             var item = inv.Equipped[slot];
             if (item == null)
             {
-                GUI.Label(area, $"{slotLabels[slot]}: empty", hud.SmallStyle);
+                GUI.Label(area, Loc.T($"{SlotLabel(slot)}: empty", $"{SlotLabel(slot)}：なし"), hud.SmallStyle);
                 return;
             }
             DrawDescription(item, area, null, true);
-            string text = inv.BagFull ? "BAG FULL" : "UNEQUIP";
+            string text = inv.BagFull ? Loc.T("BAG FULL", "鞄が満杯") : Loc.T("UNEQUIP", "外す");
             hud.Button(new Rect(pad, actionY, Screen.width - pad * 2f, btnH), text, buttonBack, hud.CenteredStyle, () =>
             {
                 if (inv.Unequip((EquipSlot)slot)) selectedEquip = -1;
@@ -169,10 +169,10 @@ namespace VividOfFade
             if (item.Locked)
             {
                 Hud.Fill(r, new Color(1f, 1f, 1f, 0.05f));
-                GUI.Label(r, "LOCKED", hud.CenteredStyle);
+                GUI.Label(r, Loc.T("LOCKED", "ロック中"), hud.CenteredStyle);
                 return;
             }
-            hud.Button(r, $"SALVAGE +{RarityInfo.SalvageOf(item.Rarity)}", buttonBack, hud.CenteredStyle, () => Salvage(inv, item));
+            hud.Button(r, Loc.T($"SALVAGE +{RarityInfo.SalvageOf(item.Rarity)}", $"分解 +{RarityInfo.SalvageOf(item.Rarity)}"), buttonBack, hud.CenteredStyle, () => Salvage(inv, item));
         }
 
         /// <summary>一括分解の選択欄。ロック中の品は残る。</summary>
@@ -180,7 +180,7 @@ namespace VividOfFade
         {
             var small = hud.SmallStyle;
             float lineH = small.fontSize * 1.4f;
-            GUI.Label(new Rect(area.x, area.y, area.width, lineH), "Salvage all at once (locked items are kept):", small);
+            GUI.Label(new Rect(area.x, area.y, area.width, lineH), Loc.T("Salvage all at once (locked items are kept):", "まとめて分解（ロック中の品は残ります）："), small);
             float y = area.y + lineH * 1.3f;
             float h = Mathf.Min(btnH, (area.height - lineH * 1.3f - gap * 4f) / 5f);
 
@@ -200,15 +200,15 @@ namespace VividOfFade
             {
                 int max = r;
                 var c = RarityInfo.ColorOf((Rarity)r);
-                Option(r == 0 ? "White" : $"White to {Short((Rarity)r).ToLower()}", new Color(c.r, c.g, c.b, 0.3f), it => (int)it.Rarity <= max);
+                Option(r == 0 ? Loc.T("White", "白だけ") : Loc.T($"White to {Short((Rarity)r).ToLower()}", $"白〜{Short((Rarity)r)}"), new Color(c.r, c.g, c.b, 0.3f), it => (int)it.Rarity <= max);
             }
-            Option("Everything that is not an upgrade", buttonBack, it => it.Rarity < Rarity.Legendary && !IsUpgrade(inv, it, current));
+            Option(Loc.T("Everything that is not an upgrade", "今より強くならない物すべて"), buttonBack, it => it.Rarity < Rarity.Legendary && !IsUpgrade(inv, it, current));
         }
 
         void SalvageBulk(Inventory inv, System.Func<Item, bool> match)
         {
             int n = inv.SalvageWhere(match);
-            if (n > 0) hud.Toast($"Salvaged {n} items", Color.white);
+            if (n > 0) hud.Toast(Loc.T($"Salvaged {n} items", $"{n}個を分解しました"), Color.white);
             if (selectedItem != null && !inv.Bag.Contains(selectedItem)) selectedItem = null;
         }
 
@@ -221,19 +221,19 @@ namespace VividOfFade
         {
             switch (r)
             {
-                case Rarity.Common: return "WHITE";
-                case Rarity.Magic: return "BLUE";
-                case Rarity.Rare: return "YELLOW";
-                case Rarity.Legendary: return "PURPLE";
-                case Rarity.Relic: return "ORANGE";
-                default: return "RED";
+                case Rarity.Common: return Loc.T("WHITE", "白");
+                case Rarity.Magic: return Loc.T("BLUE", "青");
+                case Rarity.Rare: return Loc.T("YELLOW", "黄");
+                case Rarity.Legendary: return Loc.T("PURPLE", "紫");
+                case Rarity.Relic: return Loc.T("ORANGE", "橙");
+                default: return Loc.T("RED", "赤");
             }
         }
 
         static string AutoLabel(int max)
         {
-            if (max < 0) return "AUTO: OFF";
-            return max == 0 ? "AUTO: WHITE" : $"AUTO: <= {Short((Rarity)max)}";
+            if (max < 0) return Loc.T("AUTO: OFF", "自動分解：なし");
+            return max == 0 ? Loc.T("AUTO: WHITE", "自動分解：白") : Loc.T($"AUTO: <= {Short((Rarity)max)}", $"自動分解：〜{Short((Rarity)max)}");
         }
 
         void Equip(Inventory inv, Item item, EquipSlot slot)
@@ -291,7 +291,7 @@ namespace VividOfFade
             var req = new GUIStyle(hud.SmallStyle);
             bool lvOk = st == null || st.Level >= item.ReqLevel;
             req.normal.textColor = lvOk ? new Color(0.75f, 0.75f, 0.75f) : new Color(1f, 0.45f, 0.45f);
-            string reqText = $"Lv {item.Level}   Req Lv {item.ReqLevel}";
+            string reqText = Loc.T($"Lv {item.Level}   Req Lv {item.ReqLevel}", $"Lv {item.Level}   必要Lv {item.ReqLevel}");
             if (item.ReqValue > 0)
             {
                 bool attrOk = st == null || st.Attr[(int)item.ReqAttr] >= item.ReqValue;
@@ -314,6 +314,11 @@ namespace VividOfFade
         }
 
         static readonly string[] slotNames = { "Weapon", "Lantern", "Armor", "R1", "R2" };
+        static readonly string[] slotNamesJa = { "武器", "ランタン", "防具", "指輪1", "指輪2" };
+        static readonly string[] slotLabelsJa = { "武器", "灯", "防具", "指1", "指2" };
+
+        static string SlotName(int i) => Loc.Ja ? slotNamesJa[i] : slotNames[i];
+        static string SlotLabel(int i) => Loc.Ja ? slotLabelsJa[i] : slotLabels[i];
 
         /// <summary>
         /// 装備どうしを効果ごとに比べる（今その欄に付けている装備との差）。
@@ -333,17 +338,17 @@ namespace VividOfFade
             string text;
             if (change > 0.01f)
             {
-                text = $"UPGRADE +{change * 100f:0}%";
+                text = Loc.T($"UPGRADE +{change * 100f:0}%", $"強くなる +{change * 100f:0}%");
                 verdict.normal.textColor = up;
             }
             else if (change < -0.01f)
             {
-                text = $"DOWNGRADE {change * 100f:0}%";
+                text = Loc.T($"DOWNGRADE {change * 100f:0}%", $"弱くなる {change * 100f:0}%");
                 verdict.normal.textColor = down;
             }
             else
             {
-                text = "ABOUT THE SAME";
+                text = Loc.T("ABOUT THE SAME", "ほぼ同じ");
                 verdict.normal.textColor = Color.white;
             }
             GUI.Label(r, text, verdict);
@@ -353,7 +358,7 @@ namespace VividOfFade
         {
             float lineH = hud.SmallStyle.fontSize * 1.3f;
             float y = area.y;
-            GUI.Label(new Rect(area.x, y, area.width, lineH), equipped == null ? $"vs {slotNames[(int)slot]}: empty" : $"vs {slotNames[(int)slot]}:", hud.SmallStyle);
+            GUI.Label(new Rect(area.x, y, area.width, lineH), equipped == null ? Loc.T($"vs {SlotName((int)slot)}: empty", $"{SlotName((int)slot)}と比べて：なし") : Loc.T($"vs {SlotName((int)slot)}:", $"{SlotName((int)slot)}と比べて："), hud.SmallStyle);
             y += lineH * 1.2f;
 
             var a = Contributions(item);
@@ -362,7 +367,7 @@ namespace VividOfFade
             // 武器の種類が違えば、攻撃の形が変わる
             if (item.Slot == ItemSlot.Weapon && equipped != null && equipped.Weapon != item.Weapon)
             {
-                DiffText(ref y, area, $"{ClassInfo.Weapon(equipped.Weapon).Name} > {ClassInfo.Weapon(item.Weapon).Name}", Color.white);
+                DiffText(ref y, area, $"{ClassInfo.Weapon(equipped.Weapon).DisplayName} > {ClassInfo.Weapon(item.Weapon).DisplayName}", Color.white);
             }
 
             var keys = new List<string>(a.Keys);
@@ -395,7 +400,7 @@ namespace VividOfFade
                     DiffText(ref y, area, "- " + StatText.Unique(u), down);
                 }
             }
-            if (!any) DiffText(ref y, area, "(same effects)", Color.white);
+            if (!any) DiffText(ref y, area, Loc.T("(same effects)", "（効果は同じ）"), Color.white);
         }
 
         /// <summary>長い行は折り返して書く。</summary>
@@ -434,14 +439,16 @@ namespace VividOfFade
             float v = Mathf.Abs(d);
             switch (key)
             {
-                case "0 Damage": return $"Weapon damage {sign}{v:0}";
-                case "0 Light": return $"Light {sign}{v:0.0}";
-                case "0 Max HP": return $"Max HP {sign}{v:0}";
+                case "0 Damage": return Loc.T($"Weapon damage {sign}{v:0}", $"武器のダメージ {sign}{v:0}");
+                case "0 Light": return Loc.T($"Light {sign}{v:0.0}", $"明るさ {sign}{v:0.0}");
+                case "0 Max HP": return Loc.T($"Max HP {sign}{v:0}", $"最大体力 {sign}{v:0}");
             }
             var stat = (StatType)System.Enum.Parse(typeof(StatType), key.Substring(2));
             // 効果の書き方（+12% Damage など）の先頭の + を、増減の符号に置き換える
             string text = StatText.Format(stat, v);
-            return text.StartsWith("+") ? sign + text.Substring(1) : sign + text;
+            if (text.StartsWith("+")) return sign + text.Substring(1);
+            int plus = text.IndexOf('+');
+            return plus >= 0 ? text.Substring(0, plus) + sign + text.Substring(plus + 1) : sign + text;
         }
 
         /// <summary>付けたときに一番強くなる装備欄での能力（指輪は R1・R2 の良い方）。</summary>
