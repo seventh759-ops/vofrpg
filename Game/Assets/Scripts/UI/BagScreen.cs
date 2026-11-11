@@ -104,13 +104,15 @@ namespace VividOfFade
             var now = world.Player.BaseStats;
             float change = now.Power > 0f ? candidate.Power / now.Power - 1f : 0f;
 
-            // 1行目：名前（左）と総合の判定（右）を全幅で
+            // 1行目：名前を全幅で。総合の判定は右の列（比較）の先頭に置く（長い名前と重ならないように）
             float headH = hud.LabelStyle.fontSize * 1.6f;
             DrawName(item, new Rect(area.x, area.y, area.width, headH));
-            DrawVerdict(change, new Rect(area.x, area.y, area.width, headH));
             var body = new Rect(area.x, area.y + headH, area.width, area.height - headH);
             DrawDescription(item, new Rect(body.x, body.y, body.width * 0.48f, body.height), world, false);
-            DrawItemDiff(item, inv.Equipped[(int)slot], slot, new Rect(body.x + body.width * 0.5f, body.y, body.width * 0.5f, body.height));
+            var right = new Rect(body.x + body.width * 0.5f, body.y, body.width * 0.5f, body.height);
+            float verdictH = hud.LabelStyle.fontSize * 1.5f;
+            DrawVerdict(change, new Rect(right.x, right.y, right.width, verdictH));
+            DrawItemDiff(item, inv.Equipped[(int)slot], slot, new Rect(right.x, right.y + verdictH, right.width, right.height - verdictH));
 
             float W = Screen.width;
             var centered = hud.CenteredStyle;
@@ -331,10 +333,10 @@ namespace VividOfFade
             GUI.Label(r, item.Name, title);
         }
 
-        /// <summary>総合の判定（強化なしの能力で、付けたら全体でどれだけ強くなるか）。右寄せ。</summary>
+        /// <summary>総合の判定（強化なしの能力で、付けたら全体でどれだけ強くなるか）。比較の列の先頭。</summary>
         void DrawVerdict(float change, Rect r)
         {
-            var verdict = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.UpperRight };
+            var verdict = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
             string text;
             if (change > 0.01f)
             {
