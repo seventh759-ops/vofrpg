@@ -33,8 +33,10 @@ namespace VividOfFade
 
             int cost = Boons.Cost(world.Floors.Floor);
             int embers = world.Inventory.Embers;
-            GUI.Label(new Rect(0, H * 0.17f, W, H * 0.035f), Loc.T($"Offer {cost} embers for one boon   (found this run: {embers})", $"火種 {cost} で加護を1つ   （今回拾った火種 {embers}）"), centered);
-            GUI.Label(new Rect(0, H * 0.2f, W, H * 0.035f), Loc.T("Only embers found this run can be offered. Boons last until the run ends.", "払えるのは今回拾った火種だけ。加護はこの挑戦が終わるまで効きます。"), centered);
+            Hud.FitLabel(new Rect(pad * 0.5f, H * 0.17f, W - pad, H * 0.035f), Loc.T($"Offer {cost} embers for one boon   (found this run: {embers})", $"火種 {cost} で加護を1つ   （今回拾った火種 {embers}）"), centered);
+            var note = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+            note.normal.textColor = new Color(0.8f, 0.8f, 0.85f);
+            Hud.FitLabel(new Rect(pad * 0.5f, H * 0.205f, W - pad, H * 0.03f), Loc.T("Only embers found this run can be offered. Boons last until the run ends.", "払えるのは今回拾った火種だけ。加護はこの挑戦が終わるまで効きます。"), note);
 
             float y = H * 0.26f;
             float bh = H * 0.1f;
@@ -61,21 +63,44 @@ namespace VividOfFade
             }
             if (!afford) GUI.Label(new Rect(0, y, W, H * 0.035f), Loc.T("Not enough embers.", "火種が足りません。"), centered);
 
-            // これまでに得た加護
+            // これまでに得た加護（アイコンと数。多くても重ならないように）
+            if (!afford) y += H * 0.04f; // 「火種が足りません」の下から
             if (world.Player.Boons.Count > 0)
             {
-                var names = new System.Text.StringBuilder(Loc.T("Your boons: ", "得た加護："));
-                for (int i = 0; i < world.Player.Boons.Count; i++)
-                {
-                    if (i > 0) names.Append(", ");
-                    names.Append(Boons.Get(world.Player.Boons[i]).DisplayName);
-                }
-                var list = new GUIStyle(small) { wordWrap = true, alignment = TextAnchor.UpperCenter };
-                GUI.Label(new Rect(pad, y + H * 0.04f, W - pad * 2f, H * 0.1f), names.ToString(), list);
+                var head = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+                GUI.Label(new Rect(0, y + H * 0.02f, W, H * 0.03f), Loc.T("Your boons", "得た加護"), head);
+                DrawOwned(world.Player, new Rect(pad, y + H * 0.055f, W - pad * 2f, H * 0.9f - (y + H * 0.06f)));
             }
 
             hud.Button(new Rect(pad, H - H * 0.1f, W - pad * 2f, H * 0.05f), Loc.T("LEAVE", "立ち去る"), new Color(1f, 1f, 1f, 0.1f), centered,
                 () => world.OpenPanel(false, false, false));
+        }
+        /// <summary>得た加護をアイコンで並べ、重ねた数を右下に出す。</summary>
+        void DrawOwned(Player p, Rect area)
+        {
+            var order = new System.Collections.Generic.List<int>();
+            var count = new System.Collections.Generic.Dictionary<int, int>();
+            foreach (int b in p.Boons)
+            {
+                if (!count.ContainsKey(b)) { order.Add(b); count[b] = 0; }
+                count[b]++;
+            }
+            const int cols = 6;
+            float gap = area.width * 0.02f;
+            float cell = Mathf.Min((area.width - gap * (cols - 1)) / cols, area.height / 2f - gap);
+            float rowW = cell * cols + gap * (cols - 1);
+            float x0 = area.x + (area.width - rowW) * 0.5f;
+            var badge = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.LowerRight, fontStyle = FontStyle.Bold };
+            badge.normal.textColor = new Color(1f, 0.9f, 0.5f);
+            for (int i = 0; i < order.Count; i++)
+            {
+                var r = new Rect(x0 + (i % cols) * (cell + gap), area.y + (i / cols) * (cell + gap), cell, cell);
+                if (r.yMax > area.yMax) break;
+                Hud.Fill(r, new Color(1f, 1f, 1f, 0.08f));
+                float inset = cell * 0.14f;
+                Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, cell - inset * 2f, cell - inset * 2f), PixelArt.BoonIcon(order[i]));
+                if (count[order[i]] > 1) GUI.Label(new Rect(r.x, r.y, r.width - cell * 0.06f, r.height), $"x{count[order[i]]}", badge);
+            }
         }
     }
 }
