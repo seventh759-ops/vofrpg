@@ -98,23 +98,48 @@ namespace VividOfFade
                 case AttackKind.Pulse: kind = Loc.T($"Pulse  radius {st.PulseRadius:0.0}", $"周りを焼く  範囲 {st.PulseRadius:0.0}"); break;
                 default: kind = Loc.T($"Shots x{st.Shots}  pierce {st.Pierce}", $"弾 x{st.Shots}  貫通 {st.Pierce}"); break;
             }
-            string[] lines =
-            {
-                Loc.T($"HP {world.Player.MaxHp}   (+{st.HpRegen:0.0}/s)", $"体力 {world.Player.MaxHp}   (+{st.HpRegen:0.0}/秒)"),
-                Loc.T($"MP {world.Player.MaxMp}   (+{st.MpRegen:0.0}/s)   next Lv +{Progression.MpPerLevel(Progression.BaseWis(ch))} MP", $"MP {world.Player.MaxMp}   (+{st.MpRegen:0.0}/秒)   次のLvで +{Progression.MpPerLevel(Progression.BaseWis(ch))}"),
-                Loc.T($"Damage {st.Damage:0.0}   Attacks/s {st.AttacksPerSecond:0.0}", $"ダメージ {st.Damage:0.0}   攻撃/秒 {st.AttacksPerSecond:0.0}"),
-                Loc.T($"Crit {st.CritChance * 100f:0}%  x{st.CritMult:0.00}", $"会心 {st.CritChance * 100f:0}%  x{st.CritMult:0.00}"),
-                Loc.T($"Armor {st.Armor:0}   Light {world.Player.EffectiveLight:0.0}   Speed {st.MoveSpeed:0.0}", $"防御 {st.Armor:0}   明るさ {world.Player.EffectiveLight:0.0}   速さ {st.MoveSpeed:0.0}"),
-                kind,
-                BoonLine(world.Player),
-            };
+            // 計算後の能力：2列の表（左に名前、右に値）
             float bottomY = H - pad - btnH;
-            foreach (var line in lines)
+            string[,] cells =
             {
-                if (y + lineH > bottomY - H * 0.01f) break;
-                GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), line, small);
-                y += small.fontSize * 1.4f;
+                { Loc.T("HP", "体力"), $"{world.Player.MaxHp}", Loc.T("HP regen", "体力回復"), Loc.T($"{st.HpRegen:0.0}/s", $"{st.HpRegen:0.0}/秒") },
+                { "MP", $"{world.Player.MaxMp}", Loc.T("MP regen", "MP回復"), Loc.T($"{st.MpRegen:0.0}/s", $"{st.MpRegen:0.0}/秒") },
+                { Loc.T("Damage", "ダメージ"), $"{st.Damage:0}", Loc.T("Attacks/s", "攻撃/秒"), $"{st.AttacksPerSecond:0.0}" },
+                { Loc.T("DPS", "秒間ダメージ"), $"{st.Damage * st.AttacksPerSecond * (1f + st.CritChance * (st.CritMult - 1f)):0}", Loc.T("Crit", "会心"), $"{st.CritChance * 100f:0}%  x{st.CritMult:0.00}" },
+                { Loc.T("Armor", "防御"), $"{st.Armor:0}", Loc.T("Speed", "速さ"), $"{st.MoveSpeed:0.0}" },
+                { Loc.T("Light", "明るさ"), $"{world.Player.EffectiveLight:0.0}", Loc.T("MP next Lv", "次のLvのMP"), $"+{Progression.MpPerLevel(Progression.BaseWis(ch))}" },
+            };
+            var head = new GUIStyle(label) { fontStyle = FontStyle.Bold };
+            head.normal.textColor = new Color(1f, 0.85f, 0.4f);
+            GUI.Label(new Rect(pad, y, W, lineH), Loc.T("RESULT", "最終的な能力"), head);
+            y += lineH * 1.1f;
+            var key = new GUIStyle(small);
+            key.normal.textColor = new Color(0.65f, 0.65f, 0.7f);
+            var val = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
+            float colW = (W - pad * 2f - W * 0.04f) * 0.5f;
+            float cellH = label.fontSize * 1.5f;
+            for (int r = 0; r < cells.GetLength(0); r++)
+            {
+                Hud.Fill(new Rect(pad, y, W - pad * 2f, cellH), new Color(1f, 1f, 1f, r % 2 == 0 ? 0.05f : 0.02f));
+                for (int c = 0; c < 2; c++)
+                {
+                    float x = pad + c * (colW + W * 0.04f);
+                    GUI.Label(new Rect(x + W * 0.01f, y, colW, cellH), cells[r, c * 2], new GUIStyle(key) { alignment = TextAnchor.MiddleLeft });
+                    GUI.Label(new Rect(x, y, colW - W * 0.01f, cellH), cells[r, c * 2 + 1], val);
+                }
+                y += cellH;
             }
+            y += lineH * 0.3f;
+            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), kind, small);
+            y += lineH * 1.1f;
+
+            // 加護（祭壇で得たもの）。同じものはまとめて「x2」、折り返して全部見せる
+            GUI.Label(new Rect(pad, y, W, lineH), Loc.T("BOONS", "加護"), head);
+            y += lineH * 1.1f;
+            var wrap = new GUIStyle(small) { wordWrap = true };
+            string boons = BoonLine(world.Player);
+            float bh = wrap.CalcHeight(new GUIContent(boons), W - pad * 2f);
+            GUI.Label(new Rect(pad, y, W - pad * 2f, Mathf.Min(bh, bottomY - y - H * 0.01f)), boons, wrap);
 
             // 振り直しとレベルのリセット（2回押しで実行）
             float gap = W * 0.03f;
@@ -125,12 +150,23 @@ namespace VividOfFade
 
         static string BoonLine(Player p)
         {
-            if (p.Boons.Count == 0) return Loc.T("Boons: none", "加護：なし");
-            var sb = new System.Text.StringBuilder(Loc.T("Boons: ", "加護："));
-            for (int i = 0; i < p.Boons.Count; i++)
+            if (p.Boons.Count == 0) return Loc.T("None yet. Offer embers at an altar.", "まだない。祭壇で火種を払うと得られる。");
+            // 得た順に、同じ加護は数をまとめる。説明も付ける
+            var order = new System.Collections.Generic.List<int>();
+            var count = new System.Collections.Generic.Dictionary<int, int>();
+            foreach (int b in p.Boons)
             {
-                if (i > 0) sb.Append(", ");
-                sb.Append(Boons.Get(p.Boons[i]).DisplayName);
+                if (!count.ContainsKey(b)) { order.Add(b); count[b] = 0; }
+                count[b]++;
+            }
+            var sb = new System.Text.StringBuilder();
+            foreach (int b in order)
+            {
+                var spec = Boons.Get(b);
+                if (sb.Length > 0) sb.Append('\n');
+                sb.Append("- ").Append(spec.DisplayName);
+                if (count[b] > 1) sb.Append(" x").Append(count[b]);
+                sb.Append("  -  ").Append(spec.DisplayDesc);
             }
             return sb.ToString();
         }

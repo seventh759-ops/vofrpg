@@ -104,7 +104,7 @@ namespace VividOfFade
     public sealed class SaveData
     {
         public int Version = 1;
-        public int MusicTheme;
+        public int Bgm;                                       // 0 = 区画ごと（前の版の MusicTheme は番号の意味が違うので使わない）
         public int Language;                                  // 0 = English（デフォルト）, 1 = 日本語
         public List<string> TipsSeen = new List<string>(); // 案内役が説明し終えた場面
         public List<CharacterData> Characters = new List<CharacterData>();
@@ -162,12 +162,12 @@ namespace VividOfFade
             get
             {
                 EnsureLoaded();
-                return data.MusicTheme;
+                return data.Bgm;
             }
             set
             {
                 EnsureLoaded();
-                data.MusicTheme = value;
+                data.Bgm = value;
             }
         }
 
