@@ -67,7 +67,7 @@ namespace VividOfFade
             for (int i = 0; i < Attributes.Count; i++)
             {
                 var attr = (Attr)i;
-                int baseValue = spec.BaseStats[i] + ch.Alloc[i];
+                int baseValue = spec.BaseStats[i] + ch.Alloc[i] + (ch.Third ? ThirdClasses.AllStats : 0);
                 int total = st.Attr[i];
                 int fromGear = total - baseValue;
                 var row = new Rect(pad, y, W - pad * 2f, rowH);

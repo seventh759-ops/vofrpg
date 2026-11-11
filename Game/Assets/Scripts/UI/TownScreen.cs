@@ -360,6 +360,11 @@ namespace VividOfFade
             Header(Loc.T("MASTER", "転職の師匠"), ch.Embers, W, pad, out float y);
 
             var current = AdvancedClasses.Of(type, ch);
+            if (current != null)
+            {
+                DrawRebirth(world, ch, type, current, y);
+                return;
+            }
             string status = current != null ? Loc.T($"You are a {current.DisplayName}. Class change is done once.", $"あなたは{current.DisplayName}。転職は1回だけ。")
                 : Loc.T($"From Lv {AdvancedClasses.ReqLevel}, for {AdvancedClasses.Cost} embers. You go back to Lv 1 (stat points reset) and get {AdvancedClasses.BonusPoints} bonus points. Once only, cannot be undone (except RESET ALL).",
                     $"Lv{AdvancedClasses.ReqLevel}から、火種 {AdvancedClasses.Cost}。Lv1 に戻り（振った能力値も戻る）、ボーナスで {AdvancedClasses.BonusPoints} ポイント振れる。1回だけで、戻せない（すべてリセットを除く）。");
@@ -416,6 +421,87 @@ namespace VividOfFade
                     GUI.Label(btn, why, s);
                 }
                 y += cardH + H * 0.015f;
+            }
+        }
+
+        /// <summary>上位職になったあと：転生（3次職）の欄。</summary>
+        void DrawRebirth(GameWorld world, CharacterData ch, ClassType type, AdvancedSpec current, float y)
+        {
+            float W = Screen.width, H = Screen.height;
+            float pad = W * 0.05f;
+            var small = hud.SmallStyle;
+            float lineH = small.fontSize * 1.4f;
+            var wrap = new GUIStyle(small) { wordWrap = true };
+            var third = ThirdClasses.Get(type, ch.Advanced);
+
+            string status = ch.Third
+                ? Loc.T($"You are reborn as a {third.DisplayName}.", $"あなたは転生して{third.DisplayName}になった。")
+                : Loc.T($"You are a {current.DisplayName}. Reach Lv {ThirdClasses.ReqLevel} and floor {ThirdClasses.ReqFloor} to be reborn ({ThirdClasses.Cost} embers). You go back to Lv 1 and get {ThirdClasses.BonusPoints} bonus points. Once only.",
+                    $"あなたは{current.DisplayName}。Lv{ThirdClasses.ReqLevel}で{ThirdClasses.ReqFloor}層にたどり着くと、火種 {ThirdClasses.Cost} で転生できる。Lv1 に戻り、ボーナスで {ThirdClasses.BonusPoints} ポイント振れる。1回だけ。");
+            float sh = wrap.CalcHeight(new GUIContent(status), W - pad * 2f);
+            GUI.Label(new Rect(pad, y, W - pad * 2f, sh), status, wrap);
+            y += sh + H * 0.015f;
+
+            var r = new Rect(pad, y, W - pad * 2f, H * 0.42f);
+            Hud.Fill(r, ch.Third ? new Color(0.5f, 0.4f, 0.1f, 0.5f) : row);
+            float inner = r.width * 0.04f;
+            float ty = r.y + inner;
+            float portrait = r.width * 0.22f;
+            Hud.DrawSprite(new Rect(r.xMax - inner - portrait, ty, portrait, portrait), PixelArt.ThirdPreview(type, ch.Advanced));
+            var nameStyle = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(hud.LabelStyle.fontSize * 1.3f) };
+            nameStyle.normal.textColor = new Color(1f, 0.8f, 0.35f);
+            GUI.Label(new Rect(r.x + inner, ty, r.width, lineH * 1.5f), Loc.T("Rebirth: ", "転生：") + third.DisplayName, nameStyle);
+            ty += lineH * 1.6f;
+            float textW = r.width - inner * 3f - portrait;
+            string desc = third.DisplayDesc + Loc.T($"  All stats +{ThirdClasses.AllStats} permanently.", $"  全能力値+{ThirdClasses.AllStats}（ずっと）。");
+            float dh = wrap.CalcHeight(new GUIContent(desc), textW);
+            GUI.Label(new Rect(r.x + inner, ty, textW, dh), desc, wrap);
+            ty = Mathf.Max(ty + dh, r.y + inner + portrait) + lineH * 0.4f;
+
+            var skill = third.Skill;
+            float icon = lineH * 2f;
+            Hud.DrawSprite(new Rect(r.x + inner, ty, icon, icon), PixelArt.SkillIcon(skill.Effect, skill.Color));
+            var sk = new GUIStyle(small) { fontStyle = FontStyle.Bold };
+            GUI.Label(new Rect(r.x + inner + icon * 1.2f, ty, r.width, lineH), Loc.T($"Skill: {skill.DisplayName}   MP {skill.Mp}", $"スキル：{skill.DisplayName}   MP {skill.Mp}"), sk);
+            GUI.Label(new Rect(r.x + inner + icon * 1.2f, ty + lineH, r.width - inner * 2f - icon * 1.2f, lineH), skill.DisplayDesc, small);
+            ty += icon + lineH * 0.5f;
+
+            // 条件（満たしたものは緑）
+            if (!ch.Third)
+            {
+                var ok = new Color(0.5f, 1f, 0.5f);
+                var ng = new Color(1f, 0.55f, 0.5f);
+                void Req(string text, bool met)
+                {
+                    var st = new GUIStyle(small);
+                    st.normal.textColor = met ? ok : ng;
+                    GUI.Label(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH), (met ? "OK  " : "--  ") + text, st);
+                    ty += lineH;
+                }
+                Req(Loc.T($"Lv {ThirdClasses.ReqLevel}   (now Lv {ch.Level})", $"Lv{ThirdClasses.ReqLevel}   （今 Lv{ch.Level}）"), ch.Level >= ThirdClasses.ReqLevel);
+                Req(Loc.T($"Reach floor {ThirdClasses.ReqFloor}   (best {ch.BestFloor})", $"{ThirdClasses.ReqFloor}層に到達   （最深 {ch.BestFloor}層）"), ch.BestFloor >= ThirdClasses.ReqFloor);
+                Req(Loc.T($"{ThirdClasses.Cost} embers   (have {ch.Embers})", $"火種 {ThirdClasses.Cost}   （持っている {ch.Embers}）"), ch.Embers >= ThirdClasses.Cost);
+            }
+
+            float btnH = H * 0.055f;
+            var btn = new Rect(r.x + inner, r.yMax - inner - btnH, r.width - inner * 2f, btnH);
+            if (ch.Third)
+            {
+                GUI.Label(btn, Loc.T("YOUR CLASS", "今の職業"), hud.CenteredStyle);
+            }
+            else if (ThirdClasses.CanRebirth(ch))
+            {
+                Confirm(btn, "rebirth", Loc.T($"REBIRTH  ({ThirdClasses.Cost} embers)", $"転生する（火種 {ThirdClasses.Cost}）"), () =>
+                {
+                    if (Town.Rebirth(ch)) world.OnRebirth();
+                });
+            }
+            else
+            {
+                Hud.Fill(btn, dim);
+                var s = new GUIStyle(hud.CenteredStyle);
+                s.normal.textColor = new Color(0.6f, 0.6f, 0.6f);
+                GUI.Label(btn, Loc.T("Requirements not met", "条件を満たしていない"), s);
             }
         }
 

@@ -27,7 +27,7 @@ namespace VividOfFade
         {
             // 上位職なら、その見た目（色を変えて、目印の小物を足す）
             var ch = Profile.Get(type);
-            if (ch != null && ch.Advanced >= 0) return AdvancedLook(type, ch.Advanced);
+            if (ch != null && ch.Advanced >= 0) return AdvancedLook(type, ch.Advanced, ch.Third);
             switch (type)
             {
                 case ClassType.Shadeblade: return Shaded("PlayerHd_Shadeblade", ShadebladeHdRows);
@@ -66,38 +66,90 @@ namespace VividOfFade
         /// 上位職の見た目。元の職業の絵をもとに、服の色を変え（overrides）、目印の小物を描き足す（paints）。
         /// どれもこのゲーム用のオリジナルの意匠。
         /// </summary>
-        static Sprite AdvancedLook(ClassType type, int index)
+        static Sprite AdvancedLook(ClassType type, int index, bool third = false)
         {
-            string key = $"PlayerHd_{type}_Adv{index}";
+            string key = $"PlayerHd_{type}_Adv{index}" + (third ? "_3rd" : "");
             if (cache.TryGetValue(key, out var cached)) return cached;
+            AdvancedParts(type, index, out var rows, out var over);
+            if (!third) return Shaded(key, rows, over);
+            ThirdParts(type, index, ref rows, over);
+            return Shaded(key, rows, over, ThirdAura(type, index)); // 3次職は輪郭が光る
+        }
+
+        /// <summary>3次職の見た目（町の師匠の画面で、転生する前に見せる）。</summary>
+        public static Sprite ThirdPreview(ClassType type, int advanced) => AdvancedLook(type, Mathf.Clamp(advanced, 0, 1), true);
+
+        static void AdvancedParts(ClassType type, int index, out string[] rows, out Dictionary<char, Color32[]> over)
+        {
             switch (type)
             {
                 case ClassType.Lampwright when index == 0: // 炎呼び：深紅のローブと金の縁、燃える頭巾の先、橙の火のランタン
-                    return Shaded(key, Edit(LampwrightHdRows, c => c == 'l' ? 'L' : c,
-                            (0, 14, "oL"), (1, 14, "LL"), (2, 14, "LLc")),
-                        Over(('c', Ramp(220, 70, 70, 176, 40, 48, 128, 26, 34, 88, 16, 24)), ('d', Ramp(255, 214, 110, 214, 160, 56, 160, 110, 30, 110, 72, 18))));
+                    rows = Edit(LampwrightHdRows, c => c == 'l' ? 'L' : c, (0, 14, "oL"), (1, 14, "LL"), (2, 14, "LLc"));
+                    over = Over(('c', Ramp(220, 70, 70, 176, 40, 48, 128, 26, 34, 88, 16, 24)), ('d', Ramp(255, 214, 110, 214, 160, 56, 160, 110, 30, 110, 72, 18)));
+                    return;
                 case ClassType.Lampwright: // 灯台守：白と金のローブ、金の枠のランタン、頭の上の光
-                    return Shaded(key, Edit(LampwrightHdRows, c => c == 'm' ? 'g' : c,
-                            (0, 12, "o"), (0, 17, "o"), (1, 11, "l"), (1, 18, "l")),
-                        Over(('c', Ramp(250, 248, 236, 222, 216, 196, 178, 170, 150, 130, 122, 104)), ('d', Ramp(255, 230, 130, 226, 186, 72, 170, 130, 40, 120, 88, 24))));
+                    rows = Edit(LampwrightHdRows, c => c == 'm' ? 'g' : c, (0, 12, "o"), (0, 17, "o"), (1, 11, "l"), (1, 18, "l"));
+                    over = Over(('c', Ramp(250, 248, 236, 222, 216, 196, 178, 170, 150, 130, 122, 104)), ('d', Ramp(255, 230, 130, 226, 186, 72, 170, 130, 40, 120, 88, 24)));
+                    return;
                 case ClassType.Shadeblade when index == 0: // 夜狩り：紫がかった黒、角のある頭巾、紫に光る刃
-                    return Shaded(key, Edit(ShadebladeHdRows, c => c == 'm' ? 'p' : c,
-                            (2, 10, "n"), (3, 11, "n"), (4, 11, "n"), (2, 20, "n"), (3, 19, "n"), (4, 19, "n")),
-                        Over(('n', Ramp(110, 80, 150, 72, 50, 108, 50, 34, 78, 32, 22, 52)), ('r', Ramp(190, 120, 255, 150, 80, 220, 106, 52, 170, 72, 34, 120))));
+                    rows = Edit(ShadebladeHdRows, c => c == 'm' ? 'p' : c, (2, 10, "n"), (3, 11, "n"), (4, 11, "n"), (2, 20, "n"), (3, 19, "n"), (4, 19, "n"));
+                    over = Over(('n', Ramp(110, 80, 150, 72, 50, 108, 50, 34, 78, 32, 22, 52)), ('r', Ramp(190, 120, 255, 150, 80, 220, 106, 52, 170, 72, 34, 120)));
+                    return;
                 case ClassType.Shadeblade: // 血刃：赤黒い服、赤く光る刃、長い襟巻き
-                    return Shaded(key, Edit(ShadebladeHdRows, c => c == 'm' ? 'R' : c,
-                            (12, 7, "rrrr"), (13, 6, "rr"), (14, 5, "r")),
-                        Over(('n', Ramp(120, 52, 62, 86, 34, 44, 60, 22, 30, 40, 14, 20))));
+                    rows = Edit(ShadebladeHdRows, c => c == 'm' ? 'R' : c, (12, 7, "rrrr"), (13, 6, "rr"), (14, 5, "r"));
+                    over = Over(('n', Ramp(120, 52, 62, 86, 34, 44, 60, 22, 30, 40, 14, 20)));
+                    return;
                 case ClassType.Warden when index == 0: // 陽縛り：金と白の陣羽織、頭の上の光輪、光る羽根飾り
-                    return Shaded(key, Edit(WardenHdRows, c => c == 'r' ? 'l' : c,
-                            (0, 12, "ooooooo")),
-                        Over(('v', Ramp(255, 244, 200, 236, 210, 120, 196, 160, 70, 140, 108, 40)), ('m', Ramp(255, 250, 230, 222, 214, 186, 170, 160, 130, 118, 110, 86))));
+                    rows = Edit(WardenHdRows, c => c == 'r' ? 'l' : c, (0, 12, "ooooooo"));
+                    over = Over(('v', Ramp(255, 244, 200, 236, 210, 120, 196, 160, 70, 140, 108, 40)), ('m', Ramp(255, 250, 230, 222, 214, 186, 170, 160, 130, 118, 110, 86)));
+                    return;
                 default: // 城壁：濃い青の鎧、左手に大きな盾
-                    return Shaded(key, Edit(WardenHdRows, c => c,
-                            (13, 1, "ggggg"),
-                            (14, 0, "gvvvvvg"), (15, 0, "gvvvvvg"), (16, 0, "gvvgvvg"), (17, 0, "gvgggvg"), (18, 0, "gvvgvvg"),
-                            (19, 0, "gvvgvvg"), (20, 0, "gvvvvvg"), (21, 0, "gvvvvvg"), (22, 0, "gvvvvvg"), (23, 1, "gvvvg"), (24, 2, "ggg")),
-                        Over(('m', Ramp(170, 190, 230, 110, 130, 176, 74, 90, 130, 46, 56, 86)), ('v', Ramp(70, 96, 170, 44, 64, 130, 30, 44, 94, 20, 28, 64))));
+                    rows = Edit(WardenHdRows, c => c,
+                        (13, 1, "ggggg"),
+                        (14, 0, "gvvvvvg"), (15, 0, "gvvvvvg"), (16, 0, "gvvgvvg"), (17, 0, "gvgggvg"), (18, 0, "gvvgvvg"),
+                        (19, 0, "gvvgvvg"), (20, 0, "gvvvvvg"), (21, 0, "gvvvvvg"), (22, 0, "gvvvvvg"), (23, 1, "gvvvg"), (24, 2, "ggg"));
+                    over = Over(('m', Ramp(170, 190, 230, 110, 130, 176, 74, 90, 130, 46, 56, 86)), ('v', Ramp(70, 96, 170, 44, 64, 130, 30, 44, 94, 20, 28, 64)));
+                    return;
+            }
+        }
+
+        /// <summary>3次職の輪郭の色（体のまわりが光って見える）。</summary>
+        static Color32 ThirdAura(ClassType type, int index)
+        {
+            switch (type)
+            {
+                case ClassType.Lampwright: return index == 0 ? new Color32(255, 130, 40, 255) : new Color32(150, 200, 255, 255);
+                case ClassType.Shadeblade: return index == 0 ? new Color32(170, 100, 255, 255) : new Color32(255, 60, 70, 255);
+                default: return index == 0 ? new Color32(255, 210, 90, 255) : new Color32(190, 225, 255, 255);
+            }
+        }
+
+        /// <summary>3次職：上位職の見た目に、光る目・模様・周りの光の粒を足す。</summary>
+        static void ThirdParts(ClassType type, int index, ref string[] rows, Dictionary<char, Color32[]> over)
+        {
+            switch (type)
+            {
+                case ClassType.Lampwright when index == 0: // 焔王：黒に近い深紅のローブに、溶けた金の筋
+                    rows = Edit(rows, c => c == 'd' ? 'L' : c, (3, 3, "L"), (8, 29, "o"), (18, 1, "L"), (26, 29, "L"), (29, 3, "o"));
+                    over['c'] = Ramp(150, 40, 46, 110, 24, 32, 76, 14, 22, 50, 8, 14);
+                    break;
+                case ClassType.Lampwright: // 星守：夜空の紺のローブに星
+                    rows = Edit(rows, c => c, (20, 15, "o"), (24, 19, "o"), (27, 13, "o"), (17, 18, "l"), (3, 3, "o"), (8, 29, "l"), (18, 1, "o"), (26, 29, "o"));
+                    over['c'] = Ramp(70, 86, 170, 44, 56, 130, 30, 38, 94, 18, 24, 64);
+                    break;
+                case ClassType.Shadeblade when index == 0: // 日蝕：紫に光る目、黒い装束
+                    rows = Edit(rows, c => c == 'e' ? 'p' : c, (3, 3, "p"), (12, 30, "o"), (18, 1, "p"), (26, 28, "p"), (29, 3, "o"));
+                    over['n'] = Ramp(70, 54, 100, 44, 32, 70, 30, 20, 50, 18, 12, 32);
+                    break;
+                case ClassType.Shadeblade: // 血の君主：赤く光る目、金の飾り
+                    rows = Edit(rows, c => c == 'e' ? 'R' : c, (11, 10, "g"), (11, 20, "g"), (3, 3, "R"), (12, 30, "R"), (18, 1, "o"), (26, 28, "R"), (29, 3, "R"));
+                    break;
+                case ClassType.Warden when index == 0: // 暁光：光る兜の目、大きな光輪
+                    rows = Edit(rows, c => c == 'e' ? 'l' : c, (0, 10, "ooooooooooo"), (1, 10, "o"), (1, 20, "o"), (8, 2, "l"), (20, 29, "o"), (28, 3, "l"));
+                    break;
+                default: // 神盾：光る盾の紋章と兜の目
+                    rows = Edit(rows, c => c == 'e' ? 'o' : c, (16, 3, "o"), (17, 2, "ooo"), (18, 3, "o"), (19, 3, "o"), (2, 3, "o"), (8, 28, "o"), (29, 2, "o"));
+                    break;
             }
         }
 
@@ -141,11 +193,11 @@ namespace VividOfFade
         /// 部品で描いた絵に、濃淡と影と輪郭を付ける。光は左上から：
         /// 左か上が別の部品なら明るい縁、右か下が別の部品なら影、右下の角はさらに暗く、大きな面の右下寄りも暗くする。
         /// </summary>
-        static Sprite Shaded(string key, string[] rows, Dictionary<char, Color32[]> overrides = null)
+        static Sprite Shaded(string key, string[] rows, Dictionary<char, Color32[]> overrides = null, Color32? outlineColor = null)
         {
             if (cache.TryGetValue(key, out var cached)) return cached;
             int h = rows.Length, w = rows[0].Length;
-            var outline = new Color32(22, 16, 30, 255);
+            var outline = outlineColor ?? new Color32(22, 16, 30, 255);
             var clear = new Color32(0, 0, 0, 0);
             var px = new Color32[w * h];
 

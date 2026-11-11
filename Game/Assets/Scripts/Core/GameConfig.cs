@@ -8,6 +8,7 @@ namespace VividOfFade
         // 部屋（マス）。1マス = 16ドット = 1ユニット
         // 塔：5層ごとにボスの層。敵の強さ・経験値・ドロップは「段階」（層×2）で決める（試作の波の数と同じ尺度）
         public const int BossFloorEvery = 5;
+        public const int MaxFloor = 100; // 塔の最後の層（ボス）
         public static bool IsBossFloor(int floor) => floor > 0 && floor % BossFloorEvery == 0;
         public static int Tier(int floor) => floor * 2;
         public static int RoomEnemies(int floor, int roomArea) => Mathf.Min(6 + floor * 2 + roomArea / 10, 70);

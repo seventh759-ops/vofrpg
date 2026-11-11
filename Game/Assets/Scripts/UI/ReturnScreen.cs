@@ -47,7 +47,10 @@ namespace VividOfFade
             int next = world.Floors.Floor + 1;
             Hud.FitLabel(new Rect(pad, y, W, lineH * 1.6f), Loc.T($"Stairs  -  Floor {world.Floors.Floor}", $"階段  -  {world.Floors.Floor}層"), title);
             y += lineH * 1.8f;
-            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T($"Return home to keep your gear, or descend to floor {next}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), $"帰還して装備を持ち帰るか、{next}層へ下りるか" + (GameConfig.IsBossFloor(next) ? "（ボス）。" : "。")), small);
+            bool last = world.Floors.Floor >= GameConfig.MaxFloor;
+            string lead = last ? Loc.T("This is the last floor. Return home to keep your gear.", "ここが最後の層。帰還して装備を持ち帰ろう。")
+                : Loc.T($"Return home to keep your gear, or descend to floor {next}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), $"帰還して装備を持ち帰るか、{next}層へ下りるか" + (GameConfig.IsBossFloor(next) ? "（ボス）。" : "。"));
+            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), lead, small);
             y += lineH;
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T("Equipped gear and carried-in items are always kept.", "装備中の品と、持ち込んだ品はいつも持ち帰れます。"), small);
             y += lineH;
@@ -109,7 +112,12 @@ namespace VividOfFade
                 focused = null;
                 world.ReturnHome(list);
             });
-            hud.Button(new Rect(pad + third + gap, by, third, btnH), Loc.T("DESCEND", "下りる"), new Color(0.5f, 0.35f, 0.15f, 0.85f), centered, () =>
+            if (last)
+            {
+                Hud.Fill(new Rect(pad + third + gap, by, third, btnH), new Color(1f, 1f, 1f, 0.05f));
+                GUI.Label(new Rect(pad + third + gap, by, third, btnH), Loc.T("TOP REACHED", "最後の層"), centered);
+            }
+            else hud.Button(new Rect(pad + third + gap, by, third, btnH), Loc.T("DESCEND", "下りる"), new Color(0.5f, 0.35f, 0.15f, 0.85f), centered, () =>
             {
                 chosen.Clear();
                 focused = null;

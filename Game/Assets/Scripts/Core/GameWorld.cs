@@ -72,7 +72,7 @@ namespace VividOfFade
         public static List<int> Checkpoints(CharacterData ch)
         {
             var list = new List<int> { 1 };
-            for (int boss = GameConfig.BossFloorEvery; boss <= ch.BossCleared; boss += GameConfig.BossFloorEvery) list.Add(boss + 1);
+            for (int boss = GameConfig.BossFloorEvery; boss <= ch.BossCleared && boss + 1 <= GameConfig.MaxFloor; boss += GameConfig.BossFloorEvery) list.Add(boss + 1);
             return list;
         }
 
@@ -117,6 +117,18 @@ namespace VividOfFade
             var adv = AdvancedClasses.Of(ClassInfo.Current, ch);
             if (adv != null) Hud.Toast(Loc.T($"Class changed: {adv.DisplayName}  (Lv 1, +{AdvancedClasses.BonusPoints} points)", $"転職：{adv.DisplayName}（Lv1、ポイント +{AdvancedClasses.BonusPoints}）"), new Color(1f, 0.85f, 0.4f));
             Sfx.Landed(Rarity.Legendary);
+        }
+
+        /// <summary>転生した：8つ目のスキルを覚えて、空いているボタンに付ける。</summary>
+        public void OnRebirth()
+        {
+            var ch = Profile.Current;
+            if (ch == null) return;
+            Skills.Learn(ch, ThirdClasses.SkillIndex);
+            Profile.Save();
+            var third = ThirdClasses.Of(ClassInfo.Current, ch);
+            if (third != null) Hud.Toast(Loc.T($"Reborn: {third.DisplayName}  (Lv 1, +{ThirdClasses.BonusPoints} points)", $"転生：{third.DisplayName}（Lv1、ポイント +{ThirdClasses.BonusPoints}）"), new Color(1f, 0.85f, 0.4f));
+            Sfx.Landed(Rarity.Mythic);
         }
 
         float potionCooldown;
@@ -474,6 +486,7 @@ namespace VividOfFade
         /// <summary>次の層へ。地面に残ったドロップは拾える分だけ拾ってから下りる。</summary>
         public void Descend()
         {
+            if (Floors.Floor >= GameConfig.MaxFloor) return; // 塔は100層まで
             Loot.CollectAll(Inventory);
             ReturnOpen = false;
             EnterFloor(Floors.Floor + 1);
@@ -602,7 +615,13 @@ namespace VividOfFade
             {
                 ch.BossCleared = Floors.Floor;
                 Profile.Save();
-                Hud.Toast(Loc.T($"Checkpoint unlocked: floor {Floors.Floor + 1}", $"{Floors.Floor + 1}層から始められるようになった"), new Color(0.7f, 1f, 0.7f));
+                if (Floors.Floor < GameConfig.MaxFloor)
+                    Hud.Toast(Loc.T($"Checkpoint unlocked: floor {Floors.Floor + 1}", $"{Floors.Floor + 1}層から始められるようになった"), new Color(0.7f, 1f, 0.7f));
+            }
+            if (Floors.Floor >= GameConfig.MaxFloor)
+            {
+                Hud.ShowBanner(Loc.T("TOWER CONQUERED", "塔を制覇した"), Loc.T("The light reaches the very top.", "灯りが、塔のいちばん上まで届いた。"), new Color(1f, 0.85f, 0.4f));
+                Sfx.Landed(Rarity.Mythic);
             }
             Hud.Toast(Loc.T("The stairs have appeared", "階段が現れた"), new Color(1f, 0.85f, 0.5f));
         }

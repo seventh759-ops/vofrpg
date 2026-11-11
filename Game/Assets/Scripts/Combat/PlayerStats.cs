@@ -122,7 +122,7 @@ namespace VividOfFade
                 Light = cls.BaseLight,
                 Armor = cls.Armor,
             };
-            for (int i = 0; i < Attributes.Count; i++) s.Attr[i] = cls.BaseStats[i] + ch.Alloc[i];
+            for (int i = 0; i < Attributes.Count; i++) s.Attr[i] = cls.BaseStats[i] + ch.Alloc[i] + (ch.Third ? ThirdClasses.AllStats : 0); // 3次職は全能力値+10
             int bonusHp = 0, bonusMp = 0;
 
             float baseDamage = ClassInfo.Weapon(cls.Starter).BaseDamage * 0.6f; // 武器なし
@@ -239,6 +239,8 @@ namespace VividOfFade
             // 上位職の補正（加護と同じ形で、ずっと効く）
             var adv = AdvancedClasses.Of(type, ch);
             if (adv != null) s = s.WithBoon(adv.Passive);
+            var third = ThirdClasses.Of(type, ch);
+            if (third != null) s = s.WithBoon(third.Passive);
             return s;
         }
     }

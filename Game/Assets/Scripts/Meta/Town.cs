@@ -121,6 +121,24 @@ namespace VividOfFade
             return true;
         }
 
+        /// <summary>
+        /// 転生（1回だけ）。3次職になり、Lv1・経験値0に戻って、振った能力値も戻し、ボーナスのポイントだけを振れる状態にする。
+        /// 8つ目のスキルを覚える。スキルの熟練度・装備・火種・最深層はそのまま。
+        /// </summary>
+        public static bool Rebirth(CharacterData ch)
+        {
+            if (!ThirdClasses.CanRebirth(ch)) return false;
+            ch.Embers -= ThirdClasses.Cost;
+            ch.Third = true;
+            ch.Level = 1;
+            ch.Exp = 0;
+            for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;
+            ch.Points = ThirdClasses.BonusPoints;
+            ch.MpGrown = 0;
+            Profile.Save();
+            return true;
+        }
+
         /// <summary>その武器を今の職業で使えないか（ほかの職業の武器）。</summary>
         public static bool OtherClassWeapon(Item item, ClassType type) =>
             item.Slot == ItemSlot.Weapon && ClassInfo.Weapon(item.Weapon).Class != type;

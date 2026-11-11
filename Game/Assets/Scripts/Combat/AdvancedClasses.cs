@@ -120,7 +120,10 @@ namespace VividOfFade
         /// <summary>画面に出す職業の名前（転職していれば上位職の名前）。</summary>
         public static string NameOf(ClassType type)
         {
-            var adv = Of(type, Profile.Get(type));
+            var ch = Profile.Get(type);
+            var third = ThirdClasses.Of(type, ch);
+            if (third != null) return third.DisplayName;
+            var adv = Of(type, ch);
             return adv != null ? adv.DisplayName : ClassInfo.Get(type).DisplayName;
         }
 

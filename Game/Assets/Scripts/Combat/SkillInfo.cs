@@ -50,7 +50,7 @@ namespace VividOfFade
     /// <summary>職業ごとの6つのスキル（覚えるレベルの順）と、上位職の7つ目のスキル。</summary>
     public static class SkillInfo
     {
-        public const int PerClass = 7;
+        public const int PerClass = 8;
         public const int Slots = 3;
         public const int MaxSkillLevel = 10;
 
@@ -107,11 +107,14 @@ namespace VividOfFade
         };
 
         public static SkillSpec Get(ClassType type, int index) =>
-            index == AdvancedClasses.SkillIndex ? AdvancedClasses.SkillFor(type) : table[(int)type][index];
+            index == AdvancedClasses.SkillIndex ? AdvancedClasses.SkillFor(type)
+            : index == ThirdClasses.SkillIndex ? ThirdClasses.SkillFor(type)
+            : table[(int)type][index];
 
         public static bool Learned(ClassType type, int index, int level)
         {
             if (index == AdvancedClasses.SkillIndex && Profile.Get(type).Advanced < 0) return false;
+            if (index == ThirdClasses.SkillIndex && !Profile.Get(type).Third) return false;
             return level >= Get(type, index).ReqLevel;
         }
 
