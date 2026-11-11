@@ -578,6 +578,78 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>案内役（オリジナルキャラ）。40ドットを、プレイヤーと同じ縮尺（1マス32ドット）で描く。</summary>
+        public static Sprite Guide
+        {
+            get
+            {
+                const string key = "Guide";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                var pal = new Dictionary<char, Color32>
+                {
+                    { 'k', new Color32(14, 10, 16, 255) },
+                    { 'f', new Color32(70, 62, 72, 255) },
+                    { 'w', new Color32(250, 246, 236, 255) },
+                    { 's', new Color32(90, 80, 84, 255) },
+                };
+                int h = GuideRows.Length, w = GuideRows[0].Length;
+                var px = new Color32[w * h];
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        char ch = GuideRows[y][x];
+                        px[(h - 1 - y) * w + x] = pal.TryGetValue(ch, out var c) ? c : new Color32(0, 0, 0, 0);
+                    }
+                }
+                return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), 32);
+            }
+        }
+
+        static readonly string[] GuideRows =
+        {
+            ".kkk................................kkk.",
+            ".kffkk...........................kkkffk.",
+            ".kffffkkk......................kkkffffk.",
+            "..kfffffkk....................kkfffffk..",
+            "..kfffkffkk..................kkffkfffk..",
+            ".kkkffkkfffk................kfffkkffkkk.",
+            "kfkkkffkkfffk..............kfffkkffkkkfk",
+            "kfffkkffkkfffk............kfffkkffkkfffk",
+            ".kffffffkkkfffk..........kfffkkkffffffk.",
+            ".kkfffkkkkkfffk..........kfffkkkkkfffkk.",
+            "..kkfffkkkkkfff..........fffkkkkkfffkk..",
+            ".kkkkkffkkkkkffk..kk....kffkkkkkffkkkkk.",
+            ".kffkkkkkkkkkffk..kkkkk.kffkkkkkkkkkffk.",
+            ".kkffffkkkkkkffkkkkffkkkkffkkkkkkffffkk.",
+            "..kkffffkkkkkkkffffffffffkkkkkkkffffkk..",
+            "....kkkkkkkfffkffffffffffkfffkkkkkkk....",
+            "...kkkffkkffkffffffffffffffkffkkffkkk...",
+            "...kfffffkkkffffffffffffffffkkkfffffk...",
+            "....kkkfkkkfffkkfffkfffffkfffkkkfkkk....",
+            "......kkkffffkkffffkfkfffkkffffkkk......",
+            ".......kffkffkkfkfkkkkkkffkkfkffk.......",
+            "......kkkkffkkkkkfkkkkkkkfkkffkkkk......",
+            ".......kkffkkkkkkkkkkkkkkkkkkffkk.......",
+            "......kkffkkkkkkkkkkkkkkkkkkkkffkk......",
+            ".....kkffwwkkkkkkkkkkkkkwwkkkkfffkk.....",
+            ".....kkkfwwkwwkwwkwwkwwkwwkkkkffkkk.....",
+            "......kkfffkwwkwwkwwkwwkkkkkkfffkk......",
+            "......kkkffkkkkkkkkkkkkkkkkkkfkkfk......",
+            "......kkkfffwwkwwkwwkwwkkkkkfffkkk......",
+            "........kkkfwwkwwkwwkwwkkkkffkkk........",
+            "........kkffffkkkkkkkkkkkkffffkk........",
+            ".........kkkkffkkkkkkkkkfffkkkk.........",
+            "..........kkkkffffkkkkffffkkkk..........",
+            ".........kkffkkkffffffffkkkffkk.........",
+            "........kkfkfffkkkkffkkkkfffkfkk........",
+            "........kkkkffffkkkkkkkkffkfkk..........",
+            ".........kffkkkkffkkkkfffkkfffk.........",
+            ".........kfffkkffffkkffffkkfffk.........",
+            "........kkkkfkkfkkfkkkkkfkkfkkkk........",
+            "........fkkkkffkkkkffkkkkffkkkkf........",
+        };
+
         /// <summary>祭壇（石の台の上に火が灯る）。足元が原点。</summary>
         public static Sprite Altar => FromArt("Altar", AltarRows, new Dictionary<char, Color32>
         {

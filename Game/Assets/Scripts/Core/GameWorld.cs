@@ -47,7 +47,7 @@ namespace VividOfFade
         /// <summary>この層の祭壇はもう使った。</summary>
         public bool AltarUsed { get; private set; }
 
-        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen || MenuOpen || AltarOpen;
+        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen || MenuOpen || AltarOpen || (Hud != null && Hud.Guide.Active);
 
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
         public bool ChoosingClass { get; private set; }
@@ -82,6 +82,7 @@ namespace VividOfFade
         bool stairsLatch;     // 階段の画面を閉じたら、一度離れるまで出さない
         SpriteRenderer stairs;
         SpriteRenderer altar;
+        SpriteRenderer guideNpc; // 1層目のはじめの部屋に立つ案内役
         bool altarLatch;
         bool holdSave; // 起動中・再開の準備中は、中断の保存をしない（上書きを防ぐ）
         float slowMoTimer;
@@ -109,6 +110,10 @@ namespace VividOfFade
             altar = altarGo.AddComponent<SpriteRenderer>();
             altar.sprite = PixelArt.Altar;
             Lighting.MakeGlow(altar);
+            var guideGo = new GameObject("Guide");
+            guideGo.transform.SetParent(transform, false);
+            guideNpc = guideGo.AddComponent<SpriteRenderer>();
+            guideNpc.sprite = PixelArt.Guide;
 
             Enemies = AddChild<EnemySystem>("Enemies");
             Enemies.Init();
@@ -143,7 +148,12 @@ namespace VividOfFade
                 Hud.Toast($"{name} Lv {lv}", new Color(0.6f, 0.85f, 1f));
                 Profile.Save();
             };
-            Skills.SkillLearned += name => Hud.Toast($"New skill: {name}", new Color(0.6f, 0.85f, 1f));
+            Skills.SkillLearned += name =>
+            {
+                Hud.Toast($"New skill: {name}", new Color(0.6f, 0.85f, 1f));
+                Guide("skill", "新しいスキルだ。左下のボタンで使える（PC は 1〜3 キー）。",
+                    "ボタンの上の帯を押すと、オートで勝手に使ってくれる。使うほど強くなるよ。");
+            };
             Sfx = gameObject.AddComponent<Sfx>();
             Music = gameObject.AddComponent<Music>();
             Lighting = AddChild<Lighting>("Lighting");
@@ -177,7 +187,12 @@ namespace VividOfFade
             cameraRig = new CameraRig(cam);
 
             Floors = new FloorDirector();
-            Floors.RoomActivated += () => roomRewardPending = true;
+            Floors.RoomActivated += () =>
+            {
+                roomRewardPending = true;
+                Guide("enemies", "部屋に入ると敵が湧く。灯りの届く所まで来たら、勝手に攻撃してくれるよ。",
+                    "囲まれたら回避（Space か、画面をはじく）。全滅させると、ドロップがあふれ出す。");
+            };
             holdSave = true;
             StartRun(ClassType.Lampwright, 1, false); // 画面の後ろに出しておくだけ（中断した挑戦は消さない）
             holdSave = false;
@@ -197,6 +212,13 @@ namespace VividOfFade
             float dt = Mathf.Min(Time.deltaTime, 1f / 20f);
             Input.Poll();
             if (Input.MusicPressed) Music.ToggleMute();
+            // 案内役の会話中は、決定キーで次へ。ほかの操作には使わない
+            bool talking = Hud.Guide.Active;
+            if (talking && Input.ConfirmPressed)
+            {
+                Hud.Guide.Next();
+                Input.ClearQueued();
+            }
             if (Input.HelpPressed) Hud.ShowHelp = !Hud.ShowHelp;
             if (Input.NextMusicPressed) NextMusic();
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
@@ -230,7 +252,8 @@ namespace VividOfFade
 
             if (Player.IsDead)
             {
-                if (Input.ConfirmPressed) EndRunByDeath();
+                Guide("death", "あらら、やられちゃったね。", "今回拾った物はなくなるけど、レベルは残る。帰還してから死ねば、装備も守れるよ。");
+                if (!talking && Input.ConfirmPressed) EndRunByDeath();
             }
             else if (!Paused)
             {
@@ -248,6 +271,7 @@ namespace VividOfFade
                 CheckRoomCleared();
                 CheckStairs();
                 CheckAltar();
+                CheckEliteTip();
             }
 
             Player.LightPenalty = Enemies.ShroudNear ? GameConfig.ShroudPenalty : 0f;
@@ -285,10 +309,26 @@ namespace VividOfFade
             stairs.enabled = Floors.StairsOpen;
             if (!Floors.StairsOpen) return;
             float d = (Player.Pos - Room.StairsPos).magnitude;
+            if (d < 5f) Guide("stairs", "階段だ。乗ると、下りるか、帰還するかを選べる。",
+                "帰還すれば装備と火種を持ち帰れる。下りれば、もっといい物が出るけど……死んだら全部なくすよ。");
             if (d > 1.5f) stairsLatch = false;
             if (stairsLatch || d > GameConfig.StairsRadius) return;
             stairsLatch = true;
             ReturnOpen = true;
+        }
+
+        /// <summary>精鋭が初めて近くに来たとき。</summary>
+        void CheckEliteTip()
+        {
+            if (Profile.TipSeen("elite")) return;
+            float r = Player.EffectiveLight + 2f;
+            foreach (var e in Enemies.Active)
+            {
+                if (e.Dying || e.Elite == EliteKind.None || (e.Pos - Player.Pos).sqrMagnitude > r * r) continue;
+                Guide("elite", "名前の付いた大きいのは精鋭。硬いけど、倒せばドロップがあふれる。",
+                    "紫の Shroud は近くにいると灯りを奪う。灯りが狭まったら、先に片付けな。");
+                return;
+            }
         }
 
         /// <summary>祭壇に乗ったら、加護を選ぶ画面を出す（1つの層で1回だけ選べる）。</summary>
@@ -298,6 +338,8 @@ namespace VividOfFade
             if (!Room.HasAltar) return;
             altar.color = AltarUsed ? new Color(0.45f, 0.45f, 0.5f) : Color.white;
             float d = (Player.Pos - Room.AltarPos).magnitude;
+            if (d < 5f) Guide("altar", "祭壇だよ。火種を払うと、この挑戦のあいだずっと効く加護をくれる。",
+                "1つの層で1回だけ。どれを選ぶかで、戦い方が変わるよ。");
             if (d > 1.5f) altarLatch = false;
             if (AltarUsed || altarLatch || d > GameConfig.StairsRadius) return;
             altarLatch = true;
@@ -357,6 +399,8 @@ namespace VividOfFade
             Fx.Clear();
             roomRewardPending = false;
             Floors.Begin(floor, Room);
+            if (Floors.IsBossFloor) Guide("boss", "この層の奥にはボスがいる。赤い輪が広がったら、輪の外へ逃げるか回避！",
+                "倒せば階段が現れて、次からはその先の層から始められるようになるよ。");
             ApplyZone(Room.Zone, floor);
             Player.Pos = Room.StartPos;
             stairs.transform.position = Iso.ToScreen(Room.StairsPos);
@@ -383,6 +427,15 @@ namespace VividOfFade
                 }
             }
             altar.enabled = Room.HasAltar;
+
+            // 1層目だけ、はじめの部屋に案内役が立っている
+            guideNpc.enabled = floor == 1;
+            if (floor == 1)
+            {
+                Vector2 gp = Room.Clamp(Room.StartPos + new Vector2(1.4f, 1.4f), 0.5f);
+                guideNpc.transform.position = Iso.ToScreen(gp) + new Vector2(0f, 0.15f);
+                guideNpc.sortingOrder = SortOrder.For(gp);
+            }
             SaveRun(); // 層の最初で、挑戦の状態を保存する
 
             var ch = Profile.Current;
@@ -510,6 +563,8 @@ namespace VividOfFade
             Fx.Ring(Player.Pos, 2f, new Color(1f, 0.95f, 0.6f, 0.9f), 0.5f);
             Sfx.Landed(Rarity.Legendary);
             Hud.Toast($"LEVEL UP!  Lv {ch.Level}  (+{gained * Progression.PointsPerLevel} points)", new Color(1f, 0.95f, 0.5f));
+            Guide("levelup", "レベルが上がった！ ポイントは C キーか MENU の STATS で振れる。",
+                "MP が欲しいなら、早めに WIS を少し振っておくといい。レベルアップのたびに伸びが変わるからね。");
             Profile.Save();
         }
 
@@ -590,10 +645,15 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>案内役の説明（その場面が初めてのときだけ）。</summary>
+        void Guide(string id, params string[] lines) => Hud.Guide.Show(id, lines);
+
         void OnItemPickedUp(Item item)
         {
             Sfx.Pickup();
             Hud.Toast(item.Name, RarityInfo.ColorOf(item.Rarity));
+            Guide("loot", "お、装備を拾ったね。B キーか MENU の BAG で鞄を開けるよ。",
+                "緑の UPGRADE なら付け替え時。いらない物は分解すると火種になる。");
         }
 
         void UpdateSlowMo()
@@ -605,6 +665,11 @@ namespace VividOfFade
 
         void OnTapped(Vector2 startPos)
         {
+            if (Hud.Guide.Active)
+            {
+                Hud.HandleTap(startPos); // 会話を進める
+                return;
+            }
             if (Player.IsDead && !ChoosingClass)
             {
                 EndRunByDeath();
@@ -635,6 +700,12 @@ namespace VividOfFade
             Player.ResetState(PlayerStats.From(Inventory.Equipped, type));
             EnterFloor(Mathf.Max(1, startFloor));
             Input.ClearQueued();
+            if (!holdSave && startFloor <= 1)
+            {
+                Guide("welcome", "やあ。ここは灯りの届かない塔。底へ下りながら、敵を倒して装備を集めるんだ。",
+                    "画面を押してずらすと歩ける（PC は WASD）。攻撃は灯りの届く敵へ勝手に飛ぶよ。",
+                    "部屋をまわって、どこかにある階段を探しな。右上の地図に、見た場所が描かれていく。");
+            }
         }
 
         /// <summary>帰還する：装備と選んだ品と火種を保存して、職業選択に戻る。</summary>

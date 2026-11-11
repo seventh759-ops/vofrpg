@@ -105,6 +105,7 @@ namespace VividOfFade
     {
         public int Version = 1;
         public int MusicTheme;
+        public List<string> TipsSeen = new List<string>(); // 案内役が説明し終えた場面
         public List<CharacterData> Characters = new List<CharacterData>();
     }
 
@@ -169,6 +170,19 @@ namespace VividOfFade
             }
         }
 
+        public static bool TipSeen(string id)
+        {
+            EnsureLoaded();
+            return data.TipsSeen.Contains(id);
+        }
+
+        public static void MarkTip(string id)
+        {
+            EnsureLoaded();
+            if (!data.TipsSeen.Contains(id)) data.TipsSeen.Add(id);
+            Save();
+        }
+
         public static void Save()
         {
             if (data == null) return;
@@ -199,6 +213,7 @@ namespace VividOfFade
             }
             if (data == null) data = new SaveData();
             if (data.Characters == null) data.Characters = new List<CharacterData>();
+            if (data.TipsSeen == null) data.TipsSeen = new List<string>();
             foreach (var c in data.Characters) c.Repair();
         }
     }

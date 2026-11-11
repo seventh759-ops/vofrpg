@@ -47,6 +47,7 @@ namespace VividOfFade
         ReturnScreen returnScreen;
         MenuScreen menu;
         AltarScreen altarScreen;
+        public GuideBox Guide { get; private set; }
         GUIStyle label;
         GUIStyle small;
         GUIStyle centered;
@@ -229,6 +230,7 @@ namespace VividOfFade
             returnScreen = new ReturnScreen(this);
             menu = new MenuScreen(this);
             altarScreen = new AltarScreen(this);
+            Guide = new GuideBox(this);
         }
 
         void Update()
@@ -278,6 +280,7 @@ namespace VividOfFade
             else if (World.ReturnOpen) returnScreen.Draw(World);
             else if (World.MenuOpen) menu.Draw(World);
             else if (World.AltarOpen) altarScreen.Draw(World);
+            if (!World.ChoosingClass) Guide.Draw();
 
             if (repaint)
             {
@@ -515,6 +518,20 @@ namespace VividOfFade
             GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), "Tap / Enter to continue", centered);
         }
 
+        static readonly string[] greetings =
+        {
+            "ようこそ、灯りを持つ者。塔の底へ下りる準備はいいかい？",
+            "職業を選びな。灯術師は遠くから、影刃は近くで、灯番は周りを焼く。",
+            "火種は祭壇で加護に変えられる。ケチると深くは行けないよ。",
+            "ボスを倒せば、その先から始められる。覚えておきな。",
+        };
+
+        string GuideGreeting()
+        {
+            int i = (int)(Time.unscaledTime / 6f) % greetings.Length;
+            return greetings[i];
+        }
+
         /// <summary>開始する層を選ぶ画面（1層と、倒したボスの次の層）。PC は数字キーでも選べる。</summary>
         void DrawFloorSelect(ClassType type)
         {
@@ -598,6 +615,16 @@ namespace VividOfFade
                     $"Lv {ch.Level}   Best floor {ch.BestFloor}   Main: {Attributes.ShortName(spec.MainAttr)} / {Attributes.ShortName(spec.SubAttr)}", small);
                 y += bh + gap;
             }
+
+            // 案内役（左下で話しかけてくる）
+            float gs = W * 0.22f;
+            var gr = new Rect(W * 0.04f, H - gs - H * 0.02f, gs, gs);
+            DrawSprite(gr, PixelArt.Guide);
+            var bubble = new Rect(gr.xMax + W * 0.02f, gr.y + gs * 0.1f, W - gr.xMax - W * 0.06f, gs * 0.75f);
+            Fill(bubble, new Color(1f, 1f, 1f, 0.9f));
+            var say = new GUIStyle(small) { wordWrap = true, alignment = TextAnchor.MiddleLeft };
+            say.normal.textColor = new Color(0.1f, 0.08f, 0.12f);
+            GUI.Label(new Rect(bubble.x + W * 0.02f, bubble.y, bubble.width - W * 0.04f, bubble.height), GuideGreeting(), say);
 
             // BGM の切り替え（N キーでも）
             var musicRect = new Rect(pad, y + gap, W - pad * 2f, H * 0.045f);
