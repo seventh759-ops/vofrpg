@@ -21,6 +21,72 @@ namespace VividOfFade
         readonly List<Burst> slashes = new List<Burst>();
         readonly Stack<Burst> freeSlashes = new Stack<Burst>();
 
+        // レベルアップの羽（頭の上で開いて、上がりながら消える）
+        public const float LevelUpDuration = 1.5f;
+        /// <summary>羽を付ける位置（プレイヤーの論理座標）。GameWorld が毎フレーム入れる。</summary>
+        public Vector2 Anchor;
+        Transform wingRoot;
+        readonly Transform[] hinges = new Transform[2];
+        readonly SpriteRenderer[] wings = new SpriteRenderer[2];
+        float wingT = -1f;
+
+        public void LevelUp()
+        {
+            if (wingRoot == null)
+            {
+                wingRoot = new GameObject("LevelUpWings").transform;
+                wingRoot.SetParent(transform, false);
+                for (int i = 0; i < 2; i++)
+                {
+                    hinges[i] = new GameObject(i == 0 ? "LeftHinge" : "RightHinge").transform;
+                    hinges[i].SetParent(wingRoot, false);
+                    var go = new GameObject("Wing");
+                    go.transform.SetParent(hinges[i], false);
+                    go.transform.localPosition = new Vector3(-0.5f, 0.05f, 0f); // 付け根を蝶番に合わせる（羽は幅1ユニット）
+                    wings[i] = go.AddComponent<SpriteRenderer>();
+                    wings[i].sprite = PixelArt.Wing;
+                    Lighting.MakeGlow(wings[i]);
+                }
+                hinges[0].localPosition = new Vector3(-0.08f, 0f, 0f);
+                hinges[1].localPosition = new Vector3(0.08f, 0f, 0f);
+            }
+            wingRoot.gameObject.SetActive(true);
+            wingT = 0f;
+            UpdateWings(0f);
+        }
+
+        void UpdateWings(float dt)
+        {
+            if (wingT < 0f) return;
+            wingT += dt;
+            if (wingT >= LevelUpDuration)
+            {
+                wingT = -1f;
+                wingRoot.gameObject.SetActive(false);
+                return;
+            }
+            const float openTime = 0.35f, fadeFrom = 1f;
+            float open = Mathf.Clamp01(wingT / openTime);
+            open = 1f - (1f - open) * (1f - open) * (1f - open); // 勢いよく開いて、ゆっくり止まる
+            float flap = wingT > openTime ? Mathf.Sin((wingT - openTime) * 14f) * 8f * Mathf.Clamp01(1f - (wingT - openTime) * 1.2f) : 0f;
+            float angle = Mathf.Lerp(75f, -18f, open) + flap; // 下に畳んだ形から、少し上向きに広げる
+            float scale = Mathf.Lerp(0.45f, 0.85f, open);
+            float rise = wingT > fadeFrom ? (wingT - fadeFrom) * 0.8f : 0f;
+            float alpha = wingT > fadeFrom ? 1f - (wingT - fadeFrom) / (LevelUpDuration - fadeFrom) : 1f;
+
+            wingRoot.position = (Vector3)(Iso.ToScreen(Anchor) + new Vector2(0f, 0.75f + rise));
+            hinges[0].localRotation = Quaternion.Euler(0f, 0f, angle);
+            hinges[0].localScale = new Vector3(scale, scale, 1f);
+            hinges[1].localRotation = Quaternion.Euler(0f, 0f, -angle);
+            hinges[1].localScale = new Vector3(-scale, scale, 1f);
+            int order = SortOrder.For(Anchor) - 1; // キャラクターの後ろ
+            for (int i = 0; i < 2; i++)
+            {
+                wings[i].color = new Color(1f, 1f, 1f, alpha);
+                wings[i].sortingOrder = order;
+            }
+        }
+
         /// <summary>
         /// 扇形の斬撃。論理座標で aim の方向へ、reach の距離、arc 度の広さ。
         /// 子を論理の角度で回し、親で横長に潰すと、床の上の扇に見える（Iso.ToScreen と同じ変換）。
@@ -83,6 +149,7 @@ namespace VividOfFade
 
         public void Tick(float dt)
         {
+            UpdateWings(dt);
             for (int i = slashes.Count - 1; i >= 0; i--)
             {
                 var b = slashes[i];
@@ -128,6 +195,8 @@ namespace VividOfFade
 
         public void Clear()
         {
+            if (wingRoot != null) wingRoot.gameObject.SetActive(false);
+            wingT = -1f;
             foreach (var b in slashes)
             {
                 b.Root.gameObject.SetActive(false);

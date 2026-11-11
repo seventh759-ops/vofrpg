@@ -356,6 +356,7 @@ namespace VividOfFade
                 Enemies.Tick(dt, Player, Room);
                 Shots.Tick(dt, Enemies, Room);
                 Loot.Tick(dt, Player, Inventory);
+                Fx.Anchor = Player.Pos;
                 Fx.Tick(dt);
                 CheckRoomCleared();
                 CheckStairs();
@@ -651,6 +652,9 @@ namespace VividOfFade
             RefreshStats();
             Player.Refill();
             Fx.Ring(Player.Pos, 2f, new Color(1f, 0.95f, 0.6f, 0.9f), 0.5f);
+            Fx.Anchor = Player.Pos;
+            Fx.LevelUp();
+            Hud.ShowLevelUp();
             Sfx.Landed(Rarity.Legendary);
             Hud.Toast(Loc.T($"LEVEL UP!  Lv {ch.Level}  (+{gained * Progression.PointsPerLevel} points)", $"レベルアップ！  Lv {ch.Level}  （ポイント +{gained * Progression.PointsPerLevel}）"), new Color(1f, 0.95f, 0.5f));
             Guide("levelup", Loc.T("Level up! Spend points with the C key or STATS in the MENU.", "レベルが上がった！ ポイントは C キーかメニューの「能力値」で振れる。"),
