@@ -537,6 +537,219 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>加護のアイコン（12ドット。Boons の表と同じ順）。a=主の色 b=影 w=光。</summary>
+        public static Sprite BoonIcon(int index)
+        {
+            index = Mathf.Clamp(index, 0, BoonIconRows.Length - 1);
+            var c = BoonIconColors[index];
+            return FromArt("Boon" + index, BoonIconRows[index], new Dictionary<char, Color32>
+            {
+                { 'a', c },
+                { 'b', new Color32((byte)(c.r * 0.55f), (byte)(c.g * 0.55f), (byte)(c.b * 0.55f), 255) },
+                { 'w', new Color32(255, 250, 235, 255) },
+            });
+        }
+
+        static readonly Color32[] BoonIconColors =
+        {
+            new Color32(255, 140, 60, 255), // SharpFlame
+            new Color32(255, 230, 90, 255), // Quickening
+            new Color32(255, 210, 120, 255), // KindledWick
+            new Color32(120, 220, 255, 255), // KeenEye
+            new Color32(230, 90, 110, 255), // Ruin
+            new Color32(240, 80, 90, 255), // Vigor
+            new Color32(90, 140, 255, 255), // DeepWell
+            new Color32(140, 230, 150, 255), // SwiftStep
+            new Color32(170, 180, 210, 255), // Bulwark
+            new Color32(200, 60, 80, 255), // Leech
+            new Color32(190, 140, 255, 255), // Echo
+            new Color32(255, 120, 40, 255), // EmberBurst
+        };
+
+        static readonly string[][] BoonIconRows =
+        {
+            new[] // SharpFlame
+            {
+                "............",
+                "......w.....",
+                ".....aw.....",
+                ".....aa.....",
+                "....aaab....",
+                "...aawab....",
+                "...awwaab...",
+                "..aawwwab...",
+                "..aawwwab...",
+                "...aawab....",
+                "....aab.....",
+                "............",
+            },
+            new[] // Quickening
+            {
+                "............",
+                ".......aa...",
+                "......aab...",
+                ".....aab....",
+                "....aab.....",
+                "...aaaaaa...",
+                "....baab....",
+                "....aab.....",
+                "...aab......",
+                "..aab.......",
+                "..ab........",
+                "............",
+            },
+            new[] // KindledWick
+            {
+                "............",
+                ".....w......",
+                "....waw.....",
+                "....aaa.....",
+                "...aawaa....",
+                "...awwwa....",
+                "....aaa.....",
+                ".....b......",
+                "....bbb.....",
+                "...bbbbb....",
+                "...bbbbb....",
+                "............",
+            },
+            new[] // KeenEye
+            {
+                "............",
+                "............",
+                "....aaaa....",
+                "..aa....aa..",
+                ".a...bb...a.",
+                "a...bwwb...a",
+                "a...bwwb...a",
+                ".a...bb...a.",
+                "..aa....aa..",
+                "....aaaa....",
+                "............",
+                "............",
+            },
+            new[] // Ruin
+            {
+                "............",
+                "....aaaa....",
+                "...aaaaaa...",
+                "..aaaaaaaa..",
+                "..abbaabba..",
+                "..abbaabba..",
+                "..aaaaaaaa..",
+                "...aaabaa...",
+                "....aaaa....",
+                "....a.a.a...",
+                "............",
+                "............",
+            },
+            new[] // Vigor
+            {
+                "............",
+                "............",
+                "..aa...aa...",
+                ".awwa.aaab..",
+                ".awaaaaaab..",
+                ".aaaaaaaab..",
+                "..aaaaaab...",
+                "...aaaab....",
+                "....aab.....",
+                ".....b......",
+                "............",
+                "............",
+            },
+            new[] // DeepWell
+            {
+                "............",
+                ".....a......",
+                ".....a......",
+                "....aaa.....",
+                "....awa.....",
+                "...awaaa....",
+                "..aawaaab...",
+                "..awaaaab...",
+                "..aaaaaab...",
+                "...aaaab....",
+                "....bbb.....",
+                "............",
+            },
+            new[] // SwiftStep
+            {
+                "............",
+                "....aaa.....",
+                "....aaa.....",
+                "....aaa.....",
+                "....aaa.....",
+                "....aaab....",
+                "....aaaab...",
+                "w...aaaaaaa.",
+                ".w..aaaaaaab",
+                "w...bbbbbbbb",
+                "............",
+                "............",
+            },
+            new[] // Bulwark
+            {
+                "............",
+                "..aaaaaaaa..",
+                "..awwwwwwa..",
+                "..awaaaaab..",
+                "..awaawaab..",
+                "..awawwwab..",
+                "...aaawaab..",
+                "...aaawab...",
+                "....aaab....",
+                ".....ab.....",
+                "............",
+                "............",
+            },
+            new[] // Leech
+            {
+                "............",
+                "...a....a...",
+                "...a....a...",
+                "...aa..aa...",
+                "....a..a....",
+                "............",
+                ".....aa.....",
+                "....awab....",
+                "....aaab....",
+                ".....bb.....",
+                "............",
+                "............",
+            },
+            new[] // Echo
+            {
+                "............",
+                "............",
+                "..aaa..aaa..",
+                ".a...aa...a.",
+                "a...a..a...a",
+                "a..a.ww.a..a",
+                "a..a.ww.a..a",
+                "a...a..a...a",
+                ".a...aa...a.",
+                "..aaa..aaa..",
+                "............",
+                "............",
+            },
+            new[] // EmberBurst
+            {
+                "............",
+                ".....a......",
+                ".a...a...a..",
+                "..a..a..a...",
+                "...awwwa....",
+                "aaaawwwaaaa.",
+                "...awwwa....",
+                "..a..a..a...",
+                ".a...a...a..",
+                ".....a......",
+                "............",
+                "............",
+            },
+        };
+
         /// <summary>レベルアップの天使の羽（左の羽。右は反転して使う）。細長い形で、付け根は右端の上寄り。</summary>
         public static Sprite Wing => FromArt("Wing", WingRows, new Dictionary<char, Color32>
         {

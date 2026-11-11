@@ -146,8 +146,10 @@ namespace VividOfFade
             ConfirmButton(new Rect(pad + half + gap, bottomY, half, btnH), "level", Loc.T("RESET ALL", "すべてリセット"), world.ResetLevel);
         }
 
+        int selectedBoon = -1;
+
         /// <summary>
-        /// 加護の一覧。説明付きで1行ずつ並べ、入りきらなければ名前と数だけを2列・3列に詰める（あふれないように）。
+        /// 加護の一覧：アイコンを並べ（同じ加護は数を右下に）、押すとその下に名前と説明を出す。
         /// </summary>
         void DrawBoons(Player p, Rect area)
         {
@@ -165,34 +167,36 @@ namespace VividOfFade
                 if (!count.ContainsKey(b)) { order.Add(b); count[b] = 0; }
                 count[b]++;
             }
+            if (!count.ContainsKey(selectedBoon)) selectedBoon = order[0];
 
-            var style = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
-            int maxRows = Mathf.Max(1, Mathf.FloorToInt(area.height / lineH));
-            if (order.Count <= maxRows)
-            {
-                // 説明付き
-                for (int i = 0; i < order.Count; i++)
-                {
-                    var spec = Boons.Get(order[i]);
-                    string n = count[order[i]] > 1 ? $"{spec.DisplayName} x{count[order[i]]}" : spec.DisplayName;
-                    Hud.FitLabel(new Rect(area.x, area.y + i * lineH, area.width, lineH), $"- {n}  -  {spec.DisplayDesc}", style);
-                }
-                return;
-            }
-            // 名前と数だけを、入る列数で並べる
-            int cols = 2;
-            while (cols < 4 && Mathf.CeilToInt(order.Count / (float)cols) > maxRows) cols++;
-            float colW = area.width / cols;
-            var name = new GUIStyle(style);
-            name.normal.textColor = new Color(1f, 0.9f, 0.7f);
+            // アイコン（加護は12種類なので、1行に入るだけ並べて折り返す）
+            float detailH = lineH * 2.2f;
+            float gap = area.width * 0.015f;
+            int cols = 8;
+            float cell = (area.width - gap * (cols - 1)) / cols;
+            int rows = (order.Count + cols - 1) / cols;
+            float maxCell = (area.height - detailH) / rows - gap;
+            if (maxCell < cell) cell = Mathf.Max(lineH, maxCell);
+            var badge = new GUIStyle(small) { alignment = TextAnchor.LowerRight, fontStyle = FontStyle.Bold };
+            badge.normal.textColor = new Color(1f, 0.9f, 0.5f);
             for (int i = 0; i < order.Count; i++)
             {
-                int row = i / cols, col = i % cols;
-                if (row >= maxRows) break;
-                var spec = Boons.Get(order[i]);
-                string n = count[order[i]] > 1 ? $"{spec.DisplayName} x{count[order[i]]}" : spec.DisplayName;
-                Hud.FitLabel(new Rect(area.x + col * colW, area.y + row * lineH, colW - area.width * 0.01f, lineH), n, name);
+                int b = order[i];
+                var r = new Rect(area.x + (i % cols) * (cell + gap), area.y + (i / cols) * (cell + gap), cell, cell);
+                hud.Button(r, null, b == selectedBoon ? new Color(1f, 0.85f, 0.4f, 0.4f) : new Color(1f, 1f, 1f, 0.08f), hud.CenteredStyle, () => selectedBoon = b);
+                float inset = cell * 0.12f;
+                Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, cell - inset * 2f, cell - inset * 2f), PixelArt.BoonIcon(b));
+                if (count[b] > 1) GUI.Label(new Rect(r.x, r.y, r.width - cell * 0.05f, r.height), $"x{count[b]}", badge);
             }
+
+            // 選んだ加護の名前と説明
+            float y = area.y + rows * (cell + gap);
+            var spec = Boons.Get(selectedBoon);
+            var name = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            name.normal.textColor = new Color(1f, 0.9f, 0.6f);
+            string n = count[selectedBoon] > 1 ? $"{spec.DisplayName} x{count[selectedBoon]}" : spec.DisplayName;
+            Hud.FitLabel(new Rect(area.x, y, area.width, lineH), n, name);
+            Hud.FitLabel(new Rect(area.x, y + lineH, area.width, lineH), spec.DisplayDesc, new GUIStyle(small) { alignment = TextAnchor.MiddleLeft });
         }
 
         void ConfirmButton(Rect r, string id, string text, System.Action action)

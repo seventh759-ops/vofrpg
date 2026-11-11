@@ -48,6 +48,11 @@ namespace VividOfFade
                 int pick = boon;
                 if (afford) hud.Button(r, null, new Color(1f, 0.8f, 0.3f, 0.18f), centered, () => world.BuyBoon(pick));
                 else Hud.Fill(r, new Color(1f, 1f, 1f, 0.05f));
+                float icon = bh * 0.6f;
+                var oldColor = GUI.color;
+                if (!afford) GUI.color = new Color(1f, 1f, 1f, 0.4f);
+                Hud.DrawSprite(new Rect(r.x + bh * 0.2f, r.y + bh * 0.2f, icon, icon), PixelArt.BoonIcon(boon));
+                GUI.color = oldColor;
                 name.normal.textColor = afford ? new Color(1f, 0.9f, 0.6f) : new Color(0.55f, 0.55f, 0.55f);
                 GUI.Label(new Rect(r.x, r.y + bh * 0.15f, r.width, bh * 0.4f), spec.DisplayName, name);
                 desc.normal.textColor = afford ? Color.white : new Color(0.55f, 0.55f, 0.55f);
