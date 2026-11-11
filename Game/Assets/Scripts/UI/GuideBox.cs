@@ -53,7 +53,11 @@ namespace VividOfFade
             float boxH = H * 0.16f;
             var box = new Rect(pad, H * 0.58f, W - pad * 2f, boxH);
 
-            // 箱全体がボタン（どこを押しても次へ）
+            // 画面のどこを押しても次へ（後ろのボタンを押してしまわないように、全体をふさぐ）
+            hud.Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0.3f), hud.CenteredStyle, () =>
+            {
+                if (Time.unscaledTime - shownAt > 0.15f) Next();
+            });
             hud.Button(box, null, new Color(0.05f, 0.04f, 0.08f, 0.92f), hud.CenteredStyle, () =>
             {
                 if (Time.unscaledTime - shownAt > 0.15f) Next(); // 開いた瞬間の誤タップを防ぐ

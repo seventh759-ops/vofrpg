@@ -180,6 +180,13 @@ namespace VividOfFade
             return true;
         }
 
+        /// <summary>MP を回復する（魔力の薬）。</summary>
+        public void RestoreMp(float amount)
+        {
+            if (IsDead) return;
+            mp = Mathf.Min(MaxMp, mp + amount);
+        }
+
         public void Heal(int amount)
         {
             if (IsDead) return;

@@ -125,12 +125,18 @@ namespace VividOfFade
             for (int i = 0; i < SkillInfo.PerClass; i++)
             {
                 var spec = SkillInfo.Get(ClassInfo.Current, i);
-                if (oldLevel >= spec.ReqLevel || ch.Level < spec.ReqLevel) continue;
-                SkillLearned?.Invoke(spec.DisplayName);
-                if (Array.IndexOf(ch.Slots, i) >= 0) continue;
-                int empty = Array.IndexOf(ch.Slots, -1);
-                if (empty >= 0) ch.Slots[empty] = i;
+                if (oldLevel >= spec.ReqLevel || !SkillInfo.Learned(ClassInfo.Current, i, ch.Level)) continue;
+                Learn(ch, i);
             }
+        }
+
+        /// <summary>スキルを覚えた（通知して、空いているボタンへ付ける）。転職のときにも使う。</summary>
+        public void Learn(CharacterData ch, int index)
+        {
+            SkillLearned?.Invoke(SkillInfo.Get(ClassInfo.Current, index).DisplayName);
+            if (Array.IndexOf(ch.Slots, index) >= 0) return;
+            int empty = Array.IndexOf(ch.Slots, -1);
+            if (empty >= 0) ch.Slots[empty] = index;
         }
 
         void Cast(SkillSpec spec, float power, Player player)

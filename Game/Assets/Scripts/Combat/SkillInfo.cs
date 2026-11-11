@@ -47,10 +47,10 @@ namespace VividOfFade
         public Color Color = new Color(1f, 0.7f, 0.3f, 0.9f);
     }
 
-    /// <summary>職業ごとの6つのスキル。覚えるレベルの順に並ぶ。</summary>
+    /// <summary>職業ごとの6つのスキル（覚えるレベルの順）と、上位職の7つ目のスキル。</summary>
     public static class SkillInfo
     {
-        public const int PerClass = 6;
+        public const int PerClass = 7;
         public const int Slots = 3;
         public const int MaxSkillLevel = 10;
 
@@ -106,9 +106,14 @@ namespace VividOfFade
             },
         };
 
-        public static SkillSpec Get(ClassType type, int index) => table[(int)type][index];
+        public static SkillSpec Get(ClassType type, int index) =>
+            index == AdvancedClasses.SkillIndex ? AdvancedClasses.SkillFor(type) : table[(int)type][index];
 
-        public static bool Learned(ClassType type, int index, int level) => level >= Get(type, index).ReqLevel;
+        public static bool Learned(ClassType type, int index, int level)
+        {
+            if (index == AdvancedClasses.SkillIndex && Profile.Get(type).Advanced < 0) return false;
+            return level >= Get(type, index).ReqLevel;
+        }
 
         /// <summary>スキルレベルによる強さ（威力・回復量・効果の大きさ）。Lv1 で 1、1つ上がるごとに +10%。</summary>
         public static float Power(int skillLevel) => 1f + 0.1f * (Mathf.Max(1, skillLevel) - 1);

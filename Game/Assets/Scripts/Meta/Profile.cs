@@ -21,7 +21,7 @@ namespace VividOfFade
         public bool MpGrowthReady;
 
         // スキル（覚えるのはレベルで自動。強さは使った回数で上がる）
-        public int[] SkillLv = { 1, 1, 1, 1, 1, 1 };
+        public int[] SkillLv = { 1, 1, 1, 1, 1, 1, 1 };
         public int[] SkillUses = new int[SkillInfo.PerClass];
         public int[] Slots = { 0, -1, -1 };            // ボタンに付けたスキルの番号（-1 は空き）
         public bool[] SlotAuto = new bool[SkillInfo.Slots];
@@ -34,6 +34,9 @@ namespace VividOfFade
         public int BestFloor;                         // たどり着いた一番深い層
         public int BossCleared;                       // 倒した一番深いボスの層（その次の層がチェックポイント）
         public RunSave Run = new RunSave();           // 中断した挑戦
+        public int Advanced = -1;                     // 上位職（-1 はまだ。0 か 1）
+        public int HpPotions;                         // 回復薬（町の商人で買う）
+        public int MpPotions;                         // 魔力の薬
 
         public void Repair()
         {
@@ -44,6 +47,10 @@ namespace VividOfFade
             if (Loadout == null) Loadout = new List<Item>();
             if (Stash == null) Stash = new List<Item>();
             if (CarrySlots < 1) CarrySlots = 3;
+            CarrySlots = Mathf.Min(CarrySlots, Town.MaxCarrySlots);
+            if (Advanced < -1 || Advanced > 1) Advanced = -1;
+            HpPotions = Mathf.Clamp(HpPotions, 0, Town.MaxPotions);
+            MpPotions = Mathf.Clamp(MpPotions, 0, Town.MaxPotions);
             foreach (var it in Loadout) it?.Repair();
             foreach (var it in Stash) it?.Repair();
             if (Run == null) Run = new RunSave();
@@ -108,6 +115,7 @@ namespace VividOfFade
         public int Language;                                  // 0 = English（デフォルト）, 1 = 日本語
         public List<string> TipsSeen = new List<string>(); // 案内役が説明し終えた場面
         public List<CharacterData> Characters = new List<CharacterData>();
+        public List<Item> Storage = new List<Item>();      // 町の倉庫（全職業で共有）
     }
 
     /// <summary>
@@ -154,6 +162,16 @@ namespace VividOfFade
         public static void Select(ClassType type)
         {
             Current = Get(type);
+        }
+
+        /// <summary>町の倉庫（全職業で共有）。</summary>
+        public static List<Item> Storage
+        {
+            get
+            {
+                EnsureLoaded();
+                return data.Storage;
+            }
         }
 
         /// <summary>選んだ BGM のテーマ（どの職業でも共通）。</summary>
@@ -230,6 +248,9 @@ namespace VividOfFade
             if (data == null) data = new SaveData();
             if (data.Characters == null) data.Characters = new List<CharacterData>();
             if (data.TipsSeen == null) data.TipsSeen = new List<string>();
+            if (data.Storage == null) data.Storage = new List<Item>();
+            foreach (var it in data.Storage) it?.Repair();
+            data.Storage.RemoveAll(it => it == null || it.IsEmptyMarker);
             foreach (var c in data.Characters) c.Repair();
         }
     }

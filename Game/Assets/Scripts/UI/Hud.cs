@@ -48,6 +48,7 @@ namespace VividOfFade
         MenuScreen menu;
         AltarScreen altarScreen;
         public GuideBox Guide { get; private set; }
+        public TownScreen Town { get; private set; }
         GUIStyle label;
         GUIStyle small;
         GUIStyle centered;
@@ -142,6 +143,33 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>薬のボタン（右下、攻撃ボタンの上に2つ）。画面座標（左下原点）。</summary>
+        Rect PotionRect(int i)
+        {
+            float s = Mathf.Min(Screen.width, Screen.height) * 0.13f;
+            float m = Screen.height * 0.015f;
+            var atk = AttackRect;
+            return new Rect(Screen.width - m - s - i * (s + s * 0.15f), atk.yMax + m, s, s);
+        }
+
+        void DrawPotions(CharacterData ch)
+        {
+            if (ch == null) return;
+            var style = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
+            for (int i = 0; i < 2; i++)
+            {
+                bool hp = i == 0;
+                int count = hp ? ch.HpPotions : ch.MpPotions;
+                var r = ToGui(PotionRect(i));
+                var c = hp ? new Color(0.75f, 0.2f, 0.25f, 0.7f) : new Color(0.2f, 0.35f, 0.8f, 0.7f);
+                if (count <= 0) c = new Color(0f, 0f, 0f, 0.3f);
+                string key = Application.isMobilePlatform ? "" : (hp ? "Q " : "E ");
+                Button(r, $"{key}{(hp ? "HP" : "MP")}\n{count}", c, style, () => World.UsePotion(hp));
+                float cd = World.PotionCooldownRatio;
+                if (cd > 0f) Fill(new Rect(r.x, r.y, r.width, r.height * cd), new Color(0f, 0f, 0f, 0.5f));
+            }
+        }
+
         public Rect AttackRect
         {
             get
@@ -231,6 +259,7 @@ namespace VividOfFade
             menu = new MenuScreen(this);
             altarScreen = new AltarScreen(this);
             Guide = new GuideBox(this);
+            Town = new TownScreen(this);
         }
 
         void Update()
@@ -272,6 +301,7 @@ namespace VividOfFade
             }
 
             if (World.ChoosingClass && World.PendingClass.HasValue) DrawFloorSelect(World.PendingClass.Value);
+            else if (World.ChoosingClass && World.InTown) Town.Draw(World);
             else if (World.ChoosingClass) DrawClassSelect();
             else if (World.Player.IsDead) DrawGameOver();
             else if (World.BagOpen) bag.Draw(World);
@@ -280,7 +310,7 @@ namespace VividOfFade
             else if (World.ReturnOpen) returnScreen.Draw(World);
             else if (World.MenuOpen) menu.Draw(World);
             else if (World.AltarOpen) altarScreen.Draw(World);
-            if (!World.ChoosingClass) Guide.Draw();
+            if (!World.ChoosingClass || World.InTown) Guide.Draw();
 
             if (repaint)
             {
@@ -367,6 +397,7 @@ namespace VividOfFade
                 () => World.OpenMenu());
 
             DrawSkillButtons(ch);
+            DrawPotions(ch);
 
             // 攻撃ボタン（押している間だけ、のとき）
             if (!World.AutoAttack)
@@ -410,6 +441,7 @@ namespace VividOfFade
             "Attack mode . T  (HOLD: J or right click)",
             "Bag ......... B      Stats ... C",
             "Skill list .. K      Music ... M (on/off)  N (change)",
+            "Potions ..... Q (HP)   E (MP)",
             "Menu ........ Esc (also closes screens)",
         };
 
@@ -421,6 +453,7 @@ namespace VividOfFade
             "攻撃モード .. T（押す間：J か右クリック）",
             "鞄 .......... B      能力値 ... C",
             "スキル一覧 .. K      音楽 ... M（オン/オフ）  N（変える）",
+            "薬 .......... Q（体力）  E（MP）",
             "メニュー .... Esc（画面を閉じるのも）",
         };
 

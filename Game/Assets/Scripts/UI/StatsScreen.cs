@@ -42,7 +42,8 @@ namespace VividOfFade
 
             var spec = ClassInfo.Get(st.Class);
             var title = new GUIStyle(label) { fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(pad, pad, W, btnH), $"{spec.DisplayName}   Lv {ch.Level}", title);
+            var adv = AdvancedClasses.Of(st.Class, ch);
+            GUI.Label(new Rect(pad, pad, W, btnH), (adv != null ? $"{adv.DisplayName} ({spec.DisplayName})" : spec.DisplayName) + $"   Lv {ch.Level}", title);
             hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.StatsOpen = false);
 
             // 経験値

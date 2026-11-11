@@ -235,6 +235,10 @@ namespace VividOfFade
                     break;
             }
             s.Shots = Mathf.Max(1, s.Shots);
+
+            // 上位職の補正（加護と同じ形で、ずっと効く）
+            var adv = AdvancedClasses.Of(type, ch);
+            if (adv != null) s = s.WithBoon(adv.Passive);
             return s;
         }
     }

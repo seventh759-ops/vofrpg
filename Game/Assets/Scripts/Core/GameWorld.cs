@@ -52,6 +52,9 @@ namespace VividOfFade
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
         public bool ChoosingClass { get; private set; }
 
+        /// <summary>町にいる（職業を選んだあと。出撃・倉庫・商人・転職・荷運び）。</summary>
+        public bool InTown { get; private set; }
+
         /// <summary>職業を選んだあと、開始する層を選んでいるときの職業（それ以外は null）。</summary>
         public ClassType? PendingClass { get; private set; }
 
@@ -63,13 +66,76 @@ namespace VividOfFade
             return list;
         }
 
-        /// <summary>職業を選んだ。チェックポイントがあれば開始する層を選ぶ画面へ、なければ1層から始める。</summary>
+        /// <summary>職業を選んだ：その職業で町へ。</summary>
         public void ChooseClass(ClassType type)
         {
+            ClassInfo.Current = type;
+            Profile.Select(type);
+            InTown = true;
+            PendingClass = null;
+            Guide("town", Loc.T("This is the town. Get ready here before heading into the tower.", "ここは町。塔へ出る前に、ここで支度をしな。"),
+                Loc.T("The storage keeper holds gear for every class. The merchant sells potions and gear. Pay with embers.", "倉庫番は全職業で使える倉庫。商人は薬と装備を売ってる。支払いは火種だよ。"),
+                Loc.T("At Lv 30, visit the master to change into an advanced class.", "Lv30 になったら、師匠のところで上位職に転職できる。"));
+        }
+
+        /// <summary>町から出撃する。チェックポイントか中断した挑戦があれば、開始する層を選ぶ画面へ。</summary>
+        public void Depart()
+        {
+            var type = ClassInfo.Current;
             var ch = Profile.Get(type);
             if (Checkpoints(ch).Count > 1 || ch.Run.Active) PendingClass = type;
             else StartRun(type, 1);
         }
+
+        /// <summary>町に戻る（帰還・死亡のあと）。</summary>
+        public void ShowTown()
+        {
+            ClearField();
+            ChoosingClass = true;
+            PendingClass = null;
+            InTown = true;
+            Profile.Select(ClassInfo.Current);
+        }
+
+        /// <summary>転職した：7つ目のスキルを覚えて、空いているボタンに付ける。</summary>
+        public void OnAdvanced()
+        {
+            var ch = Profile.Current;
+            if (ch == null) return;
+            Skills.Learn(ch, AdvancedClasses.SkillIndex);
+            Profile.Save();
+            var adv = AdvancedClasses.Of(ClassInfo.Current, ch);
+            if (adv != null) Hud.Toast(Loc.T($"Class changed: {adv.DisplayName}", $"転職：{adv.DisplayName}"), new Color(1f, 0.85f, 0.4f));
+            Sfx.Landed(Rarity.Legendary);
+        }
+
+        float potionCooldown;
+
+        /// <summary>回復薬（hp）か魔力の薬を使う。持ち数は町の商人で買える。</summary>
+        public void UsePotion(bool hp)
+        {
+            var ch = Profile.Current;
+            if (ch == null || Player.IsDead || Paused || ChoosingClass || potionCooldown > 0f) return;
+            if (hp)
+            {
+                if (ch.HpPotions <= 0 || Player.Hp >= Player.MaxHp) return;
+                ch.HpPotions--;
+                Player.Heal(Mathf.RoundToInt(Player.MaxHp * Town.HpPotionHeal));
+                Fx.Ring(Player.Pos, 1.2f, new Color(1f, 0.4f, 0.4f, 0.9f), 0.4f);
+            }
+            else
+            {
+                if (ch.MpPotions <= 0 || Player.Mp >= Player.MaxMp) return;
+                ch.MpPotions--;
+                Player.RestoreMp(Player.MaxMp * Town.MpPotionRestore);
+                Fx.Ring(Player.Pos, 1.2f, new Color(0.4f, 0.6f, 1f, 0.9f), 0.4f);
+            }
+            Sfx.Pickup();
+            potionCooldown = Town.PotionCooldown;
+            Profile.Save();
+        }
+
+        public float PotionCooldownRatio => Mathf.Clamp01(potionCooldown / Town.PotionCooldown);
 
         public void CancelFloorSelect()
         {
@@ -223,9 +289,14 @@ namespace VividOfFade
             if (Input.NextMusicPressed) NextMusic();
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
 
+            potionCooldown = Mathf.Max(0f, potionCooldown - dt);
             if (ChoosingClass)
             {
-                if (PendingClass.HasValue)
+                if (InTown && !PendingClass.HasValue)
+                {
+                    if (Input.CancelPressed) Hud.Town.Back();
+                }
+                else if (PendingClass.HasValue)
                 {
                     var cps = Checkpoints(Profile.Get(PendingClass.Value));
                     if (Input.NumberPressed >= 0 && Input.NumberPressed < cps.Count) StartRun(PendingClass.Value, cps[Input.NumberPressed]);
@@ -240,6 +311,8 @@ namespace VividOfFade
             }
 
             if (Input.ToggleModePressed) AutoAttack = !AutoAttack;
+            if (Input.HpPotionPressed) UsePotion(true);
+            if (Input.MpPotionPressed) UsePotion(false);
             if (Input.BagPressed && !Player.IsDead) OpenPanel(!BagOpen, false, false);
             if (Input.StatsPressed && !Player.IsDead) OpenPanel(false, !StatsOpen, false);
             if (Input.SkillsPressed && !Player.IsDead) OpenPanel(false, false, !SkillsOpen);
@@ -609,14 +682,19 @@ namespace VividOfFade
         public bool CanEquip(Item item, out string reason)
         {
             var st = Player.Stats;
+            if (Town.OtherClassWeapon(item, ClassInfo.Current))
+            {
+                reason = Loc.T("Other class", "ほかの職業の武器");
+                return false;
+            }
             if (st.Level < item.ReqLevel)
             {
-                reason = $"Need Lv {item.ReqLevel}";
+                reason = Loc.T($"Need Lv {item.ReqLevel}", $"Lv{item.ReqLevel}が必要");
                 return false;
             }
             if (item.ReqValue > 0 && st.Attr[(int)item.ReqAttr] < item.ReqValue)
             {
-                reason = $"Need {Attributes.ShortName(item.ReqAttr)} {item.ReqValue}";
+                reason = Loc.T($"Need {Attributes.ShortName(item.ReqAttr)} {item.ReqValue}", $"{Attributes.ShortName(item.ReqAttr)} {item.ReqValue}が必要");
                 return false;
             }
             reason = null;
@@ -685,12 +763,14 @@ namespace VividOfFade
             ClearField();
             ChoosingClass = true;
             PendingClass = null;
+            InTown = false;
         }
 
         /// <summary>選んだ職業で挑戦を始める。</summary>
         public void StartRun(ClassType type, int startFloor = 1, bool fresh = true)
         {
             PendingClass = null;
+            InTown = false;
             if (fresh) ClearRun(Profile.Get(type)); // 新しく始めると、中断した挑戦は消える
             ClassInfo.Current = type;
             Profile.Select(type);
@@ -718,7 +798,7 @@ namespace VividOfFade
             Inventory.SaveForReturn(ch, chosen);
             ClearRun(ch);
             Profile.Save();
-            ShowClassSelect();
+            ShowTown();
             Hud.Toast(Loc.T($"Returned home with {chosen.Count} new items", $"新しい品 {chosen.Count} 個を持ち帰った"), new Color(0.7f, 1f, 0.7f));
         }
 
@@ -776,7 +856,7 @@ namespace VividOfFade
         {
             ClearRun(Profile.Current);
             Profile.Save();
-            ShowClassSelect();
+            ShowTown();
         }
 
         /// <summary>中断した挑戦を消す（死亡・帰還・新しく始めたとき）。</summary>
