@@ -286,6 +286,16 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>区画ごとの色のスライム。</summary>
+        public static Sprite SlimeFor(ZoneSpec z) => FromArt($"Slime_{z.Name}", SlimeRows, new Dictionary<char, Color32>
+        {
+            { 'k', Mix(z.SlimeDark, new Color32(0, 0, 0, 255), 0.6f) },
+            { 'g', z.Slime },
+            { 'w', Mix(z.Slime, new Color32(255, 255, 255, 255), 0.65f) },
+            { 'e', new Color32(16, 16, 24, 255) },
+            { 'd', z.SlimeDark },
+        });
+
         public static Sprite Slime => FromArt("Slime", SlimeRows, new Dictionary<char, Color32>
         {
             { 'k', new Color32(20, 40, 26, 255) },
@@ -371,8 +381,12 @@ namespace VividOfFade
         }
 
         /// <summary>クォータービューの床（32×16 のひし形）。</summary>
-        public static Sprite IsoFloor => IsoTile("IsoFloor", new Color32(56, 52, 72, 255), new Color32(30, 27, 40, 255));
-        public static Sprite IsoFloorAlt => IsoTile("IsoFloorAlt", new Color32(50, 46, 64, 255), new Color32(30, 27, 40, 255));
+        public static Sprite IsoFloor => IsoFloorFor(Zones.For(1), false);
+        public static Sprite IsoFloorAlt => IsoFloorFor(Zones.For(1), true);
+
+        /// <summary>区画ごとの床（色と模様）。alt は市松のもう一方。</summary>
+        public static Sprite IsoFloorFor(ZoneSpec z, bool alt) =>
+            IsoTile($"Floor_{z.Name}_{alt}", alt ? z.FloorAlt : z.Floor, z.Edge, z.Accent, z.Pattern, alt ? 7 : 0);
 
         /// <summary>クォータービューの壁ブロック（32×32。上面のひし形と左右の側面）。足元のひし形の中心が原点。</summary>
         public static Sprite IsoWall
@@ -416,19 +430,21 @@ namespace VividOfFade
         }
 
         /// <summary>迷宮の壁（高さ10ドットの段。どこも同じ高さ）。足元のひし形の中心が原点。</summary>
-        public static Sprite IsoWallLow
+        public static Sprite IsoWallLow => IsoWallFor(Zones.For(1));
+
+        /// <summary>区画ごとの壁（高さ10ドット）。</summary>
+        public static Sprite IsoWallFor(ZoneSpec z)
         {
-            get
             {
-                const string key = "IsoWallBlock";
+                string key = $"Wall_{z.Name}";
                 if (cache.TryGetValue(key, out var cached)) return cached;
                 const int w = 32, h = 26, side = 10;
                 var px = new Color32[w * h];
                 var clear = new Color32(0, 0, 0, 0);
-                var top = new Color32(64, 58, 84, 255);
-                var left = new Color32(40, 35, 55, 255);
-                var right = new Color32(28, 24, 40, 255);
-                var edge = new Color32(16, 12, 24, 255);
+                var top = z.WallTop;
+                var left = z.WallLeft;
+                var right = z.WallRight;
+                var edge = Mix(z.WallRight, new Color32(0, 0, 0, 255), 0.5f);
                 float cy = 7.5f + side;
                 for (int y = 0; y < h; y++)
                 {
@@ -485,7 +501,7 @@ namespace VividOfFade
             }
         }
 
-        static Sprite IsoTile(string key, Color32 stone, Color32 edge)
+        static Sprite IsoTile(string key, Color32 stone, Color32 edge, Color32 accent, FloorPattern pattern, int salt)
         {
             if (cache.TryGetValue(key, out var cached)) return cached;
             const int w = 32, h = 16;
@@ -506,16 +522,42 @@ namespace VividOfFade
                         px[y * w + x] = edge;
                         continue;
                     }
-                    int n = (int)(Hash(x, y) % 9) - 4;
-                    px[y * w + x] = new Color32(
+                    uint hsh = Hash(x + salt * 31, y + salt * 17);
+                    int n = (int)(hsh % 9) - 4;
+                    Color32 c = new Color32(
                         (byte)Mathf.Clamp(stone.r + n, 0, 255),
                         (byte)Mathf.Clamp(stone.g + n, 0, 255),
                         (byte)Mathf.Clamp(stone.b + n, 0, 255),
                         255);
+                    // 区画ごとの模様
+                    switch (pattern)
+                    {
+                        case FloorPattern.Moss: // 苔の点と小さな固まり
+                            if (hsh % 13 == 0 || (Hash(x / 2 + salt, y / 2) % 9 == 0 && hsh % 3 == 0)) c = accent;
+                            break;
+                        case FloorPattern.Lava: // 細いひび
+                            if (Hash(x / 3 + salt, y) % 17 == 0 && d < 0.8f) c = accent;
+                            break;
+                        case FloorPattern.Ice: // 斜めのつやと、きらめき
+                            if ((x - 2 * y + salt + 64) % 14 == 0 && d < 0.75f) c = Mix(c, accent, 0.45f);
+                            if (hsh % 47 == 0) c = accent;
+                            break;
+                        case FloorPattern.Gold: // 縁に沿った金の筋
+                            if (d > 0.7f && d < 0.76f) c = Mix(c, accent, 0.7f);
+                            break;
+                        case FloorPattern.Void: // 星のような点
+                            if (hsh % 41 == 0) c = accent;
+                            else if (hsh % 23 == 0) c = Mix(c, accent, 0.35f);
+                            break;
+                    }
+                    px[y * w + x] = c;
                 }
             }
             return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp));
         }
+
+        static Color32 Mix(Color32 a, Color32 b, float t) => new Color32(
+            (byte)(a.r + (b.r - a.r) * t), (byte)(a.g + (b.g - a.g) * t), (byte)(a.b + (b.b - a.b) * t), 255);
 
         static readonly string[] SlimeRows =
         {

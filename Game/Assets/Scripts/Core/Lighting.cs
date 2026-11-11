@@ -39,12 +39,13 @@ namespace VividOfFade
         }
 
         Light2D lantern;
+        Light2D global;
         float radius;
 
         public void Init()
         {
             // シーンにある全体の光を暗くする（なければ作る）
-            Light2D global = null;
+            global = null;
             foreach (var l in FindObjectsByType<Light2D>(FindObjectsSortMode.None))
             {
                 if (l.lightType == Light2D.LightType.Global) global = l;
@@ -65,6 +66,14 @@ namespace VividOfFade
             lantern.color = LanternColor;
             lantern.intensity = 1.25f;
             lantern.falloffIntensity = 0.6f;
+        }
+
+        /// <summary>区画に合わせて、全体の光の色と明るさを変える。</summary>
+        public void SetAmbient(Color color, float intensity)
+        {
+            if (global == null) return;
+            global.color = color;
+            global.intensity = intensity;
         }
 
         /// <summary>light は論理座標のマス。光の円はクォータービューの見た目に合わせて少し大きめにする。</summary>

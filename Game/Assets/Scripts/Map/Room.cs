@@ -50,6 +50,8 @@ namespace VividOfFade
         public Vector2 StartPos { get; private set; }
         public Vector2 StairsPos { get; private set; }
         public RoomArea BossArea { get; private set; }
+        /// <summary>この層の区画（見た目）。</summary>
+        public ZoneSpec Zone { get; private set; }
 
         /// <summary>層を作り直す。boss なら「はじめの部屋 → 廊下 → 大きなボスの部屋」。</summary>
         public void Generate(int floor, bool boss, int seed)
@@ -60,6 +62,7 @@ namespace VividOfFade
             BossArea = null;
             flowOrigin = -1;
             System.Array.Clear(explored, 0, explored.Length);
+            Zone = Zones.For(floor);
 
             if (boss) BuildBossFloor(rng);
             else BuildNormalFloor(rng, floor);
@@ -253,9 +256,9 @@ namespace VividOfFade
             foreach (var go in spawned) Destroy(go);
             spawned.Clear();
 
-            var floorA = PixelArt.IsoFloor;
-            var floorB = PixelArt.IsoFloorAlt;
-            var rim = PixelArt.IsoWallLow;
+            var floorA = PixelArt.IsoFloorFor(Zone, false);
+            var floorB = PixelArt.IsoFloorFor(Zone, true);
+            var rim = PixelArt.IsoWallFor(Zone);
             for (int j = 0; j < MapSize; j++)
             {
                 for (int i = 0; i < MapSize; i++)

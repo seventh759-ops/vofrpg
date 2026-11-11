@@ -58,6 +58,13 @@ namespace VividOfFade
         }
 
         Pool<Enemy> pool;
+        Sprite slimeSprite;
+
+        /// <summary>区画が変わったら、これから出るスライムの色を変える。</summary>
+        public void SetZone(ZoneSpec zone)
+        {
+            slimeSprite = PixelArt.SlimeFor(zone);
+        }
 
         public int AliveCount
         {
@@ -110,6 +117,7 @@ namespace VividOfFade
             e.Dying = false;
             e.DyingTimer = 0f;
             e.Sr.color = Color.white;
+            if (slimeSprite != null) e.Sr.sprite = slimeSprite;
             e.IsBoss = false;
             e.Enraged = false;
             e.Elite = EliteKind.None;

@@ -183,6 +183,37 @@ namespace VividOfFade
             });
         }
 
+        string bannerTitle;
+        string bannerSub;
+        Color bannerColor;
+        float bannerTime = -1f;
+        const float BannerLife = 3.5f;
+
+        /// <summary>画面の中央に大きく出す（新しい区画に入ったとき）。</summary>
+        public void ShowBanner(string title, string subtitle, Color color)
+        {
+            bannerTitle = title;
+            bannerSub = subtitle;
+            bannerColor = color;
+            bannerTime = 0f;
+        }
+
+        void DrawBanner()
+        {
+            if (bannerTime < 0f || bannerTime > BannerLife) return;
+            float a = Mathf.Clamp01(bannerTime / 0.4f) * Mathf.Clamp01((BannerLife - bannerTime) / 0.8f);
+            float H = Screen.height, W = Screen.width;
+            Fill(new Rect(0, H * 0.3f, W, H * 0.11f), new Color(0f, 0f, 0f, 0.55f * a));
+            var t = new GUIStyle(centered) { fontSize = Mathf.RoundToInt(label.fontSize * 1.5f), fontStyle = FontStyle.Bold };
+            var c = bannerColor;
+            c.a = a;
+            t.normal.textColor = c;
+            GUI.Label(new Rect(0, H * 0.305f, W, H * 0.06f), bannerTitle, t);
+            var st = new GUIStyle(centered);
+            st.normal.textColor = new Color(1f, 1f, 1f, 0.85f * a);
+            GUI.Label(new Rect(0, H * 0.36f, W, H * 0.04f), bannerSub, st);
+        }
+
         public void Toast(string text, Color color)
         {
             if (toasts.Count >= 5) toasts.RemoveAt(0);
@@ -202,6 +233,7 @@ namespace VividOfFade
         {
             float dt = Time.unscaledDeltaTime;
             if (dt > 0f) fps = Mathf.Lerp(fps, 1f / dt, 0.05f);
+            if (bannerTime >= 0f) bannerTime += dt;
 
             for (int i = numbers.Count - 1; i >= 0; i--)
             {
@@ -318,6 +350,7 @@ namespace VividOfFade
 
             DrawBossBar();
             DrawMinimap();
+            DrawBanner();
 
             if (World.Paused || player.IsDead || World.ChoosingClass) return;
 

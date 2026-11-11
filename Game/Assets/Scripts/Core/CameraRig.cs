@@ -11,6 +11,12 @@ namespace VividOfFade
         float shakeAmount;
         Vector2 lastShake;
 
+        /// <summary>迷宮の外の色（区画ごと）。</summary>
+        public void SetBackground(Color color)
+        {
+            cam.backgroundColor = color;
+        }
+
         public CameraRig(Camera cam)
         {
             this.cam = cam;

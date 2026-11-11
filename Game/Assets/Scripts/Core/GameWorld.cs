@@ -292,6 +292,21 @@ namespace VividOfFade
             ReturnOpen = false;
         }
 
+        string currentZone;
+
+        /// <summary>区画の見た目（光・背景・スライムの色）を当てる。新しい区画に入ったら名前を大きく出す。</summary>
+        void ApplyZone(ZoneSpec zone, int floor)
+        {
+            Lighting.SetAmbient(zone.AmbientColor, zone.Ambient);
+            cameraRig.SetBackground(zone.Background);
+            Enemies.SetZone(zone);
+            if (zone.Key != currentZone)
+            {
+                currentZone = zone.Key;
+                Hud.ShowBanner($"FLOOR {floor}  -  {zone.Title}", zone.Subtitle, zone.Accent);
+            }
+        }
+
         void EnterFloor(int floor)
         {
             Enemies.Clear();
@@ -300,6 +315,7 @@ namespace VividOfFade
             Fx.Clear();
             roomRewardPending = false;
             Floors.Begin(floor, Room);
+            ApplyZone(Room.Zone, floor);
             Player.Pos = Room.StartPos;
             stairs.transform.position = Iso.ToScreen(Room.StairsPos);
             stairs.sortingOrder = SortOrder.Floor + 2;
