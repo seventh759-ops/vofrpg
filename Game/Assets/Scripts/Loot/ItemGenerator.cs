@@ -24,6 +24,27 @@ namespace VividOfFade
             // ExplodePower・DodgeCooldown。ExpGain・EmberFind・MagicFind は Luck にまとめた
         };
 
+        // 装備の種類ごとに付く効果（能力値はどれにも付く）
+        static readonly StatType[] attrStats = { StatType.Str, StatType.Dex, StatType.Int, StatType.Vit, StatType.Wis, StatType.AllStats };
+        static readonly StatType[] weaponStats = { StatType.DamagePct, StatType.AttackSpeedPct, StatType.CritChance, StatType.CritDamage, StatType.Hit };
+        static readonly StatType[] armorStats = { StatType.MaxHp, StatType.MaxHpPct, StatType.Armor, StatType.DamageReduction, StatType.LifeSteal, StatType.Evasion };
+        static readonly StatType[] lanternStats = { StatType.MaxMp, StatType.MpRegen, StatType.HpRegen, StatType.MoveSpeedPct, StatType.LightRadius, StatType.Pierce, StatType.Multishot };
+        static readonly StatType[] ringStats = { StatType.Luck };
+
+        /// <summary>その装備の種類に付けられる効果。</summary>
+        static List<StatType> StatPool(ItemSlot slot)
+        {
+            var list = new List<StatType>(attrStats);
+            switch (slot)
+            {
+                case ItemSlot.Weapon: list.AddRange(weaponStats); break;
+                case ItemSlot.Armor: list.AddRange(armorStats); break;
+                case ItemSlot.Lantern: list.AddRange(lanternStats); break;
+                default: list.AddRange(ringStats); break;
+            }
+            return list;
+        }
+
         /// <summary>今の挑戦の「珍しい品が出やすい」の効果（GameWorld が毎フレーム入れる。町では 0）。</summary>
         public static float MagicFind;
 
@@ -204,13 +225,14 @@ namespace VividOfFade
         /// <summary>スロットの演出用：その品に付きそうな効果をランダムに1つ（文字にして返す。実際には付けない）。</summary>
         public static string RandomAffixText(Item item)
         {
-            var s = allStats[Random.Range(0, allStats.Length)];
+            var pool = StatPool(item.Slot); // その装備の種類に付く効果だけ
+            var s = pool[Random.Range(0, pool.Count)];
             return StatText.Format(s, RollValue(s, item.Level, item.Rarity) * item.EnhanceMult);
         }
 
         static void AddAffixes(Item item, int count, List<StatType> exclude = null)
         {
-            var candidates = new List<StatType>(allStats);
+            var candidates = StatPool(item.Slot); // 装備の種類ごとの効果から選ぶ
             if (exclude != null) foreach (var x in exclude) candidates.Remove(x);
             if (ClassInfo.Current != ClassType.Lampwright) candidates.Remove(StatType.Pierce); // 貫通は火の玉だけ
             for (int n = 0; n < count && candidates.Count > 0; n++)
