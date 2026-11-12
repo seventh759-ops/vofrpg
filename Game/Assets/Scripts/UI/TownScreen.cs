@@ -199,7 +199,7 @@ namespace VividOfFade
             float lineH = small.fontSize * 1.4f;
             GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Bring into the next run: {ch.Stash.Count}/{Inventory.BagCapacity}  ({AdvancedClasses.NameOf(type)})", $"次の挑戦に持ち込む：{ch.Stash.Count}/{Inventory.BagCapacity}（{AdvancedClasses.NameOf(type)}）"), small);
             y += lineH;
-            y = Grid(ch.Stash, Inventory.BagCapacity, y, pad, type) + H * 0.01f;
+            y = Grid(ch.Stash, Inventory.BagCapacity, y, pad, type, 6) + H * 0.012f;
             GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Storage (shared by all classes): {Profile.Storage.Count}/{Town.StorageCapacity}", $"倉庫（全職業で共有）：{Profile.Storage.Count}/{Town.StorageCapacity}"), small);
             y += lineH;
             y = Grid(Profile.Storage, Town.StorageCapacity, y, pad, type) + H * 0.01f;
@@ -277,10 +277,9 @@ namespace VividOfFade
         }
 
         /// <summary>品の一覧（8列）。描いた下端の y を返す。</summary>
-        float Grid(List<Item> items, int capacity, float y, float pad, ClassType type)
+        float Grid(List<Item> items, int capacity, float y, float pad, ClassType type, int cols = 8)
         {
             float W = Screen.width;
-            const int cols = 8;
             float gap = W * 0.01f;
             float cell = (W - pad * 2f - gap * (cols - 1)) / cols;
             int shown = Mathf.Max(items.Count, cols);
@@ -545,7 +544,8 @@ namespace VividOfFade
         {
             float W = Screen.width, H = Screen.height;
             float pad = W * 0.05f;
-            var small = hud.SmallStyle;
+            // 文字は一段大きく（ふつうの大きさ）、品のマスも大きくする
+            var small = new GUIStyle(hud.LabelStyle);
             var type = ClassInfo.Current;
             float lineH = small.fontSize * 1.4f;
             Header(Loc.T("BLACKSMITH", "鍛冶屋"), ch.Embers, W, pad, out float y);
@@ -555,7 +555,7 @@ namespace VividOfFade
             foreach (var it in ch.Loadout) if (it != null && !it.IsEmptyMarker) equipped.Add(it);
             GUI.Label(new Rect(pad, y, W, lineH), Loc.T("Equipped", "装備中"), small);
             y += lineH;
-            y = Grid(equipped, 5, y, pad, type) + H * 0.008f;
+            y = Grid(equipped, 5, y, pad, type, 5) + H * 0.01f;
             GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Items you bring: {ch.Stash.Count}/{Inventory.BagCapacity}", $"持ち込む品：{ch.Stash.Count}/{Inventory.BagCapacity}"), small);
             y += lineH;
             y = Grid(ch.Stash, Inventory.BagCapacity, y, pad, type) + H * 0.01f;
