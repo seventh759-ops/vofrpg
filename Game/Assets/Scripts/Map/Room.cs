@@ -291,10 +291,16 @@ namespace VividOfFade
 
         // ---- 描く ----
 
+        // 壁のマスの絵（キャラクターの手前の壁を透かすのに使う）。壁でないマスは null
+        readonly SpriteRenderer[] wallRenderers = new SpriteRenderer[MapSize * MapSize];
+        readonly List<int> fadedWalls = new List<int>();
+
         void Render()
         {
             foreach (var go in spawned) Destroy(go);
             spawned.Clear();
+            System.Array.Clear(wallRenderers, 0, wallRenderers.Length);
+            fadedWalls.Clear();
 
             var floorA = PixelArt.IsoFloorFor(Zone, false);
             var floorB = PixelArt.IsoFloorFor(Zone, true);
@@ -312,12 +318,12 @@ namespace VividOfFade
                     // 床に接する壁だけを、どこも同じ高さで描く（高さがそろって見えるように）
                     bool touches = IsFloorTile(i - 1, j) || IsFloorTile(i + 1, j) || IsFloorTile(i, j - 1) || IsFloorTile(i, j + 1)
                                    || IsFloorTile(i - 1, j - 1) || IsFloorTile(i + 1, j + 1) || IsFloorTile(i + 1, j - 1) || IsFloorTile(i - 1, j + 1);
-                    if (touches) Place(rim, p, SortOrder.For(p));
+                    if (touches) wallRenderers[j * MapSize + i] = Place(rim, p, SortOrder.For(p));
                 }
             }
         }
 
-        void Place(Sprite sprite, Vector2 logical, int order)
+        SpriteRenderer Place(Sprite sprite, Vector2 logical, int order)
         {
             var go = new GameObject("Tile");
             go.transform.SetParent(transform, false);
@@ -326,7 +332,47 @@ namespace VividOfFade
             sr.sprite = sprite;
             sr.sortingOrder = order;
             spawned.Add(go);
+            return sr;
         }
+
+        /// <summary>
+        /// キャラクターの手前にあって重なっている壁を半透明にする（離れたら元に戻す）。毎フレーム呼ぶ。
+        /// 手前＝画面でキャラクターより下にある壁。壁の絵は上に伸びるので、少し下の壁まで見る。
+        /// </summary>
+        public void FadeWallsNear(Vector2 player, float dt)
+        {
+            const float faded = 0.3f, speed = 6f;
+            Vector2 ps = Iso.ToScreen(player);
+            int pi = Mathf.FloorToInt(player.x), pj = Mathf.FloorToInt(player.y);
+
+            // 今透けている壁のうち、もう重なっていないものを戻す
+            for (int k = fadedWalls.Count - 1; k >= 0; k--)
+            {
+                int idx = fadedWalls[k];
+                var sr = wallRenderers[idx];
+                if (sr == null) { fadedWalls.RemoveAt(k); continue; }
+                bool cover = Covers(sr.transform.position, ps);
+                var c = sr.color;
+                c.a = Mathf.MoveTowards(c.a, cover ? faded : 1f, speed * dt);
+                sr.color = c;
+                if (!cover && c.a >= 1f) fadedWalls.RemoveAt(k);
+            }
+            // 近くの壁で、新しく重なったものを透かし始める
+            for (int j = pj - 3; j <= pj + 3; j++)
+            {
+                for (int i = pi - 3; i <= pi + 3; i++)
+                {
+                    if (i < 0 || j < 0 || i >= MapSize || j >= MapSize) continue;
+                    int idx = j * MapSize + i;
+                    var sr = wallRenderers[idx];
+                    if (sr == null || fadedWalls.Contains(idx)) continue;
+                    if (Covers(sr.transform.position, ps)) fadedWalls.Add(idx);
+                }
+            }
+        }
+
+        static bool Covers(Vector3 wallScreen, Vector2 playerScreen) =>
+            wallScreen.y < playerScreen.y && playerScreen.y - wallScreen.y < 1.6f && Mathf.Abs(wallScreen.x - playerScreen.x) < 1.1f;
 
         // ---- 当たり判定 ----
 

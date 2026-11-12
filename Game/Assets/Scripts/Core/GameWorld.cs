@@ -445,6 +445,7 @@ namespace VividOfFade
                 Floors.Tick(dt, Enemies, Player, Room);
                 Room.UpdateFlow(Player.Pos);
                 Room.Reveal(Player.Pos, Player.EffectiveLight + 2f);
+                Room.FadeWallsNear(Player.Pos, dt); // 手前の壁にキャラクターが隠れないよう、重なった壁を透かす
                 Room.ApplyMinimap();
                 Enemies.Tick(dt, Player, Room);
                 Shots.Tick(dt, Enemies, Room);
