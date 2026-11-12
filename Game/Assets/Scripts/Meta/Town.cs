@@ -127,6 +127,7 @@ namespace VividOfFade
             for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;
             ch.Points = AdvancedClasses.BonusPoints;
             ch.MpGrown = 0;
+            StoreUnusableGear(ch);
             Profile.Save();
             return true;
         }
@@ -145,8 +146,32 @@ namespace VividOfFade
             for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;
             ch.Points = ThirdClasses.BonusPoints;
             ch.MpGrown = 0;
+            StoreUnusableGear(ch);
             Profile.Save();
             return true;
+        }
+
+        /// <summary>直前の転職・転生で倉庫へ送った品の数（知らせるため）。</summary>
+        public static int LastStored { get; private set; }
+
+        /// <summary>
+        /// 転職・転生で Lv1 に戻ったとき、必要レベルに届かなくなった装備を外して倉庫へ送る。
+        /// 鞄に入れると「持ち込んだ品」として毎回ついて回ってしまうため。倉庫がいっぱいなら付けたままにする
+        /// （次の挑戦の始めに鞄へ移る）。
+        /// </summary>
+        static void StoreUnusableGear(CharacterData ch)
+        {
+            LastStored = 0;
+            for (int i = 0; i < ch.Loadout.Count; i++)
+            {
+                var it = ch.Loadout[i];
+                if (it == null || it.IsEmptyMarker || it.ReqLevel <= ch.Level) continue;
+                if (Profile.Storage.Count >= StorageCapacity) break;
+                it.Carried = false;
+                Profile.Storage.Add(it);
+                ch.Loadout[i] = Item.EmptyMarker();
+                LastStored++;
+            }
         }
 
         // ---- 鍛冶屋：強化と効果の再抽選 ----

@@ -135,7 +135,7 @@ namespace VividOfFade
             Skills.Learn(ch, AdvancedClasses.SkillIndex);
             Profile.Save();
             var adv = AdvancedClasses.Of(ClassInfo.Current, ch);
-            if (adv != null) Hud.Toast(Loc.T($"Class changed: {adv.DisplayName}  (Lv 1, +{AdvancedClasses.BonusPoints} points)", $"転職：{adv.DisplayName}（Lv1、ポイント +{AdvancedClasses.BonusPoints}）"), new Color(1f, 0.85f, 0.4f));
+            if (adv != null) Hud.Toast(Loc.T($"Class changed: {adv.DisplayName}  (Lv 1, +{AdvancedClasses.BonusPoints} points)", $"転職：{adv.DisplayName}（Lv1、ポイント +{AdvancedClasses.BonusPoints}）") + StoredNote(), new Color(1f, 0.85f, 0.4f));
             Sfx.Landed(Rarity.Legendary);
         }
 
@@ -147,9 +147,14 @@ namespace VividOfFade
             Skills.Learn(ch, ThirdClasses.SkillIndex);
             Profile.Save();
             var third = ThirdClasses.Of(ClassInfo.Current, ch);
-            if (third != null) Hud.Toast(Loc.T($"Reborn: {third.DisplayName}  (Lv 1, +{ThirdClasses.BonusPoints} points)", $"転生：{third.DisplayName}（Lv1、ポイント +{ThirdClasses.BonusPoints}）"), new Color(1f, 0.85f, 0.4f));
+            if (third != null) Hud.Toast(Loc.T($"Reborn: {third.DisplayName}  (Lv 1, +{ThirdClasses.BonusPoints} points)", $"転生：{third.DisplayName}（Lv1、ポイント +{ThirdClasses.BonusPoints}）") + StoredNote(), new Color(1f, 0.85f, 0.4f));
             Sfx.Landed(Rarity.Mythic);
         }
+
+        /// <summary>転職・転生で装備できなくなった品を倉庫へ送ったときのひとこと。</summary>
+        static string StoredNote() => Town.LastStored > 0
+            ? Loc.T($"  /  {Town.LastStored} item(s) too high-level now sent to storage", $"  /  装備できなくなった品 {Town.LastStored} 個を倉庫へ")
+            : "";
 
         float potionCooldown;
 
