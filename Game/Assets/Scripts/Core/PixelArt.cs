@@ -54,6 +54,12 @@ namespace VividOfFade
             { 'b', Ramp(132, 100, 74, 96, 70, 50, 70, 50, 36, 48, 34, 24) },            // 革・靴
             { 'v', Ramp(200, 96, 72, 160, 64, 48, 118, 44, 34, 84, 30, 24) },           // 陣羽織
             { 'e', Ramp(30, 22, 40, 30, 22, 40, 30, 22, 40, 30, 22, 40) },              // 目
+            { 'h', Ramp(150, 100, 70, 112, 72, 50, 80, 50, 36, 56, 34, 26) },           // 髪（茶）
+            { 'H', Ramp(255, 236, 180, 230, 200, 130, 190, 150, 90, 140, 104, 60) },    // 髪・飾り（金）
+            { 'a', Ramp(140, 96, 200, 104, 66, 160, 74, 46, 120, 50, 30, 86) },         // 外套（紫）
+            { 'x', Ramp(250, 250, 252, 210, 214, 224, 160, 166, 180, 110, 116, 130) },  // 白
+            { 'f', Ramp(190, 60, 60, 150, 40, 44, 110, 26, 32, 76, 16, 22) },           // 深紅
+            { 'u', Ramp(90, 120, 190, 60, 86, 150, 40, 60, 110, 26, 40, 76) },          // 青い鎧
         };
 
         /// <summary>影を付けずに光らせる素材（ランタン・香炉の火、上位職の光る刃・光輪）。</summary>
@@ -64,6 +70,7 @@ namespace VividOfFade
             { 'o', new Color32(255, 250, 220, 255) },
             { 'p', new Color32(200, 130, 255, 255) }, // 紫に光る刃
             { 'R', new Color32(255, 70, 80, 255) },   // 赤く光る刃
+            { 'B', new Color32(150, 210, 255, 255) }, // 青白く光る目
         };
 
         /// <summary>
@@ -74,88 +81,472 @@ namespace VividOfFade
         {
             string key = $"PlayerHd_{type}_Adv{index}" + (third ? "_3rd" : "");
             if (cache.TryGetValue(key, out var cached)) return cached;
-            AdvancedParts(type, index, out var rows, out var over);
-            if (!third) return Shaded(key, rows, over);
-            ThirdParts(type, index, ref rows, over);
-            return Shaded(key, rows, over, ThirdAura(type, index)); // 3次職は輪郭が光る
+            int k = (int)type * 2 + Mathf.Clamp(index, 0, 1);
+            if (third) return Shaded(key, ThirdRows[k], ThirdOver[k], ThirdOutline[k]); // 3次職は輪郭が光る
+            return Shaded(key, AdvRows[k], AdvOver[k]);
         }
 
         /// <summary>3次職の見た目（町の師匠の画面で、転生する前に見せる）。</summary>
         public static Sprite ThirdPreview(ClassType type, int advanced) => AdvancedLook(type, Mathf.Clamp(advanced, 0, 1), true);
 
-        static void AdvancedParts(ClassType type, int index, out string[] rows, out Dictionary<char, Color32[]> over)
+        // 上位職と3次職の絵（1人ずつ描いたもの）。並びは 職業×2＋上位職（炎呼び・灯台守・夜狩り・血刃・陽縛り・城壁）
+        static readonly string[][] AdvRows =
         {
-            switch (type)
+            new[] // Flarecaller
             {
-                case ClassType.Lampwright when index == 0: // 炎呼び：深紅のローブと金の縁、燃える頭巾の先、橙の火のランタン
-                    rows = Edit(LampwrightHdRows, c => c == 'l' ? 'L' : c, (0, 14, "oL"), (1, 14, "LL"), (2, 14, "LLc"));
-                    over = Over(('c', Ramp(220, 70, 70, 176, 40, 48, 128, 26, 34, 88, 16, 24)), ('d', Ramp(255, 214, 110, 214, 160, 56, 160, 110, 30, 110, 72, 18)));
-                    return;
-                case ClassType.Lampwright: // 灯台守：白と金のローブ、金の枠のランタン、頭の上の光
-                    rows = Edit(LampwrightHdRows, c => c == 'm' ? 'g' : c, (0, 12, "o"), (0, 17, "o"), (1, 11, "l"), (1, 18, "l"));
-                    over = Over(('c', Ramp(250, 248, 236, 222, 216, 196, 178, 170, 150, 130, 122, 104)), ('d', Ramp(255, 230, 130, 226, 186, 72, 170, 130, 40, 120, 88, 24)));
-                    return;
-                case ClassType.Shadeblade when index == 0: // 夜狩り：紫がかった黒、角のある頭巾、紫に光る刃
-                    rows = Edit(ShadebladeHdRows, c => c == 'm' ? 'p' : c, (2, 10, "n"), (3, 11, "n"), (4, 11, "n"), (2, 20, "n"), (3, 19, "n"), (4, 19, "n"));
-                    over = Over(('n', Ramp(110, 80, 150, 72, 50, 108, 50, 34, 78, 32, 22, 52)), ('r', Ramp(190, 120, 255, 150, 80, 220, 106, 52, 170, 72, 34, 120)));
-                    return;
-                case ClassType.Shadeblade: // 血刃：赤黒い服、赤く光る刃、長い襟巻き
-                    rows = Edit(ShadebladeHdRows, c => c == 'm' ? 'R' : c, (12, 7, "rrrr"), (13, 6, "rr"), (14, 5, "r"));
-                    over = Over(('n', Ramp(120, 52, 62, 86, 34, 44, 60, 22, 30, 40, 14, 20)));
-                    return;
-                case ClassType.Warden when index == 0: // 陽縛り：金と白の陣羽織、頭の上の光輪、光る羽根飾り
-                    rows = Edit(WardenHdRows, c => c == 'r' ? 'l' : c, (0, 12, "ooooooo"));
-                    over = Over(('v', Ramp(255, 244, 200, 236, 210, 120, 196, 160, 70, 140, 108, 40)), ('m', Ramp(255, 250, 230, 222, 214, 186, 170, 160, 130, 118, 110, 86)));
-                    return;
-                default: // 城壁：濃い青の鎧、左手に大きな盾
-                    rows = Edit(WardenHdRows, c => c,
-                        (13, 1, "ggggg"),
-                        (14, 0, "gvvvvvg"), (15, 0, "gvvvvvg"), (16, 0, "gvvgvvg"), (17, 0, "gvgggvg"), (18, 0, "gvvgvvg"),
-                        (19, 0, "gvvgvvg"), (20, 0, "gvvvvvg"), (21, 0, "gvvvvvg"), (22, 0, "gvvvvvg"), (23, 1, "gvvvg"), (24, 2, "ggg"));
-                    over = Over(('m', Ramp(170, 190, 230, 110, 130, 176, 74, 90, 130, 46, 56, 86)), ('v', Ramp(70, 96, 170, 44, 64, 130, 30, 44, 94, 20, 28, 64)));
-                    return;
-            }
-        }
+                ".........oL............L..L.....",
+                "..........LLc.........LLoLL.....",
+                "...........ccc........LoooL.....",
+                "............cccc......LoooL.....",
+                "............ccccc......LLL......",
+                "......dddddddddddddd...gmmg.....",
+                ".........cddddddddc....gwwg.....",
+                ".........cdhhhhhhdc....gwwg.....",
+                ".........cdhshhshdc.....ww......",
+                ".........cdsessesdc.....ww......",
+                ".........cdssssssdc.....ww......",
+                "..........cdssrssd......ww......",
+                "..........ccdsssdcc.....ww......",
+                ".........cccdddccccc....ww......",
+                "........cccccdccccccc...ww......",
+                ".......ccccccdcccccccsssww......",
+                ".......cccccdddcccccssssww......",
+                ".......ccccbbgbbcccsss..ww......",
+                "........cccbbgbbccccs...ww......",
+                "........ccccdcdccccc....ww......",
+                ".......cccccdccdccccc...ww......",
+                ".......ccccdccccdcccc...ww......",
+                "......cccccdccccdccccc..ww......",
+                "......ccccdcccccdcccc...ww......",
+                "......cccdccccccdcccc...ww......",
+                ".....ccccdcccccccdcccc..ww......",
+                ".....cccdccccccccdccc...ww......",
+                ".....ddddddddddddddddd..ww......",
+                "........bbbb...bbbb.....ww......",
+                "........bbbb...bbbb.....ww......",
+                "........................ww......",
+                "........................gg......",
+            },
+            new[] // Beaconkeeper
+            {
+                "........................gg......",
+                ".....................gggggggg...",
+                ".....................gllllllg...",
+                ".....................glLoLLlg...",
+                "...........HHHHHHH...glLooLlg...",
+                "..........HggogggH...glLLLLlg...",
+                ".........HHddddddHH..gllllllg...",
+                ".........cdhhhhhhdc..gggggggg...",
+                ".........cdhshhshdc.....ww......",
+                ".........cdsessesdc.....ww......",
+                ".........cdssssssdc.....ww......",
+                "..........cdssrssd......ww......",
+                "..........ccdsssdcc.....ww......",
+                ".......ggggggggggggg....ww......",
+                "......gggccccdcccgggc...ww......",
+                ".......ccccccdcccccccsssww......",
+                ".......cccccdddcccccssssww......",
+                ".......ccccbbgbbcccsss..ww......",
+                "........cccbbgbbccccs...ww......",
+                "........ccccdcdccccc....ww......",
+                ".......cccccdccdccccc...ww......",
+                ".......ccccdccccdcccc...ww......",
+                "......cccccdccccdccccc..ww......",
+                "......ccccdcccccdcccc...ww......",
+                "......cccdccccccdcccc...ww......",
+                ".....ccccdcccccccdcccc..ww......",
+                ".....cccdccccccccdccc...ww......",
+                ".....ddddddddddddddddd..ww......",
+                "........bbbb...bbbb.....ww......",
+                "........bbbb...bbbb.....ww......",
+                "........................ww......",
+                "........................gg......",
+            },
+            new[] // Nightreaver
+            {
+                "................................",
+                "................................",
+                "..........n........n............",
+                "...........n......n.............",
+                "...........n.nnnnnn.............",
+                "............nnnnnnn.............",
+                "...........nnnnnnnnn............",
+                "...........nnhhhhhnn............",
+                "...........nnsssssnn....p.......",
+                "...........nsesssesn...p........",
+                "...........nnsssssnn..p.........",
+                "..........rrrrrrrrrr.p..........",
+                "..........rrrrrrrrrrp...........",
+                "........aaaannnnnngg............",
+                "......aaaaannbbbbngbg...........",
+                ".....aaaaaanbbbbbbns............",
+                "....aaaaaaanbbnnbbns............",
+                "....aaaaaaanbbbbbbn.............",
+                "...aaaaagbbnnggggnn.............",
+                "...aaaapambnnnnnnnn.............",
+                "..aaaapaamannn..nnn.............",
+                "..aaapaaaa.nnn..nnn.............",
+                "..aapaaaa..nnn..nnn.............",
+                "...aa.aa.a.nnn..nnn.............",
+                "...a..a....nnn..nnn.............",
+                "...........bbb..bbb.............",
+                "..........bbbb..bbbb............",
+                "..........bbbb..bbbb............",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
+            new[] // Bloodedge
+            {
+                "................................",
+                "................................",
+                "............................RR..",
+                "............x.x.x..........RR...",
+                "...........xxxxxxx........RR....",
+                "...........xxxxxxx.......RR.....",
+                "...........xxxxxxxx.....RR......",
+                "...........nxxxxxxn....RR.......",
+                "...........nnsssssnn..RR........",
+                "...........nsesssesn.RR.........",
+                "...........nnsssssnnRR..........",
+                "..........rrrrrrrrrRR...........",
+                "..........rrrrrrrgggg...........",
+                "........aaaannnnnnbb............",
+                "......aaaaannbbbbnbb............",
+                ".....aaaaaanbbbbb.gs............",
+                "....aaaaaaanbbnnb.ns............",
+                "....aaaaaaanbbbbb.n.............",
+                "...aaaaaabbnnggggnn.............",
+                "...aaaaaambnnnnnnnn.............",
+                "..aaaaaaamannn..nnn.............",
+                "..aaaaaaaa.nnn..nnn.............",
+                "..aaaaaaa..nnn..nnn.............",
+                "...aa.aa.a.nnn..nnn.............",
+                "...a..a....nnn..nnn.............",
+                "...........bbb..bbb.............",
+                "..........bbbb..bbbb............",
+                "..........bbbb..bbbb............",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
+            new[] // Sunbinder
+            {
+                ".............o.l.o..............",
+                "...........o.......o............",
+                "..........o...lll...o...........",
+                ".........o...rmmmm...o..........",
+                "...........mmmmmmmmm............",
+                "..........mmmmmmmmmmm...........",
+                "..........mmmmmmmmmmm...........",
+                "..........mgggggggggm...........",
+                "..........meeeeeeeeem...........",
+                "..........mmmmmmmmmmm...........",
+                "...........mmmmmmmmm............",
+                "............mmmmmmm.............",
+                "......ggggggmmmmmmmgggggg.......",
+                ".....mmmmmmmvvvvvvvmmmmmmm......",
+                ".....mmmmmmmvvvgvvvmmmmmmm......",
+                "........mmvvvvgggvvvvmm.........",
+                "........mmvvvvvgvvvvvmm.........",
+                "........ssvvvvvgvvvvvss.........",
+                ".........vvvvvvvvvvvvv.m........",
+                ".........bbbbbbgbbbbbb..m.......",
+                ".........vvvvvvvvvvvvv...m......",
+                ".........vvvvvv.vvvvvv...m......",
+                "..........vvvvv.vvvvv..mmmmm....",
+                "...........mmmm.mmmm..mLLLLm....",
+                "...........mmmm.mmmm..mLooLm....",
+                "...........mmmm.mmmm..mLLLLm....",
+                "..........bbbbb.bbbbb..mmmm.....",
+                "..........bbbbb.bbbbb...L.......",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
+            new[] // Bastion
+            {
+                "................................",
+                "...........g.......g............",
+                "...........gg.....gg............",
+                ".............rmmmm..............",
+                "...........mmmmmmmmm............",
+                "..........mmmmmmmmmmm...........",
+                "..........mmmmmmmmmmm...........",
+                "..........mgggggggggm...........",
+                "..........meeeeeeeeem...........",
+                "..........mmmmmmmmmmm...........",
+                "...........mmmmmmmmm............",
+                ".ggggg......mmmmmmm.............",
+                "guuuuuggggggmmmmmmmgggggg.......",
+                "guuuuugmmmmmvvvvvvvmmmmmmm......",
+                "guuuuugmmmmmvvvgvvvmmmmmmm......",
+                "guuguug.mmvvvvgggvvvvmm.........",
+                "gugggug.mmvvvvvgvvvvvmm.........",
+                "guuguug.ssvvvvvgvvvvvss.........",
+                "guuguug..vvvvvvvvvvvvv.m........",
+                "guuuuug..bbbbbbgbbbbbb..m.......",
+                "guuuuug..vvvvvvvvvvvvv...m......",
+                "guuuuug..vvvvvv.vvvvvv...m......",
+                "guuuuug...vvvvv.vvvvv..mmmmm....",
+                "guuuuug....mmmm.mmmm..mLLLLm....",
+                "guuuuug....mmmm.mmmm..mLooLm....",
+                "guuuuug....mmmm.mmmm..mLLLLm....",
+                ".guuug....bbbbb.bbbbb..mmmm.....",
+                "..ggg.....bbbbb.bbbbb...L.......",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
+        };
 
-        /// <summary>3次職の輪郭の色（体のまわりが光って見える）。</summary>
-        static Color32 ThirdAura(ClassType type, int index)
+        static readonly Dictionary<char, Color32[]>[] AdvOver =
         {
-            switch (type)
-            {
-                case ClassType.Lampwright: return index == 0 ? new Color32(255, 130, 40, 255) : new Color32(150, 200, 255, 255);
-                case ClassType.Shadeblade: return index == 0 ? new Color32(170, 100, 255, 255) : new Color32(255, 60, 70, 255);
-                default: return index == 0 ? new Color32(255, 210, 90, 255) : new Color32(190, 225, 255, 255);
-            }
-        }
+            new Dictionary<char, Color32[]> { { 'c', Ramp(220, 70, 70, 176, 40, 48, 128, 26, 34, 88, 16, 24) }, { 'd', Ramp(255, 214, 110, 214, 160, 56, 160, 110, 30, 110, 72, 18) } }, // Flarecaller
+            new Dictionary<char, Color32[]> { { 'c', Ramp(250, 248, 236, 222, 216, 196, 178, 170, 150, 130, 122, 104) }, { 'd', Ramp(255, 230, 130, 226, 186, 72, 170, 130, 40, 120, 88, 24) } }, // Beaconkeeper
+            new Dictionary<char, Color32[]> { { 'n', Ramp(110, 80, 150, 72, 50, 108, 50, 34, 78, 32, 22, 52) }, { 'r', Ramp(190, 120, 255, 150, 80, 220, 106, 52, 170, 72, 34, 120) }, { 'a', Ramp(80, 50, 110, 56, 34, 80, 40, 24, 60, 26, 14, 40) } }, // Nightreaver
+            new Dictionary<char, Color32[]> { { 'n', Ramp(120, 52, 62, 86, 34, 44, 60, 22, 30, 40, 14, 20) }, { 'a', Ramp(200, 40, 50, 160, 24, 34, 118, 14, 24, 80, 8, 16) } }, // Bloodedge
+            new Dictionary<char, Color32[]> { { 'v', Ramp(255, 244, 200, 236, 210, 120, 196, 160, 70, 140, 108, 40) }, { 'm', Ramp(255, 250, 230, 222, 214, 186, 170, 160, 130, 118, 110, 86) } }, // Sunbinder
+            new Dictionary<char, Color32[]> { { 'm', Ramp(170, 190, 230, 110, 130, 176, 74, 90, 130, 46, 56, 86) }, { 'v', Ramp(70, 96, 170, 44, 64, 130, 30, 44, 94, 20, 28, 64) } }, // Bastion
+        };
 
-        /// <summary>3次職：上位職の見た目に、光る目・模様・周りの光の粒を足す。</summary>
-        static void ThirdParts(ClassType type, int index, ref string[] rows, Dictionary<char, Color32[]> over)
+        static readonly string[][] ThirdRows =
         {
-            switch (type)
+            new[] // Pyrelord
             {
-                case ClassType.Lampwright when index == 0: // 焔王：黒に近い深紅のローブに、溶けた金の筋
-                    rows = Edit(rows, c => c == 'd' ? 'L' : c, (3, 3, "L"), (8, 29, "o"), (18, 1, "L"), (26, 29, "L"), (29, 3, "o"));
-                    over['c'] = Ramp(150, 40, 46, 110, 24, 32, 76, 14, 22, 50, 8, 14);
-                    break;
-                case ClassType.Lampwright: // 星守：夜空の紺のローブに星
-                    rows = Edit(rows, c => c, (20, 15, "o"), (24, 19, "o"), (27, 13, "o"), (17, 18, "l"), (3, 3, "o"), (8, 29, "l"), (18, 1, "o"), (26, 29, "o"));
-                    over['c'] = Ramp(70, 86, 170, 44, 56, 130, 30, 38, 94, 18, 24, 64);
-                    break;
-                case ClassType.Shadeblade when index == 0: // 日蝕：紫に光る目、黒い装束
-                    rows = Edit(rows, c => c == 'e' ? 'p' : c, (3, 3, "p"), (12, 30, "o"), (18, 1, "p"), (26, 28, "p"), (29, 3, "o"));
-                    over['n'] = Ramp(70, 54, 100, 44, 32, 70, 30, 20, 50, 18, 12, 32);
-                    break;
-                case ClassType.Shadeblade: // 血の君主：赤く光る目、金の飾り
-                    rows = Edit(rows, c => c == 'e' ? 'R' : c, (11, 10, "g"), (11, 20, "g"), (3, 3, "R"), (12, 30, "R"), (18, 1, "o"), (26, 28, "R"), (29, 3, "R"));
-                    break;
-                case ClassType.Warden when index == 0: // 暁光：光る兜の目、大きな光輪
-                    rows = Edit(rows, c => c == 'e' ? 'l' : c, (0, 10, "ooooooooooo"), (1, 10, "o"), (1, 20, "o"), (8, 2, "l"), (20, 29, "o"), (28, 3, "l"));
-                    break;
-                default: // 神盾：光る盾の紋章と兜の目
-                    rows = Edit(rows, c => c == 'e' ? 'o' : c, (16, 3, "o"), (17, 2, "ooo"), (18, 3, "o"), (19, 3, "o"), (2, 3, "o"), (8, 28, "o"), (29, 2, "o"));
-                    break;
-            }
-        }
+                "........L.o.L..........L..L.....",
+                "........LoLoL.........LLoLL.....",
+                "...........ccc........LoooL.....",
+                "....L.......cccc......LoooL.....",
+                "............ccccc......LLL......",
+                "......dddddddddddddd...gmmg.....",
+                ".........cddddddddc....gwwg.....",
+                ".........cdhhhhhhdc....gwwg.....",
+                ".........cdhshhshdc.....ww......",
+                ".........cdsessesdc.....ww......",
+                "..o......cdssssssdc.....ww......",
+                "..........cdssrssd......ww......",
+                "..........ccdsssdcc.....ww..o...",
+                ".........cccLLLccccc....ww......",
+                "........cccccLccccccc...ww......",
+                ".......ccccccLcccccccsssww......",
+                ".......cccccLLLcccccssssww......",
+                ".......ccccbbgbbcccsss..ww......",
+                "........cccbbgbbccccs...ww......",
+                "........ccccLcLccccc....ww......",
+                ".L.....cccccLccLccccc...ww......",
+                ".......ccccLccccLcccc...ww......",
+                "......cccccLccccLccccc..ww......",
+                "......ccccLcccccLcccc...ww......",
+                "......cccLccccccLcccc...ww..L...",
+                ".....ccccLcccccccLcccc..ww......",
+                ".....cccLccccccccLccc...ww......",
+                ".....LLLLLLLLLLLLLLLLL..ww......",
+                "........bbbb...bbbb.....ww......",
+                "........bbbb...bbbb.....ww......",
+                "........................ww......",
+                "........................gg......",
+            },
+            new[] // Starwarden
+            {
+                "........................o.......",
+                ".......................ooo......",
+                ".....................ooooooo....",
+                "...l..................ooooo.....",
+                "...........HHHHHHH....oo.oo.....",
+                "..........HggogggH...o.....o....",
+                ".........HHddddddHH....gwwg.....",
+                ".........cdhhhhhhdc....gwwg.....",
+                ".........cdhshhshdc.....ww......",
+                ".........cdsessesdc.....ww......",
+                ".........cdssssssdc.....ww......",
+                "..........cdssrssd......ww......",
+                ".o........ccdsssdcc.....ww......",
+                ".......ggggggggggggg....ww......",
+                "......gggccccdcccgggc...ww......",
+                ".......ccccccdcccccccsssww......",
+                ".......ccoccdddcccccssssww......",
+                ".......ccccbbgbbcccsss..ww......",
+                "........cccbbgbbcoccs...ww......",
+                "........ccccdcoccccc....ww......",
+                ".......cccccdccdccccc...ww......",
+                ".......ccccdccccdcccc...ww......",
+                "......ccccodccccdccccc..ww......",
+                "......ccccdcccccdcccc...ww......",
+                "......cccdccccccocccc...ww......",
+                ".....cccodcccccccdcccc..ww......",
+                ".....cccdccccccccdccc...ww.o....",
+                ".....ddddddddddddddddd..ww......",
+                "........bbbb...bbbb.....ww......",
+                "........bbbb...bbbb.....ww......",
+                "........................ww......",
+                "........................gg......",
+            },
+            new[] // Eclipse
+            {
+                "............ppppp...............",
+                "..........pp.....pp.............",
+                ".........pn........p............",
+                ".........p.n......np............",
+                "...........n.nnnnnn.............",
+                "............nnnnnnn.............",
+                "...p.......nnnnnnnnn............",
+                "...........nnhhhhhnn............",
+                "...........nnsssssnn....p.......",
+                "...........nspssspsn...p........",
+                "...........nnsssssnn..p.........",
+                "..........rrrrrrrrrr.p..........",
+                "..........rrrrrrrrrrp...........",
+                "........aaaannnnnngg............",
+                "......aaaaannbbbbngbg.....o.....",
+                ".....aaaaaanbbbbbbns............",
+                "....aaaaaaanbbnnbbns............",
+                "....aaaaaaanbbbbbbn.............",
+                "...aaaaagbbnnggggnn.............",
+                "...aaaapambnnnnnnnn.............",
+                "..aaaapaamannn..nnn.............",
+                "..aaapaaaa.nnn..nnn.............",
+                "..aapaaaa..nnn..nnn.............",
+                "...aa.aa.a.nnn..nnn.............",
+                "...a..a....nnn..nnn.............",
+                "...........bbb..bbb.............",
+                "..........bbbb..bbbb......p.....",
+                "..........bbbb..bbbb............",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
+            new[] // Bloodsovereign
+            {
+                "................................",
+                "...........g.g.g.g..............",
+                "...........ggggggg..........RR..",
+                "...........gRgggRg.........RR...",
+                "...........xxxxxxx........RR....",
+                "...........xxxxxxx.......RR.....",
+                "...R.......xxxxxxxx.....RR......",
+                "...........nxxxxxxn....RR.......",
+                "...........nnsssssnn..RR........",
+                "...........nsRsssRsn.RR.........",
+                "...........nnsssssnnRR..........",
+                "..........rrrrrrrrrRR...........",
+                "..........rrrrrrrgggg...........",
+                "........aaaannnnnnbb............",
+                "......aaaaannbbbbnbb............",
+                ".....aaaaaanbbbbb.gs............",
+                "....aaaaaaanbbnnb.ns............",
+                "....aaaaaaanbbbbb.n.............",
+                "...aaaaaabbnnggggnn.............",
+                "...aaaaaambnnnnnnnn.............",
+                "..aaaaaaamannn..nnn........R....",
+                "..aaaaaaaa.nnn..nnn.............",
+                "..aaaaaaa..nnn..nnn.............",
+                "...aa.aa.a.nnn..nnn.............",
+                "...a..a....nnn..nnn.............",
+                "..aaaaaaa..bbb..bbb.............",
+                "...a.a.a..bbbb..bbbb............",
+                "..........bbbb..bbbb............",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
+            new[] // Dawnbringer
+            {
+                "...........o.o.o.o.o............",
+                "...........o.......o............",
+                "..........o...lll...o...........",
+                ".........o...rmmmm...o..........",
+                "...........mmmmmmmmm............",
+                "..........mmmmmmmmmmm...........",
+                "..........mmmmmmmmmmm...........",
+                ".oo.......mgggggggggm........oo.",
+                "oool......mlllllllllm.......looo",
+                "ooool.....mmmmmmmmmmm......loooo",
+                ".oool......mmmmmmmmm.......looo.",
+                "..ool.......mmmmmmm........loo..",
+                "......ggggggmmmmmmmgggggg.......",
+                ".....mmmmmmmvvvvvvvmmmmmmm......",
+                ".....mmmmmmmvvvgvvvmmmmmmm......",
+                "........mmvvvvgggvvvvmm.........",
+                "........mmvvvvvgvvvvvmm.........",
+                "........ssvvvvvgvvvvvss.........",
+                ".........vvvvvvvvvvvvv.m........",
+                ".........bbbbbbgbbbbbb..m.......",
+                ".........vvvvvvvvvvvvv...m......",
+                ".........vvvvvv.vvvvvv...m......",
+                "..........vvvvv.vvvvv..mmmmm....",
+                "...........mmmm.mmmm..mLLLLm....",
+                "...........mmmm.mmmm..mLooLm....",
+                "...........mmmm.mmmm..mLLLLm....",
+                "..........bbbbb.bbbbb..mmmm.....",
+                "..........bbbbb.bbbbb...L.......",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
+            new[] // Aegis
+            {
+                "................................",
+                "...........g.......g............",
+                "..o........gg.....gg............",
+                "......xxx....rmmmm.....xxx......",
+                ".....xxxx..mmmmmmmmm...xxxx.....",
+                "......xxx.mmmmmmmmmmm..xxx......",
+                "..........mmmmmmmmmmm...........",
+                "..........mgggggggggm...........",
+                "..........mBBBBBBBBBm...........",
+                "..........mmmmmmmmmmm...........",
+                "...........mmmmmmmmm............",
+                ".ggggg......mmmmmmm.............",
+                "guuuuuggggggmmmmmmmgggggg.......",
+                "guuuuugmmmmmvvvvvvvmmmmmmm......",
+                "guuuuugmmmmmvvvgvvvmmmmmmm......",
+                "ouuouuo.mmvvvvgggvvvvmm.........",
+                "ouooouo.mmvvvvvgvvvvvmm.........",
+                "ouuouuo.ssvvvvvgvvvvvss.........",
+                "ouuouuo..vvvvvvvvvvvvv.m........",
+                "guuuuug..bbbbbbgbbbbbb..m.......",
+                "guuuuug..vvvvvvvvvvvvv...m......",
+                "guuuuug..vvvvvv.vvvvvv...m......",
+                "guuuuug...vvvvv.vvvvv..mmmmm....",
+                "guuuuug....mmmm.mmmm..mLLLLm....",
+                "guuuuug....mmmm.mmmm..mLooLm....",
+                "guuuuug....mmmm.mmmm..mLLLLm....",
+                ".guuug....bbbbb.bbbbb..mmmm.....",
+                "..ggg.....bbbbb.bbbbb...L.......",
+                "............................o...",
+                "................................",
+                "................................",
+                "................................",
+            },
+        };
+
+        static readonly Dictionary<char, Color32[]>[] ThirdOver =
+        {
+            new Dictionary<char, Color32[]> { { 'c', Ramp(150, 40, 46, 110, 24, 32, 76, 14, 22, 50, 8, 14) }, { 'd', Ramp(255, 214, 110, 214, 160, 56, 160, 110, 30, 110, 72, 18) } }, // Pyrelord
+            new Dictionary<char, Color32[]> { { 'c', Ramp(70, 86, 170, 44, 56, 130, 30, 38, 94, 18, 24, 64) }, { 'd', Ramp(255, 230, 130, 226, 186, 72, 170, 130, 40, 120, 88, 24) } }, // Starwarden
+            new Dictionary<char, Color32[]> { { 'n', Ramp(70, 54, 100, 44, 32, 70, 30, 20, 50, 18, 12, 32) }, { 'r', Ramp(190, 120, 255, 150, 80, 220, 106, 52, 170, 72, 34, 120) }, { 'a', Ramp(80, 50, 110, 56, 34, 80, 40, 24, 60, 26, 14, 40) } }, // Eclipse
+            new Dictionary<char, Color32[]> { { 'n', Ramp(120, 52, 62, 86, 34, 44, 60, 22, 30, 40, 14, 20) }, { 'a', Ramp(200, 40, 50, 160, 24, 34, 118, 14, 24, 80, 8, 16) } }, // Bloodsovereign
+            new Dictionary<char, Color32[]> { { 'v', Ramp(255, 244, 200, 236, 210, 120, 196, 160, 70, 140, 108, 40) }, { 'm', Ramp(255, 250, 230, 222, 214, 186, 170, 160, 130, 118, 110, 86) } }, // Dawnbringer
+            new Dictionary<char, Color32[]> { { 'm', Ramp(170, 190, 230, 110, 130, 176, 74, 90, 130, 46, 56, 86) }, { 'v', Ramp(70, 96, 170, 44, 64, 130, 30, 44, 94, 20, 28, 64) } }, // Aegis
+        };
+
+        static readonly Color32[] ThirdOutline =
+        {
+            new Color32(255, 130, 40, 255), // Pyrelord
+            new Color32(150, 200, 255, 255), // Starwarden
+            new Color32(170, 100, 255, 255), // Eclipse
+            new Color32(255, 60, 70, 255), // Bloodsovereign
+            new Color32(255, 210, 90, 255), // Dawnbringer
+            new Color32(190, 225, 255, 255), // Aegis
+        };
 
         /// <summary>絵の文字を置き換え（map）、指定の位置に描き足した（paints）新しい絵を作る。</summary>
         static string[] Edit(string[] src, System.Func<char, char> map, params (int y, int x, string s)[] paints)
@@ -251,38 +642,38 @@ namespace VividOfFade
 
         static readonly string[] LampwrightHdRows =
         {
-            "..............cc.......mm.......",
-            "..............cc.......mm.......",
-            "..............ccc....mmmmmm.....",
-            "...............cc....mmmmmm.....",
-            ".............cccc....mllllm.....",
-            "...........cccccccc..mloolm.....",
-            "..........cccccccccc.mloolm.....",
-            "..........cccccccccc.mloolm.....",
-            ".........cccccsscccccmllllm.....",
-            ".........cccsssssscccmmmmmm.....",
-            ".........cccsssssscccmmmmmm.....",
-            ".........ccssessesscc..ww.......",
-            ".........ccsssssssscc..ww.......",
-            "..........ccsssssscc...ww.......",
-            "..........ccsssssscc...ww.......",
-            "...........cccccccc....ww.......",
-            "..........cccccccccc...ww.......",
-            ".........ddccccccccccc.ww.......",
-            ".........ddcccccccccccc.ww......",
-            "........dddcccccccccccc.ww......",
-            "........ddccccccccccccc.ww......",
-            ".......dddccccccccccccccww......",
-            ".......dsssccddddccccsssww......",
-            "........sssccddddccccsssww......",
-            "........cccccddddccccsssww......",
-            ".......ccccccddddcccccc.ww......",
-            ".......cccccdddddcccccc.ww......",
-            ".......cccccddddddccccc.ww......",
-            ".......cccccddddddccccc.ww......",
-            "......ccccccddddddccccccww......",
-            "......cccbbbbddddbbbbcccww......",
-            ".........bbbb....bbbb...ww......",
+            "........................mm......",
+            ".............cc.......mmmmmm....",
+            ".............ccc......mlllLm....",
+            "............cccc......mlLoLm....",
+            "...........ccccccc....mlLLlm....",
+            "..........ccccccccc...mllllm....",
+            ".........cddddddddc...mmmmmm....",
+            ".........cdhhhhhhdc....gwwg.....",
+            ".........cdhshhshdc.....ww......",
+            ".........cdsessesdc.....ww......",
+            ".........cdssssssdc.....ww......",
+            "..........cdssrssd......ww......",
+            "..........ccdsssdcc.....ww......",
+            ".........cccdddccccc....ww......",
+            "........cccccdccccccc...ww......",
+            ".......ccccccdcccccccsssww......",
+            ".......cccccdddcccccssssww......",
+            ".......ccccbbgbbcccsss..ww......",
+            "........cccbbgbbccccs...ww......",
+            "........ccccdcdccccc....ww......",
+            ".......cccccdccdccccc...ww......",
+            ".......ccccdccccdcccc...ww......",
+            "......cccccdccccdccccc..ww......",
+            "......ccccdcccccdcccc...ww......",
+            "......cccdccccccdcccc...ww......",
+            ".....ccccdcccccccdcccc..ww......",
+            ".....cccdccccccccdccc...ww......",
+            ".....ddddddddddddddddd..ww......",
+            "........bbbb...bbbb.....ww......",
+            "........bbbb...bbbb.....ww......",
+            "........................ww......",
+            "........................gg......",
         };
 
         static readonly string[] ShadebladeHdRows =
@@ -290,71 +681,71 @@ namespace VividOfFade
             "................................",
             "................................",
             "................................",
-            "...............n................",
-            "............nnnnnnn.............",
-            "...........nnnnnnnnn............",
-            "...........nnnnnnnnn..........mm",
-            "..........nnnnsssnnnn........mm.",
-            "..........nnnsssssnnn........mm.",
-            "..........nnsesssesnn.......mm..",
-            "..........nnsssssssnn.......mm..",
-            "..........nrrrrrrrrrn......mm...",
-            "...........rrrrrrrrr.......mm...",
-            "....nnnnnn.rrrrrrrrr......mm....",
-            "....nnnnnn.rrrrrrrrr.....mm.....",
-            "...nnnnnnn.....n....nn...mm.....",
-            "...nnnnnnnn.........nn..mm......",
-            "...nnnnnnnnnnbbbbbnnnn..mm......",
-            "..nnnnnnnnnnnbbbbbnnnn.mm.......",
-            "..nnnnnnnnnnnbbbbbnnnnnmm.......",
-            "..nnnnnn.nnnnbbbbbnnnnmm........",
-            ".nnnnnnn.nnnnnnnnnnnsgs.........",
-            ".nnnnnnn...nnnnnnnnnsbb.........",
-            "...........bbbbbbbbb.bbg........",
-            "...........nnnnnnnnn.bb.g.......",
-            "............nnn.nnn.............",
-            "............nnn.nnn.............",
-            "............nnn.nnn.............",
-            "............nnn.nnn.............",
-            "...........bbbb.bbbb............",
-            "...........bbbb.bbbb............",
-            "...........bbbb.bbbb............",
+            "................................",
+            ".............nnnnn.........mm...",
+            "............nnnnnnn.......mm....",
+            "...........nnnnnnnnn.....mm.....",
+            "...........nnhhhhhnn....mm......",
+            "...........nnsssssnn...mm.......",
+            "...........nsesssesn..mm........",
+            "...........nnsssssnn.mm.........",
+            "..........rrrrrrrrrrmm..........",
+            "..........rrrrrrrrrrm...........",
+            "........aaaannnnnngg............",
+            "......aaaaannbbbbnngg...........",
+            ".....aaaaaanbbbbbbns............",
+            "....aaaaaaanbbnnbbns............",
+            "....aaaaaaanbbbbbbn.............",
+            "...aaaaaabbnnggggnn.............",
+            "...aaaaaambnnnnnnnn.............",
+            "..aaaaaaamannn..nnn.............",
+            "..aaaaaaaa.nnn..nnn.............",
+            "..aaaaaaa..nnn..nnn.............",
+            "...aa.aa.a.nnn..nnn.............",
+            "...a..a....nnn..nnn.............",
+            "...........bbb..bbb.............",
+            "..........bbbb..bbbb............",
+            "..........bbbb..bbbb............",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
         };
 
         static readonly string[] WardenHdRows =
         {
-            "................................",
             "...............r................",
-            "...............r................",
-            "............mmmrmmm.............",
+            "...............rr...............",
+            "..............rrr...............",
+            ".............rmmmm..............",
             "...........mmmmmmmmm............",
-            "...........mmmmmmmmm............",
             "..........mmmmmmmmmmm...........",
             "..........mmmmmmmmmmm...........",
-            "..........mmmmmmmmmmm...........",
+            "..........mgggggggggm...........",
             "..........meeeeeeeeem...........",
-            "..........meeeeeeeeem...........",
+            "..........mmmmmmmmmmm...........",
             "...........mmmmmmmmm............",
-            "...........mmmmmmmmm............",
-            ".......mmm..mmmmmmm..mmm........",
-            "......ggggg....m....ggggg.......",
-            ".....mmmmmmm.......mmmmmmm......",
+            "............mmmmmmm.............",
+            "......ggggggmmmmmmmgggggg.......",
             ".....mmmmmmmvvvvvvvmmmmmmm......",
-            "......vvvmmvvvvgvvvvmmvvv.......",
-            "......vvvmvvvvvgvvvvvmvvv.......",
-            "......vvvvvvvgggggvvvvvvv.......",
-            "......vvvvvvvvvgvvvvvvvvv.......",
-            "......vvvvvvvvvgvvvvvvvvv.......",
-            "......vvvvvvvvvgvvvvvvmmmm......",
-            "......mmmmmmmmmmmmmmmmmmm.m.....",
-            "......mmmmmmmmmmmmmmmm....m.....",
-            ".........vmmmmmvmmmmmv....m.....",
-            "..........mmmmm.mmmmm.....mmmm..",
-            "..........mmmmm.mmmmm.....mLLm..",
-            "..........mmmmm.mmmmm.....mLLm..",
-            ".........bbbbbb.bbbbbb....mmmm..",
-            ".........bbbbbb.bbbbbb.....L....",
-            ".........bbbbbb.bbbbbb..........",
+            ".....mmmmmmmvvvgvvvmmmmmmm......",
+            "........mmvvvvgggvvvvmm.........",
+            "........mmvvvvvgvvvvvmm.........",
+            "........ssvvvvvgvvvvvss.........",
+            ".........vvvvvvvvvvvvv.m........",
+            ".........bbbbbbgbbbbbb..m.......",
+            ".........vvvvvvvvvvvvv...m......",
+            ".........vvvvvv.vvvvvv...m......",
+            "..........vvvvv.vvvvv..mmmmm....",
+            "...........mmmm.mmmm..mLLLLm....",
+            "...........mmmm.mmmm..mLooLm....",
+            "...........mmmm.mmmm..mLLLLm....",
+            "..........bbbbb.bbbbb..mmmm.....",
+            "..........bbbbb.bbbbb...L.......",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
         };
 
         /// <summary>スキルのアイコン（効果の種類ごとの形を、スキルの色で塗る）。</summary>
