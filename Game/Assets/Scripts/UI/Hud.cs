@@ -683,7 +683,7 @@ namespace VividOfFade
             if (ch.Run.Active)
             {
                 Button(new Rect(pad, y, W - pad * 2f, bh), Loc.T($"CONTINUE  -  Floor {ch.Run.Floor}", $"続きから  -  {ch.Run.Floor}層"), new Color(0.2f, 0.5f, 0.25f, 0.85f), centered,
-                    () => World.ResumeRun(type));
+                    () => confirmFloor = 0); // 0 は「続きから」
                 y += bh + gap;
                 var warn = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
                 warn.normal.textColor = new Color(1f, 0.7f, 0.5f);
@@ -696,11 +696,53 @@ namespace VividOfFade
                 var r = new Rect(pad + (i % cols) * (bw + gap), y + (i / cols) * (bh + gap), bw, bh);
                 string key = Application.isMobilePlatform || i >= 9 ? "" : $"[{i + 1}] ";
                 Button(r, Loc.T($"{key}Floor {floor}", $"{key}{floor}層"), i == floors.Count - 1 ? new Color(0.5f, 0.4f, 0.1f, 0.7f) : new Color(1f, 1f, 1f, 0.12f), centered,
-                    () => World.StartRun(type, floor));
+                    () => confirmFloor = floor);
             }
             int rows = (floors.Count + cols - 1) / cols;
             var back = new Rect(pad, y + rows * (bh + gap) + gap, W - pad * 2f, H * 0.05f);
             Button(back, Loc.T("BACK", "戻る"), new Color(1f, 1f, 1f, 0.08f), centered, () => World.CancelFloorSelect());
+
+            if (confirmFloor >= 0) DrawFloorConfirm(type, ch);
+        }
+
+        /// <summary>層を選んだときの確認（-1 は確認なし、0 は「続きから」、1以上は始める層）。</summary>
+        int confirmFloor = -1;
+
+        /// <summary>PC の数字キーで層を選んだとき（GameWorld から）。確認を出す。</summary>
+        public void AskFloor(int floor) => confirmFloor = floor;
+
+        public bool ConfirmingFloor => confirmFloor >= 0;
+
+        void DrawFloorConfirm(ClassType type, CharacterData ch)
+        {
+            float W = Screen.width, H = Screen.height;
+            // 後ろのボタンを押せないよう、全体をふさぐ（外を押すとやめる）
+            Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0.6f), centered, () => confirmFloor = -1);
+            var box = new Rect(W * 0.08f, H * 0.36f, W * 0.84f, H * 0.24f);
+            Fill(box, new Color(0.1f, 0.08f, 0.14f, 0.97f));
+            Fill(new Rect(box.x, box.y, box.width, box.height * 0.03f), new Color(1f, 0.8f, 0.35f));
+            Button(box, null, new Color(0f, 0f, 0f, 0f), centered, () => { }); // 箱の中を押しても閉じない
+
+            bool resume = confirmFloor == 0;
+            int floor = resume ? ch.Run.Floor : confirmFloor;
+            var title = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            title.normal.textColor = new Color(1f, 0.88f, 0.5f);
+            FitLabel(new Rect(box.x, box.y + box.height * 0.1f, box.width, box.height * 0.2f),
+                resume ? Loc.T($"Continue from floor {floor}?", $"{floor}層から続けますか？") : Loc.T($"Start from floor {floor}?", $"{floor}層から始めますか？"), title);
+            var note = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            note.normal.textColor = new Color(1f, 0.7f, 0.5f);
+            string warn = !resume && ch.Run.Active ? Loc.T("The suspended run will be lost.", "中断中の挑戦は消えます。") : "";
+            GUI.Label(new Rect(box.x + box.width * 0.05f, box.y + box.height * 0.32f, box.width * 0.9f, box.height * 0.22f), warn, note);
+
+            float bw = box.width * 0.4f, bh = box.height * 0.26f;
+            float by = box.yMax - bh - box.height * 0.1f;
+            Button(new Rect(box.x + box.width * 0.07f, by, bw, bh), Loc.T("START", "始める"), new Color(0.2f, 0.5f, 0.25f, 0.9f), centered, () =>
+            {
+                confirmFloor = -1;
+                if (resume) World.ResumeRun(type);
+                else World.StartRun(type, floor);
+            });
+            Button(new Rect(box.xMax - box.width * 0.07f - bw, by, bw, bh), Loc.T("CANCEL", "やめる"), new Color(1f, 1f, 1f, 0.15f), centered, () => confirmFloor = -1);
         }
 
         /// <summary>タイトル画面。どこを押しても始まる（言語のボタンだけは別）。</summary>

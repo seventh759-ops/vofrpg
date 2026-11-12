@@ -373,7 +373,11 @@ namespace VividOfFade
                 else if (PendingClass.HasValue)
                 {
                     var cps = Checkpoints(Profile.Get(PendingClass.Value));
-                    if (Input.NumberPressed >= 0 && Input.NumberPressed < cps.Count) StartRun(PendingClass.Value, cps[Input.NumberPressed]);
+                    if (Hud.ConfirmingFloor)
+                    {
+                        if (Input.CancelPressed) Hud.AskFloor(-1); // 確認をやめる
+                    }
+                    else if (Input.NumberPressed >= 0 && Input.NumberPressed < cps.Count) Hud.AskFloor(cps[Input.NumberPressed]);
                     else if (Input.CancelPressed) CancelFloorSelect();
                 }
                 else if (Input.NumberPressed >= 0 && Input.NumberPressed < ClassInfo.Count)
