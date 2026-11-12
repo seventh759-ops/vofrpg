@@ -760,35 +760,117 @@ namespace VividOfFade
             Button(new Rect(box.xMax - box.width * 0.07f - bw, by, bw, bh), Loc.T("CANCEL", "やめる"), new Color(1f, 1f, 1f, 0.15f), centered, () => confirmFloor = -1);
         }
 
-        /// <summary>タイトル画面。どこを押しても始まる（言語のボタンだけは別）。</summary>
+        /// <summary>
+        /// タイトル画面。夜空と瞬く星、灯りの消えかけた塔、立ちのぼる火の粉、光をまとったロゴ、手前に3人の職業。
+        /// どこを押しても始まる（言語のボタンだけは別）。
+        /// </summary>
         void DrawTitle()
         {
             float W = Screen.width;
             float H = Screen.height;
-            Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0.82f), centered, World.LeaveTitle);
+            float t = Time.unscaledTime;
+            Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0f), centered, World.LeaveTitle);
 
-            var title = new GUIStyle(centered) { fontSize = Mathf.RoundToInt(label.fontSize * 2.6f), fontStyle = FontStyle.Bold };
-            title.normal.textColor = new Color(1f, 0.88f, 0.55f);
-            Hud.FitLabel(new Rect(0, H * 0.24f, W, H * 0.08f), "VIVID OF FADE", title);
-            var sub = new GUIStyle(centered);
-            sub.normal.textColor = new Color(0.8f, 0.78f, 0.9f);
-            GUI.Label(new Rect(0, H * 0.32f, W, H * 0.04f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
+            // 夜空（上は深い紫、下へいくほど青く、地平が少し明るい）
+            const int bands = 28;
+            float ground = H * 0.8f;
+            for (int b = 0; b < bands; b++)
+            {
+                float k = b / (float)(bands - 1);
+                var c = Color.Lerp(new Color(0.06f, 0.03f, 0.12f), new Color(0.16f, 0.1f, 0.24f), k);
+                Fill(new Rect(0, ground * b / bands, W, ground / bands + 1f), c);
+            }
+            Fill(new Rect(0, ground - H * 0.06f, W, H * 0.06f), new Color(1f, 0.55f, 0.3f, 0.06f)); // 地平の残り火の色
 
-            // 3人の職業を並べる
+            // 星（決まった位置で瞬く）
+            for (int i = 0; i < 70; i++)
+            {
+                float sx = Hash01(i * 7 + 1) * W, sy = Hash01(i * 13 + 5) * ground * 0.75f;
+                float tw = 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(t * (0.6f + Hash01(i) * 1.6f) + i));
+                float sz = i % 9 == 0 ? 3f : 2f;
+                Fill(new Rect(sx, sy, sz, sz), new Color(1f, 0.95f, 0.85f, tw * 0.8f));
+            }
+
+            // 塔（中央、地面に立つ）と、頂上でゆらめく光
+            float th = H * 0.56f, tw2 = th * 48f / 112f;
+            var tower = new Rect((W - tw2) * 0.5f, ground - th, tw2, th);
+            float flick = 0.55f + 0.45f * Mathf.PerlinNoise(t * 2.2f, 0.3f);
+            float gr = tw2 * 0.45f, beaconY = tower.y + th * 0.018f; // 灯りの中心（塔の最上部）
+            Fill(new Rect(W * 0.5f - gr * 0.5f, beaconY - gr * 0.2f, gr, gr * 0.4f), new Color(1f, 0.85f, 0.5f, 0.12f * flick));
+            Fill(new Rect(W * 0.5f - gr * 0.25f, beaconY - gr * 0.1f, gr * 0.5f, gr * 0.2f), new Color(1f, 0.9f, 0.6f, 0.2f * flick));
+            DrawSprite(tower, PixelArt.TitleTower);
+
+            // 地面
+            Fill(new Rect(0, ground, W, H - ground), new Color(0.05f, 0.04f, 0.08f));
+            Fill(new Rect(0, ground, W, H * 0.006f), new Color(0.35f, 0.25f, 0.4f, 0.6f));
+
+            // 火の粉（下から立ちのぼり、上へいくほど消える）
+            for (int i = 0; i < 36; i++)
+            {
+                float speed = 0.05f + Hash01(i * 3 + 2) * 0.06f;
+                float life = Mathf.Repeat(t * speed + Hash01(i * 11 + 7), 1f);
+                float ex = Hash01(i * 5 + 3) * W + Mathf.Sin(t * 0.8f + i) * W * 0.02f;
+                float ey = ground - life * ground * 0.85f;
+                float a = (1f - life) * 0.9f;
+                float sz = 2f + Hash01(i * 17) * 3f;
+                Fill(new Rect(ex, ey, sz, sz), new Color(1f, 0.55f + 0.3f * Hash01(i), 0.2f, a));
+            }
+
+            // ロゴ：影・金の光・本体の3層、下に飾りの線と副題
+            var logo = new GUIStyle(centered) { fontSize = Mathf.RoundToInt(label.fontSize * 2.8f), fontStyle = FontStyle.Bold };
+            var logoRect = new Rect(0, H * 0.1f, W, H * 0.09f);
+            float glowA = 0.18f + 0.08f * Mathf.Sin(t * 2f);
+            logo.normal.textColor = new Color(0f, 0f, 0f, 0.8f);
+            FitLabel(new Rect(logoRect.x + 3f, logoRect.y + 4f, logoRect.width, logoRect.height), "VIVID OF FADE", logo);
+            logo.normal.textColor = new Color(1f, 0.75f, 0.3f, glowA);
+            for (int d = 0; d < 4; d++)
+            {
+                float ox = d == 0 ? -3f : d == 1 ? 3f : 0f, oy = d == 2 ? -3f : d == 3 ? 3f : 0f;
+                FitLabel(new Rect(logoRect.x + ox, logoRect.y + oy, logoRect.width, logoRect.height), "VIVID OF FADE", logo);
+            }
+            logo.normal.textColor = new Color(1f, 0.92f, 0.7f);
+            FitLabel(logoRect, "VIVID OF FADE", logo);
+            float lineW = W * 0.18f, ly = H * 0.205f;
+            Fill(new Rect(W * 0.5f - lineW - W * 0.2f, ly, lineW, 2f), new Color(1f, 0.8f, 0.4f, 0.7f));
+            Fill(new Rect(W * 0.5f + W * 0.2f, ly, lineW, 2f), new Color(1f, 0.8f, 0.4f, 0.7f));
+            var sub = new GUIStyle(centered) { fontStyle = FontStyle.Italic };
+            sub.normal.textColor = new Color(0.9f, 0.85f, 0.95f, 0.9f);
+            FitLabel(new Rect(W * 0.3f, ly - H * 0.016f, W * 0.4f, H * 0.035f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
+
+            // 手前に3人（元の職業の見た目）。足元に影
             float s = W * 0.2f;
-            float gap = W * 0.06f;
-            float x0 = (W - s * 3f - gap * 2f) * 0.5f;
-            for (int i = 0; i < ClassInfo.Count; i++) DrawSprite(new Rect(x0 + i * (s + gap), H * 0.42f, s, s), PixelArt.PlayerFor(new CharacterData { ClassId = i }));
+            float gap = W * 0.04f;
+            float x0 = (W - s * ClassInfo.Count - gap * (ClassInfo.Count - 1)) * 0.5f;
+            for (int i = 0; i < ClassInfo.Count; i++)
+            {
+                float bob = Mathf.Sin(t * 1.5f + i * 1.3f) * s * 0.015f;
+                var r = new Rect(x0 + i * (s + gap), ground - s * 0.85f + bob, s, s);
+                Fill(new Rect(r.x + s * 0.2f, ground + s * 0.08f, s * 0.6f, s * 0.06f), new Color(0f, 0f, 0f, 0.5f));
+                DrawSprite(r, PixelArt.PlayerFor(new CharacterData { ClassId = i }));
+            }
 
             // 点滅する「タップで始める」
             var tap = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
-            float a = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 2f));
-            tap.normal.textColor = new Color(1f, 1f, 1f, a);
+            float a2 = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(t * 2f));
+            tap.normal.textColor = new Color(1f, 0.95f, 0.85f, a2);
             string start = Application.isMobilePlatform ? Loc.T("TAP TO START", "タップで始める") : Loc.T("TAP / ENTER TO START", "タップか Enter で始める");
-            GUI.Label(new Rect(0, H * 0.62f, W, H * 0.05f), start, tap);
+            FitLabel(new Rect(0, H * 0.86f, W, H * 0.04f), start, tap);
 
             float bw = W * 0.5f;
-            Button(new Rect((W - bw) * 0.5f, H * 0.8f, bw, H * 0.045f), $"Language: {Loc.LanguageName}", new Color(1f, 1f, 1f, 0.1f), centered, () => Loc.Next());
+            Button(new Rect((W - bw) * 0.5f, H * 0.92f, bw, H * 0.04f), $"Language: {Loc.LanguageName}", new Color(1f, 1f, 1f, 0.1f), centered, () => Loc.Next());
+        }
+
+        /// <summary>0〜1 の決まった乱数（タイトルの星・火の粉の位置に使う。毎回同じ並び）。</summary>
+        static float Hash01(int n)
+        {
+            unchecked
+            {
+                uint h = (uint)n * 2654435761u;
+                h ^= h >> 15;
+                h *= 2246822519u;
+                h ^= h >> 13;
+                return (h & 0xffff) / 65535f;
+            }
         }
 
         /// <summary>職業を選ぶ画面。3つの大きなボタン（PC は数字キー 1〜3 でも選べる）。</summary>
