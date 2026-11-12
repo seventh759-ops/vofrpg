@@ -80,6 +80,23 @@ namespace VividOfFade
         public const float BatHpMult = 0.5f, BatSpeed = 3.2f, BatDamageMult = 0.7f;
         public const float CasterHpMult = 0.8f, CasterSpeed = 1.7f, CasterRange = 4.5f, CasterFireInterval = 2.2f, BulletSpeed = 4.2f, BulletDamageMult = 0.9f;
         public const float BruteHpMult = 2.5f, BruteSpeed = 1.1f, BruteDamageMult = 1.4f, BruteScale = 1.25f, BruteChargeSpeed = 7f, BruteChargeTime = 0.45f, BrutePrep = 0.6f, BruteChargeEvery = 3.5f;
+        // 敵の段階（下級・中級・上級）。深い層ほど上級が増える
+        public static readonly float[] TierHp = { 0.8f, 1.25f, 1.9f };
+        public static readonly float[] TierDamage = { 0.85f, 1.1f, 1.3f };
+        public static readonly float[] TierSpeed = { 0.95f, 1.05f, 1.12f };
+        public static readonly float[] TierExp = { 0.8f, 1.3f, 2f };
+        public static readonly float[] TierScale = { 1f, 1.1f, 1.2f };
+
+        public static int RollEnemyTier(int floor)
+        {
+            float lower = Mathf.Max(0f, 70f - floor);
+            float mid = Mathf.Min(50f, 30f + floor * 0.3f);
+            float upper = Mathf.Max(0f, floor - 25f);
+            float r = Random.value * (lower + mid + upper);
+            if (r < lower) return 0;
+            return r < lower + mid ? 1 : 2;
+        }
+
         public const float GoldenChance = 0.06f, GoldenHpMult = 6f, GoldenSpeed = 3.3f, GoldenLife = 12f;
         public const int GoldenFountainItems = 10;
         public const float GoldenRarityBonus = 2.5f;

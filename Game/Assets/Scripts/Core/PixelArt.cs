@@ -589,6 +589,317 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>
+        /// 敵の段階（0 下級・1 中級・2 上級）の見た目。上級ほど角・牙・光る目が付き、色が暗く厳つくなる。
+        /// スライムは区画の色を使う。
+        /// </summary>
+        public static Sprite EnemySprite(EnemyKind kind, int tier)
+        {
+            if (tier <= 0 || kind == EnemyKind.Golden || kind == EnemyKind.Slime) return EnemySprite(kind);
+            switch (kind)
+            {
+                case EnemyKind.Bat: return tier == 1 ? FromArt("Enemy_Bat_1", BatRows1, BatPalette1) : FromArt("Enemy_Bat_2", BatRows2, BatPalette2);
+                case EnemyKind.Caster: return tier == 1 ? FromArt("Enemy_Caster_1", CasterRows1, CasterPalette1) : FromArt("Enemy_Caster_2", CasterRows2, CasterPalette2);
+                case EnemyKind.Brute: return tier == 1 ? FromArt("Enemy_Brute_1", BruteRows1, BrutePalette1) : FromArt("Enemy_Brute_2", BruteRows2, BrutePalette2);
+                case EnemyKind.Bomber: return tier == 1 ? FromArt("Enemy_Bomber_1", BomberRows1, BomberPalette1) : FromArt("Enemy_Bomber_2", BomberRows2, BomberPalette2);
+                default: return EnemySprite(kind);
+            }
+        }
+
+        /// <summary>区画の色のスライム（段階つき）。</summary>
+        public static Sprite SlimeFor(ZoneSpec z, int tier)
+        {
+            if (tier <= 0) return SlimeFor(z);
+            float f = tier == 1 ? 0.82f : 0.65f;
+            Color32 Dark(Color32 c) => new Color32((byte)(c.r * f), (byte)(c.g * f), (byte)(c.b * f), 255);
+            return FromArt($"Slime_{z.Name}_{tier}", tier == 1 ? SlimeRows1 : SlimeRows2, new Dictionary<char, Color32>
+            {
+                { 'k', new Color32(20, 30, 26, 255) },
+                { 'g', Dark(z.Slime) },
+                { 'w', new Color32(220, 255, 228, 255) },
+                { 'e', new Color32(16, 24, 20, 255) },
+                { 'd', Dark(z.SlimeDark) },
+                { 'h', new Color32(230, 220, 200, 255) },
+                { 'o', new Color32(255, 80, 60, 255) },
+            });
+        }
+
+        static readonly string[] SlimeRows1 =
+        {
+            "............",
+            "...h....h...",
+            "...hk..kh...",
+            "....kkkk....",
+            "..kkggggkk..",
+            ".kgwggggggk.",
+            ".kwwggggggk.",
+            "kgggkeekgggk",
+            "kgggeggegggk",
+            "kggggggggggk",
+            ".kddddddddk.",
+            "..kkkkkkkk..",
+        };
+
+        static readonly string[] SlimeRows2 =
+        {
+            "..h......h..",
+            "..hh....hh..",
+            "...hk..kh...",
+            "....kkkk....",
+            "..kkggggkk..",
+            ".kgwggggggk.",
+            ".kwwggggggk.",
+            "kgggkggkgggk",
+            "kgggoggogggk",
+            "kggwkwkwkwgk",
+            ".kddddddddk.",
+            "..kkkkkkkk..",
+        };
+
+        static readonly Dictionary<char, Color32> BatPalette1 = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(19, 13, 24, 255) },
+            { 'p', new Color32(90, 57, 114, 255) },
+            { 'r', new Color32(255, 70, 70, 255) },
+            { 'h', new Color32(230, 220, 200, 255) },
+            { 'o', new Color32(255, 250, 210, 255) },
+        };
+
+        static readonly string[] BatRows1 =
+        {
+            "................",
+            "................",
+            "................",
+            "......h..h......",
+            "k.....hkkh.....k",
+            "kk.....kk.....kk",
+            "kpk...kppk...kpk",
+            "kppk.kprrpk.kppk",
+            "kpppkppppppkpppk",
+            ".kppppppppppppk.",
+            "..kpk.kwwk.kpk..",
+            "...k..kppk..k...",
+            "......k..k......",
+            "................",
+            "................",
+            "................",
+        };
+
+        static readonly Dictionary<char, Color32> BatPalette2 = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(15, 10, 19, 255) },
+            { 'p', new Color32(71, 45, 91, 255) },
+            { 'r', new Color32(255, 70, 70, 255) },
+            { 'h', new Color32(230, 220, 200, 255) },
+            { 'o', new Color32(255, 250, 210, 255) },
+            { 'a', new Color32(230, 180, 70, 255) },
+        };
+
+        static readonly string[] BatRows2 =
+        {
+            "................",
+            ".....h....h.....",
+            ".....hh..hh.....",
+            "h.....hkkh.....h",
+            "k..............k",
+            "kk.....kk.....kk",
+            "kpk...kppk...kpk",
+            "kppk.kpoopk.kppk",
+            "kpppkppppppkpppk",
+            ".kppppppppppppk.",
+            "..kpk.w.ww.kpk..",
+            ".h.k..kppk..k.h.",
+            "......k..k......",
+            "................",
+            "................",
+            "................",
+        };
+
+        static readonly Dictionary<char, Color32> CasterPalette1 = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(16, 19, 18, 255) },
+            { 'g', new Color32(57, 122, 90, 255) },
+            { 'd', new Color32(32, 82, 57, 255) },
+            { 'y', new Color32(255, 240, 140, 255) },
+            { 'o', new Color32(255, 250, 210, 255) },
+            { 'h', new Color32(230, 220, 200, 255) },
+        };
+
+        static readonly string[] CasterRows1 =
+        {
+            ".....h....h.....",
+            ".....hkkkkh.....",
+            ".....kggggk.....",
+            "....kggggggk....",
+            "....kgkkkkgk....",
+            "...kgkyyyykgk...",
+            "...kgkyryykgk...",
+            "...kggkkkkggk...",
+            "..kgggggggggk...",
+            "..kggdggggdggk..",
+            "..kgdggggggdgk..",
+            "..kggggggggggk..",
+            "...kggggggggk...",
+            "....kgkgkgkgk...",
+            ".....k.k.k.k....",
+            "................",
+        };
+
+        static readonly Dictionary<char, Color32> CasterPalette2 = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(13, 15, 14, 255) },
+            { 'g', new Color32(45, 97, 71, 255) },
+            { 'd', new Color32(26, 65, 45, 255) },
+            { 'y', new Color32(255, 240, 140, 255) },
+            { 'o', new Color32(255, 250, 210, 255) },
+            { 'h', new Color32(230, 220, 200, 255) },
+            { 'a', new Color32(230, 180, 70, 255) },
+        };
+
+        static readonly string[] CasterRows2 =
+        {
+            "....h..h..hh....",
+            "....hkkkkkkh....",
+            ".....kggggk.....",
+            "....kggggggk....",
+            "....kgkkkkgk....",
+            "...kgkyyyykgk...",
+            "...kgkrorykgk...",
+            "...kggkkkkggk...",
+            "..kgggggggggk...",
+            "..kgadggggdagk..",
+            "..kgaggggggagk..",
+            "..kggggggggggk..",
+            "...kggggggggk...",
+            "....kakakakak...",
+            ".....k.k.k.k....",
+            "................",
+        };
+
+        static readonly Dictionary<char, Color32> BrutePalette1 = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(21, 18, 16, 255) },
+            { 's', new Color32(106, 98, 90, 255) },
+            { 'd', new Color32(73, 67, 60, 255) },
+            { 'y', new Color32(255, 140, 60, 255) },
+            { 'h', new Color32(230, 220, 200, 255) },
+            { 'o', new Color32(255, 250, 210, 255) },
+        };
+
+        static readonly string[] BruteRows1 =
+        {
+            "................",
+            "....h......h....",
+            "....hkkkkkkh....",
+            "....kssssssk....",
+            "...kssyssyssk...",
+            "...kssssssssk...",
+            "..kssssssssssk..",
+            ".kssskssssksssk.",
+            "kssssksssskssssk",
+            "kssdssssssssdssk",
+            "kssdsysssssddssk",
+            ".kkkssssssssskk.",
+            "...ksssk.kssk...",
+            "...kddk...kddk..",
+            "...kkkk...kkkk..",
+            "................",
+        };
+
+        static readonly Dictionary<char, Color32> BrutePalette2 = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(16, 14, 13, 255) },
+            { 's', new Color32(84, 78, 71, 255) },
+            { 'd', new Color32(58, 53, 48, 255) },
+            { 'y', new Color32(255, 140, 60, 255) },
+            { 'h', new Color32(230, 220, 200, 255) },
+            { 'o', new Color32(255, 250, 210, 255) },
+            { 'a', new Color32(230, 180, 70, 255) },
+        };
+
+        static readonly string[] BruteRows2 =
+        {
+            "...h........h...",
+            "...hh......hh...",
+            "....hkkkkkkh....",
+            "....kssssssk....",
+            "...kssossossk...",
+            ".h.kssssssssk.h.",
+            ".hksssssssssskh.",
+            ".kssskssssksssk.",
+            "ksssskyssskssssk",
+            "kssdsssyysysdssk",
+            "kssdssyssssddssk",
+            ".kkkssssssssskk.",
+            "...ksssk.kssk...",
+            "...kddk...kddk..",
+            "...kkkk...kkkk..",
+            "................",
+        };
+
+        static readonly Dictionary<char, Color32> BomberPalette1 = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(16, 14, 19, 255) },
+            { 'b', new Color32(49, 47, 62, 255) },
+            { 'w', new Color32(160, 160, 180, 255) },
+            { 'r', new Color32(255, 90, 60, 255) },
+            { 'y', new Color32(255, 220, 90, 255) },
+            { 'o', new Color32(255, 90, 60, 255) },
+            { 'h', new Color32(230, 220, 200, 255) },
+        };
+
+        static readonly string[] BomberRows1 =
+        {
+            "..........y.....",
+            ".........yoy....",
+            "..........w.....",
+            ".........w......",
+            ".....hkkkhk.....",
+            "....hkbbbbkhk...",
+            "...kbbbwbbbbbk..",
+            "...kbbwbbbbbbk..",
+            "..kbbbbbbbbbbbk.",
+            "..kbbrrbbbrrbbk.",
+            "..kbbbbbbbbbbbk.",
+            "...kbbbbbbbbbk..",
+            "...kbbbkkkbbbk..",
+            "....kkk...kkk...",
+            "....kk.....kk...",
+            "................",
+        };
+
+        static readonly Dictionary<char, Color32> BomberPalette2 = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(13, 11, 15, 255) },
+            { 'b', new Color32(39, 37, 49, 255) },
+            { 'w', new Color32(160, 160, 180, 255) },
+            { 'r', new Color32(255, 90, 60, 255) },
+            { 'y', new Color32(255, 220, 90, 255) },
+            { 'o', new Color32(255, 90, 60, 255) },
+            { 'h', new Color32(230, 220, 200, 255) },
+            { 'a', new Color32(230, 180, 70, 255) },
+        };
+
+        static readonly string[] BomberRows2 =
+        {
+            "..........y.....",
+            ".........yoy....",
+            "..........w.....",
+            "....h....w.h....",
+            "....hkkkkkkh....",
+            "..h.kkbbbbbkkh..",
+            "...kbbbwbbbbbk..",
+            "...kbbwbbbbbbk..",
+            ".hkbbbbbbbbbbbh.",
+            "..kboorbbboobbk.",
+            "..kbbbbbbbbbbbk.",
+            "...kbbwkwbbbbk..",
+            "...kbbbkkkbbbk..",
+            "....kkk...kkk...",
+            "....kk.....kk...",
+            "................",
+        };
+
         /// <summary>黄金のスライム（出会うと逃げる、倒すとドロップがあふれる）。</summary>
         public static Sprite GoldenSlime => FromArt("GoldenSlime", SlimeRows, new Dictionary<char, Color32>
         {

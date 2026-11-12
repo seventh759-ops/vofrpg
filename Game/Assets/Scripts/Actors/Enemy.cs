@@ -36,6 +36,8 @@ namespace VividOfFade
 
         // 種類ごとの動き
         public EnemyKind Kind;
+        public int Tier;           // 0 下級・1 中級・2 上級
+        public float ExpMult = 1f; // 段階による経験値の倍率
         public float ActTimer;     // 次の行動（弾・突進）まで
         public float Prep;         // 突進の前の溜め／導火線の残り（0 より大きい間は止まる）
         public float Charging;     // 突進している残り時間

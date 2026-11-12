@@ -665,7 +665,7 @@ namespace VividOfFade
         void OnEnemyKilled(Vector2 pos)
         {
             lastKillPos = pos;
-            GainExp(Progression.KillExp(Floors.Tier));
+            GainExp(Mathf.Max(1, Mathf.RoundToInt(Progression.KillExp(Floors.Tier) * Enemies.LastKillExpMult)));
             var stats = Player.Stats;
 
             if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(DropLevel, 0f), Room);

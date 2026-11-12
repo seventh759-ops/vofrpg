@@ -51,7 +51,7 @@ namespace VividOfFade
             {
                 Vector2 p = pending.Dequeue();
                 int before = enemies.Active.Count;
-                enemies.SpawnMixed(p, GameConfig.EnemyHp(Tier), GameConfig.EnemyDamage(Tier));
+                enemies.SpawnMixed(p, GameConfig.EnemyHp(Tier), GameConfig.EnemyDamage(Tier), GameConfig.RollEnemyTier(Floor));
                 if (enemies.Active.Count > before && Random.value < GameConfig.EliteChance(Tier))
                     enemies.MakeElite(enemies.Active[enemies.Active.Count - 1], EnemySystem.RandomElite());
                 spawnTimer += 1f / SpawnPerSecond;

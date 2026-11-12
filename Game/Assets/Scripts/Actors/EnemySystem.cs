@@ -63,12 +63,17 @@ namespace VividOfFade
 
         Pool<Enemy> pool;
         Sprite slimeSprite;
+        ZoneSpec zone;
         int zoneIndex;
+
+        /// <summary>直前に倒した敵の経験値の倍率（段階）。Killed の中で読む。</summary>
+        public float LastKillExpMult { get; private set; } = 1f;
 
         /// <summary>区画が変わったら、これから出るスライムの色と、敵の種類の割合を変える。</summary>
         public void SetZone(ZoneSpec zone)
         {
             slimeSprite = PixelArt.SlimeFor(zone);
+            this.zone = zone;
             zoneIndex = (int)zone.Pattern;
         }
 
@@ -148,9 +153,9 @@ namespace VividOfFade
         }
 
         /// <summary>部屋の敵：区画の割合で種類を選んで出す。</summary>
-        public void SpawnMixed(Vector2 pos, float hp, int contactDamage) => Spawn(pos, hp, contactDamage, PickKind());
+        public void SpawnMixed(Vector2 pos, float hp, int contactDamage, int tier = 0) => Spawn(pos, hp, contactDamage, PickKind(), tier);
 
-        public void Spawn(Vector2 pos, float hp, int contactDamage, EnemyKind kind = EnemyKind.Slime)
+        public void Spawn(Vector2 pos, float hp, int contactDamage, EnemyKind kind = EnemyKind.Slime, int tier = -1)
         {
             if (Active.Count >= GameConfig.MaxEnemies) return;
             var e = pool.Get();
@@ -212,6 +217,29 @@ namespace VividOfFade
                     e.ContactDamage = 0;
                     e.Tint = Color.white;
                     break;
+            }
+            // 段階（下級・中級・上級）：強さと大きさと見た目。-1（ボス・黄金・分裂した子）は段階なし
+            e.Tier = Mathf.Clamp(tier, 0, 2);
+            e.ExpMult = tier < 0 ? 1f : GameConfig.TierExp[e.Tier];
+            if (tier < 0)
+            {
+                // そのまま
+            }
+            else if (tier > 0)
+            {
+                e.Hp *= GameConfig.TierHp[tier] / GameConfig.TierHp[0];
+                e.ContactDamage = Mathf.RoundToInt(e.ContactDamage * GameConfig.TierDamage[tier] / GameConfig.TierDamage[0]);
+                e.Speed *= GameConfig.TierSpeed[tier] / GameConfig.TierSpeed[0];
+                e.BaseScale *= GameConfig.TierScale[tier];
+                e.Radius *= GameConfig.TierScale[tier];
+                e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale, 1f);
+                e.Sr.sprite = kind == EnemyKind.Slime && zone != null ? PixelArt.SlimeFor(zone, tier) : PixelArt.EnemySprite(kind, tier);
+            }
+            else
+            {
+                e.Hp *= GameConfig.TierHp[0];
+                e.ContactDamage = Mathf.Max(1, Mathf.RoundToInt(e.ContactDamage * GameConfig.TierDamage[0]));
+                e.Speed *= GameConfig.TierSpeed[0];
             }
             e.MaxHp = e.Hp;
             e.Pos = pos;
@@ -320,6 +348,7 @@ namespace VividOfFade
                 e.Dying = true;
                 e.DyingTimer = e.IsBoss ? DeathTime * 4f : DeathTime;
                 Kills++;
+                LastKillExpMult = e.ExpMult;
                 Killed?.Invoke(e.Pos);
                 if (e.IsBoss) BossKilled?.Invoke(e.Pos);
                 if (e.Elite != EliteKind.None) EliteKilled?.Invoke(e.Pos);
