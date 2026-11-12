@@ -761,8 +761,8 @@ namespace VividOfFade
         }
 
         /// <summary>
-        /// タイトル画面。上に副題とロゴ（VIVID は虹色に光り、FADE は崩れて粒が舞い散る）。
-        /// 背景は Resources/TitleBackground の画像（なければコードで描いた霧の洞窟）。左の崖に灯術師が後ろ姿で立ち、漂う塵。
+        /// タイトル画面。霧の洞窟の中央に、大きな逆さの塔が沈んでいる（背景は TitleScene が描く 180×320 ドットの絵）。
+        /// 手前に大きくロゴ（VIVID は虹色に光り、FADE は崩れて粒が舞い散る）と副題。窓と最深部の灯りがゆらめき、塵が舞う。
         /// どこを押しても始まる（言語のボタンだけは別）。
         /// </summary>
         void DrawTitle()
@@ -772,50 +772,49 @@ namespace VividOfFade
             float t = Time.unscaledTime;
             Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0f), centered, World.LeaveTitle);
 
-            // 背景：Resources/TitleBackground の画像があればそれを画面いっぱいに（はみ出す分は切る）。なければコードで描く
-            if (!titleBgLoaded)
-            {
-                titleBg = Resources.Load<Texture2D>("TitleBackground");
-                titleBgLoaded = true;
-            }
-            if (titleBg != null)
-            {
-                float sc0 = Mathf.Max(W / titleBg.width, H / titleBg.height);
-                var bg = new Rect((W - titleBg.width * sc0) * 0.5f, (H - titleBg.height * sc0) * 0.5f, titleBg.width * sc0, titleBg.height * sc0);
-                GUI.DrawTexture(bg, titleBg);
-                // 灯術師は画像の中の位置に合わせて立たせる（画像の左上が 0,0、右下が 1,1）
-                float lw = bg.width * TitleHeroWidth, lh = lw * 56f / 40f;
-                DrawTitleHero(new Rect(bg.x + bg.width * TitleHeroX, bg.y + bg.height * TitleHeroFeetY - lh * 52f / 56f, lw, lh), t);
-            }
-            else DrawTitleScene(W, H, t);
+            // 背景：ドットの大きさがそろうように整数倍で拡大し、画面を覆う（はみ出す分は切れる）
+            var bgTex = TitleScene.Texture;
+            float ps = Mathf.Ceil(Mathf.Max(W / TitleScene.W, H / TitleScene.H));
+            var bg = new Rect((W - TitleScene.W * ps) * 0.5f, (H - TitleScene.H * ps) * 0.5f, TitleScene.W * ps, TitleScene.H * ps);
+            GUI.DrawTexture(bg, bgTex);
 
-            // 漂う塵（霧の中でゆっくり舞う）
+            // 灯った窓のゆらめき
+            foreach (var w in TitleScene.Windows)
+            {
+                if (!w.lit) continue;
+                float r = TitleScene.TowerRadius(w.y + 4);
+                float wx = bg.x + (TitleScene.TowerX + w.u * r) * ps, wy = bg.y + (w.y + 4) * ps;
+                float f = 0.6f + 0.4f * Mathf.PerlinNoise(t * 3f, w.y * 0.37f + w.u * 5f);
+                Glow(wx, wy, ps * 9f, new Color(1f, 0.65f, 0.3f, 0.35f * f));
+            }
+            // 最深部の灯り（尖塔の先）
+            float flick = 0.55f + 0.45f * Mathf.PerlinNoise(t * 2.2f, 0.3f);
+            float bx = bg.x + TitleScene.TowerX * ps, by = bg.y + (TitleScene.SpireTip - 1) * ps;
+            Glow(bx, by, ps * 22f, new Color(1f, 0.8f, 0.45f, 0.45f * flick));
+            Glow(bx, by, ps * 6f, new Color(1f, 0.95f, 0.8f, 0.9f * flick));
+
+            // 漂う塵
             for (int i = 0; i < 30; i++)
             {
                 float life = Mathf.Repeat(t * (0.02f + 0.03f * Hash01(i * 3 + 2)) + Hash01(i * 11 + 7), 1f);
                 float ex = Hash01(i * 5 + 3) * W + Mathf.Sin(t * 0.5f + i) * W * 0.03f;
-                float ey = H * (0.9f - 0.7f * life);
+                float ey = H * (0.95f - 0.8f * life);
                 float a = Mathf.Sin(life * Mathf.PI) * 0.5f;
-                Fill(new Rect(ex, ey, 2f, 2f), new Color(0.85f, 0.88f, 0.95f, a));
+                Fill(new Rect(ex, ey, ps * 0.5f, ps * 0.5f), new Color(0.85f, 0.88f, 0.95f, a));
             }
 
             // 下側を暗くして文字を読みやすく
             for (int b = 0; b < 8; b++)
-                Fill(new Rect(0, H * (0.82f + b * 0.0225f), W, H * 0.0225f + 1f), new Color(0f, 0f, 0f, 0.08f * (b + 1)));
+                Fill(new Rect(0, H * (0.82f + b * 0.0225f), W, H * 0.0225f + 1f), new Color(0f, 0f, 0f, 0.07f * (b + 1)));
 
-            // 副題（上に線と一緒に）
-            float ly = H * 0.05f, lineW = W * 0.16f;
-            Fill(new Rect(W * 0.5f - W * 0.22f - lineW, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
-            Fill(new Rect(W * 0.5f + W * 0.22f, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
-            var sub = new GUIStyle(centered);
-            sub.normal.textColor = new Color(0.9f, 0.85f, 0.95f, 0.9f);
-            FitLabel(new Rect(W * 0.28f, ly - H * 0.017f, W * 0.44f, H * 0.035f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
-
-            // ロゴ：VIVID のまわりの光、本体、FADE から崩れて舞い散る粒
+            // ロゴ：後ろにぼかした影を敷き、VIVID のまわりの光、本体、FADE から崩れて舞い散る粒
             var logoTex = TitleArt.Logo;
             float sc = Mathf.Max(1f, Mathf.Floor(W * 0.95f / logoTex.width));
-            var logoRect = new Rect((W - logoTex.width * sc) * 0.5f, H * 0.085f, logoTex.width * sc, logoTex.height * sc);
+            var logoRect = new Rect((W - logoTex.width * sc) * 0.5f, H * 0.3f, logoTex.width * sc, logoTex.height * sc);
             var old = GUI.color;
+            GUI.color = new Color(0.015f, 0.015f, 0.03f, 0.85f);
+            float shw = W * 1.3f, shh = logoRect.height * 3.4f;
+            GUI.DrawTexture(new Rect((W - shw) * 0.5f, logoRect.center.y + logoRect.height * 0.3f - shh * 0.5f, shw, shh), TitleArt.SoftGlow);
             GUI.color = new Color(1f, 1f, 1f, 0.75f + 0.25f * Mathf.Sin(t * 2f));
             GUI.DrawTexture(new Rect(logoRect.x - sc, logoRect.y - sc, logoRect.width + sc * 2f, logoRect.height + sc * 2f), TitleArt.Glow);
             GUI.color = old;
@@ -830,6 +829,14 @@ namespace VividOfFade
                 float a = phase < 0.08f ? phase / 0.08f : 1f - phase;
                 Fill(new Rect(ox + dx, oy + dy, sc, sc), new Color(0.6f, 0.58f, 0.65f, a * 0.9f));
             }
+
+            // 副題（ロゴの下、両側に線）
+            float ly = logoRect.yMax + H * 0.03f, lineW = W * 0.14f;
+            Fill(new Rect(W * 0.5f - W * 0.24f - lineW, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
+            Fill(new Rect(W * 0.5f + W * 0.24f, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
+            var sub = new GUIStyle(centered);
+            sub.normal.textColor = new Color(0.92f, 0.88f, 0.96f, 0.95f);
+            FitLabel(new Rect(W * 0.26f, ly - H * 0.017f, W * 0.48f, H * 0.035f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
 
             // 点滅する「タップで始める」
             var tap = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
@@ -849,158 +856,6 @@ namespace VividOfFade
             GUI.color = color;
             GUI.DrawTexture(new Rect(cx - r, cy - r, r * 2f, r * 2f), TitleArt.SoftGlow);
             GUI.color = old;
-        }
-
-        /// <summary>背景画像の上で、灯術師を立たせる位置（画像の幅・高さに対する割合）。左端・足元の高さ・幅。</summary>
-        const float TitleHeroX = 0.15f, TitleHeroFeetY = 0.5f, TitleHeroWidth = 0.33f;
-
-        static Texture2D titleBg;
-        static bool titleBgLoaded;
-
-        /// <summary>タイトルの灯術師（後ろ姿）。杖の水晶が虹色に光る。</summary>
-        void DrawTitleHero(Rect lamp, float t)
-        {
-            DrawSprite(lamp, PixelArt.TitleLampwright);
-            var hue = Color.HSVToRGB(Mathf.Repeat(t * 0.12f, 1f), 0.55f, 1f);
-            float gx = lamp.x + lamp.width * 33.5f / 40f, gy = lamp.y + lamp.height * 4.5f / 56f;
-            Glow(gx, gy, lamp.width * 0.5f, new Color(hue.r, hue.g, hue.b, 0.5f));
-            Glow(gx, gy, lamp.width * 0.15f, new Color(1f, 1f, 1f, 0.6f));
-        }
-
-        /// <summary>背景画像がないときのタイトルの場面（霧の洞窟・左の崖の灯術師・右の逆さの塔）。</summary>
-        void DrawTitleScene(float W, float H, float t)
-        {
-            // 霧の洞窟（上と下は暗く、中ほどが霧で白む）
-            const int bands = 40;
-            for (int b = 0; b < bands; b++)
-            {
-                float k = b / (float)(bands - 1);
-                float mist = Mathf.Exp(-Mathf.Pow((k - 0.45f) / 0.28f, 2f));
-                var c = Color.Lerp(new Color(0.04f, 0.04f, 0.06f), new Color(0.3f, 0.33f, 0.38f), mist);
-                Fill(new Rect(0, H * b / bands, W, H / bands + 1f), c);
-            }
-            float drift = Mathf.Sin(t * 0.15f) * W * 0.04f;
-            Glow(W * 0.66f + drift, H * 0.42f, W * 0.7f, new Color(0.62f, 0.66f, 0.72f, 0.35f));
-
-            // 天井から垂れる鍾乳石
-            for (int i = 0; i < 9; i++)
-            {
-                float sx = Hash01(i * 41 + 3) * W, len = H * (0.03f + 0.05f * Hash01(i * 43 + 1)), sw = W * (0.03f + 0.03f * Hash01(i * 47));
-                var sc2 = new Color(0.05f, 0.05f, 0.07f, 0.95f);
-                for (int j = 0; j < 6; j++)
-                {
-                    float f = j / 6f;
-                    Fill(new Rect(sx + sw * f * 0.5f, len * f, sw * (1f - f), len / 6f + 1f), sc2);
-                }
-            }
-            // 右端の岩壁
-            for (int b = 0; b < bands; b++)
-            {
-                float k = b / (float)(bands - 1);
-                float rw = W * (0.06f + 0.08f * Mathf.PerlinNoise(k * 6f, 2.2f) + 0.06f * k);
-                Fill(new Rect(W - rw, H * b / bands, rw, H / bands + 1f), new Color(0.06f, 0.06f, 0.08f, 0.9f));
-            }
-
-            // 逆さの塔（右の霧の中に沈む）。まわりを螺旋階段がめぐる
-            float tw2 = W * 0.46f, th = tw2 * 112f / 48f;
-            var tower = new Rect(W * 0.66f - tw2 * 0.5f, H * 0.2f, tw2, th);
-            float stairTop = tower.y + th * 0.25f, stairLen = th * 0.45f;
-            TitleStairs(tower, stairTop, stairLen, false);
-            var oldTint = GUI.color;
-            GUI.color = new Color(0.82f, 0.86f, 0.92f); // 霧で少しかすむ
-            DrawSprite(tower, PixelArt.TitleTower);
-            GUI.color = oldTint;
-            TitleStairs(tower, stairTop, stairLen, true);
-            float flick = 0.55f + 0.45f * Mathf.PerlinNoise(t * 2.2f, 0.3f);
-            float beaconY = tower.yMax - th * 0.022f;
-            Glow(tower.center.x, beaconY, tw2 * 0.5f, new Color(1f, 0.8f, 0.45f, 0.45f * flick));
-            Glow(tower.center.x, beaconY, tw2 * 0.16f, new Color(1f, 0.95f, 0.75f, 0.8f * flick));
-            // 塔の壁の松明
-            {
-                float f = 0.7f + 0.3f * Mathf.PerlinNoise(t * 6f, 1.7f);
-                float cx = tower.x + tw2 * 0.12f, cy = tower.y + th * 0.12f;
-                Fill(new Rect(cx - W * 0.003f, cy, W * 0.006f, H * 0.014f), new Color(0.25f, 0.18f, 0.12f));
-                Glow(cx, cy - H * 0.004f, W * 0.16f, new Color(1f, 0.55f, 0.2f, 0.5f * f));
-                Fill(new Rect(cx - W * 0.007f, cy - H * 0.012f * f, W * 0.014f, H * 0.012f * f), new Color(1f, 0.55f, 0.15f));
-                Fill(new Rect(cx - W * 0.003f, cy - H * 0.007f, W * 0.006f, H * 0.006f), new Color(1f, 0.92f, 0.55f));
-            }
-
-            // 折れた橋と、その下へ下りる階段
-            float bridgeY = H * 0.64f;
-            Fill(new Rect(W * 0.45f, bridgeY, W * 0.2f, H * 0.014f), new Color(0.27f, 0.26f, 0.3f));
-            Fill(new Rect(W * 0.65f, bridgeY + H * 0.004f, W * 0.025f, H * 0.008f), new Color(0.27f, 0.26f, 0.3f)); // 折れた先
-            Fill(new Rect(W * 0.45f, bridgeY + H * 0.014f, W * 0.22f, H * 0.005f), new Color(0.09f, 0.09f, 0.11f));
-            Fill(new Rect(W * 0.57f, bridgeY + H * 0.019f, W * 0.035f, H * 0.17f), new Color(0.2f, 0.2f, 0.23f));
-            Fill(new Rect(W * 0.595f, bridgeY + H * 0.019f, W * 0.01f, H * 0.17f), new Color(0.12f, 0.12f, 0.14f));
-            for (int i = 0; i < 8; i++)
-                Fill(new Rect(W * (0.6f + i * 0.012f), H * (0.7f + i * 0.015f), W * 0.08f, H * 0.011f), new Color(0.18f, 0.18f, 0.21f));
-
-            // 左の崖（上が平ら、右の縁は霧の光を受けて明るい）
-            float cliffTop = H * 0.5f;
-            for (int b = 0; b < 20; b++) // 奥にそびえる岩
-            {
-                float k = b / 19f, y = H * (0.2f + 0.3f * k);
-                float rw = W * (0.06f + 0.05f * k + 0.04f * Mathf.PerlinNoise(k * 6f, 9.3f));
-                Fill(new Rect(0, y, rw, H * 0.3f / 20f + 1f), new Color(0.2f, 0.16f, 0.13f));
-                Fill(new Rect(rw, y, W * 0.015f, H * 0.3f / 20f + 1f), new Color(0.3f, 0.24f, 0.19f));
-            }
-            const int crows = 36;
-            float cdepth = H - cliffTop;
-            for (int b = 0; b < crows; b++)
-            {
-                float k = b / (float)(crows - 1);
-                float y = cliffTop + cdepth * b / crows, bh = cdepth / crows + 1f;
-                float u = Mathf.Clamp01((k - 0.45f) / 0.35f);
-                u = u * u * (3f - 2f * u); // 下のほうで崖が奥へ引っ込む
-                float R = W * (0.56f - 0.1f * k - 0.12f * u + 0.04f * Mathf.PerlinNoise(k * 7f, 4.1f));
-                Fill(new Rect(0, y, R, bh), Color.Lerp(new Color(0.36f, 0.27f, 0.2f), new Color(0.07f, 0.06f, 0.06f), k));
-                Fill(new Rect(R - W * 0.02f, y, W * 0.02f, bh), Color.Lerp(new Color(0.5f, 0.4f, 0.31f), new Color(0.12f, 0.1f, 0.09f), k));
-            }
-            // 岩の割れ目
-            for (int i = 0; i < 40; i++)
-            {
-                float k = Hash01(i * 53 + 7);
-                float maxX = W * (0.5f - 0.2f * k);
-                Fill(new Rect(Hash01(i * 59) * maxX, cliffTop + cdepth * k, W * (0.04f + 0.08f * Hash01(i * 61)), H * 0.004f), new Color(0.08f, 0.06f, 0.05f, 0.6f * (1f - k)));
-            }
-            // 崖の上の土と苔
-            Fill(new Rect(0, cliffTop - H * 0.008f, W * 0.56f, H * 0.012f), new Color(0.42f, 0.32f, 0.22f));
-            for (int i = 0; i < 12; i++)
-            {
-                float mx = Hash01(i * 67 + 1) * W * 0.52f, mw = W * (0.04f + 0.06f * Hash01(i * 71));
-                Fill(new Rect(mx, cliffTop - H * 0.011f, mw, H * 0.006f), new Color(0.3f, 0.44f, 0.22f));
-                if (i % 3 == 0) Fill(new Rect(mx, cliffTop, W * 0.008f, H * (0.01f + 0.03f * Hash01(i * 73))), new Color(0.24f, 0.36f, 0.18f, 0.8f));
-            }
-
-            // 結晶（ほのかに光る）
-            float[,] crystals = { { 0.06f, 0f, 1f }, { 0.47f, 0f, 0.8f }, { 0.12f, 0.3f, 0.9f }, { 0.22f, 0.45f, 0.7f } };
-            for (int i = 0; i < crystals.GetLength(0); i++)
-            {
-                float cs = W * 0.08f * crystals[i, 2];
-                float cx = W * crystals[i, 0], cy = cliffTop + cdepth * crystals[i, 1];
-                Glow(cx + cs * 0.5f, cy - cs * 0.4f, cs * 1.4f, new Color(0.6f, 0.5f, 1f, 0.25f + 0.1f * Mathf.Sin(t * 1.5f + i)));
-                DrawSprite(new Rect(cx, cy - cs, cs, cs), PixelArt.TitleCrystal);
-            }
-
-            float lw = W * 0.33f, lh = lw * 56f / 40f;
-            DrawTitleHero(new Rect(W * 0.15f, cliffTop - lh * 52f / 56f, lw, lh), t);
-        }
-
-        /// <summary>タイトルの塔をめぐる螺旋階段。front=false で塔の後ろ側、true で手前側の段だけを描く。</summary>
-        void TitleStairs(Rect tower, float top, float length, bool front)
-        {
-            const int steps = 90;
-            for (int i = 0; i < steps; i++)
-            {
-                float a = 1.1f * Mathf.PI + i / (float)steps * 2.6f * Mathf.PI;
-                bool isFront = Mathf.Sin(a) > 0f;
-                if (isFront != front) continue;
-                float x = tower.center.x + Mathf.Cos(a) * tower.width * 0.62f;
-                float y = top + i / (float)steps * length + Mathf.Sin(a) * tower.width * 0.08f;
-                var c = isFront ? new Color(0.2f, 0.2f, 0.24f) : new Color(0.13f, 0.13f, 0.16f);
-                Fill(new Rect(x - tower.width * 0.05f, y, tower.width * 0.1f, tower.width * 0.045f), c);
-                Fill(new Rect(x - tower.width * 0.05f, y, tower.width * 0.1f, tower.width * 0.01f), isFront ? new Color(0.3f, 0.3f, 0.35f) : new Color(0.18f, 0.18f, 0.21f)); // 踏み面
-            }
         }
 
         /// <summary>0〜1 の決まった乱数（タイトルの星・火の粉の位置に使う。毎回同じ並び）。</summary>
