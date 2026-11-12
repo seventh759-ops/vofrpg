@@ -549,23 +549,62 @@ namespace VividOfFade
             }
 
             var item = selected;
+            if (lockFor != item)
+            {
+                lockFor = item;
+                locked.Clear();
+            }
+            var nameRect = new Rect(pad, y, W - pad * 2f, lineH * 1.2f);
             var name = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
             name.normal.textColor = RarityInfo.ColorOf(item.Rarity);
-            Hud.FitLabel(new Rect(pad, y, W - pad * 2f, lineH * 1.2f), item.Name, name);
+            Hud.FitLabel(nameRect, item.Name, name);
             y += lineH * 1.2f;
             var info = new GUIStyle(small);
             info.normal.textColor = new Color(1f, 0.85f, 0.5f);
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH),
                 Loc.T($"Enhance +{item.Enhance}/{Item.MaxEnhance}   (values x{item.EnhanceMult:0.00})", $"強化 +{item.Enhance}/{Item.MaxEnhance}   （値 x{item.EnhanceMult:0.00}）"), info);
             y += lineH;
-            foreach (var line in item.Describe())
+
+            // 説明。効果の行には、再抽選のときに残す「ロック」の切り替えを付ける（最大3つ、全部はロックできない）
+            bool smithable = Town.Smithable(item);
+            var lines = item.Describe();
+            int baseLines = lines.Count - item.Affixes.Count - item.Uniques.Count;
+            int maxLocks = Mathf.Min(Town.MaxRerollLocks, item.Affixes.Count - 1);
+            float lockW = W * 0.16f;
+            for (int li = 0; li < lines.Count; li++)
             {
                 if (y + lineH > by - btnH - H * 0.02f) break;
-                GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), line, small);
+                int ai = li - baseLines;
+                bool isAffix = smithable && ai >= 0 && ai < item.Affixes.Count;
+                if (isAffix)
+                {
+                    int idx = ai;
+                    bool on = locked.Contains(idx);
+                    bool canLock = on || locked.Count < maxLocks;
+                    var lr = new Rect(pad, y + lineH * 0.05f, lockW, lineH * 0.9f);
+                    if (canLock)
+                        hud.Button(lr, on ? Loc.T("LOCKED", "固定") : Loc.T("lock", "固定する"), on ? gold : row, hud.CenteredStyle, () =>
+                        {
+                            if (!locked.Remove(idx)) locked.Add(idx);
+                        });
+                    else
+                    {
+                        Hud.Fill(lr, dim);
+                    }
+                    var st = new GUIStyle(small);
+                    if (on) st.normal.textColor = new Color(1f, 0.85f, 0.45f);
+                    GUI.Label(new Rect(pad + lockW + W * 0.02f, y, W - pad * 2f - lockW, lineH), lines[li], st);
+                }
+                else
+                {
+                    GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), lines[li], small);
+                }
                 y += lineH;
             }
 
-            if (!Town.Smithable(item))
+            DrawSmithFx(nameRect);
+
+            if (!smithable)
             {
                 var r = new Rect(pad, by, W - pad * 2f, btnH);
                 Hud.Fill(r, dim);
@@ -573,9 +612,8 @@ namespace VividOfFade
                 return;
             }
 
-            // 強化（すぐ実行）と再抽選（2回押し）
+            // 強化（すぐ実行。カンカンと火花）と再抽選（2回押し。ロックの数で値段が倍々）
             float gap = W * 0.03f;
-            float half = (W - pad * 2f - gap) * 0.5f;
             var enhanceRect = new Rect(pad, by - btnH - gap * 0.5f, W - pad * 2f, btnH);
             if (item.Enhance >= Item.MaxEnhance)
             {
@@ -589,7 +627,10 @@ namespace VividOfFade
                 string label = Loc.T($"ENHANCE  +{item.Enhance} → +{item.Enhance + 1}   ({price} embers)", $"強化  +{item.Enhance} → +{item.Enhance + 1}   （火種 {price}）");
                 if (can) hud.Button(enhanceRect, label, gold, hud.CenteredStyle, () =>
                 {
-                    if (Town.EnhanceItem(ch, item)) hud.Toast(item.Name, RarityInfo.ColorOf(item.Rarity));
+                    if (!Town.EnhanceItem(ch, item)) return;
+                    smithFxTime = Time.unscaledTime;
+                    smithFxText = $"+{item.Enhance}";
+                    hud.World.Sfx.Anvil();
                 });
                 else
                 {
@@ -599,16 +640,69 @@ namespace VividOfFade
             }
             if (item.Affixes.Count > 0)
             {
-                int rp = Town.RerollPrice(item);
+                int rp = Town.RerollPrice(item, locked.Count);
+                string lockNote = locked.Count > 0 ? Loc.T($", {locked.Count} locked", $"・固定 {locked.Count}") : "";
+                string label = Loc.T($"REROLL EFFECTS   ({rp} embers{lockNote})", $"効果を再抽選   （火種 {rp}{lockNote}）");
                 var rr = new Rect(pad, by, W - pad * 2f, btnH);
                 if (ch.Embers >= rp)
-                    Confirm(rr, "reroll", Loc.T($"REROLL EFFECTS   ({rp} embers)", $"効果を再抽選   （火種 {rp}）"), () => Town.RerollItem(ch, item, type));
+                    Confirm(rr, "reroll", label, () =>
+                    {
+                        if (Town.RerollItem(ch, item, type, new List<int>(locked)))
+                        {
+                            smithFxTime = Time.unscaledTime;
+                            smithFxText = Loc.T("Rerolled", "再抽選");
+                        }
+                    });
                 else
                 {
                     Hud.Fill(rr, dim);
-                    Hud.FitLabel(rr, Loc.T($"REROLL EFFECTS   ({rp} embers)", $"効果を再抽選   （火種 {rp}）"), hud.CenteredStyle);
+                    Hud.FitLabel(rr, label, hud.CenteredStyle);
                 }
             }
+        }
+
+        // 再抽選で残す効果（選んだ品ごと。品を変えると外れる）
+        readonly HashSet<int> locked = new HashSet<int>();
+        Item lockFor;
+
+        // 強化の演出（品の名前のあたりで火花が散り、白く光る）。smithFxTime は始めた時刻（-1 で出していない）
+        float smithFxTime = -1f;
+        string smithFxText;
+        const float SmithFxLife = 0.9f;
+
+        void DrawSmithFx(Rect around)
+        {
+            if (smithFxTime < 0f) return;
+            float elapsed = Time.unscaledTime - smithFxTime; // OnGUI は1フレームに何度も呼ばれるので、始めた時刻からの経過で動かす
+            if (elapsed > SmithFxLife)
+            {
+                smithFxTime = -1f;
+                return;
+            }
+            float t = elapsed / SmithFxLife;
+            // 白い光（すぐ消える）
+            Hud.Fill(new Rect(around.x - around.width * 0.02f, around.y - around.height * 0.3f, around.width * 1.04f, around.height * 1.6f), new Color(1f, 0.95f, 0.8f, 0.5f * (1f - t) * (1f - t)));
+            // 火花：中心から放射状に飛ぶ（2回目の「カン」に合わせてもう一度）
+            Vector2 c = new Vector2(around.x + around.width * 0.3f, around.y + around.height * 0.5f);
+            float size = Mathf.Max(3f, around.height * 0.18f);
+            for (int burst = 0; burst < 2; burst++)
+            {
+                float bt = (elapsed - burst * 0.17f) / 0.55f;
+                if (bt < 0f || bt > 1f) continue;
+                for (int k = 0; k < 12; k++)
+                {
+                    float ang = (k * 30f + burst * 15f) * Mathf.Deg2Rad;
+                    float dist = around.height * (0.3f + 2.2f * bt) * (0.7f + 0.3f * ((k * 7) % 5) / 4f);
+                    var p = c + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang) * 0.6f) * dist + new Vector2(0f, around.height * 1.2f * bt * bt); // 少し落ちる
+                    var col = k % 3 == 0 ? new Color(1f, 0.95f, 0.6f, 1f - bt) : new Color(1f, 0.6f, 0.2f, 1f - bt);
+                    Hud.Fill(new Rect(p.x - size * 0.5f, p.y - size * 0.5f, size, size), col);
+                }
+            }
+            // 「+5」などの文字が跳ねる
+            var pop = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
+            pop.fontSize = Mathf.RoundToInt(hud.LabelStyle.fontSize * (1.3f + 0.4f * Mathf.Clamp01(1f - t * 4f)));
+            pop.normal.textColor = new Color(1f, 0.85f, 0.35f, 1f - t * t);
+            GUI.Label(new Rect(around.x, around.y - around.height * 0.6f * t, around.width, around.height), smithFxText, pop);
         }
 
         // ================= 荷運び =================

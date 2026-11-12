@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace VividOfFade
@@ -159,7 +160,10 @@ namespace VividOfFade
             Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * Mathf.Pow(it.Enhance + 1, 1.4f));
 
         /// <summary>効果の再抽選の値段。</summary>
-        public static int RerollPrice(Item it) => Mathf.RoundToInt((30f + it.Level * 4f) * RarityCost(it.Rarity));
+        /// <summary>再抽選の値段。ロックした効果が1つ増えるごとに倍になる（0:x1 1:x2 2:x4 3:x8）。</summary>
+        public static int RerollPrice(Item it, int locks = 0) => Mathf.RoundToInt((30f + it.Level * 4f) * RarityCost(it.Rarity)) << Mathf.Clamp(locks, 0, MaxRerollLocks);
+
+        public const int MaxRerollLocks = 3;
 
         /// <summary>鍛冶屋で扱えるのは神話（赤）の装備だけ。</summary>
         public static bool Smithable(Item it) => it != null && it.Rarity == Rarity.Mythic;
@@ -173,10 +177,12 @@ namespace VividOfFade
             return true;
         }
 
-        public static bool RerollItem(CharacterData ch, Item it, ClassType type)
+        public static bool RerollItem(CharacterData ch, Item it, ClassType type, ICollection<int> locked = null)
         {
-            if (!Smithable(it) || it.Affixes.Count == 0 || !Pay(ch, RerollPrice(it))) return false;
-            ItemGenerator.RerollAffixes(it, type);
+            int locks = locked != null ? locked.Count : 0;
+            if (!Smithable(it) || it.Affixes.Count == 0 || locks > MaxRerollLocks || locks >= it.Affixes.Count) return false;
+            if (!Pay(ch, RerollPrice(it, locks))) return false;
+            ItemGenerator.RerollAffixes(it, type, locked);
             Profile.Save();
             return true;
         }

@@ -180,17 +180,30 @@ namespace VividOfFade
         /// <summary>
         /// 効果の再抽選（町の鍛冶屋）。効果の数・珍しさ・レベル・固有効果はそのままで、効果の種類と値を引き直す。
         /// </summary>
-        public static void RerollAffixes(Item item, ClassType type)
+        public static void RerollAffixes(Item item, ClassType type, ICollection<int> locked = null)
         {
             ClassInfo.Current = type; // 職業ごとに出る効果が違う（貫通は灯術師だけ）
             int n = item.Affixes.Count;
-            item.Affixes.Clear();
-            AddAffixes(item, n);
+            // ロックした効果は残し、残りを、ロックした効果と同じ種類が出ないように引き直す
+            var keep = new List<Affix>();
+            for (int i = 0; i < n; i++) if (locked != null && locked.Contains(i)) keep.Add(item.Affixes[i]);
+            var fresh = new Item { Level = item.Level, Rarity = item.Rarity, Slot = item.Slot };
+            var exclude = new List<StatType>();
+            foreach (var a in keep) exclude.Add(a.Stat);
+            AddAffixes(fresh, n - keep.Count, exclude);
+            // 並びはそのまま：ロックした場所はそのまま、ほかの場所に新しい効果
+            int f = 0;
+            for (int i = 0; i < n; i++)
+            {
+                if (locked != null && locked.Contains(i)) continue;
+                if (f < fresh.Affixes.Count) item.Affixes[i] = fresh.Affixes[f++];
+            }
         }
 
-        static void AddAffixes(Item item, int count)
+        static void AddAffixes(Item item, int count, List<StatType> exclude = null)
         {
             var candidates = new List<StatType>(allStats);
+            if (exclude != null) foreach (var x in exclude) candidates.Remove(x);
             if (ClassInfo.Current != ClassType.Lampwright) candidates.Remove(StatType.Pierce); // 貫通は火の玉だけ
             for (int n = 0; n < count && candidates.Count > 0; n++)
             {

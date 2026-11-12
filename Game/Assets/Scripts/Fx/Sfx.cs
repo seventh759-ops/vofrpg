@@ -10,7 +10,7 @@ namespace VividOfFade
         const int Rate = 44100;
 
         AudioSource source;
-        AudioClip hit, pickup, ember, chime, fanfare, relic, boom, fountain;
+        AudioClip hit, pickup, ember, chime, fanfare, relic, boom, fountain, anvil;
         float lastHit;
         float lastEmber;
 
@@ -27,6 +27,7 @@ namespace VividOfFade
             relic = Make("relic", new[] { 523f, 659f, 784f, 1046f, 1318f, 1568f, 2093f }, 0.08f, 0.4f, Wave.Sine);
             boom = Make("boom", new[] { 90f }, 0.18f, 0.5f, Wave.Noise);
             fountain = Make("fountain", new[] { 523f, 784f, 1046f }, 0.05f, 0.3f, Wave.Square);
+            anvil = MakeAnvil();
         }
 
         public void Hit()
@@ -46,6 +47,34 @@ namespace VividOfFade
         public void Pickup() => source.PlayOneShot(pickup);
         public void Boom() => source.PlayOneShot(boom, 0.7f);
         public void Fountain() => source.PlayOneShot(fountain);
+
+        /// <summary>鍛冶屋で強化したとき：金床を叩く「カン、カン」。</summary>
+        public void Anvil() => source.PlayOneShot(anvil, 0.8f);
+
+        /// <summary>金属を叩いた音（倍音が整数倍でない澄んだ響き＋叩いた瞬間の雑音）を2回。</summary>
+        static AudioClip MakeAnvil()
+        {
+            int len = (int)(Rate * 0.7f);
+            var data = new float[len];
+            float[] partials = { 1180f, 1870f, 2640f, 3410f, 4300f };
+            float[] amps = { 1f, 0.6f, 0.45f, 0.3f, 0.2f };
+            void Strike(int start, float vol)
+            {
+                for (int i = 0; start + i < len; i++)
+                {
+                    float t = (float)i / Rate;
+                    float v = 0f;
+                    for (int k = 0; k < partials.Length; k++) v += Mathf.Sin(2f * Mathf.PI * partials[k] * t) * amps[k] * Mathf.Exp(-t * (7f + k * 3f));
+                    if (t < 0.008f) v += (Random.value * 2f - 1f) * (1f - t / 0.008f) * 1.5f; // 叩いた瞬間
+                    data[start + i] += v * vol * 0.22f;
+                }
+            }
+            Strike(0, 1f);
+            Strike((int)(Rate * 0.17f), 0.75f);
+            var clip = AudioClip.Create("anvil", len, 1, Rate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
 
         public void Landed(Rarity r)
         {
