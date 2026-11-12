@@ -597,7 +597,7 @@ namespace VividOfFade
             var lines = item.Describe();
             int baseLines = lines.Count - item.Affixes.Count - item.Uniques.Count;
             int maxLocks = Mathf.Min(Town.MaxRerollLocks, item.Affixes.Count - 1);
-            float lockW = W * 0.2f;
+            float lockW = lineH * 1.6f;
             for (int li = 0; li < lines.Count; li++)
             {
                 int ai0 = li - baseLines;
@@ -612,9 +612,9 @@ namespace VividOfFade
                     bool on = locked.Contains(idx);
                     bool canLock = on || locked.Count < maxLocks;
                     var lr = new Rect(pad, y + lineH * 0.08f, lockW, lineH * 1.2f);
-                    var lockStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+                    // 南京錠：閉じている＝固定（再抽選で残す）、開いている＝引き直す
                     if (canLock)
-                        hud.Button(lr, on ? Loc.T("LOCKED", "固定中") : Loc.T("Lock", "固定"), on ? gold : new Color(1f, 1f, 1f, 0.16f), lockStyle, () =>
+                        hud.Button(lr, null, on ? new Color(0.5f, 0.4f, 0.1f, 0.6f) : new Color(1f, 1f, 1f, 0.12f), hud.CenteredStyle, () =>
                         {
                             if (!locked.Remove(idx)) locked.Add(idx);
                         });
@@ -622,6 +622,11 @@ namespace VividOfFade
                     {
                         Hud.Fill(lr, dim);
                     }
+                    var oldColor = GUI.color;
+                    if (!canLock) GUI.color = new Color(1f, 1f, 1f, 0.3f);
+                    float li2 = lr.height * 0.12f;
+                    Hud.DrawSprite(new Rect(lr.x + li2, lr.y + li2, lr.width - li2 * 2f, lr.height - li2 * 2f), PixelArt.Padlock(on));
+                    GUI.color = oldColor;
                     var st = new GUIStyle(small);
                     if (on) st.normal.textColor = new Color(1f, 0.85f, 0.45f);
                     var textRect = new Rect(pad + lockW + W * 0.03f, y + lineH * 0.18f, W - pad * 2f - lockW - W * 0.03f, lineH);

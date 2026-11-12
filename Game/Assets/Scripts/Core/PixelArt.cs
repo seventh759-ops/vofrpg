@@ -992,6 +992,49 @@ namespace VividOfFade
             return Store(key, MakeTexture(key, n, n, px32, TextureWrapMode.Clamp), n);
         }
 
+        /// <summary>南京錠（閉じている＝金色／開いている＝灰色）。鍛冶屋の再抽選で効果を固定するボタンに使う。</summary>
+        public static Sprite Padlock(bool closed) => closed ? FromArt("PadlockClosed", PadlockClosedRows, PadlockPalette) : FromArt("PadlockOpen", PadlockOpenRows, PadlockPalette);
+
+        static readonly Dictionary<char, Color32> PadlockPalette = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(30, 24, 20, 255) },
+            { 'm', new Color32(200, 205, 215, 255) },
+            { 'y', new Color32(255, 205, 70, 255) },
+            { 'g', new Color32(130, 130, 140, 255) },
+        };
+
+        static readonly string[] PadlockClosedRows =
+        {
+            "....kkkk....",
+            "...kmmmmk...",
+            "..kmk..kmk..",
+            "..km....mk..",
+            "..km....mk..",
+            ".kkkkkkkkkk.",
+            ".kyyyyyyyyk.",
+            ".kyyykkyyyk.",
+            ".kyyykkyyyk.",
+            ".kyyyykyyyk.",
+            ".kyyyyyyyyk.",
+            ".kkkkkkkkkk.",
+        };
+
+        static readonly string[] PadlockOpenRows =
+        {
+            "....kkkk....",
+            "...kmmmmk...",
+            "..kmk..kmk..",
+            "..km....mk..",
+            "........mk..",
+            ".kkkkkkkkkk.",
+            ".kggggggggk.",
+            ".kgggkkgggk.",
+            ".kgggkkgggk.",
+            ".kggggkgggk.",
+            ".kggggggggk.",
+            ".kkkkkkkkkk.",
+        };
+
         /// <summary>黄金のスライム（出会うと逃げる、倒すとドロップがあふれる）。</summary>
         public static Sprite GoldenSlime => FromArt("GoldenSlime", SlimeRows, new Dictionary<char, Color32>
         {
