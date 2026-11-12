@@ -34,6 +34,10 @@ namespace VividOfFade
         public float Windup;      // 力をためている残り時間（0 より大きい間は動かない）
         public bool Enraged;      // 体力が半分を切って怒った
 
+        // 層に入った時点で全部の部屋に置かれ、部屋に入るまで眠っている
+        public bool Dormant;
+        public RoomArea Home;      // 置かれた部屋（部屋を片付けたかの判定に使う）
+
         // 種類ごとの動き
         public EnemyKind Kind;
         public int Tier;           // 0 下級・1 中級・2 上級

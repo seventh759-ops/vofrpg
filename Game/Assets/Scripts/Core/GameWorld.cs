@@ -446,7 +446,7 @@ namespace VividOfFade
         /// <summary>部屋の敵を全滅させたら、最後に倒した場所からドロップの噴水。</summary>
         void CheckRoomCleared()
         {
-            if (!roomRewardPending || !Floors.SpawningDone || Enemies.Active.Count > 0) return;
+            if (!roomRewardPending || Enemies.AliveIn(Floors.CurrentArea) > 0) return;
             roomRewardPending = false;
             int tier = Floors.Tier;
             Loot.Fountain(lastKillPos, Room, Mathf.Max(1, GameConfig.FountainItems(tier) / 2), DropLevel,
@@ -557,6 +557,8 @@ namespace VividOfFade
             Fx.Clear();
             roomRewardPending = false;
             Floors.Begin(floor, Room);
+            Enemies.SetZone(Room.Zone); // 敵を置く前に、区画の敵の割合と色を合わせる
+            Floors.Populate(Enemies, Room);
             if (Floors.IsBossFloor) Guide("boss", Loc.T("A boss waits deep in this floor. When the red ring spreads, get outside it or dodge!", "この層の奥にはボスがいる。赤い輪が広がったら、輪の外へ逃げるか回避！"),
                 Loc.T("Beat it and the stairs appear. Next time you can start from the floor beyond.", "倒せば階段が現れて、次からはその先の層から始められるようになるよ。"));
             ApplyZone(Room.Zone, floor);

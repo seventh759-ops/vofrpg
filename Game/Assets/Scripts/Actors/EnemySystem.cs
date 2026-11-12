@@ -37,6 +37,7 @@ namespace VividOfFade
 
         struct Split
         {
+            public RoomArea Home;
             public Vector2 Pos;
             public float Hp;
             public int Damage;
@@ -55,7 +56,7 @@ namespace VividOfFade
             {
                 foreach (var e in Active)
                 {
-                    if (e.IsBoss && !e.Dying) return e;
+                    if (e.IsBoss && !e.Dying && !e.Dormant) return e; // 眠っているボスはまだ数えない（曲・体力バー）
                 }
                 return null;
             }
@@ -159,6 +160,8 @@ namespace VividOfFade
         {
             if (Active.Count >= GameConfig.MaxEnemies) return;
             var e = pool.Get();
+            e.Dormant = false;
+            e.Home = null;
             e.Hp = hp;
             e.ContactDamage = contactDamage;
             e.Speed = UnityEngine.Random.Range(GameConfig.SlimeSpeedMin, GameConfig.SlimeSpeedMax);
@@ -338,9 +341,31 @@ namespace VividOfFade
         /// <summary>精鋭・ボスへのダメージの倍率（装備の効果。GameWorld が毎フレーム入れる）。</summary>
         public float EliteDamageMult = 1f;
 
+        /// <summary>その部屋の眠っている敵を起こす（部屋に入ったとき、攻撃されたとき）。</summary>
+        public void Wake(RoomArea area)
+        {
+            if (area == null) return;
+            foreach (var e in Active)
+            {
+                if (e.Home == area && e.Dormant) e.Dormant = false;
+            }
+        }
+
+        /// <summary>その部屋の、起きていて生きている敵の数。</summary>
+        public int AliveIn(RoomArea area)
+        {
+            int n = 0;
+            foreach (var e in Active)
+            {
+                if (!e.Dying && !e.Dormant && e.Home == area) n++;
+            }
+            return n;
+        }
+
         public void Damage(Enemy e, float amount, Vector2 dir, bool crit)
         {
             if (e.Dying) return;
+            if (e.Dormant) Wake(e.Home); // 外から攻撃されたら、その部屋の敵がみんな起きる
             if (e.IsBoss || e.Elite != EliteKind.None) amount *= EliteDamageMult;
             e.Hp -= amount;
             e.FlashTimer = 0.08f;
@@ -360,7 +385,7 @@ namespace VividOfFade
                 if (e.Elite == EliteKind.Splitter)
                 {
                     for (int k = 0; k < GameConfig.SplitCount; k++)
-                        pendingSplits.Add(new Split { Pos = e.Pos, Hp = e.MaxHp / GameConfig.EliteHpMult * 0.5f, Damage = e.ContactDamage });
+                        pendingSplits.Add(new Split { Home = e.Home, Pos = e.Pos, Hp = e.MaxHp / GameConfig.EliteHpMult * 0.5f, Damage = e.ContactDamage });
                 }
             }
         }
@@ -406,6 +431,7 @@ namespace VividOfFade
                 Spawn(room.Clamp(s.Pos + offset, GameConfig.SlimeRadius), s.Hp, s.Damage);
                 if (Active.Count == 0) continue;
                 var small = Active[Active.Count - 1];
+                small.Home = s.Home;
                 small.BaseScale = 0.75f;
                 small.Radius = GameConfig.SlimeRadius * 0.75f;
                 small.Speed *= 1.3f;
@@ -437,6 +463,14 @@ namespace VividOfFade
                 {
                     e.FlashTimer -= dt;
                     if (e.FlashTimer <= 0f) e.Sr.color = e.Tint;
+                }
+
+                if (e.Dormant)
+                {
+                    // 眠っている：その場でゆっくり揺れるだけ（動き・攻撃の計算はしない）
+                    float bob = 1f + 0.04f * Mathf.Sin(Time.time * 2f + e.Phase);
+                    e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale * bob, 1f);
+                    continue;
                 }
 
                 Vector2 pos = e.Pos;

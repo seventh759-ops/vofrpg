@@ -50,7 +50,7 @@ namespace VividOfFade
         public static int EnemyDamage(int wave) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (wave - 1)) * Mathf.Pow(1.02f, wave - 1));
 
         // 敵の波
-        public const int MaxEnemies = 150;
+        public const int MaxEnemies = 600; // 眠っている敵も含む（層に入った時点で全部の部屋に置く）
         public const float WaveSpawnDuration = 2.5f;
         public const float WaveGap = 3f;
 
