@@ -6,6 +6,8 @@ namespace VividOfFade
     /// <summary>
     /// 階段の前の「帰還する／下りる／とどまる」の画面（開いている間はゲームが止まる）。
     /// 帰還すると、装備中の5つと持ち込んだ品はそのまま、今回拾った品からは持ち帰り枠の数まで選んで持ち帰れる。
+    /// 選び忘れを防ぐため、開いたときにレア度の高い順（同じならレベルの高い順）で枠の数まで選んでおく。
+    /// 枠が余っていて選べる品が残っているまま帰還しようとしたら、確認を出す。
     /// </summary>
     public sealed class ReturnScreen
     {
@@ -15,6 +17,9 @@ namespace VividOfFade
         readonly Hud hud;
         readonly List<Item> chosen = new List<Item>();
         Item focused;
+        bool opened;      // 開いたときの自動選択を済ませたか
+        bool confirming;  // 「このまま帰還する？」の確認中か
+        int lastFrame = -10;
 
         public ReturnScreen(Hud hud)
         {
@@ -28,6 +33,16 @@ namespace VividOfFade
             var inv = world.Inventory;
             var candidates = inv.NewThisRun();
             chosen.RemoveAll(it => !candidates.Contains(it));
+            if (Time.frameCount - lastFrame > 1) { opened = false; confirming = false; } // 閉じていた → 開き直した
+            lastFrame = Time.frameCount;
+            if (!opened)
+            {
+                opened = true;
+                chosen.Clear();
+                var best = new List<Item>(candidates);
+                best.Sort((a, b) => a.Rarity != b.Rarity ? b.Rarity.CompareTo(a.Rarity) : b.Level.CompareTo(a.Level));
+                for (int i = 0; i < best.Count && chosen.Count < ch.CarrySlots; i++) chosen.Add(best[i]);
+            }
 
             float W = Screen.width;
             float H = Screen.height;
@@ -106,29 +121,64 @@ namespace VividOfFade
             // 帰還する／下りる／とどまる
             float third = (W - pad * 2f - gap * 2f) / 3f;
             float by = H - pad - btnH;
+            int canPick = Mathf.Min(ch.CarrySlots, candidates.Count) - chosen.Count;
+            if (confirming)
+            {
+                DrawConfirm(world, canPick, W, H, pad, gap, btnH, label, small, centered);
+                return;
+            }
             hud.Button(new Rect(pad, by, third, btnH), Loc.T($"RETURN ({chosen.Count})", $"帰還 ({chosen.Count})"), new Color(0.2f, 0.5f, 0.25f, 0.85f), centered, () =>
             {
-                var list = new List<Item>(chosen);
-                chosen.Clear();
-                focused = null;
-                world.ReturnHome(list);
+                if (canPick > 0) confirming = true;
+                else Return(world);
             });
             if (last)
             {
                 Hud.Fill(new Rect(pad + third + gap, by, third, btnH), new Color(1f, 1f, 1f, 0.05f));
-                GUI.Label(new Rect(pad + third + gap, by, third, btnH), Loc.T("TOP REACHED", "最後の層"), centered);
+                GUI.Label(new Rect(pad + third + gap, by, third, btnH), Loc.T("LAST FLOOR", "最後の層"), centered);
             }
             else hud.Button(new Rect(pad + third + gap, by, third, btnH), Loc.T("DESCEND", "下りる"), new Color(0.5f, 0.35f, 0.15f, 0.85f), centered, () =>
             {
-                chosen.Clear();
-                focused = null;
+                Close();
                 world.Descend();
             });
             hud.Button(new Rect(pad + (third + gap) * 2f, by, third, btnH), Loc.T("STAY", "とどまる"), buttonBack, centered, () =>
             {
-                focused = null;
+                Close();
                 world.StayOnFloor();
             });
+        }
+
+        void Close()
+        {
+            chosen.Clear();
+            focused = null;
+            opened = false;
+            confirming = false;
+        }
+
+        void Return(GameWorld world)
+        {
+            var list = new List<Item>(chosen);
+            Close();
+            world.ReturnHome(list);
+        }
+
+        /// <summary>枠が余っているのに帰還しようとしたときの確認。</summary>
+        void DrawConfirm(GameWorld world, int canPick, float W, float H, float pad, float gap, float btnH, GUIStyle label, GUIStyle small, GUIStyle centered)
+        {
+            Hud.Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.6f));
+            var box = new Rect(pad, H * 0.36f, W - pad * 2f, H * 0.26f);
+            Hud.Fill(box, new Color(0.08f, 0.07f, 0.12f, 0.97f));
+            var head = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
+            head.normal.textColor = new Color(1f, 0.85f, 0.4f);
+            Hud.FitLabel(new Rect(box.x, box.y + box.height * 0.08f, box.width, box.height * 0.2f), Loc.T("Return with room to spare?", "まだ持ち帰れます"), head);
+            var body = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            GUI.Label(new Rect(box.x + gap, box.y + box.height * 0.3f, box.width - gap * 2f, box.height * 0.3f),
+                Loc.T($"You can still pick {canPick} more item(s). Items you leave behind are lost.", $"あと {canPick} 個選べます。選ばなかった品は置いていくことになります。"), body);
+            float bw = (box.width - gap * 3f) / 2f, by = box.yMax - btnH - box.height * 0.08f;
+            hud.Button(new Rect(box.x + gap, by, bw, btnH), Loc.T("RETURN ANYWAY", "このまま帰還"), new Color(0.2f, 0.5f, 0.25f, 0.85f), centered, () => Return(world));
+            hud.Button(new Rect(box.x + gap * 2f + bw, by, bw, btnH), Loc.T("PICK MORE", "選び直す"), new Color(1f, 1f, 1f, 0.15f), centered, () => confirming = false);
         }
     }
 }
