@@ -1719,6 +1719,85 @@ namespace VividOfFade
             ".kkkkkkkkkk.",
         };
 
+        /// <summary>タイトル画面の後ろ姿の灯術師（40×56）。フードと外套、虹色の水晶の杖。</summary>
+        public static Sprite TitleLampwright => Shaded("TitleLampwright", TitleLampwrightRows);
+
+        /// <summary>タイトル画面の崖に生えた結晶（9×9）。</summary>
+        public static Sprite TitleCrystal => Shaded("TitleCrystal", TitleCrystalRows);
+
+        static readonly string[] TitleLampwrightRows =
+        {
+            "........................................",
+            ".................................o......",
+            "................................oBo.....",
+            "................................BpR.....",
+            ".................ccccc.........oBplLo...",
+            "................ccccccc........lpBoR....",
+            "...............ccccccccc........RpB.....",
+            "...............cccccdccc......g.lBo.g...",
+            "..............ccccccdcccc.....g..p..g...",
+            "..............ccccccdcccc......g...g....",
+            "..............ccccccdcccc.......gwg.....",
+            "..............ccccccdcccc........w......",
+            "..............ccccccdcccc........w......",
+            "..............ccccccdcccc........w......",
+            ".............cccccccdccccc......www.....",
+            ".............ccccccccccccc......www.....",
+            "..............gggggddggggg.......w......",
+            ".............ccccccddccccc.......w......",
+            "............cccccccddccccccc.....w......",
+            "............cccccccdcccccccc.....w......",
+            "............ccccccccccccccccc....w......",
+            "...........cccccccccccccccccc....w......",
+            "...........ccccdcccccccccccccc...w......",
+            "...........ccccdcccccccccccccc...w......",
+            "..........cccccdccccccccccccccc..w......",
+            "..........cccccdcccccccccccccccssw......",
+            "..........cccccdccccccccccc.cccssw......",
+            ".........ccccccdcccccdccccc.gggg.w......",
+            ".........cccccdccccccdcccccc.....w......",
+            ".........cccccdccccccdcccccc.....w......",
+            "........ccccccdccccccdcccccc.....w......",
+            "........ccccccdccccccdcccccc.....w......",
+            ".......cccccccdccccccdcccccc.....w......",
+            ".......cccccccdccccccdcccccc.....w......",
+            ".......cdccccdccccccccdccccc.....w......",
+            "......ccdccccdccccccccdcccccc....w......",
+            "......ccdccccdccccccccdcccccc....w......",
+            ".....cccdccccdccccccccdcccccc....w......",
+            ".....ccdcccccdccccccccdcccccc....w......",
+            "....cccdcccccdccccccccdcccccc....w......",
+            "....cccdccccdcccccccccdcccccc....w......",
+            "...ccccdccccdcccccccccdcccccc....w......",
+            "...cccdcccccdccccccccccdccccc....w......",
+            "..ccccdcccccdccccccccccdcccccc...w......",
+            "ccccccdcccccdccccccccccdcccccc...w......",
+            "ccccccdcccccdccccccccccdcccccc...w......",
+            "gggggggggggggggggggggggggggggg...w......",
+            ".................................w......",
+            ".............bbbb...bbbb.........w......",
+            ".............bbbb...bbbb.........w......",
+            ".............bbbb...bbbb.........w......",
+            ".............bbbb...bbbb.........w......",
+            ".................................w......",
+            ".................................w......",
+            ".................................w......",
+            "........................................",
+        };
+
+        static readonly string[] TitleCrystalRows =
+        {
+            "....B....",
+            "...BaB...",
+            "...Bab..B",
+            ".a.Bab.Ba",
+            "aa.Bab.Ba",
+            "aB.aab.aa",
+            "aBaBaabaa",
+            ".aaBaaba.",
+            "..aaaaa..",
+        };
+
         /// <summary>タイトル画面の逆さの塔（48×112）。上が地表の入口、深くなるほど窓の灯りが消え、最深部の尖塔の先に灯り。</summary>
         public static Sprite TitleTower => FromArt("TitleTower", TitleTowerRows, TitleTowerPalette);
 
