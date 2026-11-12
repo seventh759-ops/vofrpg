@@ -114,7 +114,7 @@ namespace VividOfFade
             Tile(2, PixelArt.TownIcon(2), Loc.T("Master", "師匠"), masterLine, () => Open(Panel.Master), masterNotice);
             Tile(3, PixelArt.TownIcon(3), Loc.T("Porter", "荷運び"), Loc.T($"Carry {ch.CarrySlots}/{Town.MaxCarrySlots}", $"持ち帰り {ch.CarrySlots}/{Town.MaxCarrySlots}"), () => Open(Panel.Porter));
             Tile(4, PixelArt.TownIcon(4), Loc.T("Blacksmith", "鍛冶屋"), Loc.T("Mythic only", "神話（赤）だけ"), () => Open(Panel.Smith));
-            Tile(5, PixelArt.PlayerFor(type), Loc.T("Class", "職業"), Loc.T("Change", "変える"), world.ShowClassSelect);
+            Tile(5, PixelArt.PlayerFor(ch), Loc.T("Characters", "キャラ選択"), Loc.T("Switch", "切り替え"), world.ShowClassSelect);
 
             // 案内役（左下）
             float gs = W * 0.2f;

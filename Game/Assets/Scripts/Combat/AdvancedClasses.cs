@@ -117,6 +117,16 @@ namespace VividOfFade
             return adv != null ? adv.Skill : locked;
         }
 
+        /// <summary>そのキャラクターの職業の名前（3次職・上位職・元の職業の順）。</summary>
+        public static string NameFor(CharacterData ch)
+        {
+            var type = (ClassType)ch.ClassId;
+            var third = ThirdClasses.Of(type, ch);
+            if (third != null) return third.DisplayName;
+            var adv = Of(type, ch);
+            return adv != null ? adv.DisplayName : ClassInfo.Get(type).DisplayName;
+        }
+
         /// <summary>画面に出す職業の名前（転職していれば上位職の名前）。</summary>
         public static string NameOf(ClassType type)
         {

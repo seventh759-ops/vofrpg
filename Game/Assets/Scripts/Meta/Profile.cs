@@ -5,10 +5,11 @@ using UnityEngine;
 
 namespace VividOfFade
 {
-    /// <summary>職業ごとのキャラクターの育ち具合。挑戦をまたいで残る。</summary>
+    /// <summary>キャラクター1人の育ち具合（3つの枠のどれか。職業は作るときに選ぶ）。挑戦をまたいで残る。</summary>
     [Serializable]
     public sealed class CharacterData
     {
+        public int Slot = -1;                         // 枠（0〜2）。-1 は前の版のデータ（読み込み時に枠を割り当てる）
         public int ClassId;
         public int Level = 1;
         public int Exp;
@@ -139,31 +140,80 @@ namespace VividOfFade
             Current = null;
         }
 
+        public const int SlotCount = 3;
+
+        // 枠を選んでいないときに使う、保存しない仮のキャラクター（タイトルの後ろの画面など）
+        static readonly Dictionary<int, CharacterData> blanks = new Dictionary<int, CharacterData>();
+
+        /// <summary>
+        /// その職業の「今のキャラクター」。選んでいるキャラクターがその職業ならそれを、
+        /// そうでなければ保存しない仮のキャラクター（Lv1）を返す。
+        /// </summary>
         public static CharacterData Get(ClassType type)
+        {
+            EnsureLoaded();
+            if (Current != null && Current.ClassId == (int)type) return Current;
+            if (!blanks.TryGetValue((int)type, out var blank))
+            {
+                blank = new CharacterData { ClassId = (int)type, MpGrowthReady = true };
+                blanks[(int)type] = blank;
+            }
+            return blank;
+        }
+
+        /// <summary>枠のキャラクター（空なら null）。</summary>
+        public static CharacterData InSlot(int slot)
         {
             EnsureLoaded();
             foreach (var c in data.Characters)
             {
-                if (c.ClassId == (int)type) return c;
+                if (c.Slot == slot) return c;
             }
-            var created = new CharacterData { ClassId = (int)type };
+            return null;
+        }
+
+        public static void SelectSlot(int slot)
+        {
+            Current = InSlot(slot);
+        }
+
+        /// <summary>空いた枠に、選んだ職業でキャラクターを作る。</summary>
+        public static CharacterData CreateInSlot(int slot, ClassType type)
+        {
+            EnsureLoaded();
+            data.Characters.RemoveAll(c => c.Slot == slot);
+            var created = new CharacterData { Slot = slot, ClassId = (int)type, MpGrowthReady = true };
             data.Characters.Add(created);
+            Current = created;
+            Save();
             return created;
         }
 
-        /// <summary>その職業のキャラクターを、まっさらな状態に作り直す。</summary>
-        public static void ResetCharacter(ClassType type)
+        /// <summary>枠のキャラクターを消す（倉庫は全キャラクターで共有なので残る）。</summary>
+        public static void DeleteSlot(int slot)
         {
             EnsureLoaded();
-            data.Characters.RemoveAll(c => c.ClassId == (int)type);
-            var fresh = new CharacterData { ClassId = (int)type, MpGrowthReady = true };
-            data.Characters.Add(fresh);
-            if (Current != null && Current.ClassId == (int)type) Current = fresh;
+            data.Characters.RemoveAll(c => c.Slot == slot);
+            if (Current != null && Current.Slot == slot) Current = null;
+            Save();
         }
 
+        /// <summary>今のキャラクターを、同じ枠・同じ職業のまっさらな状態に作り直す（すべてリセット）。</summary>
+        public static void ResetCurrent()
+        {
+            EnsureLoaded();
+            if (Current == null) return;
+            int slot = Current.Slot, cls = Current.ClassId;
+            data.Characters.Remove(Current);
+            var fresh = new CharacterData { Slot = slot, ClassId = cls, MpGrowthReady = true };
+            data.Characters.Add(fresh);
+            Current = fresh;
+        }
+
+        /// <summary>挑戦の開始用：今のキャラクターがその職業でなければ、仮のキャラクターにする（保存しない）。</summary>
         public static void Select(ClassType type)
         {
-            Current = Get(type);
+            if (Current == null || Current.ClassId != (int)type) Current = Get(type);
         }
 
         /// <summary>町の倉庫（全職業で共有）。</summary>
@@ -254,6 +304,22 @@ namespace VividOfFade
             foreach (var it in data.Storage) it?.Repair();
             data.Storage.RemoveAll(it => it == null || it.IsEmptyMarker);
             foreach (var c in data.Characters) c.Repair();
+            // 前の版（職業ごとに1人）のデータは、空いている枠に順に入れる。入らない分は消す
+            var used = new bool[SlotCount];
+            foreach (var c in data.Characters) if (c.Slot >= 0 && c.Slot < SlotCount) used[c.Slot] = true;
+            foreach (var c in data.Characters)
+            {
+                if (c.Slot >= 0 && c.Slot < SlotCount) continue;
+                c.Slot = -1;
+                for (int i = 0; i < SlotCount; i++)
+                {
+                    if (used[i]) continue;
+                    used[i] = true;
+                    c.Slot = i;
+                    break;
+                }
+            }
+            data.Characters.RemoveAll(c => c.Slot < 0);
         }
     }
 }

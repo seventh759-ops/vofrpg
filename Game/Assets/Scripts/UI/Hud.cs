@@ -763,7 +763,7 @@ namespace VividOfFade
             float s = W * 0.2f;
             float gap = W * 0.06f;
             float x0 = (W - s * 3f - gap * 2f) * 0.5f;
-            for (int i = 0; i < ClassInfo.Count; i++) DrawSprite(new Rect(x0 + i * (s + gap), H * 0.42f, s, s), PixelArt.PlayerFor((ClassType)i));
+            for (int i = 0; i < ClassInfo.Count; i++) DrawSprite(new Rect(x0 + i * (s + gap), H * 0.42f, s, s), PixelArt.PlayerFor(new CharacterData { ClassId = i }));
 
             // 点滅する「タップで始める」
             var tap = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
@@ -785,35 +785,11 @@ namespace VividOfFade
 
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
             Hud.FitLabel(new Rect(0, H * 0.12f, W, H * 0.06f), "VIVID OF FADE", title);
-            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T("Choose your class", "職業を選ぶ"), centered);
-
             float pad = W * 0.08f;
-            float bh = H * 0.15f;
-            float gap = H * 0.025f;
+            float gap = H * 0.02f;
             float y = H * 0.27f;
-            var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(label.fontSize * 1.3f) };
-            for (int i = 0; i < ClassInfo.Count; i++)
-            {
-                var spec = ClassInfo.Get((ClassType)i);
-                var type = spec.Type;
-                var r = new Rect(pad, y, W - pad * 2f, bh);
-                Button(r, null, new Color(1f, 1f, 1f, 0.12f), centered, () => World.ChooseClass(type));
-
-                float inner = r.height * 0.12f;
-                float icon = r.height - inner * 2f;
-                DrawSprite(new Rect(r.x + inner, r.y + inner, icon, icon), PixelArt.PlayerFor(type));
-                float tx = r.x + icon + inner * 2f;
-                float tw = r.xMax - tx - inner;
-                float lh = small.fontSize * 1.35f;
-                string key = Application.isMobilePlatform ? "" : $"[{i + 1}] ";
-                GUI.Label(new Rect(tx, r.y + inner, tw, nameStyle.fontSize * 1.4f), key + AdvancedClasses.NameOf(type), nameStyle);
-                GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, tw, lh), spec.DisplayLine1, small);
-                GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh), spec.DisplayLine2, small);
-                var ch = Profile.Get(type);
-                GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh * 2f, tw, lh),
-                    Loc.T($"Lv {ch.Level}   Best {ch.BestFloor}F   {Attributes.ShortName(spec.MainAttr)}/{Attributes.ShortName(spec.SubAttr)}", $"Lv {ch.Level}   最深 {ch.BestFloor}層   {Attributes.ShortName(spec.MainAttr)}/{Attributes.ShortName(spec.SubAttr)}"), small);
-                y += bh + gap;
-            }
+            if (newSlot >= 0) y = DrawNewCharacter(pad, gap);
+            else y = DrawSlots(pad, gap);
 
             // 案内役（左下で話しかけてくる）
             float gs = W * 0.22f;
@@ -825,13 +801,140 @@ namespace VividOfFade
             say.normal.textColor = new Color(0.1f, 0.08f, 0.12f);
             GUI.Label(new Rect(bubble.x + W * 0.02f, bubble.y, bubble.width - W * 0.04f, bubble.height), GuideGreeting(), say);
 
-            // BGM の切り替え（N キーでも）
-            // BGM と言語は1行に並べる（下の案内役と重ならないように）
+            // BGM と言語は1行に並べる（下の案内役と重ならないように。N キーでも BGM を変えられる）
             float half = (W - pad * 2f - W * 0.02f) * 0.5f;
             var musicRect = new Rect(pad, y + gap * 0.5f, half, H * 0.045f);
             Button(musicRect, $"BGM: {World.Music.ThemeName}", new Color(1f, 1f, 1f, 0.1f), centered, () => World.NextMusic());
             var langRect = new Rect(musicRect.xMax + W * 0.02f, musicRect.y, half, musicRect.height);
             Button(langRect, $"Language: {Loc.LanguageName}", new Color(1f, 1f, 1f, 0.1f), centered, () => Loc.Next());
+        }
+
+        // ---- キャラクター選択（3つの枠） ----
+
+        int newSlot = -1;          // 新しく作る枠（-1 は枠の一覧）
+        string armedDelete;        // 消す確認（2回押し）
+        float armedDeleteUntil;
+
+        /// <summary>数字キー：枠の一覧なら枠を、職業の選択なら職業を選ぶ。</summary>
+        public void PressSlotKey(int n)
+        {
+            if (newSlot >= 0)
+            {
+                if (n < ClassInfo.Count)
+                {
+                    World.CreateCharacter(newSlot, (ClassType)n);
+                    newSlot = -1;
+                }
+                return;
+            }
+            if (n >= Profile.SlotCount) return;
+            if (Profile.InSlot(n) != null) World.ChooseCharacter(n);
+            else newSlot = n;
+        }
+
+        /// <summary>職業の選択を閉じる（Esc）。閉じたら true。</summary>
+        public bool CancelNewCharacter()
+        {
+            if (newSlot < 0) return false;
+            newSlot = -1;
+            return true;
+        }
+
+        float DrawSlots(float pad, float gap)
+        {
+            float W = Screen.width, H = Screen.height;
+            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T("Choose a character", "キャラクターを選ぶ"), centered);
+            float y = H * 0.25f;
+            float bh = H * 0.14f;
+            var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(label.fontSize * 1.25f) };
+            for (int i = 0; i < Profile.SlotCount; i++)
+            {
+                int slot = i;
+                var ch = Profile.InSlot(slot);
+                var r = new Rect(pad, y, W - pad * 2f, bh);
+                float inner = r.height * 0.12f;
+                string key = Application.isMobilePlatform ? "" : $"[{i + 1}] ";
+                if (ch == null)
+                {
+                    Button(r, null, new Color(1f, 1f, 1f, 0.06f), centered, () => newSlot = slot);
+                    var empty = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
+                    empty.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
+                    GUI.Label(r, key + Loc.T("+  New character", "＋  新しいキャラクター"), empty);
+                }
+                else
+                {
+                    Button(r, null, new Color(1f, 1f, 1f, 0.12f), centered, () => World.ChooseCharacter(slot));
+                    float icon = r.height - inner * 2f;
+                    DrawSprite(new Rect(r.x + inner, r.y + inner, icon, icon), PixelArt.PlayerFor(ch));
+                    float tx = r.x + icon + inner * 2f;
+                    float tw = r.xMax - tx - inner;
+                    float lh = small.fontSize * 1.35f;
+                    FitLabel(new Rect(tx, r.y + inner, tw * 0.7f, nameStyle.fontSize * 1.4f), key + AdvancedClasses.NameFor(ch), nameStyle);
+                    var spec = ClassInfo.Get((ClassType)ch.ClassId);
+                    GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, tw, lh),
+                        Loc.T($"Lv {ch.Level}   Best {ch.BestFloor}F   Embers {ch.Embers}", $"Lv {ch.Level}   最深 {ch.BestFloor}層   火種 {ch.Embers}"), small);
+                    var sub = new GUIStyle(small);
+                    sub.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
+                    GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh),
+                        spec.DisplayName + (ch.Run.Active ? Loc.T($"   (suspended: floor {ch.Run.Floor})", $"   （中断中：{ch.Run.Floor}層）") : ""), sub);
+
+                    // 消す（2回押し）。消しても倉庫は残る
+                    string id = "del" + slot;
+                    bool armed = armedDelete == id && Time.unscaledTime < armedDeleteUntil;
+                    var del = new Rect(r.xMax - r.width * 0.22f - inner * 0.5f, r.y + inner * 0.5f, r.width * 0.22f, r.height * 0.28f);
+                    Button(del, armed ? Loc.T("Delete?", "消す？") : Loc.T("Delete", "消す"), armed ? new Color(0.7f, 0.15f, 0.15f, 0.85f) : new Color(1f, 1f, 1f, 0.08f), centered, () =>
+                    {
+                        if (armedDelete == id && Time.unscaledTime < armedDeleteUntil)
+                        {
+                            armedDelete = null;
+                            Profile.DeleteSlot(slot);
+                        }
+                        else
+                        {
+                            armedDelete = id;
+                            armedDeleteUntil = Time.unscaledTime + 3f;
+                        }
+                    });
+                }
+                y += bh + gap;
+            }
+            return y;
+        }
+
+        /// <summary>新しいキャラクターの職業を選ぶ。職業の数に合わせて並べる（増えても入るよう、高さを詰める）。</summary>
+        float DrawNewCharacter(float pad, float gap)
+        {
+            float W = Screen.width, H = Screen.height;
+            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T($"New character (slot {newSlot + 1}): choose a class", $"新しいキャラクター（枠 {newSlot + 1}）：職業を選ぶ"), centered);
+            float y = H * 0.25f;
+            int n = ClassInfo.Count;
+            float area = H * 0.5f;
+            float bh = Mathf.Min(H * 0.14f, (area - gap * (n - 1)) / n);
+            var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(label.fontSize * 1.2f) };
+            for (int i = 0; i < n; i++)
+            {
+                var spec = ClassInfo.Get((ClassType)i);
+                var type = spec.Type;
+                var r = new Rect(pad, y, W - pad * 2f, bh);
+                Button(r, null, new Color(1f, 1f, 1f, 0.12f), centered, () =>
+                {
+                    World.CreateCharacter(newSlot, type);
+                    newSlot = -1;
+                });
+                float inner = r.height * 0.1f;
+                float icon = r.height - inner * 2f;
+                DrawSprite(new Rect(r.x + inner, r.y + inner, icon, icon), PixelArt.PlayerFor(new CharacterData { ClassId = (int)type }) /* 元の職業の見た目 */);
+                float tx = r.x + icon + inner * 2f;
+                float tw = r.xMax - tx - inner;
+                float lh = small.fontSize * 1.3f;
+                string key = Application.isMobilePlatform ? "" : $"[{i + 1}] ";
+                FitLabel(new Rect(tx, r.y + inner, tw, nameStyle.fontSize * 1.3f), key + spec.DisplayName, nameStyle);
+                FitLabel(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.4f, tw, lh), spec.DisplayLine1, small);
+                FitLabel(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.4f + lh, tw, lh), spec.DisplayLine2 + $"   {Attributes.ShortName(spec.MainAttr)}/{Attributes.ShortName(spec.SubAttr)}", small);
+                y += bh + gap;
+            }
+            Button(new Rect(pad, y, W - pad * 2f, H * 0.045f), Loc.T("BACK", "戻る"), new Color(1f, 1f, 1f, 0.08f), centered, () => newSlot = -1);
+            return y + H * 0.045f + gap;
         }
 
         void EnsureStyles()

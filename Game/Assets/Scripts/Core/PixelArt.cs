@@ -23,10 +23,14 @@ namespace VividOfFade
         /// 職業ごとの見た目（32ドット。1マスに収まるよう半分の縮尺で描く）。
         /// 形は部品（素材の文字）で描き、濃淡・影・輪郭は Shaded で自動で付ける。
         /// </summary>
-        public static Sprite PlayerFor(ClassType type)
+        public static Sprite PlayerFor(ClassType type) => PlayerFor(type, Profile.Get(type));
+
+        /// <summary>そのキャラクターの見た目（キャラクター選択の画面で、枠ごとに使う）。</summary>
+        public static Sprite PlayerFor(CharacterData c) => PlayerFor((ClassType)c.ClassId, c);
+
+        static Sprite PlayerFor(ClassType type, CharacterData ch)
         {
             // 上位職なら、その見た目（色を変えて、目印の小物を足す）
-            var ch = Profile.Get(type);
             if (ch != null && ch.Advanced >= 0) return AdvancedLook(type, ch.Advanced, ch.Third);
             switch (type)
             {

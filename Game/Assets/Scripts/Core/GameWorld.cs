@@ -76,16 +76,25 @@ namespace VividOfFade
             return list;
         }
 
-        /// <summary>職業を選んだ：その職業で町へ。</summary>
-        public void ChooseClass(ClassType type)
+        /// <summary>キャラクターを選んだ（枠）：そのキャラクターで町へ。空の枠なら何もしない（新しく作る画面は Hud が出す）。</summary>
+        public void ChooseCharacter(int slot)
         {
-            ClassInfo.Current = type;
-            Profile.Select(type);
+            var ch = Profile.InSlot(slot);
+            if (ch == null) return;
+            Profile.SelectSlot(slot);
+            ClassInfo.Current = (ClassType)ch.ClassId;
             InTown = true;
             PendingClass = null;
             Guide("town", Loc.T("This is the town. Get ready here before heading into the tower.", "ここは町。塔へ出る前に、ここで支度をしな。"),
                 Loc.T("The storage keeper holds gear for every class. The merchant sells potions and gear. Pay with embers.", "倉庫番は全職業で使える倉庫。商人は薬と装備を売ってる。支払いは火種だよ。"),
                 Loc.T("At Lv 30, visit the master to change into an advanced class.", "Lv30 になったら、師匠のところで上位職に転職できる。"));
+        }
+
+        /// <summary>空いた枠に、選んだ職業でキャラクターを作って町へ。</summary>
+        public void CreateCharacter(int slot, ClassType type)
+        {
+            Profile.CreateInSlot(slot, type);
+            ChooseCharacter(slot);
         }
 
         /// <summary>町から出撃する。チェックポイントか中断した挑戦があれば、開始する層を選ぶ画面へ。</summary>
@@ -104,7 +113,6 @@ namespace VividOfFade
             ChoosingClass = true;
             PendingClass = null;
             InTown = true;
-            Profile.Select(ClassInfo.Current);
         }
 
         /// <summary>転職した：7つ目のスキルを覚えて、空いているボタンに付ける。</summary>
@@ -380,9 +388,13 @@ namespace VividOfFade
                     else if (Input.NumberPressed >= 0 && Input.NumberPressed < cps.Count) Hud.AskFloor(cps[Input.NumberPressed]);
                     else if (Input.CancelPressed) CancelFloorSelect();
                 }
-                else if (Input.NumberPressed >= 0 && Input.NumberPressed < ClassInfo.Count)
+                else if (Input.NumberPressed >= 0)
                 {
-                    ChooseClass((ClassType)Input.NumberPressed);
+                    Hud.PressSlotKey(Input.NumberPressed); // キャラクター選択の画面（数字キー）
+                }
+                else if (Input.CancelPressed)
+                {
+                    Hud.CancelNewCharacter(); // 職業の選択から枠の一覧へ
                 }
                 cameraRig.Tick(Player.Pos, Room, dt);
                 return;
@@ -773,7 +785,7 @@ namespace VividOfFade
         /// </summary>
         public void ResetLevel()
         {
-            Profile.ResetCharacter(ClassInfo.Current);
+            Profile.ResetCurrent();
             Profile.Save();
             ShowClassSelect();
         }
