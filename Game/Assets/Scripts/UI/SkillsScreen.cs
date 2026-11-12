@@ -69,22 +69,27 @@ namespace VividOfFade
                 nameStyle.normal.textColor = learned ? Color.white : new Color(0.55f, 0.55f, 0.55f);
                 int lv = ch.SkillLv[i];
                 string header = learned ? $"{spec.DisplayName}   Lv {lv}" : Loc.T($"{spec.DisplayName}   (learn at Lv {spec.ReqLevel})", $"{spec.DisplayName}   （Lv {spec.ReqLevel}で覚える）");
-                GUI.Label(new Rect(row.x + inner, row.y + inner, row.width, lineH * 1.2f), header, nameStyle);
+                // 1・2・3 のボタンは右側に縦の真ん中で並べ、文字はその左の幅に1行ずつ収める（折り返さない）
+                float bw = row.width * 0.12f;
+                float bh = Mathf.Min(btnH, rowH * 0.4f);
+                float buttonsW = learned ? SkillInfo.Slots * (bw + inner) + inner : inner;
+                float textW = row.width - inner - buttonsW;
+                Hud.FitLabel(new Rect(row.x + inner, row.y + inner, textW, lineH * 1.2f), header, nameStyle);
 
                 var text = new GUIStyle(small);
                 text.normal.textColor = learned ? new Color(0.85f, 0.85f, 0.85f) : new Color(0.5f, 0.5f, 0.5f);
                 float ty = row.y + inner + lineH * 1.25f;
-                GUI.Label(new Rect(row.x + inner, ty, row.width - inner * 2f, lineH), spec.DisplayDesc, text);
+                Hud.FitLabel(new Rect(row.x + inner, ty, textW, lineH), spec.DisplayDesc, text);
                 ty += lineH;
                 float cd = spec.Cooldown * SkillInfo.CooldownMult(lv);
                 string power = Loc.T($"Power x{SkillInfo.Power(lv):0.0}", $"威力 x{SkillInfo.Power(lv):0.0}");
-                GUI.Label(new Rect(row.x + inner, ty, row.width - inner * 2f, lineH), Loc.T($"MP {spec.Mp}   Cooldown {cd:0.0}s   {power}", $"MP {spec.Mp}   待ち時間 {cd:0.0}秒   {power}"), text);
+                Hud.FitLabel(new Rect(row.x + inner, ty, textW, lineH), Loc.T($"MP {spec.Mp}   Cooldown {cd:0.0}s   {power}", $"MP {spec.Mp}   待ち時間 {cd:0.0}秒   {power}"), text);
                 ty += lineH;
 
                 // 熟練度（使った回数）
                 if (learned)
                 {
-                    var bar = new Rect(row.x + inner, ty + lineH * 0.25f, row.width * 0.45f, lineH * 0.4f);
+                    var bar = new Rect(row.x + inner, ty + lineH * 0.25f, Mathf.Min(row.width * 0.45f, textW), lineH * 0.4f);
                     Hud.Fill(bar, new Color(1f, 1f, 1f, 0.12f));
                     if (lv >= SkillInfo.MaxSkillLevel)
                     {
@@ -100,13 +105,11 @@ namespace VividOfFade
                 // ボタンに付ける（1・2・3）
                 if (learned)
                 {
-                    float bw = row.width * 0.13f;
-                    float bh = Mathf.Min(btnH, rowH * 0.35f);
                     for (int s = 0; s < SkillInfo.Slots; s++)
                     {
                         int slot = s;
                         bool here = ch.Slots[s] == i;
-                        var r = new Rect(row.xMax - inner - (SkillInfo.Slots - s) * (bw + inner), row.yMax - inner - bh, bw, bh);
+                        var r = new Rect(row.xMax - inner - (SkillInfo.Slots - s) * (bw + inner), row.y + (rowH - bh) * 0.5f, bw, bh);
                         hud.Button(r, (s + 1).ToString(), here ? new Color(0.3f, 0.6f, 1f, 0.8f) : buttonBack, centered,
                             () => Assign(ch, slot, index));
                     }
