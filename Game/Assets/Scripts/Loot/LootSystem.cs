@@ -87,7 +87,7 @@ namespace VividOfFade
             var g = Spawn(from, room, spread);
             g.Item = item;
             g.Embers = 0;
-            g.Sr.sprite = PixelArt.ItemIcon(item.Slot, item.Rarity);
+            g.Sr.sprite = PixelArt.ItemIcon(item);
         }
 
         public void DropEmbers(Vector2 from, int amount, Room room, float spread = 1f)

@@ -554,6 +554,210 @@ namespace VividOfFade
             { 'r', new Color32(255, 120, 40, 255) },
         });
 
+        /// <summary>
+        /// 装備のアイコン。武器は種類ごとに形を描き分ける（16ドットを、ほかのアイコンと同じ大きさで描く）。
+        /// r の部分が珍しさの色になる。
+        /// </summary>
+        public static Sprite ItemIcon(Item item)
+        {
+            if (item == null) return null;
+            if (item.Slot != ItemSlot.Weapon || !WeaponIcons.TryGetValue(item.Weapon, out var rows)) return ItemIcon(item.Slot, item.Rarity);
+            Color32 c = RarityInfo.ColorOf(item.Rarity);
+            string key = $"WeaponIcon_{item.Weapon}_{item.Rarity}";
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            var pal = new Dictionary<char, Color32>
+            {
+                { 'k', new Color32(16, 12, 22, 255) },
+                { 'w', new Color32(220, 226, 238, 255) },
+                { 'b', new Color32(150, 100, 60, 255) },
+                { 'y', new Color32(240, 190, 70, 255) },
+                { 'o', new Color32(255, 140, 40, 255) },
+                { 'l', new Color32(255, 236, 150, 255) },
+                { 'r', c },
+            };
+            int h = rows.Length, w = rows[0].Length;
+            var px = new Color32[w * h];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    px[(h - 1 - y) * w + x] = pal.TryGetValue(rows[y][x], out var col) ? col : new Color32(0, 0, 0, 0);
+            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), 32); // 8ドットのアイコンと同じ大きさ
+        }
+
+        static readonly Dictionary<WeaponKind, string[]> WeaponIcons = new Dictionary<WeaponKind, string[]>
+        {
+            { WeaponKind.Wand, new[]
+            {
+                "............kkk.",
+                "...........krrrk",
+                "..........krlrrk",
+                "..........krrrrk",
+                "..........kkrrk.",
+                ".........kbkkk..",
+                "........kbk.....",
+                ".......kbk......",
+                "......kbk.......",
+                ".....kbk........",
+                "....kbk.........",
+                "...kbk..........",
+                "..kbk...........",
+                ".kbk............",
+                ".kk.............",
+                "................",
+            } },
+            { WeaponKind.Repeater, new[]
+            {
+                "...........kk...",
+                "..........krk.kk",
+                "...........k.krk",
+                "........kk..k.k.",
+                ".......krrkkbk..",
+                "........kkkbk...",
+                ".......kbbbk....",
+                "......kbykbk....",
+                ".....kbk.kk.....",
+                "....kbk.........",
+                "...kbk..........",
+                "..kbk...........",
+                ".kbk............",
+                ".kk.............",
+                "................",
+                "................",
+            } },
+            { WeaponKind.Fan, new[]
+            {
+                "..........k.k.k.",
+                ".........krkrkrk",
+                "..........krrrk.",
+                ".........krlrk..",
+                ".........kyyk...",
+                "........kbkk....",
+                ".......kbk......",
+                "......kbk.......",
+                ".....kbk........",
+                "....kbk.........",
+                "...kbk..........",
+                "..kbk...........",
+                ".kbk............",
+                ".kk.............",
+                "................",
+                "................",
+            } },
+            { WeaponKind.Sword, new[]
+            {
+                "............kkk.",
+                "...........kwwk.",
+                "..........kwwrk.",
+                ".........kwwrk..",
+                "........kwwrk...",
+                ".......kwwrk....",
+                "......kwwrk.....",
+                "..k..kwwrk......",
+                "..kykwwrk.......",
+                "...kyyrk........",
+                "...kbyyk........",
+                "..kbkkyk........",
+                ".kbk..kk........",
+                ".kyk............",
+                "..k.............",
+                "................",
+            } },
+            { WeaponKind.Dagger, new[]
+            {
+                "................",
+                "................",
+                "................",
+                "..........kkk...",
+                ".........kwwk...",
+                "........kwwrk...",
+                ".......kwwrk....",
+                "....k.kwwrk.....",
+                "....kykwrk......",
+                ".....kyyk.......",
+                ".....kbyyk......",
+                "....kbk.kk......",
+                "...kbk..........",
+                "...kyk..........",
+                "....k...........",
+                "................",
+            } },
+            { WeaponKind.Greatblade, new[]
+            {
+                "..........kkkkk.",
+                ".........kwwwwk.",
+                "........kwwwwrk.",
+                ".......kwwwwrk..",
+                "......kwwwwrk...",
+                ".....kwwwwrk....",
+                "....kwwwwrk.....",
+                ".k.kwwwwrk......",
+                ".kykwwwrk.......",
+                "..kyyyrk........",
+                "..kbyyyk........",
+                ".kbk.kyk........",
+                "kbk...kk........",
+                "kyk.............",
+                ".k..............",
+                "................",
+            } },
+            { WeaponKind.Censer, new[]
+            {
+                ".......kk.......",
+                ".......kwk......",
+                "........kw......",
+                ".......kwk......",
+                "........kw......",
+                ".......kkkk.....",
+                "......kyyyyk....",
+                ".....kyrrrryk...",
+                "....kyolololyk..",
+                "....kyollllyk...",
+                "....kyyyyyyyk...",
+                ".....kyrrrryk...",
+                "......kyyyyk....",
+                ".......kkkk.....",
+                "........kk......",
+                "................",
+            } },
+            { WeaponKind.Chain, new[]
+            {
+                "..kk............",
+                "..kwk...........",
+                "...kwk..........",
+                "..kkkkk.........",
+                "..krlrk.........",
+                "..krrrk.........",
+                "...kkkwk........",
+                "......kwk.kk....",
+                ".......kwkwk....",
+                "........kkkkk...",
+                "........krlrk...",
+                "........krrrk...",
+                ".........kkkwk..",
+                "............kwk.",
+                ".............kk.",
+                "................",
+            } },
+            { WeaponKind.Brazier, new[]
+            {
+                "................",
+                "......k..k......",
+                ".....kok.kok....",
+                "....kolok.olk...",
+                "....kollolllk...",
+                "...kolllllllok..",
+                "..kkkkkkkkkkkkk.",
+                "..kyrrrrrrrrryk.",
+                "...kyyyyyyyyyk..",
+                "....kyyyyyyyk...",
+                "......kbbbk.....",
+                ".......kbk......",
+                ".......kbk......",
+                ".....kkbbbkk....",
+                "....kbbbbbbbk...",
+                "....kkkkkkkkk...",
+            } },
+        };
+
         /// <summary>地面に落ちた装備のアイコン。r の部分が珍しさの色になる。</summary>
         public static Sprite ItemIcon(ItemSlot slot, Rarity rarity)
         {

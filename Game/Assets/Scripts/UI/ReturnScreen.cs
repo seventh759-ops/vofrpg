@@ -82,7 +82,7 @@ namespace VividOfFade
                     else if (chosen.Count < ch.CarrySlots) chosen.Add(item);
                 });
                 float inset = r.width * 0.15f;
-                Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.ItemIcon(item.Slot, item.Rarity));
+                Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.ItemIcon(item));
                 Hud.DrawEnhance(r, item);
             }
             int rows = (candidates.Count + cols - 1) / cols;

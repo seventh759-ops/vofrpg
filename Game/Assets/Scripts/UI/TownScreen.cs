@@ -299,7 +299,7 @@ namespace VividOfFade
                 float inset = r.width * 0.15f;
                 var old = GUI.color;
                 if (Town.OtherClassWeapon(item, type)) GUI.color = new Color(1f, 1f, 1f, 0.35f);
-                Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.ItemIcon(item.Slot, item.Rarity));
+                Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.ItemIcon(item));
                 GUI.color = old;
                 Hud.DrawEnhance(r, item);
             }
