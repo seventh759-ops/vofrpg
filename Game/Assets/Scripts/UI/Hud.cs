@@ -761,7 +761,8 @@ namespace VividOfFade
         }
 
         /// <summary>
-        /// タイトル画面。上は夜空と瞬く星、地表に3人の職業。地中には逆さの塔が伸び、最深部に灯りがゆらめく。火の粉、光をまとったロゴ。
+        /// タイトル画面。上に副題とロゴ（VIVID は虹色に光り、FADE は崩れて粒が舞い散る）、夜空と星。
+        /// 崖の裂け目の上に3人が立ち、裂け目には逆さの塔が沈んでいく。壁の松明は深いほど弱く、最深部の尖塔の先に灯りがゆらめく。
         /// どこを押しても始まる（言語のボタンだけは別）。
         /// </summary>
         void DrawTitle()
@@ -771,98 +772,137 @@ namespace VividOfFade
             float t = Time.unscaledTime;
             Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0f), centered, World.LeaveTitle);
 
-            // 地表の高さ。上は夜空、下は地中（逆さの塔が地下へ伸びる）
-            float ground = H * 0.37f;
+            float ground = H * 0.44f; // 地表（崖の上）の高さ
 
-            // 夜空（上は深い紫、地平へいくほど少し明るい）
-            const int bands = 14;
+            // 夜空
+            const int bands = 16;
             for (int b = 0; b < bands; b++)
             {
                 float k = b / (float)(bands - 1);
-                var c = Color.Lerp(new Color(0.06f, 0.03f, 0.12f), new Color(0.16f, 0.1f, 0.24f), k);
+                var c = Color.Lerp(new Color(0.06f, 0.04f, 0.1f), new Color(0.17f, 0.12f, 0.22f), k);
                 Fill(new Rect(0, ground * b / bands, W, ground / bands + 1f), c);
             }
-            Fill(new Rect(0, ground - H * 0.04f, W, H * 0.04f), new Color(1f, 0.55f, 0.3f, 0.06f)); // 地平の残り火の色
-
-            // 星（決まった位置で瞬く）
-            for (int i = 0; i < 45; i++)
+            for (int i = 0; i < 40; i++)
             {
-                float sx = Hash01(i * 7 + 1) * W, sy = Hash01(i * 13 + 5) * ground * 0.85f;
-                float tw = 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(t * (0.6f + Hash01(i) * 1.6f) + i));
+                float sx = Hash01(i * 7 + 1) * W, sy = Hash01(i * 13 + 5) * ground * 0.9f;
+                float tw = 0.3f + 0.7f * Mathf.Abs(Mathf.Sin(t * (0.6f + Hash01(i) * 1.6f) + i));
                 float sz = i % 9 == 0 ? 3f : 2f;
-                Fill(new Rect(sx, sy, sz, sz), new Color(1f, 0.95f, 0.85f, tw * 0.8f));
+                Fill(new Rect(sx, sy, sz, sz), new Color(1f, 0.95f, 0.85f, tw * 0.6f));
             }
 
-            // 地中（深いほど暗い）と、ところどころの石
-            const int earthBands = 24;
-            for (int b = 0; b < earthBands; b++)
+            // 崖の裂け目（深いほど暗い）。左右の崖の縁は少しずつ揺らぐ
+            const int rows = 48;
+            float depth = H - ground;
+            for (int b = 0; b < rows; b++)
             {
-                float k = b / (float)(earthBands - 1);
-                var c = Color.Lerp(new Color(0.13f, 0.09f, 0.11f), new Color(0.02f, 0.015f, 0.04f), k);
-                Fill(new Rect(0, ground + (H - ground) * b / earthBands, W, (H - ground) / earthBands + 1f), c);
+                float k = b / (float)(rows - 1);
+                float y = ground + depth * b / rows, bh = depth / rows + 1f;
+                ChasmEdges(k, W, out float L, out float R);
+                Fill(new Rect(0, y, W, bh), Color.Lerp(new Color(0.07f, 0.05f, 0.1f), new Color(0.01f, 0.01f, 0.02f), k));
+                var rock = Color.Lerp(new Color(0.2f, 0.17f, 0.2f), new Color(0.05f, 0.04f, 0.06f), k);
+                var rim = Color.Lerp(new Color(0.32f, 0.27f, 0.3f), new Color(0.08f, 0.07f, 0.09f), k);
+                Fill(new Rect(0, y, L, bh), rock);
+                Fill(new Rect(R, y, W - R, bh), rock);
+                Fill(new Rect(L - W * 0.014f, y, W * 0.014f, bh), rim);
+                Fill(new Rect(R, y, W * 0.014f, bh), rim);
             }
-            for (int i = 0; i < 60; i++)
+            // 岩肌のでこぼこ（崖の部分だけ）
+            for (int i = 0; i < 80; i++)
             {
-                float rx = Hash01(i * 19 + 4) * W, ry = ground + H * 0.01f + Hash01(i * 23 + 9) * (H - ground);
-                float rw = W * (0.01f + Hash01(i * 29) * 0.025f);
-                float k = (ry - ground) / (H - ground);
-                Fill(new Rect(rx, ry, rw, rw * 0.5f), new Color(0.25f, 0.2f, 0.24f, 0.35f * (1f - k)));
+                float k = Hash01(i * 23 + 9);
+                float ry = ground + depth * k, rw = W * (0.02f + Hash01(i * 29) * 0.05f);
+                ChasmEdges(k, W, out float L, out float R);
+                float rx = Hash01(i * 19 + 4) < 0.5f ? Hash01(i * 37) * (L - rw - W * 0.02f) : R + W * 0.02f + Hash01(i * 37) * (W - R - rw - W * 0.02f);
+                bool light = i % 3 == 0;
+                Fill(new Rect(rx, ry, rw, rw * 0.45f), light ? new Color(0.4f, 0.35f, 0.38f, 0.18f * (1f - k)) : new Color(0f, 0f, 0f, 0.25f));
             }
 
-            // 逆さの塔（地表から下へ）と、最深部でゆらめく灯り
-            float th = H * 0.47f, tw2 = th * 48f / 112f;
+            // 逆さの塔（裂け目の中へ）と、最深部でゆらめく灯り
+            float th = H * 0.38f, tw2 = th * 48f / 112f;
             var tower = new Rect((W - tw2) * 0.5f, ground, tw2, th);
             DrawSprite(tower, PixelArt.TitleTower);
             float flick = 0.55f + 0.45f * Mathf.PerlinNoise(t * 2.2f, 0.3f);
-            float gr = tw2 * 0.45f, beaconY = tower.yMax - th * 0.022f; // 灯りの中心（尖塔の先）
-            Fill(new Rect(W * 0.5f - gr * 0.5f, beaconY - gr * 0.2f, gr, gr * 0.4f), new Color(1f, 0.85f, 0.5f, 0.12f * flick));
-            Fill(new Rect(W * 0.5f - gr * 0.25f, beaconY - gr * 0.1f, gr * 0.5f, gr * 0.2f), new Color(1f, 0.9f, 0.6f, 0.2f * flick));
+            float beaconY = tower.yMax - th * 0.022f;
+            Glow(W * 0.5f, beaconY, tw2 * 0.6f, new Color(1f, 0.8f, 0.45f, 0.5f * flick));
+            Glow(W * 0.5f, beaconY, tw2 * 0.2f, new Color(1f, 0.95f, 0.75f, 0.8f * flick));
 
-            // 地表
-            Fill(new Rect(0, ground, W, H * 0.006f), new Color(0.35f, 0.25f, 0.4f, 0.8f));
+            // 壁の松明：深いものほど弱く、いちばん深いものは消えている
+            for (int i = 0; i < 4; i++)
+            {
+                float k = 0.12f + i * 0.2f;
+                float bright = 1f - i * 0.33f;
+                ChasmEdges(k, W, out float L, out float R);
+                bool left = i % 2 == 0;
+                float tx = left ? L + W * 0.004f : R - W * 0.022f;
+                float ty = ground + depth * k;
+                Fill(new Rect(tx, ty, W * 0.018f, H * 0.006f), new Color(0.12f, 0.1f, 0.1f));          // 金具
+                Fill(new Rect(tx + W * 0.006f, ty - H * 0.012f, W * 0.006f, H * 0.012f), new Color(0.3f, 0.2f, 0.12f)); // 柄
+                if (bright <= 0.05f) continue;
+                float f = 0.7f + 0.3f * Mathf.PerlinNoise(t * 6f, i * 3.1f);
+                float cx = tx + W * 0.009f, cy = ty - H * 0.018f;
+                Glow(cx, cy, W * 0.2f * bright, new Color(1f, 0.55f, 0.2f, 0.45f * f * bright));
+                Glow(cx, cy, W * 0.06f, new Color(1f, 0.8f, 0.4f, 0.6f * f * bright));
+                float fw = W * 0.016f, fh = H * 0.016f * f;
+                Fill(new Rect(cx - fw * 0.5f, cy - fh * 0.5f, fw, fh), new Color(1f, 0.5f, 0.15f, 0.9f * bright));
+                Fill(new Rect(cx - fw * 0.25f, cy - fh * 0.2f, fw * 0.5f, fh * 0.55f), new Color(1f, 0.9f, 0.5f, bright));
+            }
 
-            // 火の粉（地の底から立ちのぼり、上へいくほど消える）
-            for (int i = 0; i < 36; i++)
+            // 地表：崖の上の苔と、裂け目に架かる塔の屋上
+            ChasmEdges(0f, W, out float L0, out float R0);
+            Fill(new Rect(0, ground, L0, H * 0.008f), new Color(0.2f, 0.28f, 0.16f));
+            Fill(new Rect(R0, ground, W - R0, H * 0.008f), new Color(0.2f, 0.28f, 0.16f));
+            Fill(new Rect(L0 - W * 0.02f, ground, R0 - L0 + W * 0.04f, H * 0.012f), new Color(0.27f, 0.24f, 0.33f));
+            Fill(new Rect(L0 - W * 0.02f, ground + H * 0.012f, R0 - L0 + W * 0.04f, H * 0.004f), new Color(0.1f, 0.08f, 0.14f));
+
+            // 火の粉（裂け目の底から立ちのぼる）
+            for (int i = 0; i < 30; i++)
             {
                 float speed = 0.05f + Hash01(i * 3 + 2) * 0.06f;
                 float life = Mathf.Repeat(t * speed + Hash01(i * 11 + 7), 1f);
-                float ex = Hash01(i * 5 + 3) * W + Mathf.Sin(t * 0.8f + i) * W * 0.02f;
-                float ey = H - life * H * 0.95f;
+                float ex = W * (0.25f + 0.5f * Hash01(i * 5 + 3)) + Mathf.Sin(t * 0.8f + i) * W * 0.02f;
+                float ey = H - life * (H - ground * 0.5f);
                 float a = (1f - life) * 0.9f;
                 float sz = 2f + Hash01(i * 17) * 3f;
                 Fill(new Rect(ex, ey, sz, sz), new Color(1f, 0.55f + 0.3f * Hash01(i), 0.2f, a));
             }
 
-            // ロゴ：影・金の光・本体の3層、下に飾りの線と副題
-            var logo = new GUIStyle(centered) { fontSize = Mathf.RoundToInt(label.fontSize * 2.8f), fontStyle = FontStyle.Bold };
-            var logoRect = new Rect(0, H * 0.1f, W, H * 0.09f);
-            float glowA = 0.18f + 0.08f * Mathf.Sin(t * 2f);
-            logo.normal.textColor = new Color(0f, 0f, 0f, 0.8f);
-            FitLabel(new Rect(logoRect.x + 3f, logoRect.y + 4f, logoRect.width, logoRect.height), "VIVID OF FADE", logo);
-            logo.normal.textColor = new Color(1f, 0.75f, 0.3f, glowA);
-            for (int d = 0; d < 4; d++)
-            {
-                float ox = d == 0 ? -3f : d == 1 ? 3f : 0f, oy = d == 2 ? -3f : d == 3 ? 3f : 0f;
-                FitLabel(new Rect(logoRect.x + ox, logoRect.y + oy, logoRect.width, logoRect.height), "VIVID OF FADE", logo);
-            }
-            logo.normal.textColor = new Color(1f, 0.92f, 0.7f);
-            FitLabel(logoRect, "VIVID OF FADE", logo);
-            float lineW = W * 0.18f, ly = H * 0.205f;
-            Fill(new Rect(W * 0.5f - lineW - W * 0.2f, ly, lineW, 2f), new Color(1f, 0.8f, 0.4f, 0.7f));
-            Fill(new Rect(W * 0.5f + W * 0.2f, ly, lineW, 2f), new Color(1f, 0.8f, 0.4f, 0.7f));
-            var sub = new GUIStyle(centered) { fontStyle = FontStyle.Italic };
+            // 副題（上に線と一緒に）
+            float ly = H * 0.05f, lineW = W * 0.16f;
+            Fill(new Rect(W * 0.5f - W * 0.22f - lineW, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
+            Fill(new Rect(W * 0.5f + W * 0.22f, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
+            var sub = new GUIStyle(centered);
             sub.normal.textColor = new Color(0.9f, 0.85f, 0.95f, 0.9f);
-            FitLabel(new Rect(W * 0.3f, ly - H * 0.016f, W * 0.4f, H * 0.035f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
+            FitLabel(new Rect(W * 0.28f, ly - H * 0.017f, W * 0.44f, H * 0.035f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
 
-            // 手前に3人（元の職業の見た目）。足元に影
-            float s = W * 0.2f;
-            float gap = W * 0.04f;
+            // ロゴ：VIVID のまわりの光、本体、FADE から崩れて舞い散る粒
+            var logoTex = TitleArt.Logo;
+            float sc = Mathf.Max(1f, Mathf.Floor(W * 0.95f / logoTex.width));
+            var logoRect = new Rect((W - logoTex.width * sc) * 0.5f, H * 0.085f, logoTex.width * sc, logoTex.height * sc);
+            var old = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, 0.75f + 0.25f * Mathf.Sin(t * 2f));
+            GUI.DrawTexture(new Rect(logoRect.x - sc, logoRect.y - sc, logoRect.width + sc * 2f, logoRect.height + sc * 2f), TitleArt.Glow);
+            GUI.color = old;
+            GUI.DrawTexture(logoRect, logoTex);
+            var crumbs = TitleArt.Crumbs;
+            for (int i = 0; i < crumbs.Count; i++)
+            {
+                float phase = Mathf.Repeat(t * 0.16f + Hash01(i * 31 + 3), 1f);
+                float ox = logoRect.x + crumbs[i].x * sc, oy = logoRect.y + crumbs[i].y * sc;
+                float dx = phase * W * 0.12f * (0.5f + Hash01(i * 7 + 2));
+                float dy = phase * phase * H * 0.1f + phase * H * 0.01f;
+                float a = phase < 0.08f ? phase / 0.08f : 1f - phase;
+                Fill(new Rect(ox + dx, oy + dy, sc, sc), new Color(0.6f, 0.58f, 0.65f, a * 0.9f));
+            }
+
+            // 崖の上に3人（元の職業の見た目）。足元に影
+            float s = W * 0.26f;
+            float gap = W * 0.02f;
             float x0 = (W - s * ClassInfo.Count - gap * (ClassInfo.Count - 1)) * 0.5f;
             for (int i = 0; i < ClassInfo.Count; i++)
             {
-                float bob = Mathf.Sin(t * 1.5f + i * 1.3f) * s * 0.015f;
+                float bob = Mathf.Sin(t * 1.5f + i * 1.3f) * s * 0.012f;
                 var r = new Rect(x0 + i * (s + gap), ground - s * 0.85f + bob, s, s);
-                Fill(new Rect(r.x + s * 0.2f, ground + s * 0.08f, s * 0.6f, s * 0.06f), new Color(0f, 0f, 0f, 0.5f));
+                Fill(new Rect(r.x + s * 0.22f, ground - s * 0.01f, s * 0.56f, s * 0.04f), new Color(0f, 0f, 0f, 0.45f));
                 DrawSprite(r, PixelArt.PlayerFor(new CharacterData { ClassId = i }));
             }
 
@@ -875,6 +915,22 @@ namespace VividOfFade
 
             float bw = W * 0.5f;
             Button(new Rect((W - bw) * 0.5f, H * 0.92f, bw, H * 0.04f), $"Language: {Loc.LanguageName}", new Color(1f, 1f, 1f, 0.1f), centered, () => Loc.Next());
+        }
+
+        /// <summary>(cx, cy) を中心に半径 r のまるい光を重ねる。</summary>
+        static void Glow(float cx, float cy, float r, Color color)
+        {
+            var old = GUI.color;
+            GUI.color = color;
+            GUI.DrawTexture(new Rect(cx - r, cy - r, r * 2f, r * 2f), TitleArt.SoftGlow);
+            GUI.color = old;
+        }
+
+        /// <summary>タイトルの崖の裂け目の左右の縁（k: 0=地表 1=画面の下）。少しずつ揺らぐ。</summary>
+        static void ChasmEdges(float k, float W, out float left, out float right)
+        {
+            left = W * (0.16f + 0.07f * Mathf.PerlinNoise(k * 5f, 1.3f) - 0.03f * k);
+            right = W * (0.84f - 0.07f * Mathf.PerlinNoise(k * 5f, 7.7f) + 0.03f * k);
         }
 
         /// <summary>0〜1 の決まった乱数（タイトルの星・火の粉の位置に使う。毎回同じ並び）。</summary>
