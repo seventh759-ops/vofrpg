@@ -51,7 +51,7 @@ namespace VividOfFade
         /// 術師の弾のダメージ。体当たりと違い、深い層でも急に強くならない（指数で増えない）。
         /// 避けにくい分、少しずつ削る攻撃にする。
         /// </summary>
-        public static int BulletDamage(int tier) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (tier - 1)) * 0.6f);
+        public static int BulletDamage(int tier) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (tier - 1)) * 1.2f);
 
         public static int EnemyDamage(int wave) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (wave - 1)) * Mathf.Pow(1.02f, wave - 1));
 
