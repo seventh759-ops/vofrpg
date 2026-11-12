@@ -218,6 +218,7 @@ namespace VividOfFade
                         case StatType.MaxHpPct: hpPct += a.Value; break;
                         case StatType.Hit: hitBonus += Mathf.RoundToInt(a.Value); break;
                         case StatType.Evasion: evaBonus += Mathf.RoundToInt(a.Value); break;
+                        case StatType.Luck: s.ExpGain += a.Value; s.EmberFind += a.Value; s.MagicFind += a.Value; break;
                     }
                 }
 

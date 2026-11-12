@@ -64,6 +64,24 @@ namespace VividOfFade
             if (Affixes == null) Affixes = new List<Affix>();
             if (Uniques == null) Uniques = new List<UniqueType>();
             if (Enhance < 0) Enhance = 0;
+            // 前の版の「経験値・拾う火種・珍しい品」は「幸運」1つにまとめる（いちばん大きい値を残す）
+            int luckAt = -1;
+            for (int i = 0; i < Affixes.Count; i++)
+            {
+                var a = Affixes[i];
+                if (a.Stat != StatType.ExpGain && a.Stat != StatType.EmberFind && a.Stat != StatType.MagicFind && a.Stat != StatType.Luck) continue;
+                if (luckAt < 0)
+                {
+                    luckAt = i;
+                    Affixes[i] = new Affix(StatType.Luck, a.Value);
+                }
+                else
+                {
+                    if (a.Value > Affixes[luckAt].Value) Affixes[luckAt] = new Affix(StatType.Luck, a.Value);
+                    Affixes.RemoveAt(i);
+                    i--;
+                }
+            }
             if (Enhance > MaxEnhance) Enhance = MaxEnhance;
         }
 
@@ -144,6 +162,7 @@ namespace VividOfFade
                 case StatType.MaxHpPct: return Loc.T($"+{v * 100f:0}% Max HP", $"最大体力 +{v * 100f:0}%");
                 case StatType.Hit: return $"+{v:0} HIT";
                 case StatType.Evasion: return $"+{v:0} EVA";
+                case StatType.Luck: return Loc.T($"+{v * 100f:0}% Luck (exp, embers, rare finds)", $"幸運 +{v * 100f:0}%（経験値・火種・珍しい品）");
                 default: return t.ToString();
             }
         }

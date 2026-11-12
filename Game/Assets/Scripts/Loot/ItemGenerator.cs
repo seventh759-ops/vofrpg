@@ -18,10 +18,10 @@ namespace VividOfFade
             StatType.MoveSpeedPct, StatType.MaxHp, StatType.Armor, StatType.LightRadius,
             StatType.Pierce, StatType.Multishot,
             StatType.Str, StatType.Dex, StatType.Int, StatType.Vit, StatType.Wis, StatType.MaxMp,
-            StatType.HpRegen, StatType.MpRegen, StatType.LifeSteal, StatType.DamageReduction, StatType.SkillDamagePct,
-            StatType.CooldownReduction, StatType.ExpGain, StatType.EmberFind, StatType.MagicFind, StatType.EliteDamage,
-            StatType.ExplodePower, StatType.DodgeCooldown, StatType.AllStats, StatType.AreaPct, StatType.MaxHpPct,
-            StatType.Hit, StatType.Evasion,
+            StatType.HpRegen, StatType.MpRegen, StatType.LifeSteal, StatType.DamageReduction,
+            StatType.AllStats, StatType.MaxHpPct, StatType.Hit, StatType.Evasion, StatType.Luck,
+            // 出なくした効果（前の版の装備に付いている分は効く）：SkillDamagePct・CooldownReduction・AreaPct・EliteDamage・
+            // ExplodePower・DodgeCooldown。ExpGain・EmberFind・MagicFind は Luck にまとめた
         };
 
         /// <summary>今の挑戦の「珍しい品が出やすい」の効果（GameWorld が毎フレーム入れる。町では 0）。</summary>
@@ -278,6 +278,7 @@ namespace VividOfFade
                 case StatType.MaxHpPct: return Random.Range(0.03f, 0.08f) * m;
                 case StatType.Hit:
                 case StatType.Evasion: return Mathf.Round((Random.Range(3f, 8f) + level * 0.5f) * m);
+                case StatType.Luck: return Random.Range(0.04f, 0.1f) * m;
                 default: return 1f; // Pierce / Multishot
             }
         }
