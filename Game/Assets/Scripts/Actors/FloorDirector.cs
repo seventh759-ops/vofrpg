@@ -78,8 +78,27 @@ namespace VividOfFade
 
         public void Tick(float dt, EnemySystem enemies, Player player, Room room)
         {
-            var area = room.AreaAt(player.Pos);
-            if (area != null && !area.Activated && !area.IsStart) Activate(area, enemies, player, room);
+            // 部屋の入口（部屋の縁から1マス外まで）に来たら、その部屋の敵が起きる
+            foreach (var area in room.Areas)
+            {
+                if (area.Activated || area.IsStart || !area.Contains(player.Pos, -1f)) continue;
+                Activate(area, enemies, player, room);
+            }
+            // 念のため：眠っている敵のすぐ近く（3マス）まで来たら、その部屋ごと起こす
+            foreach (var e in enemies.Active)
+            {
+                if (!e.Dormant) continue;
+                if (e.Home == null || e.Home.Activated)
+                {
+                    e.Dormant = false; // 起きた部屋に眠ったまま残った敵がいれば起こす
+                    continue;
+                }
+                if ((e.Pos - player.Pos).sqrMagnitude < 9f)
+                {
+                    Activate(e.Home, enemies, player, room);
+                    break;
+                }
+            }
         }
 
         void Activate(RoomArea area, EnemySystem enemies, Player player, Room room)
