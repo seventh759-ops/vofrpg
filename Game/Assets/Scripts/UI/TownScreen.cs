@@ -90,7 +90,7 @@ namespace VividOfFade
             var adv = AdvancedClasses.Of(type, ch);
             bool masterNotice = (adv == null && ch.Level >= AdvancedClasses.ReqLevel) || ThirdClasses.MeetsRequirements(ch);
             string masterLine = ch.Third ? Loc.T("Reborn", "転生ずみ")
-                : adv != null ? (ThirdClasses.MeetsRequirements(ch) ? Loc.T("Rebirth ready!", "転生できる！") : Loc.T("Rebirth: Lv99 / F100", "転生：Lv99・100層"))
+                : adv != null ? (ThirdClasses.MeetsRequirements(ch) ? Loc.T("Rebirth ready!", "転生できる！") : adv.DisplayName)
                 : ch.Level >= AdvancedClasses.ReqLevel ? Loc.T("Class change!", "転職できる！")
                 : Loc.T($"From Lv {AdvancedClasses.ReqLevel}", $"Lv{AdvancedClasses.ReqLevel}から");
             const int cols = 3;
@@ -111,7 +111,16 @@ namespace VividOfFade
             }
             Tile(0, PixelArt.TownIcon(0), Loc.T("Storage", "倉庫番"), $"{Profile.Storage.Count}/{Town.StorageCapacity}", () => Open(Panel.Storage));
             Tile(1, PixelArt.TownIcon(1), Loc.T("Merchant", "商人"), Loc.T("Potions / gear", "薬・装備"), () => Open(Panel.Merchant));
-            Tile(2, PixelArt.TownIcon(2), Loc.T("Master", "師匠"), masterLine, () => Open(Panel.Master), masterNotice);
+            // 師匠は、転職できるようになるまで「？？？」（転職・転生は条件を満たしたら明かす）
+            if (adv == null && ch.Level < AdvancedClasses.ReqLevel)
+            {
+                var r2 = new Rect(pad + (2 % cols) * (tw + tgap), y, tw, th);
+                Hud.Fill(r2, dim);
+                var q = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+                q.normal.textColor = new Color(0.55f, 0.55f, 0.6f);
+                GUI.Label(r2, "？？？", q);
+            }
+            else Tile(2, PixelArt.TownIcon(2), Loc.T("Master", "師匠"), masterLine, () => Open(Panel.Master), masterNotice);
             Tile(3, PixelArt.TownIcon(3), Loc.T("Porter", "荷運び"), Loc.T($"Carry {ch.CarrySlots}/{Town.MaxCarrySlots}", $"持ち帰り {ch.CarrySlots}/{Town.MaxCarrySlots}"), () => Open(Panel.Porter));
             Tile(4, PixelArt.TownIcon(4), Loc.T("Blacksmith", "鍛冶屋"), Loc.T("Mythic only", "神話（赤）だけ"), () => Open(Panel.Smith));
             Tile(5, PixelArt.PlayerFor(ch), Loc.T("Characters", "キャラ選択"), Loc.T("Switch", "切り替え"), world.ShowClassSelect);
@@ -218,7 +227,7 @@ namespace VividOfFade
             }
             foreach (var line in selected.Describe())
             {
-                if (y + lineH > by - H * 0.01f) break;
+                if (y + lineH > by - btnH - W * 0.03f - H * 0.01f) break; // 2段のボタンの上まで
                 GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), line, small);
                 y += lineH;
             }
@@ -227,16 +236,17 @@ namespace VividOfFade
             float half = (W - pad * 2f - gap) * 0.5f;
             bool inStash = ch.Stash.Contains(selected);
             var item = selected;
+            float by1 = by - btnH - gap * 0.5f; // 上の段：移す・ロック  下の段：売却・破棄
             if (inStash)
             {
                 bool room = Profile.Storage.Count < Town.StorageCapacity;
-                hud.Button(new Rect(pad, by, half, btnH), room ? Loc.T("TO STORAGE", "倉庫へ") : Loc.T("STORAGE FULL", "倉庫が満杯"), row, hud.CenteredStyle,
+                hud.Button(new Rect(pad, by1, half, btnH), room ? Loc.T("TO STORAGE", "倉庫へ") : Loc.T("STORAGE FULL", "倉庫が満杯"), row, hud.CenteredStyle,
                     () => { if (Town.Store(ch, item)) selected = null; });
             }
             else
             {
                 bool room = ch.Stash.Count < Inventory.BagCapacity;
-                var r = new Rect(pad, by, half, btnH);
+                var r = new Rect(pad, by1, half, btnH);
                 if (Town.OtherClassWeapon(item, type))
                 {
                     Hud.Fill(r, dim);
@@ -248,15 +258,21 @@ namespace VividOfFade
                         () => { if (Town.Take(ch, item)) selected = null; });
                 }
             }
+            hud.Button(new Rect(pad + half + gap, by1, half, btnH), item.Locked ? Loc.T("UNLOCK", "ロック解除") : Loc.T("LOCK", "ロック"),
+                item.Locked ? gold : row, hud.CenteredStyle, () => { item.Locked = !item.Locked; Profile.Save(); });
+
             if (item.Locked)
             {
-                Hud.Fill(new Rect(pad + half + gap, by, half, btnH), dim);
-                GUI.Label(new Rect(pad + half + gap, by, half, btnH), Loc.T("LOCKED", "ロック中"), hud.CenteredStyle);
+                var lr = new Rect(pad, by, W - pad * 2f, btnH);
+                Hud.Fill(lr, dim);
+                Hud.FitLabel(lr, Loc.T("Locked: unlock to sell or discard", "ロック中：外すと売却・破棄できる"), hud.CenteredStyle);
             }
             else
             {
-                Confirm(new Rect(pad + half + gap, by, half, btnH), "salvage", Loc.T($"SALVAGE +{RarityInfo.SalvageOf(item.Rarity)}", $"分解 +{RarityInfo.SalvageOf(item.Rarity)}"),
+                Confirm(new Rect(pad, by, half, btnH), "salvage", Loc.T($"SELL +{RarityInfo.SalvageOf(item.Rarity)} embers", $"売却 火種+{RarityInfo.SalvageOf(item.Rarity)}"),
                     () => { if (Town.Salvage(ch, item)) selected = null; });
+                Confirm(new Rect(pad + half + gap, by, half, btnH), "discard", Loc.T("DISCARD", "破棄"),
+                    () => { if (Town.Discard(ch, item)) selected = null; });
             }
         }
 
@@ -445,6 +461,13 @@ namespace VividOfFade
             var wrap = new GUIStyle(small) { wordWrap = true };
             var third = ThirdClasses.Get(type, ch.Advanced);
 
+            // 転生は、条件（Lv99・100層）を満たすまで明かさない
+            if (!ch.Third && !ThirdClasses.MeetsRequirements(ch))
+            {
+                var plain = new GUIStyle(hud.LabelStyle) { wordWrap = true };
+                GUI.Label(new Rect(pad, y, W - pad * 2f, H * 0.1f), Loc.T($"You are a {current.DisplayName}. Keep growing stronger.", $"あなたは{current.DisplayName}。さらに強くなりな。"), plain);
+                return;
+            }
             string status = ch.Third
                 ? Loc.T($"You are reborn as a {third.DisplayName}.", $"あなたは転生して{third.DisplayName}になった。")
                 : Loc.T($"You are a {current.DisplayName}. Reach Lv {ThirdClasses.ReqLevel} and floor {ThirdClasses.ReqFloor} to be reborn ({ThirdClasses.Cost} embers). You go back to Lv 1 and get {ThirdClasses.BonusPoints} bonus points. Once only.",

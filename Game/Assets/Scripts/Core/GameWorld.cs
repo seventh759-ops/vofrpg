@@ -86,8 +86,7 @@ namespace VividOfFade
             InTown = true;
             PendingClass = null;
             Guide("town", Loc.T("This is the town. Get ready here before heading into the tower.", "ここは町。塔へ出る前に、ここで支度をしな。"),
-                Loc.T("The storage keeper holds gear for every class. The merchant sells potions and gear. Pay with embers.", "倉庫番は全職業で使える倉庫。商人は薬と装備を売ってる。支払いは火種だよ。"),
-                Loc.T("At Lv 30, visit the master to change into an advanced class.", "Lv30 になったら、師匠のところで上位職に転職できる。"));
+                Loc.T("The storage keeper holds gear for every class. The merchant sells potions and gear. Pay with embers.", "倉庫番は全職業で使える倉庫。商人は薬と装備を売ってる。支払いは火種だよ。"));
         }
 
         /// <summary>空いた枠に、選んだ職業でキャラクターを作って町へ。</summary>
@@ -206,7 +205,6 @@ namespace VividOfFade
             new[] { "Embers buy boons at altars, and potions and gear in town.", "火種は祭壇で加護に、町で薬や装備に変えられる。" },
             new[] { "Every 5 floors a boss waits. Beat it and you can start beyond it.", "5層ごとにボスがいる。倒せば、その先から始められる。" },
             new[] { "Tap the strip above a skill button to cast it automatically.", "スキルのボタンの上の帯を押すと、オートで使ってくれる。" },
-            new[] { "At Lv 30, the master in town can make you an advanced class.", "Lv30 になったら、町の師匠で上位職に転職できる。" },
             new[] { "A Shroud drains your light. Take it out first.", "覆いは灯りを奪う。先に倒しな。" },
             new[] { "The storage in town is shared by every class.", "町の倉庫は、どの職業でも使えるよ。" },
         };

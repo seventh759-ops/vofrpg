@@ -94,7 +94,16 @@ namespace VividOfFade
             return true;
         }
 
-        /// <summary>町で分解する（火種はその職業に入る）。ロック中の品は分解しない。</summary>
+        /// <summary>町で捨てる（火種にはならない）。ロック中の品は捨てない。</summary>
+        public static bool Discard(CharacterData ch, Item item)
+        {
+            if (item.Locked) return false;
+            if (!ch.Stash.Remove(item) && !Profile.Storage.Remove(item)) return false;
+            Profile.Save();
+            return true;
+        }
+
+        /// <summary>町で売る（分解と同じく火種になる。火種はそのキャラクターに入る）。ロック中の品は売らない。</summary>
         public static bool Salvage(CharacterData ch, Item item)
         {
             if (item.Locked) return false;
