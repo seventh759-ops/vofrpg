@@ -986,6 +986,14 @@ namespace VividOfFade
             GUI.color = old;
         }
 
+        /// <summary>強化した品なら、アイコンの右下に強化の紋章を重ねる。</summary>
+        public static void DrawEnhance(Rect cell, Item item)
+        {
+            if (item == null || item.Enhance <= 0) return;
+            float s = cell.width * 0.48f;
+            DrawSprite(new Rect(cell.xMax - s * 0.95f, cell.yMax - s * 0.95f, s, s), PixelArt.EnhanceEmblem(item.Enhance));
+        }
+
         public static void DrawSprite(Rect guiRect, Sprite sprite)
         {
             if (sprite == null) return;

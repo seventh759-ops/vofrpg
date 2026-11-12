@@ -83,6 +83,7 @@ namespace VividOfFade
                 });
                 float inset = r.width * 0.15f;
                 Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.ItemIcon(item.Slot, item.Rarity));
+                Hud.DrawEnhance(r, item);
             }
             int rows = (candidates.Count + cols - 1) / cols;
             y += rows * (cell + gap) + H * 0.01f;

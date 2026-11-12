@@ -275,6 +275,7 @@ namespace VividOfFade
             if (item == null) return;
             float inset = r.width * 0.15f;
             Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.ItemIcon(item.Slot, item.Rarity));
+            Hud.DrawEnhance(r, item);
             if (item.Locked)
             {
                 var lockStyle = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };

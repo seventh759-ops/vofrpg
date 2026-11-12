@@ -904,6 +904,94 @@ namespace VividOfFade
             "................",
         };
 
+        /// <summary>
+        /// 強化の紋章（24ドット）。+1〜+4 で黄色のひし形が上・下・右・左に1つずつ、+5 で中央の橙の四角、
+        /// +6〜+9 で先のとがった花びらが左上・右上・右下・左下に1枚ずつ、+10 で中央の光。+11〜+15 は花びらの色が
+        /// 赤・深紅・紫・青・白金と変わる。
+        /// </summary>
+        public static Sprite EnhanceEmblem(int level)
+        {
+            level = Mathf.Clamp(level, 1, Item.MaxEnhance);
+            string key = "Emblem" + level;
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            const int n = 24;
+            const float c = n / 2f;
+            var yellow = new Color32(255, 236, 40, 255);
+            var orange = new Color32(236, 128, 50, 255);
+            var outline = new Color32(40, 44, 70, 255);
+            Color32 petal;
+            switch (level)
+            {
+                case 11: petal = new Color32(235, 80, 70, 255); break;
+                case 12: petal = new Color32(205, 45, 95, 255); break;
+                case 13: petal = new Color32(170, 95, 235, 255); break;
+                case 14: petal = new Color32(90, 150, 255, 255); break;
+                case 15: petal = new Color32(255, 250, 225, 255); break;
+                default: petal = new Color32(244, 178, 130, 255); break;
+            }
+            var light = level >= 15 ? new Color32(255, 255, 255, 255) : new Color32(255, 220, 110, 255);
+            int k = Mathf.Min(level, 10);
+
+            var layer = new int[n * n];
+            var col = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+            {
+                for (int x = 0; x < n; x++)
+                {
+                    float px = x + 0.5f, py = y + 0.5f;
+                    int id = -1;
+                    Color32 cc = default;
+                    for (int i = 0; i < Mathf.Min(k, 4); i++)
+                    {
+                        bool hit;
+                        switch (i)
+                        {
+                            case 0: hit = Mathf.Abs(px - c) / 1.9f + Mathf.Abs(py - 6.2f) / 6.2f <= 1f; break;       // 上
+                            case 1: hit = Mathf.Abs(px - c) / 1.9f + Mathf.Abs(py - (n - 6.2f)) / 6.2f <= 1f; break; // 下
+                            case 2: hit = Mathf.Abs(py - c) / 1.9f + Mathf.Abs(px - (n - 6.2f)) / 6.2f <= 1f; break; // 右
+                            default: hit = Mathf.Abs(py - c) / 1.9f + Mathf.Abs(px - 6.2f) / 6.2f <= 1f; break;     // 左
+                        }
+                        if (hit) { id = i; cc = yellow; }
+                    }
+                    if (k >= 5 && Mathf.Abs(px - c) + Mathf.Abs(py - c) <= 4.6f) { id = 4; cc = orange; }
+                    for (int i = 0; i < Mathf.Clamp(k - 5, 0, 4); i++)
+                    {
+                        float sx = i == 0 || i == 3 ? -1f : 1f; // 左上・右上・右下・左下
+                        float sy = i < 2 ? -1f : 1f;
+                        float dx = (px - c) * sx, dy = (py - c) * sy;
+                        float u = (dx + dy) * 0.7071f, v = (dx - dy) * 0.7071f;
+                        // 外へ向かってとがる凧の形（少しだけ片側に傾ける）
+                        float w = v - 0.15f * u;
+                        if (u < 1.6f || u > 10.2f) continue;
+                        float half = u < 4.2f ? 0.9f + (u - 1.6f) / 2.6f * 1.6f : 2.5f * (10.2f - u) / 6f;
+                        if (Mathf.Abs(w) < half) { id = 5 + i; cc = petal; }
+                    }
+                    if (k >= 10 && Mathf.Abs(px - c) + Mathf.Abs(py - c) <= 2.3f) { id = 9; cc = light; }
+                    layer[y * n + x] = id;
+                    col[y * n + x] = cc;
+                }
+            }
+            var px32 = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+            {
+                for (int x = 0; x < n; x++)
+                {
+                    int i = y * n + x, id = layer[i];
+                    bool edgeEmpty = false, edgeLower = false;
+                    for (int d = 0; d < 4; d++)
+                    {
+                        int ax = x + (d == 0 ? 1 : d == 1 ? -1 : 0), ay = y + (d == 2 ? 1 : d == 3 ? -1 : 0);
+                        int nid = ax >= 0 && ay >= 0 && ax < n && ay < n ? layer[ay * n + ax] : -1;
+                        if (nid >= 0 && id < 0) edgeEmpty = true;
+                        if (id >= 4 && nid >= 0 && nid < id) edgeLower = true;
+                    }
+                    Color32 o = id < 0 ? (edgeEmpty ? outline : new Color32(0, 0, 0, 0)) : (edgeLower ? outline : col[i]);
+                    px32[(n - 1 - y) * n + x] = o; // テクスチャは下から上へ並ぶ
+                }
+            }
+            return Store(key, MakeTexture(key, n, n, px32, TextureWrapMode.Clamp), n);
+        }
+
         /// <summary>黄金のスライム（出会うと逃げる、倒すとドロップがあふれる）。</summary>
         public static Sprite GoldenSlime => FromArt("GoldenSlime", SlimeRows, new Dictionary<char, Color32>
         {

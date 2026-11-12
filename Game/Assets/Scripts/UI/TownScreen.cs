@@ -286,6 +286,7 @@ namespace VividOfFade
                 if (Town.OtherClassWeapon(item, type)) GUI.color = new Color(1f, 1f, 1f, 0.35f);
                 Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.ItemIcon(item.Slot, item.Rarity));
                 GUI.color = old;
+                Hud.DrawEnhance(r, item);
             }
             int rows = (shown + cols - 1) / cols;
             return y + rows * (cell + gap);
@@ -554,7 +555,10 @@ namespace VividOfFade
                 lockFor = item;
                 locked.Clear();
             }
-            var nameRect = new Rect(pad, y, W - pad * 2f, lineH * 1.2f);
+            // 強化の紋章（右）と名前（左）
+            float emblem = lineH * 2.4f;
+            if (item.Enhance > 0) Hud.DrawSprite(new Rect(W - pad - emblem, y - lineH * 0.2f, emblem, emblem), PixelArt.EnhanceEmblem(item.Enhance));
+            var nameRect = new Rect(pad, y, W - pad * 2f - emblem, lineH * 1.2f);
             var name = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
             name.normal.textColor = RarityInfo.ColorOf(item.Rarity);
             Hud.FitLabel(nameRect, item.Name, name);
