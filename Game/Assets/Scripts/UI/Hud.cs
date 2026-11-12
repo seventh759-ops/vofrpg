@@ -762,7 +762,7 @@ namespace VividOfFade
 
         /// <summary>
         /// タイトル画面。上に副題とロゴ（VIVID は虹色に光り、FADE は崩れて粒が舞い散る）。
-        /// 霧の洞窟の左の崖に灯術師が後ろ姿で立ち、右の霧の中には逆さの塔が沈む（螺旋階段・松明・最深部の灯り）。結晶、折れた橋、漂う塵。
+        /// 背景は Resources/TitleBackground の画像（なければコードで描いた霧の洞窟）。左の崖に灯術師が後ろ姿で立ち、漂う塵。
         /// どこを押しても始まる（言語のボタンだけは別）。
         /// </summary>
         void DrawTitle()
@@ -772,6 +772,104 @@ namespace VividOfFade
             float t = Time.unscaledTime;
             Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0f), centered, World.LeaveTitle);
 
+            // 背景：Resources/TitleBackground の画像があればそれを画面いっぱいに（はみ出す分は切る）。なければコードで描く
+            if (!titleBgLoaded)
+            {
+                titleBg = Resources.Load<Texture2D>("TitleBackground");
+                titleBgLoaded = true;
+            }
+            if (titleBg != null)
+            {
+                float sc0 = Mathf.Max(W / titleBg.width, H / titleBg.height);
+                var bg = new Rect((W - titleBg.width * sc0) * 0.5f, (H - titleBg.height * sc0) * 0.5f, titleBg.width * sc0, titleBg.height * sc0);
+                GUI.DrawTexture(bg, titleBg);
+                // 灯術師は画像の中の位置に合わせて立たせる（画像の左上が 0,0、右下が 1,1）
+                float lw = bg.width * TitleHeroWidth, lh = lw * 56f / 40f;
+                DrawTitleHero(new Rect(bg.x + bg.width * TitleHeroX, bg.y + bg.height * TitleHeroFeetY - lh * 52f / 56f, lw, lh), t);
+            }
+            else DrawTitleScene(W, H, t);
+
+            // 漂う塵（霧の中でゆっくり舞う）
+            for (int i = 0; i < 30; i++)
+            {
+                float life = Mathf.Repeat(t * (0.02f + 0.03f * Hash01(i * 3 + 2)) + Hash01(i * 11 + 7), 1f);
+                float ex = Hash01(i * 5 + 3) * W + Mathf.Sin(t * 0.5f + i) * W * 0.03f;
+                float ey = H * (0.9f - 0.7f * life);
+                float a = Mathf.Sin(life * Mathf.PI) * 0.5f;
+                Fill(new Rect(ex, ey, 2f, 2f), new Color(0.85f, 0.88f, 0.95f, a));
+            }
+
+            // 下側を暗くして文字を読みやすく
+            for (int b = 0; b < 8; b++)
+                Fill(new Rect(0, H * (0.82f + b * 0.0225f), W, H * 0.0225f + 1f), new Color(0f, 0f, 0f, 0.08f * (b + 1)));
+
+            // 副題（上に線と一緒に）
+            float ly = H * 0.05f, lineW = W * 0.16f;
+            Fill(new Rect(W * 0.5f - W * 0.22f - lineW, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
+            Fill(new Rect(W * 0.5f + W * 0.22f, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
+            var sub = new GUIStyle(centered);
+            sub.normal.textColor = new Color(0.9f, 0.85f, 0.95f, 0.9f);
+            FitLabel(new Rect(W * 0.28f, ly - H * 0.017f, W * 0.44f, H * 0.035f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
+
+            // ロゴ：VIVID のまわりの光、本体、FADE から崩れて舞い散る粒
+            var logoTex = TitleArt.Logo;
+            float sc = Mathf.Max(1f, Mathf.Floor(W * 0.95f / logoTex.width));
+            var logoRect = new Rect((W - logoTex.width * sc) * 0.5f, H * 0.085f, logoTex.width * sc, logoTex.height * sc);
+            var old = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, 0.75f + 0.25f * Mathf.Sin(t * 2f));
+            GUI.DrawTexture(new Rect(logoRect.x - sc, logoRect.y - sc, logoRect.width + sc * 2f, logoRect.height + sc * 2f), TitleArt.Glow);
+            GUI.color = old;
+            GUI.DrawTexture(logoRect, logoTex);
+            var crumbs = TitleArt.Crumbs;
+            for (int i = 0; i < crumbs.Count; i++)
+            {
+                float phase = Mathf.Repeat(t * 0.16f + Hash01(i * 31 + 3), 1f);
+                float ox = logoRect.x + crumbs[i].x * sc, oy = logoRect.y + crumbs[i].y * sc;
+                float dx = phase * W * 0.12f * (0.5f + Hash01(i * 7 + 2));
+                float dy = phase * phase * H * 0.1f + phase * H * 0.01f;
+                float a = phase < 0.08f ? phase / 0.08f : 1f - phase;
+                Fill(new Rect(ox + dx, oy + dy, sc, sc), new Color(0.6f, 0.58f, 0.65f, a * 0.9f));
+            }
+
+            // 点滅する「タップで始める」
+            var tap = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
+            float a2 = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(t * 2f));
+            tap.normal.textColor = new Color(1f, 0.95f, 0.85f, a2);
+            string start = Application.isMobilePlatform ? Loc.T("TAP TO START", "タップで始める") : Loc.T("TAP / ENTER TO START", "タップか Enter で始める");
+            FitLabel(new Rect(0, H * 0.86f, W, H * 0.04f), start, tap);
+
+            float bw = W * 0.5f;
+            Button(new Rect((W - bw) * 0.5f, H * 0.92f, bw, H * 0.04f), $"Language: {Loc.LanguageName}", new Color(1f, 1f, 1f, 0.1f), centered, () => Loc.Next());
+        }
+
+        /// <summary>(cx, cy) を中心に半径 r のまるい光を重ねる。</summary>
+        static void Glow(float cx, float cy, float r, Color color)
+        {
+            var old = GUI.color;
+            GUI.color = color;
+            GUI.DrawTexture(new Rect(cx - r, cy - r, r * 2f, r * 2f), TitleArt.SoftGlow);
+            GUI.color = old;
+        }
+
+        /// <summary>背景画像の上で、灯術師を立たせる位置（画像の幅・高さに対する割合）。左端・足元の高さ・幅。</summary>
+        const float TitleHeroX = 0.15f, TitleHeroFeetY = 0.5f, TitleHeroWidth = 0.33f;
+
+        static Texture2D titleBg;
+        static bool titleBgLoaded;
+
+        /// <summary>タイトルの灯術師（後ろ姿）。杖の水晶が虹色に光る。</summary>
+        void DrawTitleHero(Rect lamp, float t)
+        {
+            DrawSprite(lamp, PixelArt.TitleLampwright);
+            var hue = Color.HSVToRGB(Mathf.Repeat(t * 0.12f, 1f), 0.55f, 1f);
+            float gx = lamp.x + lamp.width * 33.5f / 40f, gy = lamp.y + lamp.height * 4.5f / 56f;
+            Glow(gx, gy, lamp.width * 0.5f, new Color(hue.r, hue.g, hue.b, 0.5f));
+            Glow(gx, gy, lamp.width * 0.15f, new Color(1f, 1f, 1f, 0.6f));
+        }
+
+        /// <summary>背景画像がないときのタイトルの場面（霧の洞窟・左の崖の灯術師・右の逆さの塔）。</summary>
+        void DrawTitleScene(float W, float H, float t)
+        {
             // 霧の洞窟（上と下は暗く、中ほどが霧で白む）
             const int bands = 40;
             for (int b = 0; b < bands; b++)
@@ -884,75 +982,8 @@ namespace VividOfFade
                 DrawSprite(new Rect(cx, cy - cs, cs, cs), PixelArt.TitleCrystal);
             }
 
-            // 崖の上に立つ灯術師（後ろ姿）。杖の水晶が虹色に光る
             float lw = W * 0.33f, lh = lw * 56f / 40f;
-            var lamp = new Rect(W * 0.15f, cliffTop - lh * 52f / 56f, lw, lh);
-            DrawSprite(lamp, PixelArt.TitleLampwright);
-            var hue = Color.HSVToRGB(Mathf.Repeat(t * 0.12f, 1f), 0.55f, 1f);
-            float gx = lamp.x + lw * 33.5f / 40f, gy = lamp.y + lh * 4.5f / 56f;
-            Glow(gx, gy, lw * 0.5f, new Color(hue.r, hue.g, hue.b, 0.5f));
-            Glow(gx, gy, lw * 0.15f, new Color(1f, 1f, 1f, 0.6f));
-
-            // 漂う塵（霧の中でゆっくり舞う）
-            for (int i = 0; i < 30; i++)
-            {
-                float life = Mathf.Repeat(t * (0.02f + 0.03f * Hash01(i * 3 + 2)) + Hash01(i * 11 + 7), 1f);
-                float ex = Hash01(i * 5 + 3) * W + Mathf.Sin(t * 0.5f + i) * W * 0.03f;
-                float ey = H * (0.9f - 0.7f * life);
-                float a = Mathf.Sin(life * Mathf.PI) * 0.5f;
-                Fill(new Rect(ex, ey, 2f, 2f), new Color(0.85f, 0.88f, 0.95f, a));
-            }
-
-            // 下側を暗くして文字を読みやすく
-            for (int b = 0; b < 8; b++)
-                Fill(new Rect(0, H * (0.82f + b * 0.0225f), W, H * 0.0225f + 1f), new Color(0f, 0f, 0f, 0.08f * (b + 1)));
-
-            // 副題（上に線と一緒に）
-            float ly = H * 0.05f, lineW = W * 0.16f;
-            Fill(new Rect(W * 0.5f - W * 0.22f - lineW, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
-            Fill(new Rect(W * 0.5f + W * 0.22f, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
-            var sub = new GUIStyle(centered);
-            sub.normal.textColor = new Color(0.9f, 0.85f, 0.95f, 0.9f);
-            FitLabel(new Rect(W * 0.28f, ly - H * 0.017f, W * 0.44f, H * 0.035f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
-
-            // ロゴ：VIVID のまわりの光、本体、FADE から崩れて舞い散る粒
-            var logoTex = TitleArt.Logo;
-            float sc = Mathf.Max(1f, Mathf.Floor(W * 0.95f / logoTex.width));
-            var logoRect = new Rect((W - logoTex.width * sc) * 0.5f, H * 0.085f, logoTex.width * sc, logoTex.height * sc);
-            var old = GUI.color;
-            GUI.color = new Color(1f, 1f, 1f, 0.75f + 0.25f * Mathf.Sin(t * 2f));
-            GUI.DrawTexture(new Rect(logoRect.x - sc, logoRect.y - sc, logoRect.width + sc * 2f, logoRect.height + sc * 2f), TitleArt.Glow);
-            GUI.color = old;
-            GUI.DrawTexture(logoRect, logoTex);
-            var crumbs = TitleArt.Crumbs;
-            for (int i = 0; i < crumbs.Count; i++)
-            {
-                float phase = Mathf.Repeat(t * 0.16f + Hash01(i * 31 + 3), 1f);
-                float ox = logoRect.x + crumbs[i].x * sc, oy = logoRect.y + crumbs[i].y * sc;
-                float dx = phase * W * 0.12f * (0.5f + Hash01(i * 7 + 2));
-                float dy = phase * phase * H * 0.1f + phase * H * 0.01f;
-                float a = phase < 0.08f ? phase / 0.08f : 1f - phase;
-                Fill(new Rect(ox + dx, oy + dy, sc, sc), new Color(0.6f, 0.58f, 0.65f, a * 0.9f));
-            }
-
-            // 点滅する「タップで始める」
-            var tap = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
-            float a2 = 0.45f + 0.55f * Mathf.Abs(Mathf.Sin(t * 2f));
-            tap.normal.textColor = new Color(1f, 0.95f, 0.85f, a2);
-            string start = Application.isMobilePlatform ? Loc.T("TAP TO START", "タップで始める") : Loc.T("TAP / ENTER TO START", "タップか Enter で始める");
-            FitLabel(new Rect(0, H * 0.86f, W, H * 0.04f), start, tap);
-
-            float bw = W * 0.5f;
-            Button(new Rect((W - bw) * 0.5f, H * 0.92f, bw, H * 0.04f), $"Language: {Loc.LanguageName}", new Color(1f, 1f, 1f, 0.1f), centered, () => Loc.Next());
-        }
-
-        /// <summary>(cx, cy) を中心に半径 r のまるい光を重ねる。</summary>
-        static void Glow(float cx, float cy, float r, Color color)
-        {
-            var old = GUI.color;
-            GUI.color = color;
-            GUI.DrawTexture(new Rect(cx - r, cy - r, r * 2f, r * 2f), TitleArt.SoftGlow);
-            GUI.color = old;
+            DrawTitleHero(new Rect(W * 0.15f, cliffTop - lh * 52f / 56f, lw, lh), t);
         }
 
         /// <summary>タイトルの塔をめぐる螺旋階段。front=false で塔の後ろ側、true で手前側の段だけを描く。</summary>
