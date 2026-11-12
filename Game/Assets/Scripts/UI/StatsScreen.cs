@@ -108,17 +108,16 @@ namespace VividOfFade
                     GUI.Label(new Rect(row.x + W * 0.36f, row.y, W * 0.12f, rowH * 0.6f), $"+{pending[i]}", pend);
                 }
                 float bw = rowH * 0.95f, bg = W * 0.008f;
-                float buttonsW = (ch.Points > 0 ? 4f * (bw + bg) : 0f);
-                Hud.FitLabel(new Rect(row.x + pad * 0.3f, row.y + rowH * 0.55f, row.width - buttonsW - pad * 0.3f, rowH * 0.45f), Attributes.Effect(attr), small);
+                Hud.FitLabel(new Rect(row.x + pad * 0.3f, row.y + rowH * 0.55f, row.width - pad * 0.6f, rowH * 0.45f), Attributes.Effect(attr), small); // 説明は全幅
 
                 if (ch.Points > 0)
                 {
                     // [+10][+][-][-10]（残りのポイントと、仮に振った分の範囲で）
                     float bx = row.xMax - 4f * (bw + bg);
-                    var by = row.y + rowH * 0.1f;
+                    var by = row.y + rowH * 0.04f;
                     void Step(int k, string text, int delta)
                     {
-                        var r = new Rect(bx + k * (bw + bg), by, bw, rowH * 0.8f);
+                        var r = new Rect(bx + k * (bw + bg), by, bw, rowH * 0.5f); // 行の上半分（下の説明と重ならない）
                         bool can = delta > 0 ? left > 0 : pending[idx] > 0;
                         if (can) hud.Button(r, text, delta > 0 ? plusBack : buttonBack, centered, () =>
                         {
@@ -144,6 +143,20 @@ namespace VividOfFade
             }
             y += H * 0.01f;
 
+            // 仮に振っている間は、確定したあとの能力を見せる（加護も込み）
+            bool preview = pendingSum > 0;
+            if (preview)
+            {
+                for (int k = 0; k < Attributes.Count; k++) ch.Alloc[k] += pending[k];
+                var pv = PlayerStats.From(world.Inventory.Equipped, st.Class, ch);
+                for (int k = 0; k < Attributes.Count; k++) ch.Alloc[k] -= pending[k];
+                foreach (int b in world.Player.Boons) pv = pv.WithBoon(Boons.Get(b));
+                st = pv;
+            }
+            int shownHp = preview ? st.MaxHp : world.Player.MaxHp;
+            int shownMp = preview ? st.MaxMp : world.Player.MaxMp;
+            float shownLight = preview ? st.Light : world.Player.EffectiveLight;
+
             // 計算後の能力
             string kind;
             switch (st.Kind)
@@ -157,18 +170,18 @@ namespace VividOfFade
             float bottomY = H - pad - btnH;
             string[,] cells =
             {
-                { Loc.T("HP", "体力"), $"{world.Player.MaxHp}", Loc.T("HP regen", "体力回復"), Loc.T($"{st.HpRegen:0.0}/s", $"{st.HpRegen:0.0}/秒") },
-                { "MP", $"{world.Player.MaxMp}", Loc.T("MP regen", "MP回復"), Loc.T($"{st.MpRegen:0.0}/s", $"{st.MpRegen:0.0}/秒") },
+                { Loc.T("HP", "体力"), $"{shownHp}", Loc.T("HP regen", "体力回復"), Loc.T($"{st.HpRegen:0.0}/s", $"{st.HpRegen:0.0}/秒") },
+                { "MP", $"{shownMp}", Loc.T("MP regen", "MP回復"), Loc.T($"{st.MpRegen:0.0}/s", $"{st.MpRegen:0.0}/秒") },
                 { Loc.T("Damage", "ダメージ"), $"{st.Damage:0}", Loc.T("Attacks/s", "攻撃/秒"), $"{st.AttacksPerSecond:0.0}" },
                 { Loc.T("DPS", "秒間ダメージ"), $"{st.Damage * st.AttacksPerSecond * (1f + st.CritChance * (st.CritMult - 1f)):0}", Loc.T("Crit", "会心"), $"{st.CritChance * 100f:0}%  x{st.CritMult:0.00}" },
                 { Loc.T("Armor", "防御"), $"{st.Armor:0}", Loc.T("Speed", "速さ"), $"{st.MoveSpeed:0.0}" },
-                { Loc.T("Light", "明るさ"), $"{world.Player.EffectiveLight:0.0}", Loc.T("MP next Lv", "次のLvのMP"), $"+{Progression.MpPerLevel(Progression.BaseWis(ch))}" },
+                { Loc.T("Light", "明るさ"), $"{shownLight:0.0}", Loc.T("MP next Lv", "次のLvのMP"), $"+{Progression.MpPerLevel(Progression.BaseWis(ch))}" },
                 { "HIT", Loc.T($"{st.Hit} ({st.HitChance(world.Enemies.FloorTier) * 100f:0}%)", $"{st.Hit}（{st.HitChance(world.Enemies.FloorTier) * 100f:0}%）"),
                   "EVA", Loc.T($"{st.Eva} ({st.EvadeChance(world.Enemies.FloorTier) * 100f:0}%)", $"{st.Eva}（{st.EvadeChance(world.Enemies.FloorTier) * 100f:0}%）") },
             };
             var head = new GUIStyle(label) { fontStyle = FontStyle.Bold };
             head.normal.textColor = new Color(1f, 0.85f, 0.4f);
-            GUI.Label(new Rect(pad, y, W, lineH), Loc.T("RESULT", "最終的な能力"), head);
+            GUI.Label(new Rect(pad, y, W, lineH), preview ? Loc.T("RESULT (after APPLY)", "最終的な能力（確定後）") : Loc.T("RESULT", "最終的な能力"), head);
             y += lineH * 1.1f;
             var key = new GUIStyle(small);
             key.normal.textColor = new Color(0.65f, 0.65f, 0.7f);
