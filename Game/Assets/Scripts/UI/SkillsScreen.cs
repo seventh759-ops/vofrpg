@@ -37,10 +37,18 @@ namespace VividOfFade
             hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.OpenPanel(false, false, false));
 
             float y = pad + btnH + H * 0.015f;
-            float rowH = (H - y - pad) / SkillInfo.PerClass - H * 0.008f;
+            // 出すのは、今の職業で覚えられるスキルだけ（上位職・3次職のスキルは、転職・転生したときだけ）
+            var visible = new System.Collections.Generic.List<int>();
+            for (int i = 0; i < SkillInfo.PerClass; i++)
+            {
+                if (i == AdvancedClasses.SkillIndex && ch.Advanced < 0) continue;
+                if (i == ThirdClasses.SkillIndex && !ch.Third) continue;
+                visible.Add(i);
+            }
+            float rowH = Mathf.Min(H * 0.13f, (H - y - pad) / visible.Count - H * 0.008f);
             float lineH = small.fontSize * 1.3f;
 
-            for (int i = 0; i < SkillInfo.PerClass; i++)
+            foreach (int i in visible)
             {
                 int index = i;
                 var spec = SkillInfo.Get(ClassInfo.Current, i);
