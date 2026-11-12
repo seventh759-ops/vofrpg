@@ -946,27 +946,27 @@ namespace VividOfFade
                         bool hit;
                         switch (i)
                         {
-                            case 0: hit = Mathf.Abs(px - c) / 1.9f + Mathf.Abs(py - 6.2f) / 6.2f <= 1f; break;       // 上
-                            case 1: hit = Mathf.Abs(px - c) / 1.9f + Mathf.Abs(py - (n - 6.2f)) / 6.2f <= 1f; break; // 下
-                            case 2: hit = Mathf.Abs(py - c) / 1.9f + Mathf.Abs(px - (n - 6.2f)) / 6.2f <= 1f; break; // 右
-                            default: hit = Mathf.Abs(py - c) / 1.9f + Mathf.Abs(px - 6.2f) / 6.2f <= 1f; break;     // 左
+                            case 0: hit = Mathf.Abs(px - c) / 2.3f + Mathf.Abs(py - 6f) / 6f <= 1f; break;       // 上
+                            case 1: hit = Mathf.Abs(px - c) / 2.3f + Mathf.Abs(py - (n - 6f)) / 6f <= 1f; break; // 下
+                            case 2: hit = Mathf.Abs(py - c) / 2.3f + Mathf.Abs(px - (n - 6f)) / 6f <= 1f; break; // 右
+                            default: hit = Mathf.Abs(py - c) / 2.3f + Mathf.Abs(px - 6f) / 6f <= 1f; break;     // 左
                         }
                         if (hit) { id = i; cc = yellow; }
                     }
-                    if (k >= 5 && Mathf.Abs(px - c) + Mathf.Abs(py - c) <= 4.6f) { id = 4; cc = orange; }
+                    if (k >= 5 && Mathf.Abs(px - c) + Mathf.Abs(py - c) <= 5.6f) { id = 4; cc = orange; }
                     for (int i = 0; i < Mathf.Clamp(k - 5, 0, 4); i++)
                     {
                         float sx = i == 0 || i == 3 ? -1f : 1f; // 左上・右上・右下・左下
                         float sy = i < 2 ? -1f : 1f;
                         float dx = (px - c) * sx, dy = (py - c) * sy;
                         float u = (dx + dy) * 0.7071f, v = (dx - dy) * 0.7071f;
-                        // 外へ向かってとがる凧の形（少しだけ片側に傾ける）
-                        float w = v - 0.15f * u;
-                        if (u < 1.6f || u > 10.2f) continue;
-                        float half = u < 4.2f ? 0.9f + (u - 1.6f) / 2.6f * 1.6f : 2.5f * (10.2f - u) / 6f;
+                        // 大きな花びら。外へ向かって鋭くとがる（少しだけ片側に傾ける）
+                        float w = v - 0.12f * u;
+                        if (u < 2f || u > 10.6f) continue;
+                        float half = u < 4.6f ? 1.6f + (u - 2f) / 2.6f * 1.6f : 3.2f * (10.6f - u) / 6f;
                         if (Mathf.Abs(w) < half) { id = 5 + i; cc = petal; }
                     }
-                    if (k >= 10 && Mathf.Abs(px - c) + Mathf.Abs(py - c) <= 2.3f) { id = 9; cc = light; }
+                    if (k >= 10 && Mathf.Abs(px - c) + Mathf.Abs(py - c) <= 2.2f) { id = 9; cc = light; }
                     layer[y * n + x] = id;
                     col[y * n + x] = cc;
                 }
