@@ -11,7 +11,7 @@ namespace VividOfFade
         public const int MaxFloor = 100; // 塔の最後の層（ボス）
         public static bool IsBossFloor(int floor) => floor > 0 && floor % BossFloorEvery == 0;
         public static int Tier(int floor) => floor * 2;
-        public static int RoomEnemies(int floor, int roomArea) => Mathf.Min(6 + floor * 2 + roomArea / 10, 70);
+        public static int RoomEnemies(int floor, int roomArea) => Mathf.Min(5 + Mathf.RoundToInt(floor * 1.2f) + roomArea / 14, 45); // 前の約6割の密度
         public const float StairsRadius = 0.7f;
 
         // 縦画面で横に見える幅（ユニット。1ユニット = 16 ドット。14 なら内部解像度 224 ドット相当）
