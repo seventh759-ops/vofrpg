@@ -341,6 +341,17 @@ namespace VividOfFade
         /// <summary>精鋭・ボスへのダメージの倍率（装備の効果。GameWorld が毎フレーム入れる）。</summary>
         public float EliteDamageMult = 1f;
 
+        /// <summary>直前の範囲攻撃の出どころ（デバッグ表示用）。</summary>
+        public string LastBlastSource { get; private set; } = "?";
+
+        /// <summary>敵の説明（デバッグ表示用）：種類・段階・精鋭・ボス。</summary>
+        public static string Describe(Enemy e)
+        {
+            string s = e.IsBoss ? "Boss" : $"{e.Kind} T{e.Tier}";
+            if (e.Elite != EliteKind.None) s += $" Elite({e.Elite})";
+            return s;
+        }
+
         /// <summary>その部屋の眠っている敵を起こす（部屋に入ったとき、攻撃されたとき）。</summary>
         public void Wake(RoomArea area)
         {
@@ -523,7 +534,7 @@ namespace VividOfFade
 
                 if (!player.IsDead && e.ContactDamage > 0 && dist < e.Radius + GameConfig.PlayerRadius)
                 {
-                    if (player.TakeHit(e.ContactDamage)) e.Knock -= dir * 4f;
+                    if (player.TakeHit(e.ContactDamage, Describe(e) + " contact")) e.Knock -= dir * 4f;
                 }
             }
         }
@@ -618,6 +629,7 @@ namespace VividOfFade
                         if (e.Prep <= 0f)
                         {
                             // 爆発（倒したことにはならない：経験値やドロップは出ない）
+                            LastBlastSource = Describe(e) + " blast";
                             BossSlam?.Invoke(e.Pos, GameConfig.BomberRadius, Mathf.RoundToInt(e.ContactDamage * GameConfig.BomberDamageMult));
                             e.Dying = true;
                             e.DyingTimer = DeathTime;
@@ -668,7 +680,7 @@ namespace VividOfFade
                 b.Life -= dt;
                 b.Pos += b.Vel * dt;
                 bool hit = !player.IsDead && (b.Pos - player.Pos).sqrMagnitude < (GameConfig.PlayerRadius + 0.15f) * (GameConfig.PlayerRadius + 0.15f);
-                if (hit) player.TakeHit(b.Damage);
+                if (hit) player.TakeHit(b.Damage, "Caster bullet");
                 if (hit || b.Life <= 0f || !room.Contains(b.Pos))
                 {
                     b.Sr.gameObject.SetActive(false);
@@ -699,6 +711,7 @@ namespace VividOfFade
                 e.Windup -= dt;
                 if (e.Windup <= 0f)
                 {
+                    LastBlastSource = "Boss slam";
                     BossSlam?.Invoke(e.Pos, GameConfig.BossSlamRadius, e.ContactDamage * 2);
                     e.SlamTimer = e.Enraged ? GameConfig.BossEnragedSlamInterval : GameConfig.BossSlamInterval;
                 }

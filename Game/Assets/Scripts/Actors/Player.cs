@@ -194,15 +194,22 @@ namespace VividOfFade
         }
 
         /// <summary>ダメージを受けたら true。無敵中は受けない。防御で減らす。</summary>
-        public bool TakeHit(int damage)
+        public bool TakeHit(int damage, string source = "?")
         {
             if (invuln > 0f || IsDead) return false;
             float reduced = damage * Stats.DamageTaken * 100f / (100f + Stats.Armor);
-            Hp = Mathf.Max(0, Hp - Mathf.Max(1, Mathf.RoundToInt(reduced)));
+            int dealt = Mathf.Max(1, Mathf.RoundToInt(reduced));
+            Hp = Mathf.Max(0, Hp - dealt);
             invuln = GameConfig.HitInvuln;
             hurtTimer = GameConfig.HitInvuln;
+            if (LogDamage)
+                Debug.Log($"[Damage] {source}: raw {damage} -> {dealt} (armor {Stats.Armor:0}, taken x{Stats.DamageTaken:0.00})  HP {Hp}/{MaxHp}" + (IsDead ? "  DEAD" : ""));
             return true;
         }
+
+        /// <summary>受けたダメージをコンソールに出す（デバッグ用）。</summary>
+        public static bool LogDamage = true;
+
 
         public void Tick(float dt, PlayerInputReader input, Room room)
         {

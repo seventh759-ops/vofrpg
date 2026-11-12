@@ -633,7 +633,7 @@ namespace VividOfFade
             Fx.Ring(pos, radius, new Color(1f, 0.9f, 0.8f, 0.9f), 0.2f);
             Sfx.Boom();
             cameraRig.Shake(0.2f, 0.3f);
-            if ((Player.Pos - pos).sqrMagnitude <= radius * radius) Player.TakeHit(damage);
+            if ((Player.Pos - pos).sqrMagnitude <= radius * radius) Player.TakeHit(damage, Enemies.LastBlastSource);
         }
 
         /// <summary>ボスを倒した：大きな噴水と、低い確率でボス専用の Mythic 装備。</summary>
