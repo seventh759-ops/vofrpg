@@ -555,15 +555,26 @@ namespace VividOfFade
         });
 
         /// <summary>
-        /// 装備のアイコン。武器は種類ごとに形を描き分ける（16ドットを、ほかのアイコンと同じ大きさで描く）。
+        /// 装備のアイコン（16ドット）。武器は種類ごとに形を描き分け、ランタン・防具（外套）・指輪もそろえた絵にする。
         /// r の部分が珍しさの色になる。
         /// </summary>
         public static Sprite ItemIcon(Item item)
         {
             if (item == null) return null;
-            if (item.Slot != ItemSlot.Weapon || !WeaponIcons.TryGetValue(item.Weapon, out var rows)) return ItemIcon(item.Slot, item.Rarity);
+            string[] rows;
+            string kind;
+            switch (item.Slot)
+            {
+                case ItemSlot.Lantern: rows = LanternIcon16; kind = "Lantern"; break;
+                case ItemSlot.Armor: rows = ArmorIcon16; kind = "Armor"; break;
+                case ItemSlot.Ring: rows = RingIcon16; kind = "Ring"; break;
+                default:
+                    if (!WeaponIcons.TryGetValue(item.Weapon, out rows)) return ItemIcon(item.Slot, item.Rarity);
+                    kind = item.Weapon.ToString();
+                    break;
+            }
             Color32 c = RarityInfo.ColorOf(item.Rarity);
-            string key = $"WeaponIcon_{item.Weapon}_{item.Rarity}";
+            string key = $"ItemIcon16_{kind}_{item.Rarity}";
             if (cache.TryGetValue(key, out var cached)) return cached;
             var pal = new Dictionary<char, Color32>
             {
@@ -582,6 +593,66 @@ namespace VividOfFade
                     px[(h - 1 - y) * w + x] = pal.TryGetValue(rows[y][x], out var col) ? col : new Color32(0, 0, 0, 0);
             return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), 32); // 8ドットのアイコンと同じ大きさ
         }
+
+        static readonly string[] LanternIcon16 =
+        {
+            "......kkkk......",
+            ".....kyyyyk.....",
+            ".....kykkyk.....",
+            "......kkkk......",
+            ".....kyyyyk.....",
+            "....kyyyyyyk....",
+            "....krklolkrk...",
+            "....krkoloorkk..",
+            "....krkllllkrk..",
+            "....krkollokrk..",
+            "....krkoolokrk..",
+            "....kyyyyyyyyk..",
+            ".....kyyyyyyk...",
+            "......kkkkkk....",
+            "................",
+            "................",
+        };
+
+        static readonly string[] ArmorIcon16 =
+        {
+            "................",
+            "....kkk..kkk....",
+            "...kyrrkkrryk...",
+            "..kyrrrkkrrryk..",
+            ".kyrrrrkkrrrryk.",
+            ".krrkrrkkrrkrrk.",
+            ".krk.krrrrk.krk.",
+            ".kk..krrrrk..kk.",
+            ".....krwrrk.....",
+            ".....kwrrrk.....",
+            ".....krrrrk.....",
+            "....kyyyyyyk....",
+            "....krrrrrrk....",
+            "...krrrrrrrrk...",
+            "...kkkkkkkkkk...",
+            "................",
+        };
+
+        static readonly string[] RingIcon16 =
+        {
+            "................",
+            "................",
+            "......kkkk......",
+            ".....krwrrk.....",
+            ".....krrrrk.....",
+            "......kyyk......",
+            "....kkyyyykk....",
+            "...kyyk..kyyk...",
+            "..kyk......kyk..",
+            "..kyk......kyk..",
+            "..kyk......kyk..",
+            "...kyk....kyk...",
+            "....kyykkyyk....",
+            ".....kkkkkk.....",
+            "................",
+            "................",
+        };
 
         static readonly Dictionary<WeaponKind, string[]> WeaponIcons = new Dictionary<WeaponKind, string[]>
         {
