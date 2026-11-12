@@ -78,7 +78,7 @@ namespace VividOfFade
 
         // 敵の種類（体力・攻撃の倍率は、その層のスライムに対して）
         public const float BatHpMult = 0.5f, BatSpeed = 3.2f, BatDamageMult = 0.7f;
-        public const float CasterHpMult = 0.8f, CasterSpeed = 1.7f, CasterRange = 4.5f, CasterFireInterval = 2.2f, BulletSpeed = 4.2f, BulletDamageMult = 0.9f;
+        public const float CasterHpMult = 0.8f, CasterSpeed = 1.7f, CasterRange = 4.5f, CasterFireInterval = 2.2f, BulletSpeed = 4.2f, BulletDamageMult = 0.35f; // 術師の弾は避けにくいので弱め
         public const float BruteHpMult = 2.5f, BruteSpeed = 1.1f, BruteDamageMult = 1.4f, BruteScale = 1.25f, BruteChargeSpeed = 7f, BruteChargeTime = 0.45f, BrutePrep = 0.6f, BruteChargeEvery = 3.5f;
         // 敵の段階（下級・中級・上級）。深い層ほど上級が増える
         public static readonly float[] TierHp = { 0.8f, 1.25f, 1.9f };

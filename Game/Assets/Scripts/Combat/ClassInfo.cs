@@ -82,7 +82,6 @@ namespace VividOfFade
                 Line1 = "Hurls fire from afar.",
                 Line2 = "Stronger with wide light.",
                 BaseHp = 50, BaseStats = new[] { 4, 6, 12, 6, 8 }, MainAttr = Attr.Int, SubAttr = Attr.Wis,
-                DamageMult = 0.7f, // 遠距離は安全なぶん、火力を控えめに
                 Speed = 4.5f, BaseLight = 3f, Crit = 0.05f, Armor = 0f,
                 Starter = WeaponKind.Wand,
                 Weapons = new[] { WeaponKind.Wand, WeaponKind.Repeater, WeaponKind.Fan },
