@@ -237,7 +237,7 @@ namespace VividOfFade
             var w = ClassInfo.Weapon(kind);
             s.Kind = w.Attack;
             s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
-            s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f + sub * 0.01f);
+            s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f + sub * 0.01f) * cls.DamageMult;
             s.DamageTaken = cls.DamageTaken * (1f - Mathf.Min(0.6f, reduction)); // 被ダメージの軽減は 60% まで
             s.DodgeCooldown = GameConfig.DodgeCooldown * cls.DodgeCooldownMult * (1f - Mathf.Min(0.5f, dodgeCdr));
             s.CooldownMult = 1f - Mathf.Min(0.5f, cdr); // 待ち時間の短縮は 50% まで

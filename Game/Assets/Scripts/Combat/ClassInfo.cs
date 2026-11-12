@@ -26,6 +26,7 @@ namespace VividOfFade
         public Attr MainAttr;           // 攻撃力が伸びる能力値（1ポイントで +2%）。武器の必要条件にも使う
         public Attr SubAttr;            // 攻撃力が少し伸びる能力値（1ポイントで +1%）
         public float DamageTaken = 1f;  // 受けるダメージの倍率
+        public float DamageMult = 1f;   // 与えるダメージの倍率（遠くから安全に戦える職業は低め）
         public float DodgeCooldownMult = 1f;
         public float Speed;
         public float BaseLight;
@@ -81,6 +82,7 @@ namespace VividOfFade
                 Line1 = "Hurls fire from afar.",
                 Line2 = "Stronger with wide light.",
                 BaseHp = 50, BaseStats = new[] { 4, 6, 12, 6, 8 }, MainAttr = Attr.Int, SubAttr = Attr.Wis,
+                DamageMult = 0.7f, // 遠距離は安全なぶん、火力を控えめに
                 Speed = 4.5f, BaseLight = 3f, Crit = 0.05f, Armor = 0f,
                 Starter = WeaponKind.Wand,
                 Weapons = new[] { WeaponKind.Wand, WeaponKind.Repeater, WeaponKind.Fan },
