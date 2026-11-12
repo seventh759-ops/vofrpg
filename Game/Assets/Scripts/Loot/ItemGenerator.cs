@@ -26,7 +26,7 @@ namespace VividOfFade
 
         // 装備の種類ごとに付く効果（能力値はどれにも付く）
         static readonly StatType[] attrStats = { StatType.Str, StatType.Dex, StatType.Int, StatType.Vit, StatType.Wis, StatType.AllStats };
-        static readonly StatType[] weaponStats = { StatType.DamagePct, StatType.AttackSpeedPct, StatType.CritChance, StatType.CritDamage, StatType.Hit };
+        static readonly StatType[] weaponStats = { StatType.FlatDamage, StatType.DamagePct, StatType.AttackSpeedPct, StatType.CritChance, StatType.CritDamage, StatType.Hit };
         static readonly StatType[] armorStats = { StatType.MaxHp, StatType.MaxHpPct, StatType.Armor, StatType.DamageReduction, StatType.LifeSteal, StatType.Evasion };
         static readonly StatType[] lanternStats = { StatType.MaxMp, StatType.MpRegen, StatType.HpRegen, StatType.MoveSpeedPct, StatType.LightRadius, StatType.Pierce, StatType.Multishot };
         static readonly StatType[] ringStats = { StatType.Luck };
@@ -301,6 +301,7 @@ namespace VividOfFade
                 case StatType.Hit:
                 case StatType.Evasion: return Mathf.Round((Random.Range(3f, 8f) + level * 0.5f) * m);
                 case StatType.Luck: return Random.Range(0.04f, 0.1f) * m;
+                case StatType.FlatDamage: return Mathf.Round((Random.Range(2f, 5f) + level * 0.8f) * m);
                 default: return 1f; // Pierce / Multishot
             }
         }

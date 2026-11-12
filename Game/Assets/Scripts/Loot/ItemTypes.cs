@@ -22,6 +22,7 @@ namespace VividOfFade
         HpRegen, MpRegen, LifeSteal, DamageReduction, SkillDamagePct, CooldownReduction, ExpGain, EmberFind, MagicFind,
         EliteDamage, ExplodePower, DodgeCooldown, AllStats, AreaPct, MaxHpPct,
         Hit, Evasion, // 命中（近距離の攻撃）・回避
+        FlatDamage,   // 攻撃力 +N（武器だけ。基礎攻撃力に足す）
         Luck,         // 幸運：経験値・拾う火種・珍しい品の出やすさ（前の ExpGain・EmberFind・MagicFind をまとめたもの）
     }
 

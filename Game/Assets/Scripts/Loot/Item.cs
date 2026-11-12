@@ -162,6 +162,7 @@ namespace VividOfFade
                 case StatType.MaxHpPct: return Loc.T($"+{v * 100f:0}% Max HP", $"最大体力 +{v * 100f:0}%");
                 case StatType.Hit: return $"+{v:0} HIT";
                 case StatType.Evasion: return $"+{v:0} EVA";
+                case StatType.FlatDamage: return Loc.T($"+{v:0} Attack", $"攻撃力 +{v:0}");
                 case StatType.Luck: return Loc.T($"+{v * 100f:0}% Luck (exp, embers, rare finds)", $"幸運 +{v * 100f:0}%（経験値・火種・珍しい品）");
                 default: return t.ToString();
             }

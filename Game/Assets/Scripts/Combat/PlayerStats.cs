@@ -155,6 +155,7 @@ namespace VividOfFade
             int bonusHp = 0, bonusMp = 0;
             float hpRegen = 0f, mpRegen = 0f, reduction = 0f, cdr = 0f, dodgeCdr = 0f, hpPct = 0f;
             int hitBonus = 0, evaBonus = 0;
+            float flatDamage = 0f;
 
             float baseDamage = ClassInfo.Weapon(cls.Starter).BaseDamage * 0.6f; // 武器なし
             var kind = cls.Starter;
@@ -218,6 +219,7 @@ namespace VividOfFade
                         case StatType.MaxHpPct: hpPct += a.Value; break;
                         case StatType.Hit: hitBonus += Mathf.RoundToInt(a.Value); break;
                         case StatType.Evasion: evaBonus += Mathf.RoundToInt(a.Value); break;
+                        case StatType.FlatDamage: flatDamage += a.Value; break;
                         case StatType.Luck: s.ExpGain += a.Value; s.EmberFind += a.Value; s.MagicFind += a.Value; break;
                     }
                 }
@@ -260,6 +262,7 @@ namespace VividOfFade
             var w = ClassInfo.Weapon(kind);
             s.Kind = w.Attack;
             s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
+            baseDamage += flatDamage; // 「攻撃力 +N」は基礎攻撃力に足す（倍率の前）
             s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f + sub * 0.01f) * cls.DamageMult;
             s.DamageTaken = cls.DamageTaken * (1f - Mathf.Min(0.6f, reduction)); // 被ダメージの軽減は 60% まで
             s.DodgeCooldown = GameConfig.DodgeCooldown * cls.DodgeCooldownMult * (1f - Mathf.Min(0.5f, dodgeCdr));
