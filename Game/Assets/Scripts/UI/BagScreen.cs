@@ -540,9 +540,15 @@ namespace VividOfFade
             var stat = (StatType)System.Enum.Parse(typeof(StatType), key.Substring(2));
             // 効果の書き方（+12% Damage など）の先頭の + を、増減の符号に置き換える
             string text = StatText.Format(stat, v);
-            if (text.StartsWith("+")) return sign + text.Substring(1);
-            int plus = text.IndexOf('+');
-            return plus >= 0 ? text.Substring(0, plus) + sign + text.Substring(plus + 1) : sign + text;
+            // 数字の前の符号を探す。「+」なら増減の符号に、「-」（被ダメージ・待ち時間の短縮など）なら逆向きにする
+            for (int i = 0; i < text.Length - 1; i++)
+            {
+                char c = text[i];
+                if ((c != '+' && c != '-') || !char.IsDigit(text[i + 1])) continue;
+                string mark = c == '+' ? sign : (d > 0f ? "-" : "+");
+                return text.Substring(0, i) + mark + text.Substring(i + 1);
+            }
+            return sign + text;
         }
 
         /// <summary>付けたときに一番強くなる装備欄での能力（指輪は R1・R2 の良い方）。</summary>

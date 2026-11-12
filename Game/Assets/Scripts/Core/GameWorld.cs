@@ -352,6 +352,11 @@ namespace VividOfFade
             if (Input.NextMusicPressed) NextMusic();
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
             Music.SetTitle(OnTitle);
+            // 装備の効果のうち、ほかの仕組みが読むもの（町では効かせない）
+            var fx = ChoosingClass ? null : Player.Stats;
+            ItemGenerator.MagicFind = fx != null ? fx.MagicFind : 0f;
+            LootSystem.EmberMult = fx != null ? 1f + fx.EmberFind : 1f;
+            Enemies.EliteDamageMult = fx != null ? 1f + fx.EliteDamage : 1f;
             Music.SetTown(InTown && ChoosingClass);
 
             potionCooldown = Mathf.Max(0f, potionCooldown - dt);
@@ -712,6 +717,7 @@ namespace VividOfFade
         {
             var ch = Profile.Current;
             int oldLevel = ch.Level;
+            if (Player.Stats != null) amount = Mathf.RoundToInt(amount * (1f + Player.Stats.ExpGain)); // 経験値の効果
             int gained = Progression.AddExp(ch, amount);
             if (gained <= 0) return;
             Skills.OnLevelChanged(ch, oldLevel);

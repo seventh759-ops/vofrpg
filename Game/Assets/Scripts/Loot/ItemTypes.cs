@@ -15,7 +15,13 @@ namespace VividOfFade
     public enum WeaponKind { None, Wand, Repeater, Fan, Sword, Dagger, Greatblade, Censer, Chain, Brazier }
 
     /// <summary>装備に付く効果。</summary>
-    public enum StatType { DamagePct, AttackSpeedPct, CritChance, CritDamage, MoveSpeedPct, MaxHp, Armor, LightRadius, Pierce, Multishot, Str, Dex, Int, Vit, Wis, MaxMp }
+    public enum StatType
+    {
+        DamagePct, AttackSpeedPct, CritChance, CritDamage, MoveSpeedPct, MaxHp, Armor, LightRadius, Pierce, Multishot, Str, Dex, Int, Vit, Wis, MaxMp,
+        // M6 で足した効果（保存の番号を変えないよう、後ろに足す）
+        HpRegen, MpRegen, LifeSteal, DamageReduction, SkillDamagePct, CooldownReduction, ExpGain, EmberFind, MagicFind,
+        EliteDamage, ExplodePower, DodgeCooldown, AllStats, AreaPct, MaxHpPct,
+    }
 
     /// <summary>橙・紫の装備だけが持つ固有効果。</summary>
     /// <summary>DodgeNova・DoubleStrike・Vampiric はボスの Mythic 装備だけに付く。</summary>

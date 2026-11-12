@@ -127,6 +127,21 @@ namespace VividOfFade
                 case StatType.Vit: return $"+{v:0} VIT";
                 case StatType.Wis: return $"+{v:0} WIS";
                 case StatType.MaxMp: return Loc.T($"+{v:0} Max MP", $"最大MP +{v:0}");
+                case StatType.HpRegen: return Loc.T($"+{v:0.0} HP/s", $"体力回復 +{v:0.0}/秒");
+                case StatType.MpRegen: return Loc.T($"+{v:0.0} MP/s", $"MP回復 +{v:0.0}/秒");
+                case StatType.LifeSteal: return Loc.T($"Heal {v * 100f:0.0}% of damage dealt", $"与えたダメージの{v * 100f:0.0}%を回復");
+                case StatType.DamageReduction: return Loc.T($"-{v * 100f:0}% Damage Taken", $"被ダメージ -{v * 100f:0}%");
+                case StatType.SkillDamagePct: return Loc.T($"+{v * 100f:0}% Skill Damage", $"スキルのダメージ +{v * 100f:0}%");
+                case StatType.CooldownReduction: return Loc.T($"-{v * 100f:0}% Skill Cooldown", $"スキルの待ち時間 -{v * 100f:0}%");
+                case StatType.ExpGain: return Loc.T($"+{v * 100f:0}% Experience", $"経験値 +{v * 100f:0}%");
+                case StatType.EmberFind: return Loc.T($"+{v * 100f:0}% Embers Found", $"拾う火種 +{v * 100f:0}%");
+                case StatType.MagicFind: return Loc.T($"+{v * 100f:0}% Rare Find", $"珍しい品が出やすい +{v * 100f:0}%");
+                case StatType.EliteDamage: return Loc.T($"+{v * 100f:0}% Damage to Elites/Bosses", $"精鋭・ボスへのダメージ +{v * 100f:0}%");
+                case StatType.ExplodePower: return Loc.T($"Enemies explode on death (+{v * 100f:0}%)", $"倒した敵が爆発（+{v * 100f:0}%）");
+                case StatType.DodgeCooldown: return Loc.T($"-{v * 100f:0}% Dodge Cooldown", $"回避の待ち時間 -{v * 100f:0}%");
+                case StatType.AllStats: return Loc.T($"+{v:0} All Stats", $"全能力値 +{v:0}");
+                case StatType.AreaPct: return Loc.T($"+{v * 100f:0}% Skill Area", $"スキルの範囲 +{v * 100f:0}%");
+                case StatType.MaxHpPct: return Loc.T($"+{v * 100f:0}% Max HP", $"最大体力 +{v * 100f:0}%");
                 default: return t.ToString();
             }
         }

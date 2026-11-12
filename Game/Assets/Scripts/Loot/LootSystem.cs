@@ -231,12 +231,16 @@ namespace VividOfFade
             ReleaseAt(victim);
         }
 
+        /// <summary>拾う火種の倍率（装備の効果。GameWorld が毎フレーム入れる）。</summary>
+        public static float EmberMult = 1f;
+
         void Collect(GroundLoot g, Inventory inventory)
         {
             if (g.Item == null)
             {
-                inventory.Embers += g.Embers;
-                EmbersPickedUp?.Invoke(g.Embers);
+                int amount = Mathf.RoundToInt(g.Embers * EmberMult);
+                inventory.Embers += amount;
+                EmbersPickedUp?.Invoke(amount);
                 return;
             }
             if (inventory.Add(g.Item)) PickedUp?.Invoke(g.Item);
@@ -247,7 +251,7 @@ namespace VividOfFade
         {
             foreach (var g in active)
             {
-                if (g.Item == null) inventory.Embers += g.Embers;
+                if (g.Item == null) inventory.Embers += Mathf.RoundToInt(g.Embers * EmberMult);
                 else if (inventory.CanTake(g.Item)) inventory.Add(g.Item);
             }
             Clear();

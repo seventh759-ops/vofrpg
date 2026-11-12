@@ -49,6 +49,15 @@ namespace VividOfFade
         public float DamageTaken = 1f;    // 受けるダメージの倍率
         public float DodgeCooldown;
 
+        // 装備の効果（M6 で足した分）
+        public float SkillDamage;          // スキルのダメージ +割合
+        public float CooldownMult = 1f;    // スキルの待ち時間の倍率
+        public float ExpGain;              // 経験値 +割合
+        public float EmberFind;            // 拾う火種 +割合
+        public float MagicFind;            // 珍しい品の出やすさ（RollRarity の bonus に足す）
+        public float EliteDamage;          // 精鋭・ボスへのダメージ +割合
+        public float AreaMult = 1f;        // スキルの範囲の倍率
+
         public float AttacksPerSecond => 1f / FireInterval;
 
         /// <summary>斬撃の2体目以降に入る威力の割合。</summary>
@@ -79,8 +88,11 @@ namespace VividOfFade
                 // MP・自然回復も少しだけ数える（スキルが入ったら重みを見直す）
                 float survive = 1f + MaxHp * 0.002f + Armor * 0.002f + MaxMp * 0.0005f + HpRegen * 0.02f + MpRegen * 0.01f;
                 float reach = 1f + (Light - spec.BaseLight) * 0.05f;
+                // M6 の効果も少しずつ数える（スキル・被ダメージ・精鋭・範囲・稼ぎ）
+                float extras = (1f + SkillDamage * 0.3f) * (1f + (1f - CooldownMult) * 0.3f) * (spec.DamageTaken / Mathf.Max(0.1f, DamageTaken))
+                    * (1f + EliteDamage * 0.2f) * (1f + (AreaMult - 1f) * 0.2f) * (1f + (ExpGain + EmberFind + MagicFind) * 0.1f);
                 return dps * survive * reach * (1f + ExplodeMult * 0.5f) * (1f + DoubleStrikeChance)
-                    * (1f + DodgeNovaMult * 0.1f) * (1f + LifeSteal * 10f);
+                    * (1f + DodgeNovaMult * 0.1f) * (1f + LifeSteal * 10f) * extras;
             }
         }
 
@@ -124,6 +136,7 @@ namespace VividOfFade
             };
             for (int i = 0; i < Attributes.Count; i++) s.Attr[i] = cls.BaseStats[i] + ch.Alloc[i] + (ch.Third ? ThirdClasses.AllStats : 0); // 3次職は全能力値+10
             int bonusHp = 0, bonusMp = 0;
+            float hpRegen = 0f, mpRegen = 0f, reduction = 0f, cdr = 0f, dodgeCdr = 0f, hpPct = 0f;
 
             float baseDamage = ClassInfo.Weapon(cls.Starter).BaseDamage * 0.6f; // 武器なし
             var kind = cls.Starter;
@@ -168,6 +181,23 @@ namespace VividOfFade
                         case StatType.LightRadius: s.Light += a.Value; break;
                         case StatType.Pierce: pierce += Mathf.RoundToInt(a.Value); break;
                         case StatType.Multishot: extra += Mathf.RoundToInt(a.Value); break;
+                        case StatType.HpRegen: hpRegen += a.Value; break;
+                        case StatType.MpRegen: mpRegen += a.Value; break;
+                        case StatType.LifeSteal: s.LifeSteal += a.Value; break;
+                        case StatType.DamageReduction: reduction += a.Value; break;
+                        case StatType.SkillDamagePct: s.SkillDamage += a.Value; break;
+                        case StatType.CooldownReduction: cdr += a.Value; break;
+                        case StatType.ExpGain: s.ExpGain += a.Value; break;
+                        case StatType.EmberFind: s.EmberFind += a.Value; break;
+                        case StatType.MagicFind: s.MagicFind += a.Value; break;
+                        case StatType.EliteDamage: s.EliteDamage += a.Value; break;
+                        case StatType.ExplodePower: s.ExplodeMult += a.Value; break;
+                        case StatType.DodgeCooldown: dodgeCdr += a.Value; break;
+                        case StatType.AllStats:
+                            for (int k = 0; k < Attributes.Count; k++) s.Attr[k] += Mathf.RoundToInt(a.Value);
+                            break;
+                        case StatType.AreaPct: s.AreaMult += a.Value; break;
+                        case StatType.MaxHpPct: hpPct += a.Value; break;
                     }
                 }
 
@@ -197,8 +227,9 @@ namespace VividOfFade
             // MP は WIS だけで増える。レベルアップのたびに、そのときの WIS で上限が積み上がる（MpGrown）
             Progression.EnsureMpGrowth(ch);
             s.MaxMp = 20 + wis * 2 + ch.MpGrown + bonusMp;
-            s.HpRegen = vit * 0.05f;
-            s.MpRegen = 1f + wis * 0.1f + (ch.Level - 1) * 0.02f;
+            s.MaxHp = Mathf.RoundToInt(s.MaxHp * (1f + hpPct));
+            s.HpRegen = vit * 0.05f + hpRegen;
+            s.MpRegen = 1f + wis * 0.1f + (ch.Level - 1) * 0.02f + mpRegen;
             s.Armor += str * 0.5f;
             atkSpd += dex * 0.004f;
             s.CritChance += dex * 0.002f;
@@ -207,8 +238,9 @@ namespace VividOfFade
             s.Kind = w.Attack;
             s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
             s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f + sub * 0.01f);
-            s.DamageTaken = cls.DamageTaken;
-            s.DodgeCooldown = GameConfig.DodgeCooldown * cls.DodgeCooldownMult;
+            s.DamageTaken = cls.DamageTaken * (1f - Mathf.Min(0.6f, reduction)); // 被ダメージの軽減は 60% まで
+            s.DodgeCooldown = GameConfig.DodgeCooldown * cls.DodgeCooldownMult * (1f - Mathf.Min(0.5f, dodgeCdr));
+            s.CooldownMult = 1f - Mathf.Min(0.5f, cdr); // 待ち時間の短縮は 50% まで
             s.FireInterval = w.Interval / (1f + atkSpd);
             s.MoveSpeed = cls.Speed * (1f + moveSpd);
             s.CritChance = Mathf.Min(s.CritChance + w.CritBonus, 0.75f);

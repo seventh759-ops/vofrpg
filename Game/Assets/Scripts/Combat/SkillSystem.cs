@@ -94,7 +94,7 @@ namespace VividOfFade
 
             int skillLevel = ch.SkillLv[index];
             Cast(spec, SkillInfo.Power(skillLevel), player);
-            cooldowns[slot] = spec.Cooldown * SkillInfo.CooldownMult(skillLevel);
+            cooldowns[slot] = spec.Cooldown * SkillInfo.CooldownMult(skillLevel) * player.Stats.CooldownMult;
             GainUse(ch, index, spec);
         }
 
@@ -143,13 +143,14 @@ namespace VividOfFade
         {
             var st = player.Stats;
             Vector2 origin = player.Pos;
-            float damage = st.Damage * spec.Mult * power;
+            float damage = st.Damage * spec.Mult * power * (1f + st.SkillDamage);
+            float radius = spec.Radius * st.AreaMult;
 
             switch (spec.Effect)
             {
                 case SkillEffect.Nova:
-                    Area(origin, spec.Radius, damage, st);
-                    fx.Ring(origin, spec.Radius, spec.Color, 0.35f);
+                    Area(origin, radius, damage, st);
+                    fx.Ring(origin, radius, spec.Color, 0.35f);
                     sfx.Boom();
                     if (spec.HealPct > 0f) player.Heal(Mathf.RoundToInt(player.MaxHp * spec.HealPct * power));
                     break;
@@ -175,7 +176,7 @@ namespace VividOfFade
                     Vector2 start = origin;
                     player.SkillDash(aim, spec.Range, room);
                     Vector2 end = player.Pos;
-                    HitAlong(start, end, spec.Radius, damage, st);
+                    HitAlong(start, end, radius, damage, st);
                     fx.Slash(end, aim, 1.8f, 160f, spec.Color);
                     sfx.Boom();
                     break;
@@ -185,8 +186,8 @@ namespace VividOfFade
                 {
                     var target = enemies.FindNearest(origin, spec.Range);
                     Vector2 at = target != null ? target.Pos : origin + Aim(player, spec.Range) * 3f;
-                    strikes.Add(new PendingStrike { Pos = at, Timer = spec.Delay, Damage = damage, Radius = spec.Radius, Color = spec.Color });
-                    fx.Ring(at, spec.Radius, new Color(1f, 0.3f, 0.2f, 0.6f), spec.Delay); // 落ちる場所の予告
+                    strikes.Add(new PendingStrike { Pos = at, Timer = spec.Delay, Damage = damage, Radius = radius, Color = spec.Color });
+                    fx.Ring(at, radius, new Color(1f, 0.3f, 0.2f, 0.6f), spec.Delay); // 落ちる場所の予告
                     break;
                 }
 

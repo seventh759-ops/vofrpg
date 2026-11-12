@@ -18,7 +18,13 @@ namespace VividOfFade
             StatType.MoveSpeedPct, StatType.MaxHp, StatType.Armor, StatType.LightRadius,
             StatType.Pierce, StatType.Multishot,
             StatType.Str, StatType.Dex, StatType.Int, StatType.Vit, StatType.Wis, StatType.MaxMp,
+            StatType.HpRegen, StatType.MpRegen, StatType.LifeSteal, StatType.DamageReduction, StatType.SkillDamagePct,
+            StatType.CooldownReduction, StatType.ExpGain, StatType.EmberFind, StatType.MagicFind, StatType.EliteDamage,
+            StatType.ExplodePower, StatType.DodgeCooldown, StatType.AllStats, StatType.AreaPct, StatType.MaxHpPct,
         };
+
+        /// <summary>今の挑戦の「珍しい品が出やすい」の効果（GameWorld が毎フレーム入れる。町では 0）。</summary>
+        public static float MagicFind;
 
         static readonly UniqueType[] allUniques = { UniqueType.ExplodeOnKill, UniqueType.HealOnKill, UniqueType.SplitShot };
         static readonly UniqueType[] bossUniques = { UniqueType.DodgeNova, UniqueType.DoubleStrike, UniqueType.Vampiric };
@@ -44,6 +50,7 @@ namespace VividOfFade
 
         public static Item Roll(int level, float bonus)
         {
+            bonus += MagicFind;
             var item = new Item
             {
                 Level = Mathf.Max(1, level),
@@ -210,6 +217,7 @@ namespace VividOfFade
         {
             if (s == StatType.Pierce) return 0.4f;
             if (s == StatType.Multishot) return 0.3f;
+            if (s == StatType.AllStats || s == StatType.LifeSteal || s == StatType.ExplodePower) return 0.5f; // 強めの効果は出にくく
             return 1f;
         }
 
@@ -232,6 +240,21 @@ namespace VividOfFade
                 case StatType.Vit:
                 case StatType.Wis: return Mathf.Round((Random.Range(1f, 3f) + level * 0.25f) * m);
                 case StatType.MaxMp: return Mathf.Round((Random.Range(5f, 12f) + level) * m);
+                case StatType.HpRegen: return (Random.Range(0.3f, 0.8f) + 0.03f * level) * m;
+                case StatType.MpRegen: return (Random.Range(0.2f, 0.6f) + 0.02f * level) * m;
+                case StatType.LifeSteal: return Random.Range(0.002f, 0.005f) * m;
+                case StatType.DamageReduction: return Random.Range(0.02f, 0.05f) * m;
+                case StatType.SkillDamagePct: return (Random.Range(0.06f, 0.15f) + 0.004f * level) * m;
+                case StatType.CooldownReduction: return Random.Range(0.03f, 0.07f) * m;
+                case StatType.ExpGain: return Random.Range(0.04f, 0.1f) * m;
+                case StatType.EmberFind: return Random.Range(0.05f, 0.15f) * m;
+                case StatType.MagicFind: return Random.Range(0.05f, 0.12f) * m;
+                case StatType.EliteDamage: return Random.Range(0.08f, 0.2f) * m;
+                case StatType.ExplodePower: return Random.Range(0.08f, 0.18f) * m;
+                case StatType.DodgeCooldown: return Random.Range(0.04f, 0.1f) * m;
+                case StatType.AllStats: return Mathf.Round((Random.Range(1f, 2f) + level * 0.1f) * m);
+                case StatType.AreaPct: return Random.Range(0.05f, 0.12f) * m;
+                case StatType.MaxHpPct: return Random.Range(0.03f, 0.08f) * m;
                 default: return 1f; // Pierce / Multishot
             }
         }

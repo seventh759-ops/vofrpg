@@ -335,9 +335,13 @@ namespace VividOfFade
         /// <summary>まだ出ていない精鋭の種類をランダムに選ぶ。</summary>
         public static EliteKind RandomElite() => (EliteKind)UnityEngine.Random.Range(1, 5);
 
+        /// <summary>精鋭・ボスへのダメージの倍率（装備の効果。GameWorld が毎フレーム入れる）。</summary>
+        public float EliteDamageMult = 1f;
+
         public void Damage(Enemy e, float amount, Vector2 dir, bool crit)
         {
             if (e.Dying) return;
+            if (e.IsBoss || e.Elite != EliteKind.None) amount *= EliteDamageMult;
             e.Hp -= amount;
             e.FlashTimer = 0.08f;
             e.Sr.color = HitColor;
