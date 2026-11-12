@@ -99,14 +99,16 @@ namespace VividOfFade
                 else if (attr == spec.SubAttr) nameStyle.normal.textColor = new Color(0.95f, 0.75f, 0.5f);
                 GUI.Label(new Rect(row.x + pad * 0.3f, row.y, W * 0.18f, rowH * 0.6f), Attributes.ShortName(attr), nameStyle);
                 string gear = fromGear > 0 ? $"  (+{fromGear})" : "";
-                GUI.Label(new Rect(row.x + W * 0.17f, row.y, W * 0.3f, rowH * 0.6f), $"{total}{gear}", label);
                 int idx = i;
+                // 仮に振っていれば、確定後の値を金色で出す（ボタンと重ならないよう、数値の欄の中だけで）
+                var valueStyle = new GUIStyle(label);
                 if (pending[i] > 0)
                 {
-                    var pend = new GUIStyle(label) { fontStyle = FontStyle.Bold };
-                    pend.normal.textColor = new Color(1f, 0.85f, 0.3f);
-                    GUI.Label(new Rect(row.x + W * 0.36f, row.y, W * 0.12f, rowH * 0.6f), $"+{pending[i]}", pend);
+                    valueStyle.fontStyle = FontStyle.Bold;
+                    valueStyle.normal.textColor = new Color(1f, 0.85f, 0.3f);
                 }
+                float valueW = (ch.Points > 0 ? row.xMax - 4f * (rowH * 0.95f + W * 0.008f) : row.xMax) - (row.x + W * 0.17f) - W * 0.01f;
+                Hud.FitLabel(new Rect(row.x + W * 0.17f, row.y, valueW, rowH * 0.6f), $"{total + pending[i]}{gear}", valueStyle);
                 float bw = rowH * 0.95f, bg = W * 0.008f;
                 Hud.FitLabel(new Rect(row.x + pad * 0.3f, row.y + rowH * 0.55f, row.width - pad * 0.6f, rowH * 0.45f), Attributes.Effect(attr), small); // 説明は全幅
 
