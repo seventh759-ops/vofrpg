@@ -761,7 +761,7 @@ namespace VividOfFade
         }
 
         /// <summary>
-        /// タイトル画面。夜空と瞬く星、灯りの消えかけた塔、立ちのぼる火の粉、光をまとったロゴ、手前に3人の職業。
+        /// タイトル画面。上は夜空と瞬く星、地表に3人の職業。地中には逆さの塔が伸び、最深部に灯りがゆらめく。火の粉、光をまとったロゴ。
         /// どこを押しても始まる（言語のボタンだけは別）。
         /// </summary>
         void DrawTitle()
@@ -771,46 +771,63 @@ namespace VividOfFade
             float t = Time.unscaledTime;
             Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0f), centered, World.LeaveTitle);
 
-            // 夜空（上は深い紫、下へいくほど青く、地平が少し明るい）
-            const int bands = 28;
-            float ground = H * 0.8f;
+            // 地表の高さ。上は夜空、下は地中（逆さの塔が地下へ伸びる）
+            float ground = H * 0.37f;
+
+            // 夜空（上は深い紫、地平へいくほど少し明るい）
+            const int bands = 14;
             for (int b = 0; b < bands; b++)
             {
                 float k = b / (float)(bands - 1);
                 var c = Color.Lerp(new Color(0.06f, 0.03f, 0.12f), new Color(0.16f, 0.1f, 0.24f), k);
                 Fill(new Rect(0, ground * b / bands, W, ground / bands + 1f), c);
             }
-            Fill(new Rect(0, ground - H * 0.06f, W, H * 0.06f), new Color(1f, 0.55f, 0.3f, 0.06f)); // 地平の残り火の色
+            Fill(new Rect(0, ground - H * 0.04f, W, H * 0.04f), new Color(1f, 0.55f, 0.3f, 0.06f)); // 地平の残り火の色
 
             // 星（決まった位置で瞬く）
-            for (int i = 0; i < 70; i++)
+            for (int i = 0; i < 45; i++)
             {
-                float sx = Hash01(i * 7 + 1) * W, sy = Hash01(i * 13 + 5) * ground * 0.75f;
+                float sx = Hash01(i * 7 + 1) * W, sy = Hash01(i * 13 + 5) * ground * 0.85f;
                 float tw = 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(t * (0.6f + Hash01(i) * 1.6f) + i));
                 float sz = i % 9 == 0 ? 3f : 2f;
                 Fill(new Rect(sx, sy, sz, sz), new Color(1f, 0.95f, 0.85f, tw * 0.8f));
             }
 
-            // 塔（中央、地面に立つ）と、頂上でゆらめく光
-            float th = H * 0.56f, tw2 = th * 48f / 112f;
-            var tower = new Rect((W - tw2) * 0.5f, ground - th, tw2, th);
+            // 地中（深いほど暗い）と、ところどころの石
+            const int earthBands = 24;
+            for (int b = 0; b < earthBands; b++)
+            {
+                float k = b / (float)(earthBands - 1);
+                var c = Color.Lerp(new Color(0.13f, 0.09f, 0.11f), new Color(0.02f, 0.015f, 0.04f), k);
+                Fill(new Rect(0, ground + (H - ground) * b / earthBands, W, (H - ground) / earthBands + 1f), c);
+            }
+            for (int i = 0; i < 60; i++)
+            {
+                float rx = Hash01(i * 19 + 4) * W, ry = ground + H * 0.01f + Hash01(i * 23 + 9) * (H - ground);
+                float rw = W * (0.01f + Hash01(i * 29) * 0.025f);
+                float k = (ry - ground) / (H - ground);
+                Fill(new Rect(rx, ry, rw, rw * 0.5f), new Color(0.25f, 0.2f, 0.24f, 0.35f * (1f - k)));
+            }
+
+            // 逆さの塔（地表から下へ）と、最深部でゆらめく灯り
+            float th = H * 0.47f, tw2 = th * 48f / 112f;
+            var tower = new Rect((W - tw2) * 0.5f, ground, tw2, th);
+            DrawSprite(tower, PixelArt.TitleTower);
             float flick = 0.55f + 0.45f * Mathf.PerlinNoise(t * 2.2f, 0.3f);
-            float gr = tw2 * 0.45f, beaconY = tower.y + th * 0.018f; // 灯りの中心（塔の最上部）
+            float gr = tw2 * 0.45f, beaconY = tower.yMax - th * 0.022f; // 灯りの中心（尖塔の先）
             Fill(new Rect(W * 0.5f - gr * 0.5f, beaconY - gr * 0.2f, gr, gr * 0.4f), new Color(1f, 0.85f, 0.5f, 0.12f * flick));
             Fill(new Rect(W * 0.5f - gr * 0.25f, beaconY - gr * 0.1f, gr * 0.5f, gr * 0.2f), new Color(1f, 0.9f, 0.6f, 0.2f * flick));
-            DrawSprite(tower, PixelArt.TitleTower);
 
-            // 地面
-            Fill(new Rect(0, ground, W, H - ground), new Color(0.05f, 0.04f, 0.08f));
-            Fill(new Rect(0, ground, W, H * 0.006f), new Color(0.35f, 0.25f, 0.4f, 0.6f));
+            // 地表
+            Fill(new Rect(0, ground, W, H * 0.006f), new Color(0.35f, 0.25f, 0.4f, 0.8f));
 
-            // 火の粉（下から立ちのぼり、上へいくほど消える）
+            // 火の粉（地の底から立ちのぼり、上へいくほど消える）
             for (int i = 0; i < 36; i++)
             {
                 float speed = 0.05f + Hash01(i * 3 + 2) * 0.06f;
                 float life = Mathf.Repeat(t * speed + Hash01(i * 11 + 7), 1f);
                 float ex = Hash01(i * 5 + 3) * W + Mathf.Sin(t * 0.8f + i) * W * 0.02f;
-                float ey = ground - life * ground * 0.85f;
+                float ey = H - life * H * 0.95f;
                 float a = (1f - life) * 0.9f;
                 float sz = 2f + Hash01(i * 17) * 3f;
                 Fill(new Rect(ex, ey, sz, sz), new Color(1f, 0.55f + 0.3f * Hash01(i), 0.2f, a));

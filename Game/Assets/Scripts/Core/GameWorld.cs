@@ -690,7 +690,7 @@ namespace VividOfFade
             }
             if (Floors.Floor >= GameConfig.MaxFloor)
             {
-                Hud.ShowBanner(Loc.T("TOWER CONQUERED", "塔を制覇した"), Loc.T("The light reaches the very top.", "灯りが、塔のいちばん上まで届いた。"), new Color(1f, 0.85f, 0.4f));
+                Hud.ShowBanner(Loc.T("TOWER CONQUERED", "塔を制覇した"), Loc.T("The light reaches the very bottom.", "灯りが、塔のいちばん底まで届いた。"), new Color(1f, 0.85f, 0.4f));
                 Sfx.Landed(Rarity.Mythic);
             }
             Hud.Toast(Loc.T("The stairs have appeared", "階段が現れた"), new Color(1f, 0.85f, 0.5f));
