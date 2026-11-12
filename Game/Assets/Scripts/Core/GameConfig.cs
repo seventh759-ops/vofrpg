@@ -75,6 +75,12 @@ namespace VividOfFade
         public static float EliteChance(int wave) => wave < EliteFirstWave ? 0f : Mathf.Min(0.02f + wave * 0.001f, 0.06f);
         public const float EliteHpMult = 4f;
         public const float EliteScale = 1.45f;
+
+        // 敵の種類（体力・攻撃の倍率は、その層のスライムに対して）
+        public const float BatHpMult = 0.5f, BatSpeed = 3.2f, BatDamageMult = 0.7f;
+        public const float CasterHpMult = 0.8f, CasterSpeed = 1.7f, CasterRange = 4.5f, CasterFireInterval = 2.2f, BulletSpeed = 4.2f, BulletDamageMult = 0.9f;
+        public const float BruteHpMult = 2.5f, BruteSpeed = 1.1f, BruteDamageMult = 1.4f, BruteScale = 1.25f, BruteChargeSpeed = 7f, BruteChargeTime = 0.45f, BrutePrep = 0.6f, BruteChargeEvery = 3.5f;
+        public const float BomberHpMult = 0.7f, BomberSpeed = 2.4f, BomberFuse = 0.8f, BomberRadius = 1.8f, BomberDamageMult = 2.5f;
         public const int EliteFountainItems = 2;
         public const float EliteRarityBonus = 0.8f;
         public const float ShroudRange = 5f;      // この距離にいると明るさを奪う

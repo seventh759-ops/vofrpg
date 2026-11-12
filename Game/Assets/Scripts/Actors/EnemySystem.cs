@@ -59,12 +59,51 @@ namespace VividOfFade
 
         Pool<Enemy> pool;
         Sprite slimeSprite;
+        int zoneIndex;
 
-        /// <summary>区画が変わったら、これから出るスライムの色を変える。</summary>
+        /// <summary>区画が変わったら、これから出るスライムの色と、敵の種類の割合を変える。</summary>
         public void SetZone(ZoneSpec zone)
         {
             slimeSprite = PixelArt.SlimeFor(zone);
+            zoneIndex = (int)zone.Pattern;
         }
+
+        // 区画ごとの敵の割合（スライム・コウモリ・術師・岩鬼・爆弾虫）。FloorPattern の順
+        static readonly int[][] zoneMix =
+        {
+            new[] { 60, 25, 0, 15, 0 },   // 灰の回廊
+            new[] { 45, 20, 20, 0, 15 },  // 苔むす底
+            new[] { 35, 0, 15, 25, 25 },  // 残り火の炉
+            new[] { 35, 20, 30, 15, 0 },  // 凍てる墓所
+            new[] { 30, 15, 25, 20, 10 }, // 沈んだ書庫
+            new[] { 20, 20, 20, 20, 20 }, // 虚ろの淵
+        };
+
+        EnemyKind PickKind()
+        {
+            var mix = zoneMix[Mathf.Clamp(zoneIndex, 0, zoneMix.Length - 1)];
+            int total = 0;
+            foreach (int w in mix) total += w;
+            int r = UnityEngine.Random.Range(0, total);
+            for (int i = 0; i < mix.Length; i++)
+            {
+                r -= mix[i];
+                if (r < 0) return (EnemyKind)i;
+            }
+            return EnemyKind.Slime;
+        }
+
+        // 術師の弾
+        sealed class Bullet
+        {
+            public SpriteRenderer Sr;
+            public Vector2 Pos;
+            public Vector2 Vel;
+            public float Life;
+            public int Damage;
+        }
+        readonly List<Bullet> bullets = new List<Bullet>();
+        readonly Stack<Bullet> freeBullets = new Stack<Bullet>();
 
         public int AliveCount
         {
@@ -104,7 +143,10 @@ namespace VividOfFade
             return e;
         }
 
-        public void Spawn(Vector2 pos, float hp, int contactDamage)
+        /// <summary>部屋の敵：区画の割合で種類を選んで出す。</summary>
+        public void SpawnMixed(Vector2 pos, float hp, int contactDamage) => Spawn(pos, hp, contactDamage, PickKind());
+
+        public void Spawn(Vector2 pos, float hp, int contactDamage, EnemyKind kind = EnemyKind.Slime)
         {
             if (Active.Count >= GameConfig.MaxEnemies) return;
             var e = pool.Get();
@@ -117,7 +159,7 @@ namespace VividOfFade
             e.Dying = false;
             e.DyingTimer = 0f;
             e.Sr.color = Color.white;
-            if (slimeSprite != null) e.Sr.sprite = slimeSprite;
+            e.Sr.sprite = slimeSprite != null ? slimeSprite : PixelArt.Slime; // 使い回すので毎回入れ直す
             e.IsBoss = false;
             e.Enraged = false;
             e.Elite = EliteKind.None;
@@ -128,6 +170,39 @@ namespace VividOfFade
             e.SlamTimer = 0f;
             e.Windup = 0f;
             e.transform.localScale = Vector3.one;
+            e.Kind = kind;
+            e.Prep = 0f;
+            e.Charging = 0f;
+            e.Phase = UnityEngine.Random.value * 6.28f;
+            e.ActTimer = UnityEngine.Random.Range(0.5f, 1.5f);
+            if (kind != EnemyKind.Slime) e.Sr.sprite = PixelArt.EnemySprite(kind);
+            switch (kind)
+            {
+                case EnemyKind.Bat:
+                    e.Hp *= GameConfig.BatHpMult;
+                    e.Speed = GameConfig.BatSpeed * UnityEngine.Random.Range(0.9f, 1.1f);
+                    e.Radius = GameConfig.SlimeRadius * 0.8f;
+                    e.ContactDamage = Mathf.Max(1, Mathf.RoundToInt(contactDamage * GameConfig.BatDamageMult));
+                    break;
+                case EnemyKind.Caster:
+                    e.Hp *= GameConfig.CasterHpMult;
+                    e.Speed = GameConfig.CasterSpeed;
+                    e.ActTimer = UnityEngine.Random.Range(1f, GameConfig.CasterFireInterval);
+                    break;
+                case EnemyKind.Brute:
+                    e.Hp *= GameConfig.BruteHpMult;
+                    e.Speed = GameConfig.BruteSpeed;
+                    e.ContactDamage = Mathf.RoundToInt(contactDamage * GameConfig.BruteDamageMult);
+                    e.BaseScale = GameConfig.BruteScale;
+                    e.Radius = GameConfig.SlimeRadius * GameConfig.BruteScale;
+                    e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale, 1f);
+                    break;
+                case EnemyKind.Bomber:
+                    e.Hp *= GameConfig.BomberHpMult;
+                    e.Speed = GameConfig.BomberSpeed;
+                    break;
+            }
+            e.MaxHp = e.Hp;
             e.Pos = pos;
             e.Sr.sortingOrder = SortOrder.For(pos);
             Active.Add(e);
@@ -181,8 +256,8 @@ namespace VividOfFade
         {
             e.Elite = kind;
             e.Hp *= GameConfig.EliteHpMult;
-            e.BaseScale = GameConfig.EliteScale;
-            e.Radius = GameConfig.SlimeRadius * GameConfig.EliteScale;
+            e.Radius *= GameConfig.EliteScale; // 種類ごとの大きさに対して大きくする
+            e.BaseScale *= GameConfig.EliteScale;
             switch (kind)
             {
                 case EliteKind.Swift:
@@ -283,6 +358,7 @@ namespace VividOfFade
             pendingSplits.Clear();
 
             ShroudNear = false;
+            TickBullets(dt, player, room);
             Vector2 target = player.Pos;
             for (int i = Active.Count - 1; i >= 0; i--)
             {
@@ -312,9 +388,17 @@ namespace VividOfFade
                 float dist = to.magnitude;
                 Vector2 dir = dist > 0.001f ? to / dist : Vector2.zero;
 
-                // 迷路を回り込んで追う（近ければまっすぐ）
+                // 迷路を回り込んで追う（近ければまっすぐ）。種類ごとの動きで変える
                 Vector2 moveDir = room.FlowDir(pos, target);
-                if (e.IsBoss && UpdateBoss(e, dt, dist)) moveDir = Vector2.zero; // 力をためている間は止まる
+                float speed = e.Speed;
+                if (e.IsBoss)
+                {
+                    if (UpdateBoss(e, dt, dist)) moveDir = Vector2.zero; // 力をためている間は止まる
+                }
+                else if (UpdateKind(e, dt, dist, dir, ref moveDir, ref speed, player, room))
+                {
+                    continue; // 爆発して消えた
+                }
                 if (e.Elite == EliteKind.Shroud && dist < GameConfig.ShroudRange) ShroudNear = true;
 
                 // 重なりすぎないように押し合う
@@ -334,7 +418,7 @@ namespace VividOfFade
                     }
                 }
 
-                pos = room.Move(pos, (moveDir * e.Speed + e.Knock) * dt + separation * 0.5f, e.Radius);
+                pos = room.Move(pos, (moveDir * speed + e.Knock) * dt + separation * 0.5f, e.Radius);
                 e.Knock = Vector2.MoveTowards(e.Knock, Vector2.zero, 20f * dt);
                 e.Pos = pos;
                 e.Sr.sortingOrder = SortOrder.For(pos);
@@ -350,6 +434,143 @@ namespace VividOfFade
                 {
                     if (player.TakeHit(e.ContactDamage)) e.Knock -= dir * 4f;
                 }
+            }
+        }
+
+        /// <summary>
+        /// 種類ごとの動き。moveDir と speed を変える。爆弾虫が爆発して消えたときは true。
+        /// </summary>
+        bool UpdateKind(Enemy e, float dt, float dist, Vector2 dir, ref Vector2 moveDir, ref float speed, Player player, Room room)
+        {
+            switch (e.Kind)
+            {
+                case EnemyKind.Bat:
+                {
+                    // 追いながら、横にふらふら揺れる
+                    var perp = new Vector2(-moveDir.y, moveDir.x);
+                    moveDir = (moveDir + perp * Mathf.Sin(Time.time * 6f + e.Phase) * 0.9f).normalized;
+                    break;
+                }
+                case EnemyKind.Caster:
+                {
+                    // ちょうどよい距離を保ち、ときどき弾を撃つ
+                    if (dist < GameConfig.CasterRange - 1.2f) moveDir = -dir;
+                    else if (dist < GameConfig.CasterRange + 1f)
+                    {
+                        moveDir = new Vector2(-dir.y, dir.x) * Mathf.Sign(Mathf.Sin(e.Phase));
+                        speed *= 0.5f;
+                    }
+                    e.ActTimer -= dt;
+                    if (e.ActTimer <= 0f && dist < 8f)
+                    {
+                        e.ActTimer = GameConfig.CasterFireInterval + UnityEngine.Random.Range(0f, 0.6f);
+                        Fire(e.Pos + dir * 0.3f, dir * GameConfig.BulletSpeed, Mathf.Max(1, Mathf.RoundToInt(e.ContactDamage * GameConfig.BulletDamageMult)));
+                    }
+                    break;
+                }
+                case EnemyKind.Brute:
+                {
+                    if (e.Charging > 0f)
+                    {
+                        e.Charging -= dt;
+                        moveDir = e.ChargeDir;
+                        speed = GameConfig.BruteChargeSpeed;
+                    }
+                    else if (e.Prep > 0f)
+                    {
+                        // 力をためる（赤く点滅して、止まる）
+                        e.Prep -= dt;
+                        moveDir = Vector2.zero;
+                        e.Sr.color = Mathf.Repeat(Time.time * 10f, 1f) < 0.5f ? new Color(1f, 0.5f, 0.4f) : e.Tint;
+                        if (e.Prep <= 0f)
+                        {
+                            e.Sr.color = e.Tint;
+                            e.Charging = GameConfig.BruteChargeTime;
+                            e.ChargeDir = dir;
+                        }
+                    }
+                    else
+                    {
+                        e.ActTimer -= dt;
+                        if (e.ActTimer <= 0f && dist < 5.5f)
+                        {
+                            e.ActTimer = GameConfig.BruteChargeEvery;
+                            e.Prep = GameConfig.BrutePrep;
+                        }
+                    }
+                    break;
+                }
+                case EnemyKind.Bomber:
+                {
+                    if (e.Prep > 0f)
+                    {
+                        e.Prep -= dt;
+                        moveDir = Vector2.zero;
+                        float blink = Mathf.Repeat(Time.time * (6f + (GameConfig.BomberFuse - e.Prep) * 20f), 1f);
+                        e.Sr.color = blink < 0.5f ? new Color(1f, 0.4f, 0.3f) : Color.white;
+                        if (e.Prep <= 0f)
+                        {
+                            // 爆発（倒したことにはならない：経験値やドロップは出ない）
+                            BossSlam?.Invoke(e.Pos, GameConfig.BomberRadius, Mathf.RoundToInt(e.ContactDamage * GameConfig.BomberDamageMult));
+                            e.Dying = true;
+                            e.DyingTimer = DeathTime;
+                            e.Hp = 0f;
+                            return true;
+                        }
+                    }
+                    else if (dist < 1.3f)
+                    {
+                        e.Prep = GameConfig.BomberFuse;
+                        BossWindup?.Invoke(e.Pos, GameConfig.BomberRadius, GameConfig.BomberFuse);
+                    }
+                    break;
+                }
+            }
+            return false;
+        }
+
+        void Fire(Vector2 pos, Vector2 vel, int damage)
+        {
+            var b = freeBullets.Count > 0 ? freeBullets.Pop() : CreateBullet();
+            b.Sr.gameObject.SetActive(true);
+            b.Pos = pos;
+            b.Vel = vel;
+            b.Life = 3f;
+            b.Damage = damage;
+            b.Sr.transform.position = Iso.ToScreen(pos);
+            bullets.Add(b);
+        }
+
+        Bullet CreateBullet()
+        {
+            var go = new GameObject("EnemyBullet");
+            go.transform.SetParent(transform, false);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = PixelArt.Ember;
+            sr.color = new Color(0.55f, 1f, 0.6f);
+            Lighting.MakeGlow(sr);
+            return new Bullet { Sr = sr };
+        }
+
+        /// <summary>術師の弾を動かす。壁に当たるか時間が来たら消える。</summary>
+        void TickBullets(float dt, Player player, Room room)
+        {
+            for (int i = bullets.Count - 1; i >= 0; i--)
+            {
+                var b = bullets[i];
+                b.Life -= dt;
+                b.Pos += b.Vel * dt;
+                bool hit = !player.IsDead && (b.Pos - player.Pos).sqrMagnitude < (GameConfig.PlayerRadius + 0.15f) * (GameConfig.PlayerRadius + 0.15f);
+                if (hit) player.TakeHit(b.Damage);
+                if (hit || b.Life <= 0f || !room.Contains(b.Pos))
+                {
+                    b.Sr.gameObject.SetActive(false);
+                    bullets.RemoveAt(i);
+                    freeBullets.Push(b);
+                    continue;
+                }
+                b.Sr.transform.position = Iso.ToScreen(b.Pos) + new Vector2(0f, 0.25f);
+                b.Sr.sortingOrder = SortOrder.For(b.Pos) + 1;
             }
         }
 
@@ -389,6 +610,12 @@ namespace VividOfFade
         public void Clear()
         {
             pendingSplits.Clear();
+            foreach (var b in bullets)
+            {
+                b.Sr.gameObject.SetActive(false);
+                freeBullets.Push(b);
+            }
+            bullets.Clear();
             ShroudNear = false;
             for (int i = Active.Count - 1; i >= 0; i--) ReleaseAt(i);
         }

@@ -589,6 +589,133 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>スライム以外の敵の絵（16ドット）。どれもこのゲーム用のオリジナル。</summary>
+        public static Sprite EnemySprite(EnemyKind kind)
+        {
+            switch (kind)
+            {
+                case EnemyKind.Bat: return FromArt("Enemy_Bat", BatRows, BatPalette);
+                case EnemyKind.Caster: return FromArt("Enemy_Caster", CasterRows, CasterPalette);
+                case EnemyKind.Brute: return FromArt("Enemy_Brute", BruteRows, BrutePalette);
+                case EnemyKind.Bomber: return FromArt("Enemy_Bomber", BomberRows, BomberPalette);
+                default: return Slime;
+            }
+        }
+
+        static readonly Dictionary<char, Color32> BatPalette = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(24, 16, 30, 255) },
+            { 'p', new Color32(110, 70, 140, 255) },
+            { 'r', new Color32(255, 70, 70, 255) },
+        };
+
+        static readonly string[] BatRows =
+        {
+            "................",
+            "................",
+            "................",
+            "................",
+            "k..............k",
+            "kk.....kk.....kk",
+            "kpk...kppk...kpk",
+            "kppk.kprrpk.kppk",
+            "kpppkppppppkpppk",
+            ".kppppppppppppk.",
+            "..kpk.kppk.kpk..",
+            "...k..kppk..k...",
+            "......k..k......",
+            "................",
+            "................",
+            "................",
+        };
+
+        static readonly Dictionary<char, Color32> CasterPalette = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(20, 24, 22, 255) },
+            { 'g', new Color32(70, 150, 110, 255) },
+            { 'd', new Color32(40, 100, 70, 255) },
+            { 'y', new Color32(255, 240, 140, 255) },
+            { 'o', new Color32(255, 255, 255, 255) },
+        };
+
+        static readonly string[] CasterRows =
+        {
+            "................",
+            "......kkkk......",
+            ".....kggggk.....",
+            "....kggggggk....",
+            "....kgkkkkgk....",
+            "...kgkyyyykgk...",
+            "...kgkyoyykgk...",
+            "...kggkkkkggk...",
+            "..kgggggggggk...",
+            "..kggdggggdggk..",
+            "..kgdggggggdgk..",
+            "..kggggggggggk..",
+            "...kggggggggk...",
+            "....kgkgkgkgk...",
+            ".....k.k.k.k....",
+            "................",
+        };
+
+        static readonly Dictionary<char, Color32> BrutePalette = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(26, 22, 20, 255) },
+            { 's', new Color32(130, 120, 110, 255) },
+            { 'd', new Color32(90, 82, 74, 255) },
+            { 'y', new Color32(255, 140, 60, 255) },
+        };
+
+        static readonly string[] BruteRows =
+        {
+            "................",
+            "................",
+            ".....kkkkkk.....",
+            "....kssssssk....",
+            "...kssyssyssk...",
+            "...kssssssssk...",
+            "..kssssssssssk..",
+            ".kssskssssksssk.",
+            "kssssksssskssssk",
+            "kssdssssssssdssk",
+            "kssdsssssssddssk",
+            ".kkkssssssssskk.",
+            "...ksssk.kssk...",
+            "...kddk...kddk..",
+            "...kkkk...kkkk..",
+            "................",
+        };
+
+        static readonly Dictionary<char, Color32> BomberPalette = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(20, 18, 24, 255) },
+            { 'b', new Color32(60, 58, 76, 255) },
+            { 'w', new Color32(160, 160, 180, 255) },
+            { 'r', new Color32(255, 90, 60, 255) },
+            { 'y', new Color32(255, 220, 90, 255) },
+            { 'o', new Color32(255, 255, 230, 255) },
+        };
+
+        static readonly string[] BomberRows =
+        {
+            "..........y.....",
+            ".........yoy....",
+            "..........w.....",
+            ".........w......",
+            "......kkkkk.....",
+            "....kkbbbbbkk...",
+            "...kbbbwbbbbbk..",
+            "...kbbwbbbbbbk..",
+            "..kbbbbbbbbbbbk.",
+            "..kbbrrbbbrrbbk.",
+            "..kbbbbbbbbbbbk.",
+            "...kbbbbbbbbbk..",
+            "...kbbbkkkbbbk..",
+            "....kkk...kkk...",
+            "....kk.....kk...",
+            "................",
+        };
+
         /// <summary>町の施設のアイコン（12ドット）。0 倉庫番・1 商人・2 師匠・3 荷運び・4 鍛冶屋。</summary>
         public static Sprite TownIcon(int index)
         {
