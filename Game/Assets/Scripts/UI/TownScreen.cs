@@ -597,10 +597,13 @@ namespace VividOfFade
             var lines = item.Describe();
             int baseLines = lines.Count - item.Affixes.Count - item.Uniques.Count;
             int maxLocks = Mathf.Min(Town.MaxRerollLocks, item.Affixes.Count - 1);
-            float lockW = W * 0.16f;
+            float lockW = W * 0.2f;
             for (int li = 0; li < lines.Count; li++)
             {
-                if (y + lineH > by - btnH - H * 0.02f) break;
+                int ai0 = li - baseLines;
+                bool affixRow = smithable && ai0 >= 0 && ai0 < item.Affixes.Count;
+                float rowLine = affixRow ? lineH * 1.35f : lineH; // 固定ボタンの行は少し高く
+                if (y + rowLine > by - btnH - H * 0.02f) break;
                 int ai = li - baseLines;
                 bool isAffix = smithable && ai >= 0 && ai < item.Affixes.Count;
                 if (isAffix)
@@ -608,9 +611,10 @@ namespace VividOfFade
                     int idx = ai;
                     bool on = locked.Contains(idx);
                     bool canLock = on || locked.Count < maxLocks;
-                    var lr = new Rect(pad, y + lineH * 0.05f, lockW, lineH * 0.9f);
+                    var lr = new Rect(pad, y + lineH * 0.08f, lockW, lineH * 1.2f);
+                    var lockStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
                     if (canLock)
-                        hud.Button(lr, on ? Loc.T("LOCKED", "固定") : Loc.T("lock", "固定する"), on ? gold : row, hud.CenteredStyle, () =>
+                        hud.Button(lr, on ? Loc.T("LOCKED", "固定中") : Loc.T("Lock", "固定"), on ? gold : new Color(1f, 1f, 1f, 0.16f), lockStyle, () =>
                         {
                             if (!locked.Remove(idx)) locked.Add(idx);
                         });
@@ -620,14 +624,14 @@ namespace VividOfFade
                     }
                     var st = new GUIStyle(small);
                     if (on) st.normal.textColor = new Color(1f, 0.85f, 0.45f);
-                    var textRect = new Rect(pad + lockW + W * 0.02f, y, W - pad * 2f - lockW, lineH);
-                    GUI.Label(textRect, SlotText(item, idx, lines[li], textRect, st), st);
+                    var textRect = new Rect(pad + lockW + W * 0.03f, y + lineH * 0.18f, W - pad * 2f - lockW - W * 0.03f, lineH);
+                    Hud.FitLabel(textRect, SlotText(item, idx, lines[li], textRect, st), st);
                 }
                 else
                 {
-                    GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), lines[li], small);
+                    Hud.FitLabel(new Rect(pad, y, W - pad * 2f, lineH), lines[li], small);
                 }
-                y += lineH;
+                y += rowLine;
             }
 
             DrawSmithFx(nameRect);
