@@ -593,7 +593,8 @@ namespace VividOfFade
                     }
                     var st = new GUIStyle(small);
                     if (on) st.normal.textColor = new Color(1f, 0.85f, 0.45f);
-                    GUI.Label(new Rect(pad + lockW + W * 0.02f, y, W - pad * 2f - lockW, lineH), lines[li], st);
+                    var textRect = new Rect(pad + lockW + W * 0.02f, y, W - pad * 2f - lockW, lineH);
+                    GUI.Label(textRect, SlotText(item, idx, lines[li], textRect, st), st);
                 }
                 else
                 {
@@ -614,6 +615,13 @@ namespace VividOfFade
 
             // 強化（すぐ実行。カンカンと火花）と再抽選（2回押し。ロックの数で値段が倍々）
             float gap = W * 0.03f;
+            if (SlotsSpinning)
+            {
+                var wait = new Rect(pad, by - btnH - gap * 0.5f, W - pad * 2f, btnH * 2f + gap * 0.5f);
+                Hud.Fill(wait, dim);
+                Hud.FitLabel(wait, Loc.T("Rolling...", "抽選中……"), hud.CenteredStyle);
+                return;
+            }
             var enhanceRect = new Rect(pad, by - btnH - gap * 0.5f, W - pad * 2f, btnH);
             if (item.Enhance >= Item.MaxEnhance)
             {
@@ -647,11 +655,8 @@ namespace VividOfFade
                 if (ch.Embers >= rp)
                     Confirm(rr, "reroll", label, () =>
                     {
-                        if (Town.RerollItem(ch, item, type, new List<int>(locked)))
-                        {
-                            smithFxTime = Time.unscaledTime;
-                            smithFxText = Loc.T("Rerolled", "再抽選");
-                        }
+                        var lockList = new List<int>(locked);
+                        if (Town.RerollItem(ch, item, type, lockList)) StartSlots(item, lockList);
                     });
                 else
                 {
@@ -659,6 +664,65 @@ namespace VividOfFade
                     Hud.FitLabel(rr, label, hud.CenteredStyle);
                 }
             }
+        }
+
+        // ---- 再抽選のスロット演出：固定していない効果の行が回り、上から順に止まる ----
+        Item slotItem;
+        readonly List<int> slotLines = new List<int>(); // 回す効果の番号（上から）
+        float slotStart = -1f;
+        int slotStopped;                               // 止まった数（音を鳴らすため）
+        readonly Dictionary<int, (int frame, string text)> slotShown = new Dictionary<int, (int frame, string text)>();
+        const float SlotFirstStop = 0.8f, SlotStopGap = 0.45f;
+
+        bool SlotsSpinning => slotStart >= 0f && Time.unscaledTime - slotStart < SlotFirstStop + SlotStopGap * Mathf.Max(0, slotLines.Count - 1) + 0.05f;
+
+        void StartSlots(Item item, List<int> lockedIdx)
+        {
+            slotItem = item;
+            slotLines.Clear();
+            for (int i = 0; i < item.Affixes.Count; i++) if (!lockedIdx.Contains(i)) slotLines.Add(i);
+            slotStart = Time.unscaledTime;
+            slotStopped = 0;
+        }
+
+        /// <summary>効果の行の文字。回っている行はランダムな効果をめまぐるしく出し、止まったら本当の効果を光らせて出す。</summary>
+        string SlotText(Item item, int affixIndex, string real, Rect rect, GUIStyle st)
+        {
+            if (slotStart < 0f || item != slotItem) return real;
+            int order = slotLines.IndexOf(affixIndex);
+            if (order < 0) return real;
+            float elapsed = Time.unscaledTime - slotStart;
+            float stopAt = SlotFirstStop + SlotStopGap * order;
+            if (elapsed < stopAt)
+            {
+                // 回っている：枠を光らせ、ランダムな効果を出す（止まる直前はゆっくり）
+                Hud.Fill(new Rect(rect.x - 2f, rect.y, rect.width, rect.height), new Color(1f, 0.85f, 0.4f, 0.12f));
+                float speed = Mathf.Lerp(0.04f, 0.14f, Mathf.Clamp01((elapsed - (stopAt - 0.4f)) / 0.4f));
+                int frame = Mathf.FloorToInt(elapsed / speed);
+                // 同じ瞬間（OnGUI は1フレームに何度も呼ばれる）は同じ文字を出す。乱数の種は変えない（ドロップに影響させない）
+                if (!slotShown.TryGetValue(affixIndex, out var shown) || shown.frame != frame)
+                {
+                    shown = (frame, ItemGenerator.RandomAffixText(item));
+                    slotShown[affixIndex] = shown;
+                    hud.World.Sfx.Tick();
+                }
+                st.normal.textColor = new Color(0.85f, 0.85f, 0.9f);
+                return shown.text;
+            }
+            // 止まった：その瞬間に音と光
+            if (order >= slotStopped)
+            {
+                slotStopped = order + 1;
+                hud.World.Sfx.SlotStop();
+            }
+            float since = elapsed - stopAt;
+            if (since < 0.5f)
+            {
+                Hud.Fill(new Rect(rect.x - 2f, rect.y, rect.width, rect.height), new Color(1f, 0.95f, 0.6f, 0.45f * (1f - since / 0.5f)));
+                st.normal.textColor = new Color(1f, 0.95f, 0.6f);
+            }
+            if (order == slotLines.Count - 1 && since > 0.6f) slotStart = -1f; // 全部止まって少ししたら終わり
+            return real;
         }
 
         // 再抽選で残す効果（選んだ品ごと。品を変えると外れる）

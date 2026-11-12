@@ -200,6 +200,13 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>スロットの演出用：その品に付きそうな効果をランダムに1つ（文字にして返す。実際には付けない）。</summary>
+        public static string RandomAffixText(Item item)
+        {
+            var s = allStats[Random.Range(0, allStats.Length)];
+            return StatText.Format(s, RollValue(s, item.Level, item.Rarity) * item.EnhanceMult);
+        }
+
         static void AddAffixes(Item item, int count, List<StatType> exclude = null)
         {
             var candidates = new List<StatType>(allStats);

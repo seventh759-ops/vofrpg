@@ -51,6 +51,25 @@ namespace VividOfFade
         /// <summary>鍛冶屋で強化したとき：金床を叩く「カン、カン」。</summary>
         public void Anvil() => source.PlayOneShot(anvil, 0.8f);
 
+        AudioClip tick, stop;
+        float lastTick;
+
+        /// <summary>スロットが回る「カチカチ」。</summary>
+        public void Tick()
+        {
+            if (tick == null) tick = Make("tick", new[] { 2200f }, 0.012f, 0.2f, Wave.Square);
+            if (Time.unscaledTime - lastTick < 0.05f) return;
+            lastTick = Time.unscaledTime;
+            source.PlayOneShot(tick, 0.5f);
+        }
+
+        /// <summary>スロットが止まった「チン」。</summary>
+        public void SlotStop()
+        {
+            if (stop == null) stop = Make("slotstop", new[] { 1568f, 2093f }, 0.06f, 0.35f, Wave.Sine);
+            source.PlayOneShot(stop, 0.8f);
+        }
+
         /// <summary>金属を叩いた音（倍音が整数倍でない澄んだ響き＋叩いた瞬間の雑音）を2回。</summary>
         static AudioClip MakeAnvil()
         {
