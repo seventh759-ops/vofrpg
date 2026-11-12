@@ -8,8 +8,9 @@ namespace VividOfFade
     /// <summary>
     /// 敵の種類。スライム：まっすぐ追う／コウモリ：速く、ふらふら飛ぶ／術師：距離を取って弾を撃つ／
     /// 岩鬼：力をためてから突進する／爆弾虫：近づくと導火線に火がつき、少しして爆発する。
+    /// 黄金：まれに出る。逃げ回り、しばらくすると消える。倒すとドロップがあふれる。
     /// </summary>
-    public enum EnemyKind { Slime, Bat, Caster, Brute, Bomber }
+    public enum EnemyKind { Slime, Bat, Caster, Brute, Bomber, Golden }
 
     /// <summary>敵1体の状態。動きは EnemySystem がまとめて処理する。</summary>
     public sealed class Enemy : MonoBehaviour

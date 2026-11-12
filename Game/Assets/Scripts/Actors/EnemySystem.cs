@@ -28,6 +28,10 @@ namespace VividOfFade
         public event Action<Vector2, float, int> BossSlam;
         /// <summary>ボスが怒った（体力が半分を切った）。</summary>
         public event Action BossEnraged;
+        /// <summary>黄金の敵が出た／倒された（位置）／逃げた。</summary>
+        public event Action GoldenAppeared;
+        public event Action<Vector2> GoldenKilled;
+        public event Action GoldenEscaped;
         /// <summary>精鋭を倒した（位置）。</summary>
         public event Action<Vector2> EliteKilled;
 
@@ -201,11 +205,29 @@ namespace VividOfFade
                     e.Hp *= GameConfig.BomberHpMult;
                     e.Speed = GameConfig.BomberSpeed;
                     break;
+                case EnemyKind.Golden:
+                    e.Hp *= GameConfig.GoldenHpMult;
+                    e.Speed = GameConfig.GoldenSpeed;
+                    e.ActTimer = GameConfig.GoldenLife;
+                    e.ContactDamage = 0;
+                    e.Tint = Color.white;
+                    break;
             }
             e.MaxHp = e.Hp;
             e.Pos = pos;
             e.Sr.sortingOrder = SortOrder.For(pos);
             Active.Add(e);
+        }
+
+        /// <summary>黄金の敵を出す（光る輪付き）。</summary>
+        public void SpawnGolden(Vector2 pos, float hp)
+        {
+            int before = Active.Count;
+            Spawn(pos, hp, 0, EnemyKind.Golden);
+            if (Active.Count == before) return;
+            var e = Active[Active.Count - 1];
+            ShowAura(e, new Color(1f, 0.85f, 0.3f));
+            GoldenAppeared?.Invoke();
         }
 
         /// <summary>ボス：大きく、硬く、遅い。数秒ごとに周りを叩きつける。</summary>
@@ -301,6 +323,7 @@ namespace VividOfFade
                 Killed?.Invoke(e.Pos);
                 if (e.IsBoss) BossKilled?.Invoke(e.Pos);
                 if (e.Elite != EliteKind.None) EliteKilled?.Invoke(e.Pos);
+                if (e.Kind == EnemyKind.Golden) GoldenKilled?.Invoke(e.Pos);
                 if (e.Elite == EliteKind.Splitter)
                 {
                     for (int k = 0; k < GameConfig.SplitCount; k++)
@@ -430,7 +453,7 @@ namespace VividOfFade
                     e.Aura.color = ac;
                 }
 
-                if (!player.IsDead && dist < e.Radius + GameConfig.PlayerRadius)
+                if (!player.IsDead && e.ContactDamage > 0 && dist < e.Radius + GameConfig.PlayerRadius)
                 {
                     if (player.TakeHit(e.ContactDamage)) e.Knock -= dir * 4f;
                 }
@@ -497,6 +520,22 @@ namespace VividOfFade
                             e.ActTimer = GameConfig.BruteChargeEvery;
                             e.Prep = GameConfig.BrutePrep;
                         }
+                    }
+                    break;
+                }
+                case EnemyKind.Golden:
+                {
+                    // 逃げる。しばらくすると消える
+                    moveDir = dist < 7f ? -dir : moveDir * 0.3f;
+                    e.ActTimer -= dt;
+                    if (e.ActTimer < 2f) e.Sr.color = Mathf.Repeat(Time.time * 8f, 1f) < 0.5f ? new Color(1f, 1f, 1f, 0.4f) : Color.white;
+                    if (e.ActTimer <= 0f)
+                    {
+                        GoldenEscaped?.Invoke();
+                        e.Dying = true;
+                        e.DyingTimer = DeathTime;
+                        e.Hp = 0f;
+                        return true;
                     }
                     break;
                 }

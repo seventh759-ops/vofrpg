@@ -10,6 +10,7 @@ namespace VividOfFade
         public bool Activated;   // 入って敵が出た
         public bool IsBoss;
         public bool IsStart;
+        public bool IsTreasure;  // 宝の間（敵が出ず、宝箱が置いてある）
 
         public Vector2 Center => new Vector2(X + W * 0.5f, Y + H * 0.5f);
 
@@ -53,6 +54,8 @@ namespace VividOfFade
         public bool HasAltar { get; private set; }
         public Vector2 AltarPos { get; private set; }
         public RoomArea BossArea { get; private set; }
+        /// <summary>宝の間の宝箱の位置（宝の間がなければ空）。</summary>
+        public readonly List<Vector2> ChestPositions = new List<Vector2>();
         /// <summary>この層の区画（見た目）。</summary>
         public ZoneSpec Zone { get; private set; }
 
@@ -63,6 +66,7 @@ namespace VividOfFade
             System.Array.Clear(tiles, 0, tiles.Length);
             Areas.Clear();
             BossArea = null;
+            ChestPositions.Clear();
             flowOrigin = -1;
             System.Array.Clear(explored, 0, explored.Length);
             Zone = Zones.For(floor);
@@ -194,10 +198,29 @@ namespace VividOfFade
                 if (a != start && a != far) candidates.Add(a);
             }
             HasAltar = candidates.Count > 0;
+            RoomArea altarRoom = null;
             if (HasAltar)
             {
-                var room = candidates[rng.Next(candidates.Count)];
-                AltarPos = new Vector2(room.X + 1.5f + rng.Next(Mathf.Max(1, room.W - 3)), room.Y + room.H - 1.5f);
+                altarRoom = candidates[rng.Next(candidates.Count)];
+                AltarPos = new Vector2(altarRoom.X + 1.5f + rng.Next(Mathf.Max(1, altarRoom.W - 3)), altarRoom.Y + altarRoom.H - 1.5f);
+            }
+
+            // 宝の間：まれに、敵の出ない部屋に宝箱が並ぶ
+            if (rng.NextDouble() < GameConfig.TreasureRoomChance)
+            {
+                var pool = new List<RoomArea>();
+                foreach (var a in candidates)
+                {
+                    if (a != altarRoom && a.W >= 6 && a.H >= 5) pool.Add(a);
+                }
+                if (pool.Count > 0)
+                {
+                    var t = pool[rng.Next(pool.Count)];
+                    t.IsTreasure = true;
+                    var c = t.Center;
+                    for (int k = 0; k < GameConfig.TreasureChests; k++)
+                        ChestPositions.Add(new Vector2(c.x + (k - (GameConfig.TreasureChests - 1) * 0.5f) * 1.6f, c.y));
+                }
             }
         }
 

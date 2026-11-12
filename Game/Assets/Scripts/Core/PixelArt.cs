@@ -589,6 +589,56 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>黄金のスライム（出会うと逃げる、倒すとドロップがあふれる）。</summary>
+        public static Sprite GoldenSlime => FromArt("GoldenSlime", SlimeRows, new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(70, 46, 10, 255) },
+            { 'g', new Color32(255, 204, 60, 255) },
+            { 'w', new Color32(255, 252, 220, 255) },
+            { 'e', new Color32(60, 36, 8, 255) },
+            { 'd', new Color32(200, 140, 30, 255) },
+        });
+
+        static readonly Dictionary<char, Color32> ChestPalette = new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(30, 18, 12, 255) },
+            { 'b', new Color32(140, 86, 44, 255) },
+            { 'g', new Color32(230, 180, 70, 255) },
+            { 'y', new Color32(255, 230, 120, 255) },
+            { 'w', new Color32(255, 255, 230, 255) },
+        };
+
+        /// <summary>宝の間の宝箱（閉じている／開いた）。</summary>
+        public static Sprite Chest(bool open) => open ? FromArt("ChestOpen", ChestOpenRows, ChestPalette) : FromArt("ChestClosed", ChestClosedRows, ChestPalette);
+
+        static readonly string[] ChestClosedRows =
+        {
+            "..kkkkkkkkkk..",
+            ".kbbbbbbbbbbk.",
+            "kbbbbbbbbbbbbk",
+            "kggggggggggggk",
+            "kbbbbbgybbbbbk",
+            "kbbbbbyybbbbbk",
+            "kbbbbbbbbbbbbk",
+            "kbbbbbbbbbbbbk",
+            "kggggggggggggk",
+            ".kkkkkkkkkkkk.",
+        };
+
+        static readonly string[] ChestOpenRows =
+        {
+            "..kkkkkkkkkk..",
+            ".kbbbbbbbbbbk.",
+            "kggggggggggggk",
+            "kyyyyyyyyyyyyk",
+            "kyywyyyyywyyyk",
+            "kggggggggggggk",
+            "kbbbbbbbbbbbbk",
+            "kbbbbbbbbbbbbk",
+            "kggggggggggggk",
+            ".kkkkkkkkkkkk.",
+        };
+
         /// <summary>スライム以外の敵の絵（16ドット）。どれもこのゲーム用のオリジナル。</summary>
         public static Sprite EnemySprite(EnemyKind kind)
         {
@@ -598,6 +648,7 @@ namespace VividOfFade
                 case EnemyKind.Caster: return FromArt("Enemy_Caster", CasterRows, CasterPalette);
                 case EnemyKind.Brute: return FromArt("Enemy_Brute", BruteRows, BrutePalette);
                 case EnemyKind.Bomber: return FromArt("Enemy_Bomber", BomberRows, BomberPalette);
+                case EnemyKind.Golden: return GoldenSlime;
                 default: return Slime;
             }
         }

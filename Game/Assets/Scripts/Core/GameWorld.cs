@@ -171,6 +171,8 @@ namespace VividOfFade
         SpriteRenderer stairs;
         SpriteRenderer altar;
         SpriteRenderer guideNpc; // 1層目のはじめの部屋に立つ案内役
+        readonly List<SpriteRenderer> chests = new List<SpriteRenderer>(); // 宝の間の宝箱
+        readonly List<bool> chestOpened = new List<bool>();
         Vector2 guidePos;
         bool guideLatch;         // 話し終えたら、一度離れるまで話さない
         int guideTip;            // 次に話す豆知識
@@ -232,6 +234,23 @@ namespace VividOfFade
                 cameraRig.Shake(0.2f, 0.4f);
             };
             Enemies.EliteKilled += OnEliteKilled;
+            Enemies.GoldenAppeared += () =>
+            {
+                Hud.Toast(Loc.T("A golden slime appeared! Catch it before it escapes!", "黄金のスライムが現れた！逃げられる前に倒せ！"), new Color(1f, 0.85f, 0.3f));
+                Sfx.Landed(Rarity.Legendary);
+                Guide("golden", Loc.T("A golden one! It runs away and vanishes after a while.", "黄金のやつだ！逃げ回って、しばらくすると消えちゃう。"),
+                    Loc.T("Beat it in time and it bursts with loot and embers.", "時間内に倒せば、装備と火種があふれ出すよ。"));
+            };
+            Enemies.GoldenKilled += pos =>
+            {
+                Loot.Fountain(pos, Room, GameConfig.GoldenFountainItems, DropLevel, GameConfig.GoldenRarityBonus,
+                    GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * 2);
+                Fx.Ring(pos, 2.5f, new Color(1f, 0.85f, 0.3f, 0.9f), 0.5f);
+                Sfx.Fountain();
+                cameraRig.Shake(0.2f, 0.4f);
+                GainExp(Progression.KillExp(Floors.Tier) * 10);
+            };
+            Enemies.GoldenEscaped += () => Hud.Toast(Loc.T("The golden slime escaped...", "黄金のスライムに逃げられた……"), new Color(0.8f, 0.7f, 0.5f));
 
             Shots = AddChild<ProjectileSystem>("Shots");
             Shots.Init();
@@ -291,6 +310,11 @@ namespace VividOfFade
             cameraRig = new CameraRig(cam);
 
             Floors = new FloorDirector();
+            Floors.TreasureEntered += () =>
+            {
+                Hud.Toast(Loc.T("A treasure room!", "宝の間だ！"), new Color(1f, 0.85f, 0.4f));
+                Guide("treasure", Loc.T("A treasure room. No enemies here, just chests. Walk up to open them.", "宝の間だよ。敵はいなくて、宝箱だけ。近づくと開く。"));
+            };
             Floors.RoomActivated += () =>
             {
                 roomRewardPending = true;
@@ -390,6 +414,7 @@ namespace VividOfFade
                 CheckRoomCleared();
                 CheckStairs();
                 CheckAltar();
+                CheckChests();
                 CheckGuideNpc();
                 CheckEliteTip();
             }
@@ -551,6 +576,7 @@ namespace VividOfFade
                 }
             }
             altar.enabled = Room.HasAltar;
+            PlaceChests();
 
             // 1層目だけ、はじめの部屋に案内役が立っている
             guideNpc.enabled = floor == 1;
@@ -782,6 +808,48 @@ namespace VividOfFade
                 cameraRig.Shake(0.25f, 0.5f);
                 slowMoTimer = 0.6f; // 一瞬スローにする
                 Time.timeScale = 0.3f;
+            }
+        }
+
+        /// <summary>宝の間の宝箱を置く（宝の間がない層ではすべて隠す）。</summary>
+        void PlaceChests()
+        {
+            while (chests.Count < Room.ChestPositions.Count)
+            {
+                var go = new GameObject("Chest");
+                go.transform.SetParent(transform, false);
+                var sr = go.AddComponent<SpriteRenderer>();
+                Lighting.MakeGlow(sr);
+                chests.Add(sr);
+                chestOpened.Add(false);
+            }
+            for (int i = 0; i < chests.Count; i++)
+            {
+                bool on = i < Room.ChestPositions.Count;
+                chests[i].enabled = on;
+                chestOpened[i] = false;
+                if (!on) continue;
+                var p = Room.ChestPositions[i];
+                chests[i].sprite = PixelArt.Chest(false);
+                chests[i].transform.position = Iso.ToScreen(p) + new Vector2(0f, 0.2f);
+                chests[i].sortingOrder = SortOrder.For(p);
+            }
+        }
+
+        /// <summary>宝箱に近づいたら開ける：珍しい装備と火種の噴水。</summary>
+        void CheckChests()
+        {
+            for (int i = 0; i < Room.ChestPositions.Count && i < chests.Count; i++)
+            {
+                if (chestOpened[i]) continue;
+                var p = Room.ChestPositions[i];
+                if ((Player.Pos - p).sqrMagnitude > 0.9f * 0.9f) continue;
+                chestOpened[i] = true;
+                chests[i].sprite = PixelArt.Chest(true);
+                Loot.Fountain(p, Room, GameConfig.ChestItems, DropLevel, GameConfig.ChestRarityBonus,
+                    GameConfig.FountainEmberOrbs(Floors.Tier) / 2, GameConfig.EmberAmount(Floors.Tier));
+                Fx.Ring(p, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.4f);
+                Sfx.Fountain();
             }
         }
 

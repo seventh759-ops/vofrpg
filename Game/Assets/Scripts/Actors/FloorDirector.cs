@@ -23,6 +23,8 @@ namespace VividOfFade
 
         /// <summary>部屋の敵が出た（ドロップの噴水の判定に使う）。</summary>
         public event System.Action RoomActivated;
+        /// <summary>宝の間に入った。</summary>
+        public event System.Action TreasureEntered;
 
         public void Begin(int floor, Room room)
         {
@@ -59,6 +61,11 @@ namespace VividOfFade
         void Activate(RoomArea area, EnemySystem enemies, Player player, Room room)
         {
             area.Activated = true;
+            if (area.IsTreasure)
+            {
+                TreasureEntered?.Invoke();
+                return;
+            }
             int count = GameConfig.RoomEnemies(Floor, area.W * area.H);
             if (area.IsBoss)
             {
@@ -67,6 +74,9 @@ namespace VividOfFade
                 count /= 2; // お供
             }
             for (int i = 0; i < count; i++) pending.Enqueue(room.RandomPointIn(area, player.Pos, 3f));
+            // まれに黄金の敵（ボスの部屋には出ない）
+            if (!area.IsBoss && Random.value < GameConfig.GoldenChance)
+                enemies.SpawnGolden(room.RandomPointIn(area, player.Pos, 4f), GameConfig.EnemyHp(Tier)); // 体力の倍率は Spawn で掛ける
             spawnTimer = 0.3f; // 部屋に入ってから少しだけ間を置く
             RoomActivated?.Invoke();
         }
