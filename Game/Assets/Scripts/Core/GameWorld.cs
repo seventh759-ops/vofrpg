@@ -97,6 +97,19 @@ namespace VividOfFade
             ChooseCharacter(slot);
         }
 
+        /// <summary>
+        /// 町で能力値（stats）かスキルの画面を開く。装備は前回帰還したときのもので計算し直す
+        /// （加護は挑戦の中だけのものなので入らない）。
+        /// </summary>
+        public void OpenTownPanel(bool stats)
+        {
+            var type = ClassInfo.Current;
+            Inventory.Reset(type, Profile.Current);
+            Player.SetClass(type);
+            Player.ResetState(PlayerStats.From(Inventory.Equipped, type));
+            OpenPanel(false, stats, !stats);
+        }
+
         /// <summary>町から出撃する。チェックポイントか中断した挑戦があれば、開始する層を選ぶ画面へ。</summary>
         public void Depart()
         {
@@ -376,7 +389,13 @@ namespace VividOfFade
                 }
                 else if (InTown && !PendingClass.HasValue)
                 {
-                    if (Input.CancelPressed) Hud.Town.Back();
+                    if (StatsOpen || SkillsOpen)
+                    {
+                        if (Input.CancelPressed || (StatsOpen && Input.StatsPressed) || (SkillsOpen && Input.SkillsPressed)) OpenPanel(false, false, false);
+                    }
+                    else if (Input.StatsPressed) OpenTownPanel(true);
+                    else if (Input.SkillsPressed) OpenTownPanel(false);
+                    else if (Input.CancelPressed) Hud.Town.Back();
                 }
                 else if (PendingClass.HasValue)
                 {
