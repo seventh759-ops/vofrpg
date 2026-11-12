@@ -53,7 +53,7 @@ namespace VividOfFade
                 for (int i = 0; i < count; i++)
                 {
                     int before = enemies.Active.Count;
-                    enemies.SpawnMixed(room.RandomPointIn(area, area.Center, 0f), GameConfig.EnemyHp(Tier), GameConfig.EnemyDamage(Tier), GameConfig.RollEnemyTier(Floor));
+                    enemies.SpawnMixed(room.RandomPointCentral(area), GameConfig.EnemyHp(Tier), GameConfig.EnemyDamage(Tier), GameConfig.RollEnemyTier(Floor));
                     if (enemies.Active.Count == before) return; // 上限
                     if (Random.value < GameConfig.EliteChance(Tier))
                         enemies.MakeElite(enemies.Active[enemies.Active.Count - 1], EnemySystem.RandomElite());

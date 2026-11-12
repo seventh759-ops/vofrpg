@@ -28,7 +28,7 @@ namespace VividOfFade
     /// </summary>
     public sealed class Room : MonoBehaviour
     {
-        public const int MapSize = 48;
+        public const int MapSize = 64;
 
         const byte Wall = 0;
         const byte Floor = 1;
@@ -137,13 +137,13 @@ namespace VividOfFade
             int target = Mathf.Min(5 + floor / 4, 8);
             for (int attempt = 0; attempt < 300 && Areas.Count < target; attempt++)
             {
-                int w = rng.Next(7, 12);
-                int h = rng.Next(7, 12);
+                int w = rng.Next(9, 14);
+                int h = rng.Next(9, 14);
                 var a = new RoomArea { X = rng.Next(2, MapSize - w - 2), Y = rng.Next(2, MapSize - h - 2), W = w, H = h };
                 bool ok = true;
                 foreach (var o in Areas)
                 {
-                    if (!a.Overlaps(o, 3)) continue;
+                    if (!a.Overlaps(o, 6)) continue; // 部屋どうしを離す（廊下が長くなり、隣の部屋の敵と近づきにくい）
                     ok = false;
                     break;
                 }
@@ -392,6 +392,13 @@ namespace VividOfFade
         }
 
         /// <summary>部屋の中の床の、ランダムな位置（avoid から minDist 以上離す）。</summary>
+        /// <summary>部屋の中央寄り（端から frac の割合だけ内側）のランダムな位置。眠った敵を置くのに使う。</summary>
+        public Vector2 RandomPointCentral(RoomArea a, float frac = 0.25f)
+        {
+            float mx = Mathf.Max(1f, a.W * frac), my = Mathf.Max(1f, a.H * frac);
+            return new Vector2(Random.Range(a.X + mx, a.X + a.W - mx), Random.Range(a.Y + my, a.Y + a.H - my));
+        }
+
         public Vector2 RandomPointIn(RoomArea a, Vector2 avoid, float minDist)
         {
             Vector2 p = a.Center;

@@ -102,7 +102,7 @@ namespace VividOfFade
             for (int i = 0; i < list.Count; i++)
             {
                 var e = list[i];
-                if (e.Dying) continue;
+                if (e.Dying || e.Dormant) continue; // 眠っている敵（隣の部屋）には当てない
                 Vector2 d = e.Pos - origin;
                 float dist = d.magnitude;
                 if (dist > st.Reach + e.Radius) continue;
@@ -132,7 +132,7 @@ namespace VividOfFade
             for (int i = 0; i < list.Count; i++)
             {
                 var e = list[i];
-                if (e.Dying) continue;
+                if (e.Dying || e.Dormant) continue; // 眠っている敵（隣の部屋）には当てない
                 Vector2 d = e.Pos - origin;
                 if (d.sqrMagnitude > r2) continue;
                 bool crit = Random.value < st.CritChance;
@@ -169,7 +169,7 @@ namespace VividOfFade
             for (int i = 0; i < list.Count; i++)
             {
                 var e = list[i];
-                if (e.Dying) continue;
+                if (e.Dying || e.Dormant) continue; // 眠っている敵（隣の部屋）には当てない
                 Vector2 d = e.Pos - p;
                 float r = OrbHitRadius + e.Radius;
                 if (d.sqrMagnitude > r * r) continue;

@@ -398,20 +398,21 @@ namespace VividOfFade
             for (int i = 0; i < Active.Count; i++)
             {
                 var e = Active[i];
-                if (e.Dying) continue;
+                if (e.Dying || e.Dormant) continue;
                 Vector2 d = e.Pos - center;
                 if (d.sqrMagnitude > r2) continue;
                 Damage(e, amount, d.sqrMagnitude > 0.0001f ? d.normalized : Vector2.up, false);
             }
         }
 
+        /// <summary>一番近い敵（眠っている敵は狙わない）。</summary>
         public Enemy FindNearest(Vector2 from, float range)
         {
             Enemy best = null;
             float bestSq = range * range;
             foreach (var e in Active)
             {
-                if (e.Dying) continue;
+                if (e.Dying || e.Dormant) continue;
                 float sq = (e.Pos - from).sqrMagnitude;
                 if (sq < bestSq)
                 {

@@ -226,7 +226,7 @@ namespace VividOfFade
             for (int i = 0; i < list.Count; i++)
             {
                 var e = list[i];
-                if (e.Dying) continue;
+                if (e.Dying || e.Dormant) continue;
                 Vector2 d = e.Pos - center;
                 if (d.sqrMagnitude > r2) continue;
                 bool crit = UnityEngine.Random.value < st.CritChance;
@@ -242,7 +242,7 @@ namespace VividOfFade
             for (int i = 0; i < list.Count; i++)
             {
                 var e = list[i];
-                if (e.Dying) continue;
+                if (e.Dying || e.Dormant) continue;
                 float t = Mathf.Clamp01(Vector2.Dot(e.Pos - a, ab) / len2);
                 Vector2 closest = a + ab * t;
                 float r = radius + e.Radius;

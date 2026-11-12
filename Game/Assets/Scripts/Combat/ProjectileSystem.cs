@@ -62,7 +62,7 @@ namespace VividOfFade
                 bool spent = false;
                 foreach (var e in enemies.Active)
                 {
-                    if (e.Dying || e == p.LastHit) continue;
+                    if (e.Dying || e.Dormant || e == p.LastHit) continue; // 眠っている敵はすり抜ける
                     float r = GameConfig.ShotRadius + e.Radius;
                     if ((e.Pos - pos).sqrMagnitude > r * r) continue;
 
