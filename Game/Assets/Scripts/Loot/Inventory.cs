@@ -140,10 +140,10 @@ namespace VividOfFade
 
         bool AutoSalvages(Item item) => (int)item.Rarity <= AutoSalvageMax;
 
-        /// <summary>自動分解の段階を 切 → 白 → 青まで → 黄まで → 切 の順に切り替える。</summary>
+        /// <summary>自動分解の段階を 切 → 白 → 青まで → 黄まで → 紫まで → 切 の順に切り替える。</summary>
         public void CycleAutoSalvage()
         {
-            AutoSalvageMax = AutoSalvageMax >= (int)Rarity.Rare ? -1 : AutoSalvageMax + 1;
+            AutoSalvageMax = AutoSalvageMax >= (int)Rarity.Legendary ? -1 : AutoSalvageMax + 1;
         }
 
         public static bool Fits(Item item, EquipSlot slot)
