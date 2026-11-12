@@ -51,9 +51,16 @@ namespace VividOfFade
         /// 術師の弾のダメージ。体当たりと違い、深い層でも急に強くならない（指数で増えない）。
         /// 避けにくい分、少しずつ削る攻撃にする。
         /// </summary>
-        public static int BulletDamage(int tier) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (tier - 1)) * 1.2f);
+        public static int BulletDamage(int tier) => Mathf.Max(1, Mathf.RoundToInt(EnemyDamage(tier) * BulletToContact));
 
-        public static int EnemyDamage(int wave) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (wave - 1)) * Mathf.Pow(1.02f, wave - 1));
+        /// <summary>弾は体当たりの約4割（体当たりが弾の約2.6倍）。</summary>
+        public const float BulletToContact = 0.38f;
+
+        /// <summary>
+        /// 体当たりのダメージ。前は指数で増えていて深い層で一撃死になっていたので、緩やかな増え方にした
+        /// （1層は前とほぼ同じ、30層で約半分、96層で約800）。
+        /// </summary>
+        public static int EnemyDamage(int wave) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (wave - 1)) * (1f + 0.012f * (wave - 1)));
 
         // 敵の波
         public const int MaxEnemies = 600; // 眠っている敵も含む（層に入った時点で全部の部屋に置く）
