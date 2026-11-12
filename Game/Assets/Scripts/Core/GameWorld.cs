@@ -785,6 +785,20 @@ namespace VividOfFade
             Profile.Save();
         }
 
+        /// <summary>仮に振ったポイントをまとめて確定する（能力値の画面の「確定」）。</summary>
+        public void AllocateMany(int[] add)
+        {
+            var ch = Profile.Current;
+            if (ch == null) return;
+            int sum = 0;
+            foreach (int v in add) sum += Mathf.Max(0, v);
+            if (sum <= 0 || sum > ch.Points) return;
+            for (int i = 0; i < add.Length && i < ch.Alloc.Length; i++) ch.Alloc[i] += Mathf.Max(0, add[i]);
+            ch.Points -= sum;
+            RefreshStats();
+            Profile.Save();
+        }
+
         /// <summary>振ったポイントを全部戻す（振り直し）。</summary>
         public void ResetPoints()
         {

@@ -14,6 +14,10 @@ namespace VividOfFade
 
         readonly Hud hud;
 
+        // 仮に振ったポイント（「確定」で反映。画面を閉じても残る）
+        int[] pending = new int[Attributes.Count];
+        CharacterData pendingFor;
+
         // 2回押しで実行する確認（押してから数秒だけ有効）
         string armed;
         float armedUntil;
@@ -56,10 +60,27 @@ namespace VividOfFade
             GUI.Label(new Rect(pad, y, W, lineH), $"EXP {ch.Exp} / {need}", small);
             y += lineH * 1.2f;
 
-            // 能力値
+            // 能力値：[+10][+][-][-10] で仮に振り、「確定」で反映する
+            if (pending.Length != Attributes.Count) pending = new int[Attributes.Count];
+            if (pendingFor != ch) { System.Array.Clear(pending, 0, pending.Length); pendingFor = ch; } // キャラクターが変わったら消す
+            int pendingSum = 0;
+            foreach (int v in pending) pendingSum += v;
+            if (pendingSum > ch.Points) { System.Array.Clear(pending, 0, pending.Length); pendingSum = 0; } // リセットなどで足りなくなったら仮振りを消す
+            int left = ch.Points - pendingSum;
             var pointsStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold };
             pointsStyle.normal.textColor = ch.Points > 0 ? new Color(1f, 0.85f, 0.3f) : Color.white;
-            GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Points: {ch.Points}", $"ポイント：{ch.Points}"), pointsStyle);
+            GUI.Label(new Rect(pad, y, W * 0.5f, lineH), Loc.T($"Points: {left}", $"ポイント：{left}"), pointsStyle);
+            if (pendingSum > 0)
+            {
+                float cw = W * 0.18f;
+                hud.Button(new Rect(W - pad - cw, y - lineH * 0.1f, cw, lineH * 1.2f), Loc.T("APPLY", "確定"), plusBack, centered, () =>
+                {
+                    world.AllocateMany(pending);
+                    System.Array.Clear(pending, 0, pending.Length);
+                });
+                hud.Button(new Rect(W - pad - cw * 2f - W * 0.02f, y - lineH * 0.1f, cw, lineH * 1.2f), Loc.T("CLEAR", "取り消し"), buttonBack, centered,
+                    () => System.Array.Clear(pending, 0, pending.Length));
+            }
             y += lineH * 1.3f;
 
             float rowH = H * 0.06f;
@@ -78,13 +99,46 @@ namespace VividOfFade
                 else if (attr == spec.SubAttr) nameStyle.normal.textColor = new Color(0.95f, 0.75f, 0.5f);
                 GUI.Label(new Rect(row.x + pad * 0.3f, row.y, W * 0.18f, rowH * 0.6f), Attributes.ShortName(attr), nameStyle);
                 string gear = fromGear > 0 ? $"  (+{fromGear})" : "";
-                GUI.Label(new Rect(row.x + W * 0.2f, row.y, W * 0.4f, rowH * 0.6f), $"{total}{gear}", label);
-                GUI.Label(new Rect(row.x + pad * 0.3f, row.y + rowH * 0.55f, row.width - plusW, rowH * 0.45f), Attributes.Effect(attr), small);
+                GUI.Label(new Rect(row.x + W * 0.17f, row.y, W * 0.3f, rowH * 0.6f), $"{total}{gear}", label);
+                int idx = i;
+                if (pending[i] > 0)
+                {
+                    var pend = new GUIStyle(label) { fontStyle = FontStyle.Bold };
+                    pend.normal.textColor = new Color(1f, 0.85f, 0.3f);
+                    GUI.Label(new Rect(row.x + W * 0.36f, row.y, W * 0.12f, rowH * 0.6f), $"+{pending[i]}", pend);
+                }
+                float bw = rowH * 0.95f, bg = W * 0.008f;
+                float buttonsW = (ch.Points > 0 ? 4f * (bw + bg) : 0f);
+                Hud.FitLabel(new Rect(row.x + pad * 0.3f, row.y + rowH * 0.55f, row.width - buttonsW - pad * 0.3f, rowH * 0.45f), Attributes.Effect(attr), small);
 
                 if (ch.Points > 0)
                 {
-                    var plus = new Rect(row.xMax - plusW, row.y + rowH * 0.1f, plusW, rowH * 0.8f);
-                    hud.Button(plus, "+", plusBack, centered, () => world.Allocate(attr));
+                    // [+10][+][-][-10]（残りのポイントと、仮に振った分の範囲で）
+                    float bx = row.xMax - 4f * (bw + bg);
+                    var by = row.y + rowH * 0.1f;
+                    void Step(int k, string text, int delta)
+                    {
+                        var r = new Rect(bx + k * (bw + bg), by, bw, rowH * 0.8f);
+                        bool can = delta > 0 ? left > 0 : pending[idx] > 0;
+                        if (can) hud.Button(r, text, delta > 0 ? plusBack : buttonBack, centered, () =>
+                        {
+                            int sum = 0;
+                            foreach (int v in pending) sum += v;
+                            int room = ch.Points - sum;
+                            pending[idx] = delta > 0 ? pending[idx] + Mathf.Min(delta, room) : Mathf.Max(0, pending[idx] + delta);
+                        });
+                        else
+                        {
+                            Hud.Fill(r, new Color(1f, 1f, 1f, 0.04f));
+                            var dimStyle = new GUIStyle(centered);
+                            dimStyle.normal.textColor = new Color(0.45f, 0.45f, 0.45f);
+                            Hud.FitLabel(r, text, dimStyle);
+                        }
+                    }
+                    Step(0, "+10", 10);
+                    Step(1, "+", 1);
+                    Step(2, "-", -1);
+                    Step(3, "-10", -10);
                 }
                 y += rowH + H * 0.006f;
             }
