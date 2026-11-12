@@ -341,6 +341,9 @@ namespace VividOfFade
         /// <summary>精鋭・ボスへのダメージの倍率（装備の効果。GameWorld が毎フレーム入れる）。</summary>
         public float EliteDamageMult = 1f;
 
+        /// <summary>今の層の強さの尺度（弾のダメージに使う）。GameWorld が層に入るたびに入れる。</summary>
+        public int FloorTier = 1;
+
         /// <summary>直前の範囲攻撃の出どころ（デバッグ表示用）。</summary>
         public string LastBlastSource { get; private set; } = "?";
 
@@ -566,7 +569,8 @@ namespace VividOfFade
                     if (e.ActTimer <= 0f && dist < 8f)
                     {
                         e.ActTimer = GameConfig.CasterFireInterval + UnityEngine.Random.Range(0f, 0.6f);
-                        Fire(e.Pos + dir * 0.3f, dir * GameConfig.BulletSpeed, Mathf.Max(1, Mathf.RoundToInt(e.ContactDamage * GameConfig.BulletDamageMult)));
+                        float bulletMult = GameConfig.TierDamage[e.Tier] * (e.Elite != EliteKind.None ? 1.3f : 1f);
+                        Fire(e.Pos + dir * 0.3f, dir * GameConfig.BulletSpeed, Mathf.Max(1, Mathf.RoundToInt(GameConfig.BulletDamage(FloorTier) * bulletMult)));
                     }
                     break;
                 }

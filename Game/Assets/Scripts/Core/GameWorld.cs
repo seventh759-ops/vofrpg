@@ -557,6 +557,7 @@ namespace VividOfFade
             Fx.Clear();
             roomRewardPending = false;
             Floors.Begin(floor, Room);
+            Enemies.FloorTier = Floors.Tier;
             Enemies.SetZone(Room.Zone); // 敵を置く前に、区画の敵の割合と色を合わせる
             Floors.Populate(Enemies, Room);
             if (Floors.IsBossFloor) Guide("boss", Loc.T("A boss waits deep in this floor. When the red ring spreads, get outside it or dodge!", "この層の奥にはボスがいる。赤い輪が広がったら、輪の外へ逃げるか回避！"),
