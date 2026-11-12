@@ -12,7 +12,7 @@ namespace VividOfFade
     {
         public const int W = 180, H = 320;
         public const int TowerX = 90, TowerTop = 0;
-        public const int SpireTip = 295;
+        public const int SpireTip = 245;
 
         static Texture2D texture;
         static Color32[] img;
@@ -95,7 +95,7 @@ namespace VividOfFade
         /// <summary>その場所の霧の明るさ（中ほど右が明るい）。</summary>
         static float Mist(int x, int y)
         {
-            float dx = (x - 90) / 100f, dy = (y - 150) / 130f;
+            float dx = (x - 90) / 100f, dy = (y - 130) / 130f;
             float v = Mathf.Exp(-(dx * dx + dy * dy) * 1.1f) * 0.85f + 0.12f * Mathf.Exp(-Sq((y - 150) / 90f));
             v += (Fbm(x / 40f, y / 25f, 7) - 0.5f) * 0.12f;
             return v * 0.72f;
@@ -200,22 +200,22 @@ namespace VividOfFade
         public static float TowerRadius(float y)
         {
             if (y < TowerTop) return 0f;
-            if (y < 120) return 42f;
-            if (y < 127) return 48f;
-            if (y < 240) return 37f - (y - 127) * 0.11f;
-            if (y < 247) return 28f;
-            if (y < SpireTip) return 23f * Mathf.Pow(1f - (y - 247) / 48f, 1.15f);
+            if (y < 100) return 42f;
+            if (y < 106) return 48f;
+            if (y < 200) return 37f - (y - 106) * 0.13f;
+            if (y < 206) return 28f;
+            if (y < SpireTip) return 23f * Mathf.Pow(1f - (y - 206) / 39f, 1.15f);
             return 0f;
         }
 
-        static float TowerFog(float y) => 0.06f + Mathf.Min(0.9f, 0.9f * Mathf.Max(0f, (60 - y) / 50f)) + 0.2f * Mathf.Max(0f, (y - 250) / 40f);
+        static float TowerFog(float y) => 0.06f + Mathf.Min(0.9f, 0.9f * Mathf.Max(0f, (60 - y) / 50f)) + 0.2f * Mathf.Max(0f, (y - 208) / 40f);
 
         /// <summary>窓（塔の正面からの位置 -1〜1、上端の高さ、灯っているか）。</summary>
         public static readonly (float u, int y, bool lit)[] Windows =
         {
-            (-0.3f, 60, true), (0.25f, 60, true), (-0.5f, 85, true), (0f, 85, true), (0.5f, 85, false),
-            (-0.2f, 104, true), (0.35f, 104, true), (-0.5f, 142, true), (0f, 142, true), (0.45f, 142, false),
-            (-0.25f, 166, true), (0.25f, 166, false), (-0.4f, 190, false), (0.1f, 190, true), (-0.1f, 214, false), (0.35f, 214, false),
+            (-0.3f, 50, true), (0.25f, 50, true), (-0.5f, 70, true), (0f, 70, true), (0.5f, 70, false),
+            (-0.2f, 86, true), (0.35f, 86, true), (-0.5f, 118, true), (0f, 118, true), (0.45f, 118, false),
+            (-0.25f, 138, true), (0.25f, 138, false), (-0.4f, 158, false), (0.1f, 158, true), (-0.1f, 178, false), (0.35f, 178, false),
         };
 
         static void Tower()
@@ -224,7 +224,7 @@ namespace VividOfFade
             {
                 float r = TowerRadius(y);
                 if (r <= 0.5f) continue;
-                bool balcony = y >= 120 && y < 127, parapet = y >= 240 && y < 247;
+                bool balcony = y >= 100 && y < 106, parapet = y >= 200 && y < 206;
                 for (int x = (int)(TowerX - r); x <= (int)(TowerX + r); x++)
                 {
                     float u = (x + 0.5f - TowerX) / r;
@@ -235,7 +235,7 @@ namespace VividOfFade
                     float v = diff + rim;
                     float theta = Mathf.Asin(u);
                     int row;
-                    if (y >= 247)
+                    if (y >= 206)
                     {
                         v -= 0.08f * (1f + u);
                         row = y / 4;
@@ -243,14 +243,14 @@ namespace VividOfFade
                     else row = (y - TowerTop) / 5;
                     float cf = theta / Mathf.PI * 10f + (row % 2) * 0.5f;
                     int col = Mathf.FloorToInt(cf);
-                    bool mortar = ((y - TowerTop) % 5 == 0 && y < 247) || Mathf.Abs(cf - Mathf.Round(cf)) < 0.06f / Mathf.Max(nz, 0.25f);
+                    bool mortar = ((y - TowerTop) % 5 == 0 && y < 206) || Mathf.Abs(cf - Mathf.Round(cf)) < 0.06f / Mathf.Max(nz, 0.25f);
                     v += (Rnd(col, row, 21) - 0.5f) * 0.14f + (Fbm(x / 3f, y / 3f, 22) - 0.5f) * 0.06f;
                     v -= 0.5f * Mathf.Max(0f, (60 - y) / 50f);
                     if (mortar && !(balcony || parapet)) v -= 0.16f;
-                    if (balcony) v = 0.62f * diff + rim + (y == 120 ? 0.12f : y == 126 ? -0.15f : 0f);
+                    if (balcony) v = 0.62f * diff + rim + (y == 100 ? 0.12f : y == 105 ? -0.15f : 0f);
                     if (parapet)
                     {
-                        bool notch = Mathf.FloorToInt(theta / Mathf.PI * 12f) % 2 == 0 && y >= 245;
+                        bool notch = Mathf.FloorToInt(theta / Mathf.PI * 12f) % 2 == 0 && y >= 204;
                         if (notch) continue;
                         v = diff * 0.9f + rim;
                     }
@@ -277,10 +277,10 @@ namespace VividOfFade
             {
                 int sx = (int)(TowerX - 46 + Rnd(i, 7, 30) * 92);
                 float len = 3f + Rnd(i, 8, 30) * 12f;
-                for (int y = 127; y < 127 + (int)len; y++)
+                for (int y = 106; y < 106 + (int)len; y++)
                 {
-                    int w = y > 127 + len * 0.4f ? 1 : 2;
-                    for (int x = sx; x < sx + w; x++) Put(x, y, Stone, 0.3f - 0.1f * (y - 127) / len, TowerFog(y));
+                    int w = y > 106 + len * 0.4f ? 1 : 2;
+                    for (int x = sx; x < sx + w; x++) Put(x, y, Stone, 0.3f - 0.1f * (y - 106) / len, TowerFog(y));
                 }
             }
             // 胸壁下のつらら
@@ -288,15 +288,15 @@ namespace VividOfFade
             {
                 int sx = (int)(TowerX - 26 + Rnd(i, 9, 31) * 52);
                 float len = 2f + Rnd(i, 10, 31) * 8f;
-                for (int y = 247; y < 247 + (int)len; y++) Put(sx, y, Stone, 0.25f, TowerFog(y));
+                for (int y = 206; y < 206 + (int)len; y++) Put(sx, y, Stone, 0.25f, TowerFog(y));
             }
         }
 
         /// <summary>塔をめぐる螺旋階段。front=false で塔の後ろ側、true で手前側の段だけを描く。</summary>
         static void Stairs(bool front)
         {
-            const int ys = 130, length = 112;
-            const float pitch = 92f;
+            const int ys = 109, length = 93;
+            const float pitch = 76f;
             for (int s = 0; s < length; s++)
             {
                 float a = 0.6f * Mathf.PI + s / pitch * 2f * Mathf.PI;
@@ -325,7 +325,7 @@ namespace VividOfFade
                 for (int x = 0; x < W; x++)
                 {
                     float f = Fbm(x / 50f, y / 12f, 70);
-                    float band = Mathf.Exp(-Sq((y - 260) / 40f)) * 0.6f + Mathf.Exp(-Sq((y - 150) / 30f)) * 0.25f;
+                    float band = Mathf.Exp(-Sq((y - 225) / 40f)) * 0.6f + Mathf.Exp(-Sq((y - 130) / 30f)) * 0.25f;
                     float fog = Mathf.Max(0f, f - 0.45f) * 1.6f * band;
                     float vig = Sq((x - W / 2f) / (W * 0.65f)) + Sq((y - H * 0.45f) / (H * 0.62f));
                     var c = img[y * W + x];
