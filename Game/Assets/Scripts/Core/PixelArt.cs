@@ -82,7 +82,7 @@ namespace VividOfFade
             string key = $"PlayerHd_{type}_Adv{index}" + (third ? "_3rd" : "");
             if (cache.TryGetValue(key, out var cached)) return cached;
             int k = (int)type * 2 + Mathf.Clamp(index, 0, 1);
-            if (third) return Shaded(key, ThirdRows[k], ThirdOver[k], ThirdOutline[k]); // 3次職は輪郭が光る
+            if (third) return Shaded(key, ThirdRows[k], ThirdOver[k], ThirdOutline[k]); // 3次職は輪郭の外側が光る
             return Shaded(key, AdvRows[k], AdvOver[k]);
         }
 
@@ -588,11 +588,11 @@ namespace VividOfFade
         /// 部品で描いた絵に、濃淡と影と輪郭を付ける。光は左上から：
         /// 左か上が別の部品なら明るい縁、右か下が別の部品なら影、右下の角はさらに暗く、大きな面の右下寄りも暗くする。
         /// </summary>
-        static Sprite Shaded(string key, string[] rows, Dictionary<char, Color32[]> overrides = null, Color32? outlineColor = null)
+        static Sprite Shaded(string key, string[] rows, Dictionary<char, Color32[]> overrides = null, Color32? auraColor = null)
         {
             if (cache.TryGetValue(key, out var cached)) return cached;
             int h = rows.Length, w = rows[0].Length;
-            var outline = outlineColor ?? new Color32(22, 16, 30, 255);
+            var outline = new Color32(22, 16, 30, 255); // 輪郭はいつも暗い線（3次職の光は、その外側に足す）
             var clear = new Color32(0, 0, 0, 0);
             var px = new Color32[w * h];
 
@@ -635,6 +635,24 @@ namespace VividOfFade
                     }
                     px[(h - 1 - y) * w + x] = c; // テクスチャは下から上へ並ぶ
                 }
+            }
+            // 3次職：暗い輪郭のさらに外側に、半透明の光の縁を1ドット
+            if (auraColor.HasValue)
+            {
+                var ac = auraColor.Value;
+                ac.a = 160;
+                var halo = (Color32[])px.Clone();
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        int i = y * w + x;
+                        if (px[i].a > 0) continue;
+                        bool near = (x > 0 && px[i - 1].a > 0) || (x < w - 1 && px[i + 1].a > 0) || (y > 0 && px[i - w].a > 0) || (y < h - 1 && px[i + w].a > 0);
+                        if (near) halo[i] = ac;
+                    }
+                }
+                px = halo;
             }
             // 32ドットを1マスに収める（ほかの絵の半分の縮尺）
             return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), w);
