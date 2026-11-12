@@ -117,6 +117,7 @@ namespace VividOfFade
                 var e = slashHits[i];
                 Vector2 d = e.Pos - origin;
                 float dist = d.magnitude;
+                if (Random.value > st.HitChanceVs(e.Eva)) { enemies.ReportMiss(e.Pos); continue; } // 近距離は外れることがある（HIT）
                 bool crit = Random.value < st.CritChance;
                 float scale = i == 0 ? 1f : PlayerStats.SecondaryHit;
                 enemies.Damage(e, st.Damage * scale * (crit ? st.CritMult : 1f), dist > 0.001f ? d / dist : aim, crit);
@@ -135,6 +136,7 @@ namespace VividOfFade
                 if (e.Dying || e.Dormant) continue; // 眠っている敵（隣の部屋）には当てない
                 Vector2 d = e.Pos - origin;
                 if (d.sqrMagnitude > r2) continue;
+                if (Random.value > st.HitChanceVs(e.Eva)) { enemies.ReportMiss(e.Pos); continue; } // 近距離は外れることがある（HIT）
                 bool crit = Random.value < st.CritChance;
                 enemies.Damage(e, st.Damage * (crit ? st.CritMult : 1f), d.sqrMagnitude > 0.0001f ? d.normalized : Vector2.up, crit);
             }
@@ -173,6 +175,7 @@ namespace VividOfFade
                 Vector2 d = e.Pos - p;
                 float r = OrbHitRadius + e.Radius;
                 if (d.sqrMagnitude > r * r) continue;
+                if (Random.value > st.HitChanceVs(e.Eva)) { enemies.ReportMiss(e.Pos); continue; } // 近距離は外れることがある（HIT）
                 bool crit = Random.value < st.CritChance;
                 enemies.Damage(e, st.Damage * (crit ? st.CritMult : 1f), d.sqrMagnitude > 0.0001f ? d.normalized : Vector2.up, crit);
             }

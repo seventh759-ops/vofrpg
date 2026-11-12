@@ -201,6 +201,19 @@ namespace VividOfFade
             return false;
         }
 
+        /// <summary>「MISS」を出す（攻撃が外れた・避けた）。</summary>
+        public void AddMiss(Vector2 world, bool playerEvaded)
+        {
+            if (numbers.Count >= MaxNumbers) numbers.RemoveAt(0);
+            numbers.Add(new FloatNumber
+            {
+                World = Iso.ToScreen(world) + new Vector2(UnityEngine.Random.Range(-0.1f, 0.1f), playerEvaded ? 0.7f : 0.4f),
+                Text = "MISS",
+                Color = playerEvaded ? new Color(0.5f, 0.95f, 1f) : new Color(0.7f, 0.7f, 0.75f),
+                Big = false,
+            });
+        }
+
         public void AddNumber(Vector2 world, float amount, bool crit)
         {
             if (numbers.Count >= MaxNumbers) numbers.RemoveAt(0);

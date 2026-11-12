@@ -110,6 +110,19 @@ namespace VividOfFade
             return r < lower + mid ? 1 : 2;
         }
 
+        // 命中と回避（DEX で伸びる）。深い層の敵ほど、命中も回避も高い
+        public static int EnemyAccuracy(int tier) => 40 + tier * 2;   // 敵の命中（プレイヤーの EVA と比べる）
+        public static int EnemyEvasion(int tier) => 12 + tier;         // 敵の回避（プレイヤーの HIT と比べる）
+        public const float MaxEvade = 0.6f;
+
+        // 敵の種類ごとの命中・回避の倍率（スライム・コウモリ・術師・岩鬼・爆弾虫・黄金）
+        public static readonly float[] KindAcc = { 1f, 0.9f, 1.2f, 1.25f, 0.8f, 0f };
+        public static readonly float[] KindEva = { 1f, 1.8f, 1f, 0.5f, 0.7f, 2.5f };
+        public static readonly float[] TierAccEva = { 0.9f, 1.05f, 1.2f };
+        /// <summary>囲まれ補正：近く（2マス以内）の起きた敵が多いほど、避けにくい。1体で100%、1体増えるごとに -20%。</summary>
+        public static float CrowdEvadeMult(int nearby) => Mathf.Clamp01(1f - 0.2f * (Mathf.Max(1, nearby) - 1));
+        public const float CrowdRadius = 2f;
+
         public const float GoldenChance = 0.06f, GoldenHpMult = 6f, GoldenSpeed = 3.3f, GoldenLife = 12f;
         public const int GoldenFountainItems = 10;
         public const float GoldenRarityBonus = 2.5f;

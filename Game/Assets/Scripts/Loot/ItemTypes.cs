@@ -21,6 +21,7 @@ namespace VividOfFade
         // M6 で足した効果（保存の番号を変えないよう、後ろに足す）
         HpRegen, MpRegen, LifeSteal, DamageReduction, SkillDamagePct, CooldownReduction, ExpGain, EmberFind, MagicFind,
         EliteDamage, ExplodePower, DodgeCooldown, AllStats, AreaPct, MaxHpPct,
+        Hit, Evasion, // 命中（近距離の攻撃）・回避
     }
 
     /// <summary>橙・紫の装備だけが持つ固有効果。</summary>

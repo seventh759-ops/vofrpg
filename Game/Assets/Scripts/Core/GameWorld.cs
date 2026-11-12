@@ -243,6 +243,7 @@ namespace VividOfFade
             Enemies = AddChild<EnemySystem>("Enemies");
             Enemies.Init();
             Enemies.Damaged += OnEnemyDamaged;
+            Enemies.Missed += pos => Hud.AddMiss(pos, false);
             Enemies.Killed += OnEnemyKilled;
             Enemies.BossKilled += OnBossKilled;
             Enemies.BossWindup += (pos, radius, time) => Fx.Ring(pos, radius, new Color(1f, 0.2f, 0.2f, 0.7f), time);
@@ -306,6 +307,7 @@ namespace VividOfFade
             Player.Sr = Player.gameObject.AddComponent<SpriteRenderer>();
             Player.Sr.sprite = PixelArt.Player;
             Player.Dodged += OnPlayerDodged;
+            Player.Evaded += pos => Hud.AddMiss(pos, true);
 
             Inventory.Changed += () => Player.ApplyStats(PlayerStats.From(Inventory.Equipped));
 

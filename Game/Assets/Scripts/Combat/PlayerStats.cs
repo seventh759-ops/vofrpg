@@ -58,6 +58,23 @@ namespace VividOfFade
         public float EliteDamage;          // 精鋭・ボスへのダメージ +割合
         public float AreaMult = 1f;        // スキルの範囲の倍率
 
+        /// <summary>命中（近距離の攻撃が当たるか）。DEX＋装備。</summary>
+        public int Hit;
+        /// <summary>回避（敵の攻撃を避けるか）。DEX＋装備。</summary>
+        public int Eva;
+
+        /// <summary>近距離の攻撃が当たる確率（その層の敵の回避と比べる。60%〜100%）。</summary>
+        public float HitChance(int floorTier) => HitChanceVs(GameConfig.EnemyEvasion(floorTier));
+
+        /// <summary>その敵の回避と比べた、近距離の攻撃が当たる確率（60%〜100%）。</summary>
+        public float HitChanceVs(int enemyEva) => Mathf.Clamp(0.4f + Hit / (float)(Hit + Mathf.Max(1, enemyEva)), 0.6f, 1f);
+
+        /// <summary>敵の攻撃を避ける確率（その層の敵の命中と比べる。上限60%）。囲まれ補正は別に掛ける。</summary>
+        public float EvadeChance(int floorTier) => EvadeChanceVs(GameConfig.EnemyAccuracy(floorTier));
+
+        /// <summary>その敵の命中と比べた、避ける確率（上限60%）。</summary>
+        public float EvadeChanceVs(int enemyAcc) => Mathf.Min(GameConfig.MaxEvade, Eva / (float)(Eva + Mathf.Max(1, enemyAcc)));
+
         public float AttacksPerSecond => 1f / FireInterval;
 
         /// <summary>斬撃の2体目以降に入る威力の割合。</summary>
@@ -137,6 +154,7 @@ namespace VividOfFade
             for (int i = 0; i < Attributes.Count; i++) s.Attr[i] = cls.BaseStats[i] + ch.Alloc[i] + (ch.Third ? ThirdClasses.AllStats : 0); // 3次職は全能力値+10
             int bonusHp = 0, bonusMp = 0;
             float hpRegen = 0f, mpRegen = 0f, reduction = 0f, cdr = 0f, dodgeCdr = 0f, hpPct = 0f;
+            int hitBonus = 0, evaBonus = 0;
 
             float baseDamage = ClassInfo.Weapon(cls.Starter).BaseDamage * 0.6f; // 武器なし
             var kind = cls.Starter;
@@ -198,6 +216,8 @@ namespace VividOfFade
                             break;
                         case StatType.AreaPct: s.AreaMult += a.Value; break;
                         case StatType.MaxHpPct: hpPct += a.Value; break;
+                        case StatType.Hit: hitBonus += Mathf.RoundToInt(a.Value); break;
+                        case StatType.Evasion: evaBonus += Mathf.RoundToInt(a.Value); break;
                     }
                 }
 
@@ -232,6 +252,8 @@ namespace VividOfFade
             s.MpRegen = 1f + wis * 0.1f + (ch.Level - 1) * 0.02f + mpRegen;
             s.Armor += str * 0.5f;
             atkSpd += dex * 0.004f;
+            s.Hit = dex + hitBonus;  // 命中・回避は DEX で伸びる
+            s.Eva = dex + evaBonus;
             s.CritChance += dex * 0.002f;
 
             var w = ClassInfo.Weapon(kind);

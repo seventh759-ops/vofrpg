@@ -207,6 +207,27 @@ namespace VividOfFade
             return true;
         }
 
+        /// <summary>避けた（位置）。「MISS」の表示に使う。</summary>
+        public event System.Action<Vector2> Evaded;
+
+        /// <summary>
+        /// 敵の攻撃（体当たり・弾）。EVA と囲まれ補正で避けられる。避けたら少しの間だけ無敵（同じ敵に何度も判定しない）。
+        /// 当たったら true。
+        /// </summary>
+        public bool TryHit(int damage, string source, int enemyAcc, int nearbyEnemies)
+        {
+            if (invuln > 0f || IsDead) return false;
+            float chance = Stats.EvadeChanceVs(enemyAcc) * GameConfig.CrowdEvadeMult(nearbyEnemies);
+            if (Random.value < chance)
+            {
+                invuln = 0.25f;
+                Evaded?.Invoke(Pos);
+                if (LogDamage) Debug.Log($"[Damage] {source}: MISS (evade {chance * 100f:0}%, nearby {nearbyEnemies})");
+                return false;
+            }
+            return TakeHit(damage, source);
+        }
+
         /// <summary>受けたダメージをコンソールに出す（デバッグ用）。</summary>
         public static bool LogDamage = true;
 

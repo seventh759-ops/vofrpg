@@ -13,7 +13,7 @@ namespace VividOfFade
         static readonly string[] effects =
         {
             "Physical power, armor",
-            "Attack speed, crit",
+            "Attack speed, crit, HIT, EVA",
             "Magic power",
             "Max HP, HP regen",
             "Flame power, MP, MP regen",
@@ -23,7 +23,7 @@ namespace VividOfFade
         static readonly string[] effectsJa =
         {
             "物理の攻撃力、防御",
-            "攻撃の速さ、会心",
+            "攻撃の速さ、会心、命中、回避",
             "魔法の攻撃力",
             "最大体力、体力の回復",
             "灯りの攻撃力、MP、MPの回復",

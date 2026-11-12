@@ -142,6 +142,8 @@ namespace VividOfFade
                 case StatType.AllStats: return Loc.T($"+{v:0} All Stats", $"全能力値 +{v:0}");
                 case StatType.AreaPct: return Loc.T($"+{v * 100f:0}% Skill Area", $"スキルの範囲 +{v * 100f:0}%");
                 case StatType.MaxHpPct: return Loc.T($"+{v * 100f:0}% Max HP", $"最大体力 +{v * 100f:0}%");
+                case StatType.Hit: return $"+{v:0} HIT";
+                case StatType.Evasion: return $"+{v:0} EVA";
                 default: return t.ToString();
             }
         }

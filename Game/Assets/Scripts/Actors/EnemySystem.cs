@@ -111,6 +111,7 @@ namespace VividOfFade
             public Vector2 Vel;
             public float Life;
             public int Damage;
+            public int Acc;
         }
         readonly List<Bullet> bullets = new List<Bullet>();
         readonly Stack<Bullet> freeBullets = new Stack<Bullet>();
@@ -244,6 +245,10 @@ namespace VividOfFade
                 e.ContactDamage = Mathf.Max(1, Mathf.RoundToInt(e.ContactDamage * GameConfig.TierDamage[0]));
                 e.Speed *= GameConfig.TierSpeed[0];
             }
+            // 命中・回避：層の深さ × 種類 × 段階
+            float te = GameConfig.TierAccEva[e.Tier];
+            e.Acc = Mathf.RoundToInt(GameConfig.EnemyAccuracy(FloorTier) * GameConfig.KindAcc[(int)kind] * te);
+            e.Eva = Mathf.RoundToInt(GameConfig.EnemyEvasion(FloorTier) * GameConfig.KindEva[(int)kind] * te);
             e.MaxHp = e.Hp;
             e.Pos = pos;
             e.Sr.sortingOrder = SortOrder.For(pos);
@@ -269,6 +274,8 @@ namespace VividOfFade
             if (Active.Count == before) return; // 上限で出せなかった
             var e = Active[Active.Count - 1];
             e.IsBoss = true;
+            e.Acc = Mathf.RoundToInt(GameConfig.EnemyAccuracy(FloorTier) * 1.3f);
+            e.Eva = Mathf.RoundToInt(GameConfig.EnemyEvasion(FloorTier) * 0.8f);
             e.BaseScale = GameConfig.BossScale;
             e.Radius = GameConfig.SlimeRadius * GameConfig.BossScale;
             e.Speed = GameConfig.BossSpeed;
@@ -315,6 +322,7 @@ namespace VividOfFade
             {
                 case EliteKind.Swift:
                     e.Speed *= 2f;
+                    e.Eva = Mathf.RoundToInt(e.Eva * 1.8f); // 俊足は避けやすい
                     e.Tint = new Color(0.55f, 1f, 1f);
                     break;
                 case EliteKind.Hardened:
@@ -343,6 +351,13 @@ namespace VividOfFade
 
         /// <summary>今の層の強さの尺度（弾のダメージに使う）。GameWorld が層に入るたびに入れる。</summary>
         public int FloorTier = 1;
+
+        /// <summary>プレイヤーの近く（2マス以内）にいる、起きた敵の数（回避の囲まれ補正）。</summary>
+        public int NearbyCount { get; private set; }
+
+        /// <summary>プレイヤーの攻撃が外れた（位置）。「MISS」の表示に使う。</summary>
+        public event Action<Vector2> Missed;
+        public void ReportMiss(Vector2 pos) => Missed?.Invoke(pos);
 
         /// <summary>直前の範囲攻撃の出どころ（デバッグ表示用）。</summary>
         public string LastBlastSource { get; private set; } = "?";
@@ -455,6 +470,13 @@ namespace VividOfFade
             pendingSplits.Clear();
 
             ShroudNear = false;
+            // 囲まれ補正のための、プレイヤーの近くの起きた敵の数
+            NearbyCount = 0;
+            float cr2 = GameConfig.CrowdRadius * GameConfig.CrowdRadius;
+            foreach (var o in Active)
+            {
+                if (!o.Dying && !o.Dormant && (o.Pos - player.Pos).sqrMagnitude <= cr2) NearbyCount++;
+            }
             TickBullets(dt, player, room);
             Vector2 target = player.Pos;
             for (int i = Active.Count - 1; i >= 0; i--)
@@ -537,7 +559,7 @@ namespace VividOfFade
 
                 if (!player.IsDead && e.ContactDamage > 0 && dist < e.Radius + GameConfig.PlayerRadius)
                 {
-                    if (player.TakeHit(e.ContactDamage, Describe(e) + " contact")) e.Knock -= dir * 4f;
+                    if (player.TryHit(e.ContactDamage, Describe(e) + " contact", e.Acc, NearbyCount)) e.Knock -= dir * 4f;
                 }
             }
         }
@@ -570,6 +592,7 @@ namespace VividOfFade
                     {
                         e.ActTimer = GameConfig.CasterFireInterval + UnityEngine.Random.Range(0f, 0.6f);
                         float bulletMult = GameConfig.TierDamage[e.Tier] * (e.Elite != EliteKind.None ? 1.3f : 1f);
+                        fireAcc = e.Acc;
                         Fire(e.Pos + dir * 0.3f, dir * GameConfig.BulletSpeed, Mathf.Max(1, Mathf.RoundToInt(GameConfig.BulletDamage(FloorTier) * bulletMult)));
                     }
                     break;
@@ -652,6 +675,8 @@ namespace VividOfFade
             return false;
         }
 
+        int fireAcc; // 次に撃つ弾の命中（撃った術師の命中）
+
         void Fire(Vector2 pos, Vector2 vel, int damage)
         {
             var b = freeBullets.Count > 0 ? freeBullets.Pop() : CreateBullet();
@@ -660,6 +685,7 @@ namespace VividOfFade
             b.Vel = vel;
             b.Life = 3f;
             b.Damage = damage;
+            b.Acc = fireAcc;
             b.Sr.transform.position = Iso.ToScreen(pos);
             bullets.Add(b);
         }
@@ -684,7 +710,7 @@ namespace VividOfFade
                 b.Life -= dt;
                 b.Pos += b.Vel * dt;
                 bool hit = !player.IsDead && (b.Pos - player.Pos).sqrMagnitude < (GameConfig.PlayerRadius + 0.15f) * (GameConfig.PlayerRadius + 0.15f);
-                if (hit) player.TakeHit(b.Damage, "Caster bullet");
+                if (hit) player.TryHit(b.Damage, "Caster bullet", b.Acc, NearbyCount);
                 if (hit || b.Life <= 0f || !room.Contains(b.Pos))
                 {
                     b.Sr.gameObject.SetActive(false);

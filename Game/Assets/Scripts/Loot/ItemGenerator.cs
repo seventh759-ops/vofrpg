@@ -21,6 +21,7 @@ namespace VividOfFade
             StatType.HpRegen, StatType.MpRegen, StatType.LifeSteal, StatType.DamageReduction, StatType.SkillDamagePct,
             StatType.CooldownReduction, StatType.ExpGain, StatType.EmberFind, StatType.MagicFind, StatType.EliteDamage,
             StatType.ExplodePower, StatType.DodgeCooldown, StatType.AllStats, StatType.AreaPct, StatType.MaxHpPct,
+            StatType.Hit, StatType.Evasion,
         };
 
         /// <summary>今の挑戦の「珍しい品が出やすい」の効果（GameWorld が毎フレーム入れる。町では 0）。</summary>
@@ -275,6 +276,8 @@ namespace VividOfFade
                 case StatType.AllStats: return Mathf.Round((Random.Range(1f, 2f) + level * 0.1f) * m);
                 case StatType.AreaPct: return Random.Range(0.05f, 0.12f) * m;
                 case StatType.MaxHpPct: return Random.Range(0.03f, 0.08f) * m;
+                case StatType.Hit:
+                case StatType.Evasion: return Mathf.Round((Random.Range(3f, 8f) + level * 0.5f) * m);
                 default: return 1f; // Pierce / Multishot
             }
         }
