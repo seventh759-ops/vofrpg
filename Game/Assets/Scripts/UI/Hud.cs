@@ -990,8 +990,10 @@ namespace VividOfFade
         public static void DrawEnhance(Rect cell, Item item)
         {
             if (item == null || item.Enhance <= 0) return;
-            float s = cell.width * 0.48f;
-            DrawSprite(new Rect(cell.xMax - s * 0.95f, cell.yMax - s * 0.95f, s, s), PixelArt.EnhanceEmblem(item.Enhance));
+            // 枠の内側の右下に収める（はみ出さない）
+            float s = Mathf.Min(cell.width, cell.height) * 0.42f;
+            float m = cell.width * 0.03f;
+            DrawSprite(new Rect(cell.xMax - s - m, cell.yMax - s - m, s, s), PixelArt.EnhanceEmblem(item.Enhance));
         }
 
         public static void DrawSprite(Rect guiRect, Sprite sprite)
