@@ -22,6 +22,9 @@ namespace VividOfFade
             get
             {
                 if (unlit != null) return unlit;
+                // ビルドでシェーダーが削られないよう、Assets/Resources/GlowMaterial（Sprite-Unlit-Default を使うマテリアル）を先に探す
+                unlit = Resources.Load<Material>("GlowMaterial");
+                if (unlit != null) return unlit;
                 var shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
                 if (shader != null) unlit = new Material(shader) { name = "SpriteUnlit (runtime)" };
                 return unlit;
