@@ -527,15 +527,20 @@ namespace VividOfFade
 
             var ch = Profile.Current;
             float W = Screen.width, H = Screen.height, mm = BandMargin;
-            var bandColor = new Color(0.07f, 0.06f, 0.09f, 0.96f);
-            var edgeColor = new Color(0.25f, 0.22f, 0.3f, 1f);
+            // 帯はダンジョンより明るい色にし、境目に明るい線と暗い線を重ねて、暗い層でもくっきり分かれるようにする
+            var bandColor = new Color(0.15f, 0.14f, 0.2f, 1f);
+            var edgeColor = new Color(0.58f, 0.52f, 0.72f, 1f);
+            var edgeDark = new Color(0f, 0f, 0f, 0.85f);
+            float edgeT = Mathf.Max(2f, Mathf.Round(H * 0.0015f));
 
             // 上の帯と下の帯（真ん中はダンジョン）
             float topBottom = TopBandBottom, bottomTop = BottomBandTop;
             Fill(new Rect(0, 0, W, topBottom), bandColor);
-            Fill(new Rect(0, topBottom - 1f, W, 1f), edgeColor);
+            Fill(new Rect(0, topBottom - edgeT, W, edgeT), edgeColor);
+            Fill(new Rect(0, topBottom, W, edgeT), edgeDark);
             Fill(new Rect(0, bottomTop, W, H - bottomTop), bandColor);
-            Fill(new Rect(0, bottomTop, W, 1f), edgeColor);
+            Fill(new Rect(0, bottomTop, W, edgeT), edgeColor);
+            Fill(new Rect(0, bottomTop - edgeT, W, edgeT), edgeDark);
 
             // 1段目：レベル・HP・MP（メニューのボタンは右端、あとで描く）
             float rowY = mm, rowH = TopRowH;
@@ -605,13 +610,14 @@ namespace VividOfFade
             }
 
             // 下の帯の2つの区画：メッセージウィンドウ（上）とショートカット（下）。それぞれ背景と枠で仕切る
-            var frameColor = new Color(0.36f, 0.32f, 0.44f, 1f);
+            var frameColor = new Color(0.55f, 0.5f, 0.68f, 1f);
+            float frameT = Mathf.Max(2f, Mathf.Round(H * 0.0012f));
             var msgR = MessageWindow;
-            Fill(msgR, new Color(0.02f, 0.02f, 0.035f, 1f));
-            Frame(msgR, frameColor);
+            Fill(msgR, new Color(0.03f, 0.03f, 0.05f, 1f));
+            Frame(msgR, frameColor, frameT);
             var scR = ShortcutPanel;
-            Fill(scR, new Color(0.05f, 0.045f, 0.065f, 1f));
-            Frame(scR, frameColor);
+            Fill(scR, new Color(0.08f, 0.075f, 0.11f, 1f));
+            Frame(scR, frameColor, frameT);
 
             // メッセージ：直近の行を残す（新しいものほど下）。来たばかりの行は明るく、古い行は少し暗い
             {
