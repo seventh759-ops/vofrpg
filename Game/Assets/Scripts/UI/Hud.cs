@@ -80,13 +80,13 @@ namespace VividOfFade
         // ---- 上の帯と下の帯（スキルと薬）。真ん中がダンジョン ----
         // 上の帯：1段目 ゲームのロゴと MENU／2段目 HP・MP／3段目 レベルと経験値／3.5段目 転生の印・層・回避
         static float BandMargin => Screen.height * 0.008f;
-        static float TitleRowH => Screen.height * 0.022f;
+        static float TitleRowH => Screen.height * 0.024f;
         static float TopRowH => Screen.height * 0.028f;
-        static float ExpRowH => Screen.height * 0.017f;
-        static float FloorRowH => Screen.height * 0.019f;
+        static float ExpRowH => Screen.height * 0.019f;
+        static float FloorRowH => Screen.height * 0.021f;
 
         /// <summary>上の帯の下端（GUI 座標、上が 0）。</summary>
-        public static float TopBandBottom => BandMargin * 3.2f + TitleRowH + TopRowH + ExpRowH + FloorRowH; // 段の間は詰める（0.4 ずつ）
+        public static float TopBandBottom => BandMargin * 4.4f + TitleRowH + TopRowH + ExpRowH + FloorRowH; // 段の間は 0.8 ずつ（枠が重ならないように）
 
         /// <summary>メッセージウィンドウの行数と、1行の高さ。</summary>
         const int LogLines = 4;
@@ -178,7 +178,7 @@ namespace VividOfFade
             Fill(new Rect(f.x, f.yMax - f.height * 0.22f, f.width, f.height * 0.22f), new Color(0f, 0f, 0f, 0.25f)); // 下の陰
             if (ratio > 0f && ratio < 1f) Fill(new Rect(f.xMax - t * 0.5f, f.y, t * 0.5f, f.height), new Color(1f, 1f, 1f, 0.5f)); // 中身の端の光
             for (int k = 1; k < 4; k++) Fill(new Rect(r.x + r.width * k / 4f, r.y + r.height * 0.55f, 1f, r.height * 0.45f), new Color(0f, 0f, 0f, 0.45f)); // 目盛り
-            OrnateFrame(r, frame, t, true); // バーはへこみ
+            OrnateFrame(r, frame, t, true, false); // バーはへこみ（段が詰まっているので鋲はなし）
         }
 
         /// <summary>カメラのずれ（CameraRig.CenterShift）。上下の帯の高さの差の半分。</summary>
@@ -623,7 +623,7 @@ namespace VividOfFade
             }
 
             // 2段目：HP と MP（横いっぱい）
-            float rowY = titleRow.yMax + mm * 0.4f, rowH = TopRowH;
+            float rowY = titleRow.yMax + mm * 0.8f, rowH = TopRowH;
             float barW = (W - mm * 3f) * 0.5f;
             var barText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
             var hpBack = new Rect(mm, rowY, barW, rowH);
@@ -636,7 +636,7 @@ namespace VividOfFade
             FitLabel(mpBack, $"MP  {player.Mp}/{player.MaxMp}", barText);
 
             // 3段目：レベル（左。「LV120★」まで入る幅）と経験値のバー
-            float expY = rowY + rowH + mm * 0.4f;
+            float expY = rowY + rowH + mm * 0.8f;
             var lvBox = new Rect(mm, expY, W * 0.19f, ExpRowH);
             Fill(lvBox, new Color(0.04f, 0.04f, 0.07f, 1f));
             OrnateFrame(lvBox, FrameGold, FrameT, true, false);
@@ -660,11 +660,11 @@ namespace VividOfFade
 
             // 3.5段目：転生の印・層（ボスのときは添える）と、右に回避の待ち時間
             float lineH = small.fontSize * 1.35f;
-            var floorRow = new Rect(mm, expBack.yMax + mm * 0.4f, W - mm * 2f, FloorRowH);
+            var floorRow = new Rect(mm, expBack.yMax + mm * 0.8f, W - mm * 2f, FloorRowH);
             Fill(floorRow, new Color(0.05f, 0.05f, 0.08f, 1f));
-            OrnateFrame(floorRow, FrameGold, FrameT, true);
+            OrnateFrame(floorRow, FrameGold, FrameT, true, false);
             string floorText = GameConfig.FloorName(World.Floors.Floor) + (World.Floors.IsBossFloor ? Loc.T("   BOSS", "   ボス") : "");
-            var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+            var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
             float floorX = floorRow.x + mm;
             if (ch != null && ch.Rebirths > 0)
             {
