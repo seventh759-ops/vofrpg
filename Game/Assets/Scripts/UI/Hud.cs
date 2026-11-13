@@ -71,20 +71,22 @@ namespace VividOfFade
             get
             {
                 float w = Screen.width * 0.17f;
-                float h = TopRowH;
+                float h = TitleRowH;
                 float m = BandMargin;
                 return new Rect(Screen.width - w - m, Screen.height - h - m, w, h);
             }
         }
 
-        // ---- 上の帯（レベル・HP・MP・メニュー／経験値／層）と下の帯（スキルと薬）。真ん中がダンジョン ----
+        // ---- 上の帯と下の帯（スキルと薬）。真ん中がダンジョン ----
+        // 上の帯：1段目 ゲームのロゴと MENU／2段目 HP・MP／3段目 レベルと経験値／3.5段目 転生の印・層・回避
         static float BandMargin => Screen.height * 0.008f;
-        static float TopRowH => Screen.height * 0.032f;
-        static float ExpRowH => Screen.height * 0.012f;
-        static float FloorRowH => Screen.height * 0.026f;
+        static float TitleRowH => Screen.height * 0.022f;
+        static float TopRowH => Screen.height * 0.028f;
+        static float ExpRowH => Screen.height * 0.017f;
+        static float FloorRowH => Screen.height * 0.019f;
 
         /// <summary>上の帯の下端（GUI 座標、上が 0）。</summary>
-        public static float TopBandBottom => BandMargin * 3.2f + TopRowH + ExpRowH + FloorRowH;
+        public static float TopBandBottom => BandMargin * 3.2f + TitleRowH + TopRowH + ExpRowH + FloorRowH; // 段の間は詰める（0.4 ずつ）
 
         /// <summary>メッセージウィンドウの行数と、1行の高さ。</summary>
         const int LogLines = 4;
@@ -607,45 +609,58 @@ namespace VividOfFade
             Fill(new Rect(0, bottomTop + edgeT, W, edgeT), new Color(1f, 1f, 1f, 0.08f));
             Fill(new Rect(0, topBottom - edgeT * 2f, W, edgeT), new Color(0f, 0f, 0f, 0.35f));
 
-            // 1段目：レベル・HP・MP（メニューのボタンは右端、あとで描く）
-            float rowY = mm, rowH = TopRowH;
-            // レベルの欄：「LV120★」まで入る幅。暗い下地に、バーと同じ飾りの枠（転生の印は2段目の層の表示の左に出す）
-            var lvBox = new Rect(mm, rowY, W * 0.19f, rowH);
+            // 1段目：ゲームのロゴ（左）と MENU（右。あとで描く）
+            var titleRow = new Rect(mm, mm, W - mm * 2f, TitleRowH);
+            {
+                var logo = TitleArt.Logo;
+                float lh = titleRow.height * 0.92f, lw = logo.width * lh / logo.height;
+                var logoRect = new Rect(titleRow.x + mm * 0.5f, titleRow.y + (titleRow.height - lh) * 0.5f, lw, lh);
+                var oldColor = GUI.color;
+                GUI.color = new Color(1f, 1f, 1f, 0.6f);
+                GUI.DrawTexture(new Rect(logoRect.x - lh * 0.05f, logoRect.y - lh * 0.05f, logoRect.width + lh * 0.1f, logoRect.height + lh * 0.1f), TitleArt.Glow);
+                GUI.color = oldColor;
+                GUI.DrawTexture(logoRect, logo);
+            }
+
+            // 2段目：HP と MP（横いっぱい）
+            float rowY = titleRow.yMax + mm * 0.4f, rowH = TopRowH;
+            float barW = (W - mm * 3f) * 0.5f;
+            var barText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            var hpBack = new Rect(mm, rowY, barW, rowH);
+            float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
+            OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold);
+            FitLabel(hpBack, $"HP  {player.Hp}/{player.MaxHp}", barText);
+            var mpBack = new Rect(hpBack.xMax + mm, rowY, barW, rowH);
+            float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
+            OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), FrameGold);
+            FitLabel(mpBack, $"MP  {player.Mp}/{player.MaxMp}", barText);
+
+            // 3段目：レベル（左。「LV120★」まで入る幅）と経験値のバー
+            float expY = rowY + rowH + mm * 0.4f;
+            var lvBox = new Rect(mm, expY, W * 0.19f, ExpRowH);
             Fill(lvBox, new Color(0.04f, 0.04f, 0.07f, 1f));
-            OrnateFrame(lvBox, FrameGold, FrameT, true);
+            OrnateFrame(lvBox, FrameGold, FrameT, true, false);
             int level = ch != null ? ch.Level : 1;
             var lvStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
             string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
             FitLabel(new Rect(lvBox.x + lvBox.width * 0.06f, lvBox.y, lvBox.width * 0.88f, lvBox.height), lvText, lvStyle);
-            float barsX = lvBox.xMax + mm, barsW = ToGui(MenuRect).x - mm - barsX;
-            float barW = (barsW - mm) * 0.5f;
-            var barText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-            var hpBack = new Rect(barsX, rowY, barW, rowH);
-            float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
-            OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold);
-            FitLabel(hpBack, $"{player.Hp}/{player.MaxHp}", barText);
-            var mpBack = new Rect(hpBack.xMax + mm, rowY, barW, rowH);
-            float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
-            OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), FrameGold);
-            FitLabel(mpBack, $"{player.Mp}/{player.MaxMp}", barText);
-
-            // 2段目：経験値（細い帯に ％）
-            var expBack = new Rect(mm, rowY + rowH + mm * 0.6f, W - mm * 2f, ExpRowH);
+            var expBack = new Rect(lvBox.xMax + mm, expY, W - mm * 2f - lvBox.width - mm, ExpRowH);
             Fill(expBack, new Color(0.15f, 0.14f, 0.12f, 1f));
             if (ch != null)
             {
                 float expRatio = ch.Level >= Progression.LevelCap(ch) ? 1f : Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
                 Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.95f, 0.88f, 0.7f, 1f));
                 Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.35f), new Color(1f, 1f, 1f, 0.3f)); // 光沢
-                var expText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.Max(8, Mathf.RoundToInt(ExpRowH * 0.85f)) };
-                expText.normal.textColor = new Color(0.15f, 0.12f, 0.1f);
-                GUI.Label(expBack, $"{Mathf.FloorToInt(expRatio * 100f)}%", expText);
+                for (int k = 1; k < 10; k++) Fill(new Rect(expBack.x + expBack.width * k / 10f, expBack.y + expBack.height * 0.6f, 1f, expBack.height * 0.4f), new Color(0f, 0f, 0f, 0.3f)); // 10% ごとの目盛り
+                var expText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(ExpRowH * 0.7f)) };
+                expText.normal.textColor = expRatio > 0.45f ? new Color(0.15f, 0.12f, 0.1f) : new Color(0.95f, 0.9f, 0.8f);
+                GUI.Label(expBack, $"EXP {Mathf.FloorToInt(expRatio * 100f)}%", expText);
             }
-            OrnateFrame(expBack, FrameGold, Mathf.Max(1f, FrameT * 0.5f), true, false); // 細いので鋲はなし
+            OrnateFrame(expBack, FrameGold, FrameT, true, false);
 
-            // 3段目：層（ボスのときは添える）と、右に回避の待ち時間
+            // 3.5段目：転生の印・層（ボスのときは添える）と、右に回避の待ち時間
             float lineH = small.fontSize * 1.35f;
-            var floorRow = new Rect(mm, expBack.yMax + mm * 0.6f, W - mm * 2f, FloorRowH);
+            var floorRow = new Rect(mm, expBack.yMax + mm * 0.4f, W - mm * 2f, FloorRowH);
             Fill(floorRow, new Color(0.05f, 0.05f, 0.08f, 1f));
             OrnateFrame(floorRow, FrameGold, FrameT, true);
             string floorText = GameConfig.FloorName(World.Floors.Floor) + (World.Floors.IsBossFloor ? Loc.T("   BOSS", "   ボス") : "");
