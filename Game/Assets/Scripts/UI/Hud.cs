@@ -533,15 +533,25 @@ namespace VividOfFade
             if (bannerTime < 0f || bannerTime > BannerLife) return;
             float a = Mathf.Clamp01(bannerTime / 0.4f) * Mathf.Clamp01((BannerLife - bannerTime) / 0.8f);
             float H = Screen.height, W = Screen.width;
-            Fill(new Rect(0, H * 0.3f, W, H * 0.11f), new Color(0f, 0f, 0f, 0.55f * a));
-            var t = new GUIStyle(centered) { fontSize = Mathf.RoundToInt(label.fontSize * 1.5f), fontStyle = FontStyle.Bold };
+            // 副題は画面の幅で折り返す（長くても切れないように）。帯の高さは中身に合わせる
+            float textW = W * 0.88f;
+            var st = new GUIStyle(centered) { wordWrap = true };
+            st.normal.textColor = new Color(1f, 1f, 1f, 0.9f * a);
+            float subH = string.IsNullOrEmpty(bannerSub) ? 0f : st.CalcHeight(new GUIContent(bannerSub), textW);
+            float titleH = H * 0.06f;
+            float pad = H * 0.012f;
+            float top = H * 0.3f;
+            var band = new Rect(0, top, W, pad * 2f + titleH + subH);
+            Fill(band, new Color(0f, 0f, 0f, 0.6f * a));
             var c = bannerColor;
             c.a = a;
+            var line = new Color(c.r, c.g, c.b, 0.8f * a); // 帯の上下に、題の色の細い線
+            Fill(new Rect(W * 0.08f, band.y, W * 0.84f, Mathf.Max(1f, FrameT * 0.75f)), line);
+            Fill(new Rect(W * 0.08f, band.yMax - Mathf.Max(1f, FrameT * 0.75f), W * 0.84f, Mathf.Max(1f, FrameT * 0.75f)), line);
+            var t = new GUIStyle(centered) { fontSize = Mathf.RoundToInt(label.fontSize * 1.5f), fontStyle = FontStyle.Bold };
             t.normal.textColor = c;
-            GUI.Label(new Rect(0, H * 0.305f, W, H * 0.06f), bannerTitle, t);
-            var st = new GUIStyle(centered);
-            st.normal.textColor = new Color(1f, 1f, 1f, 0.85f * a);
-            GUI.Label(new Rect(0, H * 0.36f, W, H * 0.04f), bannerSub, st);
+            OutlinedLabel(new Rect((W - textW) * 0.5f, band.y + pad, textW, titleH), bannerTitle, t, new Color(0f, 0f, 0f, 0.8f * a));
+            if (subH > 0f) GUI.Label(new Rect((W - textW) * 0.5f, band.y + pad + titleH, textW, subH), bannerSub, st);
         }
 
         public void Toast(string text, Color color)
