@@ -244,7 +244,6 @@ namespace VividOfFade
             }
 
             // 能力値の効果
-            int str = s.Attr[(int)VividOfFade.Attr.Str];
             int dex = s.Attr[(int)VividOfFade.Attr.Dex];
             int vit = s.Attr[(int)VividOfFade.Attr.Vit];
             int wis = s.Attr[(int)VividOfFade.Attr.Wis];
@@ -258,7 +257,7 @@ namespace VividOfFade
             s.MaxHp = Mathf.RoundToInt(s.MaxHp * (1f + hpPct));
             s.HpRegen = vit * 0.05f + hpRegen;
             s.MpRegen = 1f + wis * 0.1f + (ch.Level - 1) * 0.02f + mpRegen;
-            s.Armor += str * 0.5f;
+            s.Armor += vit * 0.5f; // 防御は VIT（STR は攻撃だけ。守りを固めたいなら VIT に振る）
             atkSpd += dex * 0.004f;
             s.Hit = dex + hitBonus;  // 命中・回避は DEX で伸びる
             s.Eva = dex + evaBonus;

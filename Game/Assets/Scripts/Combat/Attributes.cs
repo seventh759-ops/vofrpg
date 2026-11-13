@@ -12,20 +12,20 @@ namespace VividOfFade
         static readonly string[] shortNames = { "STR", "DEX", "INT", "VIT", "WIS" };
         static readonly string[] effects =
         {
-            "Physical power, armor",
+            "Physical power",
             "Attack speed, crit, HIT, EVA",
             "Magic power",
-            "Max HP, HP regen",
+            "Max HP, HP regen, armor",
             "Flame power, MP, MP regen",
         };
 
         public static string ShortName(Attr a) => shortNames[(int)a];
         static readonly string[] effectsJa =
         {
-            "物理の攻撃力、防御",
+            "物理の攻撃力",
             "攻撃の速さ、会心、命中、回避",
             "魔法の攻撃力",
-            "最大体力、体力の回復",
+            "最大体力、体力の回復、防御",
             "灯りの攻撃力、MP、MPの回復",
         };
 
