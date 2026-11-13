@@ -51,7 +51,8 @@ namespace VividOfFade
         Inventory inventory;
         float vacuumTimer = -1f;
 
-        public event Action<Item> Landed;
+        /// <summary>品が着地した（品と、着地した場所）。</summary>
+        public event Action<Item, Vector2> Landed;
         public event Action<Item> PickedUp;
         public event Action<int> EmbersPickedUp;
 
@@ -63,6 +64,9 @@ namespace VividOfFade
             pool = new Pool<GroundLoot>(Create);
         }
 
+        static readonly Vector3 BeamScale = new Vector3(3f, 0.9f, 1f);
+        static readonly Vector3 MythicBeamScale = new Vector3(5f, 1.8f, 1f); // 神話：太く、高さ約3.6マス
+
         GroundLoot Create()
         {
             var go = new GameObject("Loot");
@@ -73,7 +77,7 @@ namespace VividOfFade
 
             var beam = new GameObject("Beam");
             beam.transform.SetParent(go.transform, false);
-            beam.transform.localScale = new Vector3(3f, 0.9f, 1f); // 高さ約1.8マス
+            beam.transform.localScale = BeamScale; // 高さ約1.8マス
             g.Beam = beam.AddComponent<SpriteRenderer>();
             Lighting.MakeGlow(g.Beam);
             g.Beam.sprite = PixelArt.Beam;
@@ -124,6 +128,7 @@ namespace VividOfFade
             g.Pos = from;
             g.Sr.color = Color.white;
             g.Beam.enabled = false;
+            g.Beam.transform.localScale = BeamScale;
             active.Add(g);
             return g;
         }
@@ -169,8 +174,9 @@ namespace VividOfFade
                             c.a = 0.55f;
                             g.Beam.color = c;
                             g.Beam.sortingOrder = g.Sr.sortingOrder - 1;
+                            if (g.Item.Rarity == Rarity.Mythic) g.Beam.transform.localScale = MythicBeamScale; // 神話は太く高い柱
                         }
-                        Landed?.Invoke(g.Item);
+                        Landed?.Invoke(g.Item, g.To);
                     }
                     continue;
                 }
@@ -192,6 +198,16 @@ namespace VividOfFade
                         ReleaseAt(i);
                     }
                     continue;
+                }
+
+                // 神話の柱は赤く脈打つ
+                if (g.Beam.enabled && g.Item != null && g.Item.Rarity == Rarity.Mythic)
+                {
+                    float pulse = Mathf.Sin(g.Age * 6f);
+                    var c = RarityInfo.ColorOf(Rarity.Mythic);
+                    c.a = 0.6f + 0.3f * pulse;
+                    g.Beam.color = c;
+                    g.Beam.transform.localScale = new Vector3(MythicBeamScale.x * (1f + 0.15f * pulse), MythicBeamScale.y, 1f);
                 }
 
                 // 地面で小さく弾む

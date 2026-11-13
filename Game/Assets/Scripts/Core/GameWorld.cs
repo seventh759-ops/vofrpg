@@ -864,13 +864,26 @@ namespace VividOfFade
             Player.ApplyStats(PlayerStats.From(Inventory.Equipped));
         }
 
-        void OnLootLanded(Item item)
+        void OnLootLanded(Item item, Vector2 pos)
         {
             if (item == null || item.Rarity < Rarity.Rare) return;
             Sfx.Landed(item.Rarity);
             if (item.Rarity == Rarity.Legendary)
             {
                 cameraRig.Shake(0.15f, 0.3f);
+            }
+            else if (item.Rarity == Rarity.Mythic)
+            {
+                // 神話：3重の衝撃の輪、強い揺れ、長めのスロー、画面中央に大きく知らせる
+                var red = RarityInfo.ColorOf(Rarity.Mythic);
+                Fx.Ring(pos, 1.6f, new Color(red.r, red.g, red.b, 0.95f), 0.35f);
+                Fx.Ring(pos, 3f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.6f);
+                Fx.Ring(pos, 4.5f, new Color(red.r, red.g, red.b, 0.8f), 0.9f);
+                Sfx.Fountain();
+                cameraRig.Shake(0.35f, 0.7f);
+                slowMoTimer = 0.9f;
+                Time.timeScale = 0.25f;
+                Hud.ShowBanner(Loc.T("MYTHIC DROP!", "神話の装備！"), item.Name, red);
             }
             else if (item.Rarity >= Rarity.Relic)
             {
