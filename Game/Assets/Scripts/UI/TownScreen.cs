@@ -66,7 +66,8 @@ namespace VividOfFade
         /// </summary>
         static void DrawBackdrop(float W, float H)
         {
-            var tex = TownScene.Texture;
+            bool abyss = Profile.AbyssUnlocked; // 深淵へ行けるようになったら、町も深淵版の絵
+            var tex = abyss ? TownScene.AbyssTexture : TownScene.Texture;
             float ps = Mathf.Ceil(Mathf.Max(W / TownScene.W, H / TownScene.H));
             var bg = new Rect((W - TownScene.W * ps) * 0.5f, (H - TownScene.H * ps) * 0.5f, TownScene.W * ps, TownScene.H * ps);
             GUI.DrawTexture(bg, tex);
@@ -75,15 +76,15 @@ namespace VividOfFade
             foreach (var w in TownScene.LitWindows)
             {
                 float f = 0.6f + 0.4f * Mathf.PerlinNoise(t * 2.5f, i++ * 0.73f);
-                Hud.Glow(bg.x + w.x * ps, bg.y + w.y * ps, ps * 7f, new Color(1f, 0.7f, 0.35f, 0.25f * f));
+                Hud.Glow(bg.x + w.x * ps, bg.y + w.y * ps, ps * 7f, abyss ? new Color(1f, 0.25f, 0.45f, 0.25f * f) : new Color(1f, 0.7f, 0.35f, 0.25f * f));
             }
             foreach (var l in TownScene.Lamps)
             {
                 float f = 0.7f + 0.3f * Mathf.PerlinNoise(t * 3f, l.x * 0.1f);
-                Hud.Glow(bg.x + l.x * ps, bg.y + l.y * ps, ps * 16f, new Color(1f, 0.75f, 0.4f, 0.35f * f));
+                Hud.Glow(bg.x + l.x * ps, bg.y + l.y * ps, ps * 16f, abyss ? new Color(1f, 0.3f, 0.5f, 0.35f * f) : new Color(1f, 0.75f, 0.4f, 0.35f * f));
             }
             float g = 0.75f + 0.25f * Mathf.PerlinNoise(t * 1.5f, 0.5f);
-            Hud.Glow(bg.x + TownScene.GateX * ps, bg.y + (TownScene.GateY - 14) * ps, ps * 34f, new Color(1f, 0.7f, 0.35f, 0.35f * g));
+            Hud.Glow(bg.x + TownScene.GateX * ps, bg.y + (TownScene.GateY - 14) * ps, ps * 30f, abyss ? new Color(1f, 0.2f, 0.45f, 0.2f * g) : new Color(1f, 0.7f, 0.35f, 0.18f * g)); // 門の光は控えめに
             // 上の帯（題・名前・火種）と、タイルの並ぶあたりを少し暗く
             for (int b = 0; b < 10; b++)
                 Hud.Fill(new Rect(0, H * 0.02f * b, W, H * 0.02f + 1f), new Color(0f, 0f, 0.02f, 0.06f * (10 - b)));

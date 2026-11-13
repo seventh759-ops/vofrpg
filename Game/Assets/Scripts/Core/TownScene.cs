@@ -22,15 +22,27 @@ namespace VividOfFade
         /// <summary>灯った窓の位置（ゆらめきの光を重ねるため）。</summary>
         public static readonly System.Collections.Generic.List<Vector2Int> LitWindows = new System.Collections.Generic.List<Vector2Int>();
 
-        static Texture2D texture;
+        static Texture2D texture, abyssTexture;
         static Color32[] img;
+        static bool abyss; // いま描いているのが深淵版か
 
+        /// <summary>町の絵（ふつう）。</summary>
         public static Texture2D Texture
         {
             get
             {
-                if (texture == null) Build();
+                if (texture == null) texture = Build(false);
                 return texture;
+            }
+        }
+
+        /// <summary>町の絵（深淵版：血の色の空と赤い月、赤紫に灯る門と窓、地面を走る光る裂け目）。深淵へ行けるようになったら使う。</summary>
+        public static Texture2D AbyssTexture
+        {
+            get
+            {
+                if (abyssTexture == null) abyssTexture = Build(true);
+                return abyssTexture;
             }
         }
 
@@ -85,15 +97,36 @@ namespace VividOfFade
         }
 
         // 素材ごとの色の段階（暗い → 明るい）
-        static readonly Color32[] Sky = Ramp(6, 6, 18, 10, 11, 28, 16, 16, 40, 24, 22, 54, 34, 28, 66, 48, 34, 78, 66, 42, 86, 90, 52, 92);
-        static readonly Color32[] Hill = Ramp(8, 8, 18, 13, 13, 28, 19, 19, 38, 26, 25, 48);
-        static readonly Color32[] Stone = Ramp(12, 12, 20, 22, 21, 32, 34, 32, 46, 48, 45, 60, 64, 60, 76, 82, 77, 92, 104, 98, 112);
-        static readonly Color32[] Plaster = Ramp(26, 22, 32, 42, 36, 46, 60, 52, 60, 80, 70, 74, 104, 92, 90, 132, 118, 110);
-        static readonly Color32[] Timber = Ramp(16, 10, 10, 28, 18, 16, 42, 28, 22, 58, 40, 30);
-        static readonly Color32[] Roof = Ramp(14, 10, 20, 24, 16, 30, 36, 22, 40, 50, 30, 50, 66, 40, 60);
-        static readonly Color32[] Warm = Ramp(70, 30, 12, 140, 66, 20, 214, 120, 40, 255, 180, 80, 255, 226, 160, 255, 246, 220);
-        static readonly Color32[] Cobble = Ramp(10, 10, 16, 18, 17, 26, 28, 26, 36, 40, 37, 48, 54, 50, 60, 70, 64, 72, 92, 80, 80, 120, 100, 86);
-        static readonly Color32[] Moon = Ramp(120, 120, 150, 180, 180, 200, 225, 225, 235, 250, 250, 252);
+        static readonly Color32[] SkyN = Ramp(6, 6, 18, 10, 11, 28, 16, 16, 40, 24, 22, 54, 34, 28, 66, 48, 34, 78, 66, 42, 86, 90, 52, 92);
+        static readonly Color32[] HillN = Ramp(8, 8, 18, 13, 13, 28, 19, 19, 38, 26, 25, 48);
+        static readonly Color32[] StoneN = Ramp(12, 12, 20, 22, 21, 32, 34, 32, 46, 48, 45, 60, 64, 60, 76, 82, 77, 92, 104, 98, 112);
+        static readonly Color32[] PlasterN = Ramp(26, 22, 32, 42, 36, 46, 60, 52, 60, 80, 70, 74, 104, 92, 90, 132, 118, 110);
+        static readonly Color32[] TimberN = Ramp(16, 10, 10, 28, 18, 16, 42, 28, 22, 58, 40, 30);
+        static readonly Color32[] RoofN = Ramp(14, 10, 20, 24, 16, 30, 36, 22, 40, 50, 30, 50, 66, 40, 60);
+        static readonly Color32[] WarmN = Ramp(70, 30, 12, 140, 66, 20, 214, 120, 40, 255, 180, 80, 255, 226, 160, 255, 246, 220);
+        static readonly Color32[] CobbleN = Ramp(10, 10, 16, 18, 17, 26, 28, 26, 36, 40, 37, 48, 54, 50, 60, 70, 64, 72, 92, 80, 80, 120, 100, 86);
+        static readonly Color32[] MoonN = Ramp(120, 120, 150, 180, 180, 200, 225, 225, 235, 250, 250, 252);
+
+        // 深淵版の色
+        static readonly Color32[] SkyA = Ramp(8, 2, 8, 16, 4, 14, 26, 6, 22, 38, 8, 30, 54, 10, 38, 72, 12, 44, 94, 16, 48, 120, 22, 52);
+        static readonly Color32[] HillA = Ramp(8, 3, 8, 14, 5, 12, 20, 7, 16, 28, 9, 22);
+        static readonly Color32[] StoneA = Ramp(10, 6, 12, 18, 11, 22, 28, 16, 32, 40, 22, 44, 54, 30, 58, 70, 38, 72, 88, 48, 88);
+        static readonly Color32[] PlasterA = Ramp(22, 14, 24, 36, 22, 36, 52, 32, 48, 70, 42, 60, 90, 54, 72, 112, 68, 84);
+        static readonly Color32[] TimberA = Ramp(12, 6, 10, 22, 10, 16, 34, 16, 22, 48, 22, 28);
+        static readonly Color32[] RoofA = Ramp(16, 4, 12, 28, 8, 20, 42, 12, 28, 58, 16, 34, 76, 22, 40);
+        static readonly Color32[] WarmA = Ramp(70, 6, 22, 140, 16, 44, 220, 34, 74, 255, 90, 130, 255, 170, 200, 255, 225, 235);
+        static readonly Color32[] CobbleA = Ramp(8, 4, 10, 14, 8, 18, 22, 12, 26, 32, 16, 34, 44, 22, 44, 58, 28, 54, 74, 34, 62, 92, 42, 70);
+        static readonly Color32[] MoonA = Ramp(90, 10, 20, 160, 20, 40, 220, 50, 70, 255, 120, 130);
+
+        static Color32[] Sky => abyss ? SkyA : SkyN;
+        static Color32[] Hill => abyss ? HillA : HillN;
+        static Color32[] Stone => abyss ? StoneA : StoneN;
+        static Color32[] Plaster => abyss ? PlasterA : PlasterN;
+        static Color32[] Timber => abyss ? TimberA : TimberN;
+        static Color32[] Roof => abyss ? RoofA : RoofN;
+        static Color32[] Warm => abyss ? WarmA : WarmN;
+        static Color32[] Cobble => abyss ? CobbleA : CobbleN;
+        static Color32[] Moon => abyss ? MoonA : MoonN;
 
         static Color32 Pick(Color32[] ramp, float v, int x, int y)
         {
@@ -116,7 +149,7 @@ namespace VividOfFade
         /// <summary>灯りの明るさ（窓・街灯・門の光が、近くの壁や地面を暖かく照らす）。</summary>
         static float WarmLight(int x, int y)
         {
-            float v = 0.9f * Mathf.Exp(-(Sq((x - GateX) / 26f) + Sq((y - GateY) / 18f)));
+            float v = 0.6f * Mathf.Exp(-(Sq((x - GateX) / 26f) + Sq((y - GateY) / 18f))); // 門の光は控えめに（ボタンより目立たないように）
             foreach (var l in Lamps) v += 0.75f * Mathf.Exp(-(Sq((x - l.x) / 15f) + Sq((y - l.y - 10) / 9f)));
             return v;
         }
@@ -133,8 +166,9 @@ namespace VividOfFade
 
         // ---- 組み立て ----
 
-        static void Build()
+        static Texture2D Build(bool abyssVersion)
         {
+            abyss = abyssVersion;
             img = new Color32[W * H];
             LitWindows.Clear();
             SkyAndStars();
@@ -149,15 +183,17 @@ namespace VividOfFade
             for (int y = 0; y < H; y++)
                 for (int x = 0; x < W; x++)
                     px[(H - 1 - y) * W + x] = img[y * W + x];
-            texture = new Texture2D(W, H, TextureFormat.RGBA32, false)
+            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false)
             {
-                name = "TownScene",
+                name = abyss ? "TownSceneAbyss" : "TownScene",
                 filterMode = FilterMode.Point,
                 wrapMode = TextureWrapMode.Clamp,
             };
-            texture.SetPixels32(px);
-            texture.Apply(false, true);
+            tex.SetPixels32(px);
+            tex.Apply(false, true);
             img = null;
+            abyss = false;
+            return tex;
         }
 
         static void SkyAndStars()
@@ -228,7 +264,7 @@ namespace VividOfFade
                     if (y < archTop || dx > 12.5f) { Put(x, y, Stone, 0.55f + (y < archTop - 1 ? 0.1f : -0.1f)); continue; } // 縁石
                     float depth = (y - archTop) / (GateY - archTop);
                     bool step = (y - (int)archTop) % 4 == 0 && depth > 0.35f;
-                    Put(x, y, Warm, 0.85f - depth * 0.45f - dx * 0.025f - (step ? 0.25f : 0f));
+                    Put(x, y, Warm, 0.68f - depth * 0.4f - dx * 0.025f - (step ? 0.25f : 0f));
                 }
             // 門の両脇の旗（深い赤に金の縁）
             foreach (int bx in new[] { GateX - 24, GateX + 20 })
@@ -333,6 +369,8 @@ namespace VividOfFade
                     if (fy > 0.75f && !joint) v -= 0.06f;
                     Put(x, y, Cobble, v);
                     Warmth(x, y, WarmLight(x, y));
+                    // 深淵版：石畳を走る、赤紫に光る裂け目（門から広がる）
+                    if (abyss && Mathf.Abs(Fbm(x / 14f, y / 7f, 61, 2) - 0.5f) < 0.004f + 0.01f * Mathf.Exp(-Sq((x - GateX) / 30f))) Put(x, y, Warm, 0.55f + 0.3f * t);
                 }
             }
             // 門から広場へ伸びる光の道
@@ -341,7 +379,7 @@ namespace VividOfFade
                 {
                     float spread = 12f + (y - GateY) * 0.5f;
                     float a = Mathf.Max(0f, 1f - Mathf.Abs(x - GateX) / spread) * (1f - (y - GateY) / 50f);
-                    Warmth(x, y, a * 0.9f);
+                    Warmth(x, y, a * 0.6f);
                 }
         }
 
