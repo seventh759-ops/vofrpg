@@ -45,10 +45,11 @@ namespace VividOfFade
                 if (i == ThirdClasses.SkillIndex && !ch.Third) continue;
                 visible.Add(i);
             }
-            float rowH = Mathf.Min(H * 0.13f, (H - y - pad) / visible.Count - H * 0.008f);
             // 説明と MP などの行は、経験値のバーをアイコンの下に移した分だけ文字を大きくする
             var text = new GUIStyle(small) { fontSize = Mathf.RoundToInt(small.fontSize * 1.15f) };
             float lineH = text.fontSize * 1.3f;
+            // 行の高さは中身（名前・説明・MP などの3行）にぴったり合わせる。入りきらなければ画面に合わせて縮める
+            float rowH = Mathf.Min(lineH * 3.35f / 0.88f, (H - y - pad) / visible.Count - H * 0.008f);
 
             foreach (int i in visible)
             {
