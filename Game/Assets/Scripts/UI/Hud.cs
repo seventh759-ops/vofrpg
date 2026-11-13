@@ -1120,6 +1120,23 @@ namespace VividOfFade
         }
 
         /// <summary>開始する層を選ぶ画面（1層と、倒したボスの次の層）。PC は数字キーでも選べる。</summary>
+        bool floorTabAbyss; // 層選びで、深淵のタブを見ているか
+
+        /// <summary>層選びを開いたとき：深淵に入れるなら、深淵のタブから始める。</summary>
+        public void ResetFloorTab(CharacterData ch)
+        {
+            var all = GameWorld.Checkpoints(ch);
+            floorTabAbyss = all.Count > 0 && GameConfig.IsAbyss(all[all.Count - 1]);
+        }
+
+        /// <summary>いま見ているタブの層（塔か深淵か）。数字キーもこの並びで選ぶ。</summary>
+        public List<int> VisibleFloors(CharacterData ch)
+        {
+            var list = new List<int>();
+            foreach (int f in GameWorld.Checkpoints(ch)) if (GameConfig.IsAbyss(f) == floorTabAbyss) list.Add(f);
+            return list;
+        }
+
         void DrawFloorSelect(ClassType type)
         {
             float W = Screen.width;
@@ -1132,7 +1149,10 @@ namespace VividOfFade
             Hud.FitLabel(new Rect(0, H * 0.12f, W, H * 0.06f), Loc.T("Choose a starting floor", "始める層を選ぶ"), title);
             GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), $"{AdvancedClasses.NameOf(type)}   Lv {ch.Level}   " + Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor), centered);
 
-            var floors = GameWorld.Checkpoints(ch);
+            var all = GameWorld.Checkpoints(ch);
+            bool hasAbyss = all.Exists(GameConfig.IsAbyss);
+            if (!hasAbyss) floorTabAbyss = false;
+            var floors = VisibleFloors(ch);
             const int cols = 3;
             float pad = W * 0.08f;
             float gap = W * 0.03f;
@@ -1151,7 +1171,15 @@ namespace VividOfFade
                 GUI.Label(new Rect(0, y, W, small.fontSize * 1.5f), Loc.T("Starting a new run abandons the suspended one.", "新しく始めると、中断中の挑戦は消えます。"), warn);
                 y += small.fontSize * 2f;
             }
-            // 深淵の層が増えて行が多いときは、ボタンを低くして画面に収める
+            // 塔と深淵のタブ（深淵に入れるときだけ）。選んでいるタブは明るく
+            if (hasAbyss)
+            {
+                float tw = (W - pad * 2f - gap) * 0.5f, th = H * 0.05f;
+                Button(new Rect(pad, y, tw, th), Loc.T("TOWER", "塔"), !floorTabAbyss ? new Color(0.5f, 0.4f, 0.1f, 0.85f) : new Color(1f, 1f, 1f, 0.06f), centered, () => floorTabAbyss = false);
+                Button(new Rect(pad + tw + gap, y, tw, th), Loc.T("ABYSS", "深淵"), floorTabAbyss ? new Color(0.55f, 0.1f, 0.42f, 0.9f) : new Color(1f, 1f, 1f, 0.06f), centered, () => floorTabAbyss = true);
+                y += th + gap * 1.5f;
+            }
+            // 行が多いときは、ボタンを低くして画面に収める
             int rowCount = (floors.Count + cols - 1) / cols;
             bh = Mathf.Min(bh, (H * 0.92f - y - H * 0.05f - gap * 2f) / Mathf.Max(1, rowCount) - gap);
             for (int i = 0; i < floors.Count; i++)
@@ -1159,7 +1187,8 @@ namespace VividOfFade
                 int floor = floors[i];
                 var r = new Rect(pad + (i % cols) * (bw + gap), y + (i / cols) * (bh + gap), bw, bh);
                 string key = Application.isMobilePlatform || i >= 9 ? "" : $"[{i + 1}] ";
-                Button(r, key + GameConfig.FloorName(floor), GameConfig.IsAbyss(floor) ? new Color(0.45f, 0.08f, 0.35f, 0.8f) : i == floors.Count - 1 ? new Color(0.5f, 0.4f, 0.1f, 0.7f) : new Color(1f, 1f, 1f, 0.12f), centered,
+                bool latest = i == floors.Count - 1; // そのタブでいちばん深い層は目立たせる
+                Button(r, key + GameConfig.FloorName(floor), GameConfig.IsAbyss(floor) ? new Color(0.45f, 0.08f, 0.35f, latest ? 0.95f : 0.55f) : latest ? new Color(0.5f, 0.4f, 0.1f, 0.7f) : new Color(1f, 1f, 1f, 0.12f), centered,
                     () => confirmFloor = floor);
             }
             int rows = (floors.Count + cols - 1) / cols;

@@ -142,7 +142,11 @@ namespace VividOfFade
             Hud.BigMap = false;
             var type = ClassInfo.Current;
             var ch = Profile.Get(type);
-            if (Checkpoints(ch).Count > 1 || ch.Run.Active) PendingClass = type;
+            if (Checkpoints(ch).Count > 1 || ch.Run.Active)
+            {
+                Hud.ResetFloorTab(ch);
+                PendingClass = type;
+            }
             else StartRun(type, 1);
         }
 
@@ -473,7 +477,7 @@ namespace VividOfFade
                 }
                 else if (PendingClass.HasValue)
                 {
-                    var cps = Checkpoints(Profile.Get(PendingClass.Value));
+                    var cps = Hud.VisibleFloors(Profile.Get(PendingClass.Value)); // 見ているタブ（塔か深淵）の層
                     if (Hud.ConfirmingFloor)
                     {
                         if (Input.CancelPressed) Hud.AskFloor(-1); // 確認をやめる
