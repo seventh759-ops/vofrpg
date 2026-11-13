@@ -124,11 +124,14 @@ namespace VividOfFade
         }
 
         static readonly Color StudGold = new Color(0.95f, 0.78f, 0.38f, 1f);
+        /// <summary>HUD の飾りの枠の色（どこも同じ金色にそろえる）。</summary>
+        public static readonly Color FrameGold = new Color(0.85f, 0.72f, 0.42f, 1f);
+        static float FrameT => Mathf.Max(2f, Mathf.Round(Screen.height * 0.0012f));
 
         /// <summary>
         /// 飾りの付いた枠：外側に暗い線、色の線、内側にうっすら明るい線。四隅に金の鋲（暗い縁つき）。
         /// </summary>
-        public static void OrnateFrame(Rect r, Color main, float t, bool inset = false)
+        public static void OrnateFrame(Rect r, Color main, float t, bool inset = false, bool studs = true)
         {
             Frame(new Rect(r.x - t, r.y - t, r.width + t * 2f, r.height + t * 2f), new Color(0f, 0f, 0f, 0.85f), t);
             // 枠そのものに凹凸：上と左は明るく、下と右は暗い（光は左上から）
@@ -149,6 +152,7 @@ namespace VividOfFade
             Fill(new Rect(inner.x, inner.y, b, inner.height), tl);
             Fill(new Rect(inner.x, inner.yMax - b, inner.width, b), br);
             Fill(new Rect(inner.xMax - b, inner.y, b, inner.height), br);
+            if (!studs) return;
             float s = t * 4f;
             foreach (var c in new[] { new Vector2(r.x, r.y), new Vector2(r.xMax, r.y), new Vector2(r.x, r.yMax), new Vector2(r.xMax, r.yMax) })
             {
@@ -214,6 +218,7 @@ namespace VividOfFade
                 if (index < 0 || !SkillInfo.Learned(ClassInfo.Current, index, ch.Level))
                 {
                     Button(r, null, new Color(0f, 0f, 0f, 0.3f), centered, () => World.OpenPanel(false, false, true));
+                    OrnateFrame(r, FrameGold, FrameT, false, false);
                     continue;
                 }
 
@@ -221,6 +226,7 @@ namespace VividOfFade
                 int mpCost = SkillInfo.MpCost(spec, index, ch.Level);
                 bool enoughMp = player.Mp >= mpCost;
                 Button(r, null, new Color(0f, 0f, 0f, 0.55f), centered, () => World.Skills.Press(slot, World.Player));
+                OrnateFrame(r, FrameGold, FrameT, false, false);
                 float inset = r.width * 0.12f;
                 var iconRect = new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f);
                 var old = GUI.color;
@@ -246,11 +252,14 @@ namespace VividOfFade
 
                 // オート／手動の帯
                 bool auto = ch.SlotAuto[i];
-                Button(ToGui(SkillAutoRect(i)), null, auto ? new Color(0.3f, 0.85f, 0.4f, 0.85f) : new Color(1f, 1f, 1f, 0.15f), centered, () =>
+                var autoR = ToGui(SkillAutoRect(i));
+                Button(autoR, null, auto ? new Color(0.3f, 0.85f, 0.4f, 0.85f) : new Color(1f, 1f, 1f, 0.15f), centered, () =>
                 {
                     ch.SlotAuto[slot] = !ch.SlotAuto[slot];
                     Profile.Save();
                 });
+                if (auto) Fill(new Rect(autoR.x, autoR.y, autoR.width, autoR.height * 0.35f), new Color(1f, 1f, 1f, 0.25f)); // 光沢
+                OrnateFrame(autoR, FrameGold, Mathf.Max(1f, FrameT * 0.5f), !auto, false); // 入っているときは出っぱり、切れているときはへこみ
             }
 
             // かかっている強化：ダンジョンの左上（上の帯のすぐ下）に、スキルのアイコンと残り秒数。残り2秒を切ると点滅して、切れたら消える
@@ -299,6 +308,7 @@ namespace VividOfFade
                 int n = hp ? ch.HpPotions : ch.MpPotions;
                 var r = ToGui(PotionRect(i));
                 Button(r, null, new Color(0f, 0f, 0f, 0.55f), centered, () => World.UsePotion(hp));
+                OrnateFrame(r, FrameGold, FrameT, false, false);
                 float inset = r.width * 0.12f;
                 var old = GUI.color;
                 GUI.color = n > 0 ? Color.white : new Color(1f, 1f, 1f, 0.35f);
@@ -602,7 +612,7 @@ namespace VividOfFade
             // レベルの欄：「LV120★」まで入る幅。暗い下地に、バーと同じ飾りの枠（転生の印は2段目の層の表示の左に出す）
             var lvBox = new Rect(mm, rowY, W * 0.19f, rowH);
             Fill(lvBox, new Color(0.04f, 0.04f, 0.07f, 1f));
-            OrnateFrame(lvBox, new Color(0.85f, 0.72f, 0.42f, 1f), Mathf.Max(2f, Mathf.Round(H * 0.0012f)), true);
+            OrnateFrame(lvBox, FrameGold, FrameT, true);
             int level = ch != null ? ch.Level : 1;
             var lvStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
             string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
@@ -612,11 +622,11 @@ namespace VividOfFade
             var barText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
             var hpBack = new Rect(barsX, rowY, barW, rowH);
             float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
-            OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), new Color(1f, 0.55f, 0.55f, 1f));
+            OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold);
             FitLabel(hpBack, $"{player.Hp}/{player.MaxHp}", barText);
             var mpBack = new Rect(hpBack.xMax + mm, rowY, barW, rowH);
             float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
-            OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), new Color(0.55f, 0.7f, 1f, 1f));
+            OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), FrameGold);
             FitLabel(mpBack, $"{player.Mp}/{player.MaxMp}", barText);
 
             // 2段目：経験値（細い帯に ％）
@@ -626,15 +636,18 @@ namespace VividOfFade
             {
                 float expRatio = ch.Level >= Progression.LevelCap(ch) ? 1f : Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
                 Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.95f, 0.88f, 0.7f, 1f));
+                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.35f), new Color(1f, 1f, 1f, 0.3f)); // 光沢
                 var expText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.Max(8, Mathf.RoundToInt(ExpRowH * 0.85f)) };
                 expText.normal.textColor = new Color(0.15f, 0.12f, 0.1f);
                 GUI.Label(expBack, $"{Mathf.FloorToInt(expRatio * 100f)}%", expText);
             }
+            OrnateFrame(expBack, FrameGold, Mathf.Max(1f, FrameT * 0.5f), true, false); // 細いので鋲はなし
 
             // 3段目：層（ボスのときは添える）と、右に回避の待ち時間
             float lineH = small.fontSize * 1.35f;
             var floorRow = new Rect(mm, expBack.yMax + mm * 0.6f, W - mm * 2f, FloorRowH);
-            Fill(floorRow, new Color(0.13f, 0.12f, 0.15f, 1f));
+            Fill(floorRow, new Color(0.05f, 0.05f, 0.08f, 1f));
+            OrnateFrame(floorRow, FrameGold, FrameT, true);
             string floorText = GameConfig.FloorName(World.Floors.Floor) + (World.Floors.IsBossFloor ? Loc.T("   BOSS", "   ボス") : "");
             var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
             float floorX = floorRow.x + mm;
@@ -659,6 +672,7 @@ namespace VividOfFade
             var dodge = new Rect(floorRow.xMax - W * 0.22f - mm, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
             Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.75f, 0.85f, 1f, 0.9f));
+            OrnateFrame(dodge, FrameGold, Mathf.Max(1f, FrameT * 0.5f), true, false);
             float y = topBottom + mm;
 
             // FPS（ダンジョンの右上）
@@ -669,7 +683,7 @@ namespace VividOfFade
             }
 
             // 下の帯の2つの区画：メッセージウィンドウ（上）とショートカット（下）。それぞれ背景と枠で仕切る
-            var frameColor = new Color(0.55f, 0.5f, 0.68f, 1f);
+            var frameColor = FrameGold;
             float frameT = Mathf.Max(2f, Mathf.Round(H * 0.0012f));
             var msgR = MessageWindow;
             Fill(msgR, new Color(0.03f, 0.03f, 0.05f, 1f));
@@ -708,8 +722,10 @@ namespace VividOfFade
             // 右上は MENU だけ（ポイントが余っている・鞄が満杯なら「!」）
             int points = ch != null ? ch.Points : 0;
             bool notice = points > 0 || inv.BagFull;
-            Button(ToGui(MenuRect), notice ? "MENU !" : "MENU", notice ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.55f), centered,
+            Fill(ToGui(MenuRect), new Color(0.05f, 0.05f, 0.08f, 1f));
+            Button(ToGui(MenuRect), notice ? "MENU !" : "MENU", notice ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.3f), centered,
                 () => World.OpenMenu());
+            OrnateFrame(ToGui(MenuRect), FrameGold, FrameT);
 
             DrawSkillButtons(ch);
             DrawPotions(ch);
