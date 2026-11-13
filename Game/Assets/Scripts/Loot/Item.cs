@@ -33,6 +33,8 @@ namespace VividOfFade
         /// <summary>武器に必要な能力値（職業の主能力）。0 なら条件なし。</summary>
         public Attr ReqAttr;
         public int ReqValue;
+        /// <summary>能力値の条件が要るか（神話の武器だけ。前の版で付いた、ほかの装備の条件は数えない）。</summary>
+        public bool NeedsAttr => ReqValue > 0 && Slot == ItemSlot.Weapon && Rarity == Rarity.Mythic;
 
         /// <summary>武器：基本ダメージ／ランタン：明るさ（マス）／防具：最大体力。指輪は0。</summary>
         public float BaseValue;

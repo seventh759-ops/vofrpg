@@ -119,7 +119,7 @@ namespace VividOfFade
         }
 
         /// <summary>
-        /// ボス専用の Mythic 装備。効果4つ（強めの値）＋通常の固有効果1つ＋ボス専用の固有効果1つ。
+        /// 神話（Mythic）の装備（ボス・精鋭がまれに落とす）。効果4つ（強めの値）＋通常の固有効果1つ＋ボス専用の固有効果1つ。
         /// </summary>
         public static Item RollMythic(int level)
         {
@@ -132,6 +132,7 @@ namespace VividOfFade
             AddAffixes(item, 4);
             item.Uniques.Add(allUniques[Random.Range(0, allUniques.Length)]);
             item.Uniques.Add(bossUniques[Random.Range(0, bossUniques.Length)]);
+            SetMythicRequirement(item);
             return item;
         }
 
@@ -159,15 +160,22 @@ namespace VividOfFade
             };
         }
 
-        /// <summary>必要レベルは装備のレベルと同じ。武器は職業の主能力も要る。</summary>
+        /// <summary>
+        /// 必要レベルは装備のレベルと同じ。能力値の条件は付けない（振り方を縛らないため）。
+        /// 能力値の条件があるのは、神話（赤）の武器だけ（SetMythicRequirement）。
+        /// </summary>
         static void SetRequirements(Item item)
         {
             item.ReqLevel = item.Level;
-            if (item.Slot == ItemSlot.Weapon)
-            {
-                item.ReqAttr = ClassInfo.Weapon(item.Weapon).ClassAttr();
-                item.ReqValue = 8 + item.Level;
-            }
+            item.ReqValue = 0;
+        }
+
+        /// <summary>神話（赤）の武器だけは、武器の主能力が要る（特別な武器）。</summary>
+        static void SetMythicRequirement(Item item)
+        {
+            if (item.Slot != ItemSlot.Weapon) return;
+            item.ReqAttr = ClassInfo.Weapon(item.Weapon).ClassAttr();
+            item.ReqValue = 8 + item.Level;
         }
 
         static ItemSlot RollSlot()

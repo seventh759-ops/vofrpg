@@ -477,6 +477,8 @@ namespace VividOfFade
         {
             Loot.Fountain(pos, Room, GameConfig.EliteFountainItems, DropLevel, GameConfig.EliteRarityBonus,
                 4, GameConfig.EmberAmount(Floors.Tier));
+            // まれに神話（赤）の装備（ボスより低い確率）
+            if (Random.value < GameConfig.EliteMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
             Fx.Ring(pos, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.35f);
             Sfx.Fountain();
             GainExp(Progression.KillExp(Floors.Tier) * 5);
@@ -845,7 +847,7 @@ namespace VividOfFade
                 reason = Loc.T($"Need Lv {item.ReqLevel}", $"Lv{item.ReqLevel}が必要");
                 return false;
             }
-            if (item.ReqValue > 0 && st.Attr[(int)item.ReqAttr] < item.ReqValue)
+            if (item.NeedsAttr && st.Attr[(int)item.ReqAttr] < item.ReqValue)
             {
                 reason = Loc.T($"Need {Attributes.ShortName(item.ReqAttr)} {item.ReqValue}", $"{Attributes.ShortName(item.ReqAttr)} {item.ReqValue}が必要");
                 return false;

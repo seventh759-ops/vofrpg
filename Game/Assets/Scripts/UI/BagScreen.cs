@@ -307,7 +307,7 @@ namespace VividOfFade
             bool lvOk = st == null || st.Level >= item.ReqLevel;
             req.normal.textColor = lvOk ? new Color(0.75f, 0.75f, 0.75f) : new Color(1f, 0.45f, 0.45f);
             string reqText = Loc.T($"Lv {item.Level}   Req Lv {item.ReqLevel}", $"Lv {item.Level}   必要Lv {item.ReqLevel}");
-            if (item.ReqValue > 0)
+            if (item.NeedsAttr)
             {
                 bool attrOk = st == null || st.Attr[(int)item.ReqAttr] >= item.ReqValue;
                 if (!attrOk) req.normal.textColor = new Color(1f, 0.45f, 0.45f);
