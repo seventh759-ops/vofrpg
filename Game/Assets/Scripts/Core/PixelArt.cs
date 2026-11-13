@@ -3249,76 +3249,58 @@ namespace VividOfFade
             return sprite;
         }
 
-        /// <summary>案内役（オリジナルキャラ）。40ドットを、プレイヤーと同じ縮尺（1マス32ドット）で描く。</summary>
-        public static Sprite Guide
+        /// <summary>
+        /// 案内役（オリジナルキャラ）。40ドットを、プレイヤーと同じ縮尺（1マス32ドット）で描く。
+        /// 黒い影の体（Q）と灰色の毛（F）に陰影を付け、白い歯（o）だけは陰影なしでくっきり光らせる。
+        /// </summary>
+        public static Sprite Guide => Shaded("Guide40", GuideRows, new Dictionary<char, Color32[]>
         {
-            get
-            {
-                const string key = "Guide";
-                if (cache.TryGetValue(key, out var cached)) return cached;
-                var pal = new Dictionary<char, Color32>
-                {
-                    { 'k', new Color32(14, 10, 16, 255) },
-                    { 'f', new Color32(70, 62, 72, 255) },
-                    { 'w', new Color32(250, 246, 236, 255) },
-                    { 's', new Color32(90, 80, 84, 255) },
-                };
-                int h = GuideRows.Length, w = GuideRows[0].Length;
-                var px = new Color32[w * h];
-                for (int y = 0; y < h; y++)
-                {
-                    for (int x = 0; x < w; x++)
-                    {
-                        char ch = GuideRows[y][x];
-                        px[(h - 1 - y) * w + x] = pal.TryGetValue(ch, out var c) ? c : new Color32(0, 0, 0, 0);
-                    }
-                }
-                return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), 32);
-            }
-        }
+            { 'Q', Ramp(44, 40, 52, 28, 24, 34, 19, 15, 25, 12, 8, 16) },
+            { 'F', Ramp(112, 100, 114, 82, 72, 86, 60, 52, 64, 44, 38, 48) },
+        }, null, 32);
 
         static readonly string[] GuideRows =
         {
-            ".kkk................................kkk.",
-            ".kffkk...........................kkkffk.",
-            ".kffffkkk......................kkkffffk.",
-            "..kfffffkk....................kkfffffk..",
-            "..kfffkffkk..................kkffkfffk..",
-            ".kkkffkkfffk................kfffkkffkkk.",
-            "kfkkkffkkfffk..............kfffkkffkkkfk",
-            "kfffkkffkkfffk............kfffkkffkkfffk",
-            ".kffffffkkkfffk..........kfffkkkffffffk.",
-            ".kkfffkkkkkfffk..........kfffkkkkkfffkk.",
-            "..kkfffkkkkkfff..........fffkkkkkfffkk..",
-            ".kkkkkffkkkkkffk..kk....kffkkkkkffkkkkk.",
-            ".kffkkkkkkkkkffk..kkkkk.kffkkkkkkkkkffk.",
-            ".kkffffkkkkkkffkkkkffkkkkffkkkkkkffffkk.",
-            "..kkffffkkkkkkkffffffffffkkkkkkkffffkk..",
-            "....kkkkkkkfffkffffffffffkfffkkkkkkk....",
-            "...kkkffkkffkffffffffffffffkffkkffkkk...",
-            "...kfffffkkkffffffffffffffffkkkfffffk...",
-            "....kkkfkkkfffkkfffkfffffkfffkkkfkkk....",
-            "......kkkffffkkffffkfkfffkkffffkkk......",
-            ".......kffkffkkfkfkkkkkkffkkfkffk.......",
-            "......kkkkffkkkkkfkkkkkkkfkkffkkkk......",
-            ".......kkffkkkkkkkkkkkkkkkkkkffkk.......",
-            "......kkffkkkkkkkkkkkkkkkkkkkkffkk......",
-            ".....kkfffwwkkkkkkkkkkkkkkkkwwfffkk.....",
-            ".....kkkffwwkwwkwwkwwkwwkwwkwwffkkk.....",
-            "......kkffkkkwwkwwkwwkwwkwwkkkffkk......",
-            "......kkkffkkkkkkkkkkkkkkkkkkfkkfk......",
-            "......kkkfkkkwwkwwkwwkwwkwwkkkfkkk......",
-            "........kkkkkwwkwwkwwkwwkwwkkkkk........",
-            "........kkffffkkkkkkkkkkkkffffkk........",
-            ".........kkkkffkkkkkkkkkfffkkkk.........",
-            "..........kkkkffffkkkkffffkkkk..........",
-            ".........kkffkkkffffffffkkkffkk.........",
-            "........kkfkfffkkkkffkkkkfffkfkk........",
-            "........kkkkffffkkkkkkkkffkfkk..........",
-            ".........kffkkkkffkkkkfffkkfffk.........",
-            ".........kfffkkffffkkffffkkfffk.........",
-            "........kkkkfkkfkkfkkkkkfkkfkkkk........",
-            "........fkkkkffkkkkffkkkkffkkkkf........",
+            "........................................",
+            "..FF................................FF..",
+            "..FFFF...........................QFFFF..",
+            "...FFFFFQ......................QFFFFF...",
+            "...FFFQFFQ....................QFFQFFF...",
+            "..QQFFQQFFF..................FFFQQFFQQ..",
+            ".FQQQFFQQFFF................FFFQQFFQQQF.",
+            ".FFFQQFFQQFFF..............FFFQQFFQQFFF.",
+            "..FFFFFFQQQFFF............FFFQQQFFFFFF..",
+            "..QFFFQQQQQFFF............FFFQQQQQFFFQ..",
+            "...QFFFQQQQQFFF..........FFFQQQQQFFFQ...",
+            "..QQQQFFQQQQQFF..........FFQQQQQFFQQQQ..",
+            "..FFQQQQQQQQQFF....Q.....FFQQQQQQQQQFF..",
+            "..QFFFFQQQQQQFFQ..QFFQQ.QFFQQQQQQFFFFQ..",
+            "....FFFFQQQQQQQFFFFFFFFFFQQQQQQQFFFF....",
+            ".....QQQQQQFFFQFFFFFFFFFFQFFFQQQQQQ.....",
+            "....QQFFQQFFQFFFFFFFFFFFFFFQFFQQFFQQ....",
+            "....FFFFFQQQFFFFFFFFFFFFFFFFQQQFFFFF....",
+            "......QFQQQFFFQQFFFQFFFFFQFFFQQQFQ......",
+            ".......QQFFFFQQFFFFQFQFFFQQFFFFQQ.......",
+            "........FFQFFQQFQFQQQQQQFFQQFQFF........",
+            ".......QQQFFQQQQQFQQQQQQQFQQFFQQQ.......",
+            "........QFFQQQQQQQQQQQQQQQQQQFFQ........",
+            ".......QFFQQQQQQQQQQQQQQQQQQQQFFQ.......",
+            "......QFFFooQQQQQQQQQQQQQQQQooFFFQ......",
+            "......QQFFooQooQooQooQooQooQooFFQQ......",
+            ".......QFFQQQooQooQooQooQooQQQFFQ.......",
+            ".......QQFFQQQQQQQQQQQQQQQQQQFQQF.......",
+            "........QFQQQooQooQooQooQooQQQFQ........",
+            ".........QQQQooQooQooQooQooQQQQ.........",
+            ".........QFFFFQQQQQQQQQQQQFFFFQ.........",
+            "..........QQQFFQQQQQQQQQFFFQQQ..........",
+            "...........QQQFFFFQQQQFFFFQQQ...........",
+            "..........QFFQQQFFFFFFFFQQQFFQ..........",
+            ".........QFQFFFQQQQFFQQQQFFFQF..........",
+            ".........QQQFFFFQQQQQQQQFFQFQ...........",
+            "..........FFQQQQFFQQQQFFFQQFFF..........",
+            "..........FFFQQFFFFQQFFFFQQFFF..........",
+            ".........QQQFQQFQQFQQQQQFQQFQQQ.........",
+            "........F....FF....FF....FF....F........",
         };
 
         /// <summary>祭壇（石の台の上に火が灯る）。足元が原点。</summary>
