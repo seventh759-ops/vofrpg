@@ -618,7 +618,7 @@ namespace VividOfFade
                 altar.transform.position = Iso.ToScreen(Room.AltarPos);
                 altar.sortingOrder = SortOrder.For(Room.AltarPos);
                 var pool = new List<int>();
-                for (int k = 0; k < Boons.Count; k++) pool.Add(k);
+                for (int k = 0; k < Boons.Count; k++) if (Boons.Offerable(k)) pool.Add(k);
                 for (int k = 0; k < Boons.OffersPerAltar && pool.Count > 0; k++)
                 {
                     int pick = Random.Range(0, pool.Count);

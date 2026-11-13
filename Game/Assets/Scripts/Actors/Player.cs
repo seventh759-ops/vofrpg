@@ -114,7 +114,7 @@ namespace VividOfFade
         public void RestoreRun(System.Collections.Generic.List<int> boons, float hpRatio, float mpRatio)
         {
             Boons.Clear();
-            Boons.AddRange(boons);
+            foreach (int b in boons) if (VividOfFade.Boons.Offerable(b)) Boons.Add(b); // 引退した加護は捨てる
             RebuildStats();
             MaxHp = Stats.MaxHp;
             MaxMp = Stats.MaxMp;
