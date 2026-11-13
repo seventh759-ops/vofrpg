@@ -1297,7 +1297,7 @@ namespace VividOfFade
             Fill(new Rect(W * 0.5f + W * 0.24f, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
             var sub = new GUIStyle(centered);
             sub.normal.textColor = new Color(0.92f, 0.88f, 0.96f, 0.95f);
-            FitLabel(new Rect(W * 0.26f, ly - H * 0.017f, W * 0.48f, H * 0.035f), Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ"), sub);
+            FitLabel(new Rect(W * 0.26f, ly - H * 0.017f, W * 0.48f, H * 0.035f), (abyss ? Loc.T("Into the abyss no light can reach", "灯りの届かぬ深淵へ") : Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ")), sub);
 
             // 点滅する「タップで始める」
             var tap = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
