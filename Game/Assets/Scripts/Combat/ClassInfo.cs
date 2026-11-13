@@ -61,8 +61,17 @@ namespace VividOfFade
         public float CritBonus;
         public int MaxTargets = 1;      // 斬撃が一度に当たる数（近い順）。2体目以降は威力が下がる
 
-        /// <summary>この武器を使う職業の主能力。</summary>
-        public Attr ClassAttr() => ClassInfo.Get(Class).MainAttr;
+        /// <summary>この武器だけ攻撃力が伸びる能力値を変えるとき（例：短剣は DEX が主・STR が副）。なければ職業のもの。</summary>
+        public Attr? Main, Sub;
+
+        /// <summary>この武器で攻撃力が伸びる主能力（1ポイントで +2%）。武器の必要条件にも使う。</summary>
+        public Attr MainAttr => Main ?? ClassInfo.Get(Class).MainAttr;
+
+        /// <summary>この武器で攻撃力が少し伸びる副能力（1ポイントで +1%）。</summary>
+        public Attr SubAttr => Sub ?? ClassInfo.Get(Class).SubAttr;
+
+        /// <summary>この武器の必要条件に使う能力値（主能力）。</summary>
+        public Attr ClassAttr() => MainAttr;
     }
 
     /// <summary>職業と武器の表。数値はすべて仮で、遊んでから調整する。</summary>
@@ -122,8 +131,8 @@ namespace VividOfFade
             // 影刃：斬撃
             { WeaponKind.Sword, new WeaponSpec { Kind = WeaponKind.Sword, Class = ClassType.Shadeblade, Name = "Sword", NameJa = "剣", DescJa = "広く斬る", Desc = "Wide slash",
                 Attack = AttackKind.Slash, BaseDamage = 12f, Interval = 0.4f, Reach = 1.8f, Arc = 120f, MaxTargets = 4 } },
-            { WeaponKind.Dagger, new WeaponSpec { Kind = WeaponKind.Dagger, Class = ClassType.Shadeblade, Name = "Dagger", NameJa = "短剣", DescJa = "すばやく突く。会心が出やすい", Desc = "Quick stabs, more crits",
-                Attack = AttackKind.Slash, BaseDamage = 8f, Interval = 0.2f, Reach = 1.5f, Arc = 70f, CritBonus = 0.1f, MaxTargets = 2 } },
+            { WeaponKind.Dagger, new WeaponSpec { Kind = WeaponKind.Dagger, Class = ClassType.Shadeblade, Name = "Dagger", NameJa = "短剣", DescJa = "すばやく突く。会心が出やすい。DEX で強くなる", Desc = "Quick stabs, more crits. Scales with DEX",
+                Attack = AttackKind.Slash, BaseDamage = 8f, Interval = 0.2f, Reach = 1.5f, Arc = 70f, CritBonus = 0.1f, MaxTargets = 2, Main = Attr.Dex, Sub = Attr.Str } },
             { WeaponKind.Greatblade, new WeaponSpec { Kind = WeaponKind.Greatblade, Class = ClassType.Shadeblade, Name = "Greatblade", NameJa = "大剣", DescJa = "遅いが、大きく薙ぎ払う", Desc = "Slow, huge sweep",
                 Attack = AttackKind.Slash, BaseDamage = 24f, Interval = 0.7f, Reach = 2.2f, Arc = 180f, MaxTargets = 6 } },
 

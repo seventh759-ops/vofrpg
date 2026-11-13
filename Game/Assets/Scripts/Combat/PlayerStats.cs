@@ -17,6 +17,8 @@ namespace VividOfFade
         public float MpRegen;
 
         public float Damage;
+        /// <summary>今の武器で攻撃力が伸びる主能力・副能力。</summary>
+        public Attr MainAttr, SubAttr;
         /// <summary>
         /// スキルの基準の攻撃力。武器ごとの手数の差（1 回の倍率×弾の数÷攻撃の間隔）を、職業の最初の武器を基準にならす。
         /// 攻撃速度は入れない（攻撃速度を上げてもスキルは強くならない）。
@@ -247,8 +249,11 @@ namespace VividOfFade
             int dex = s.Attr[(int)VividOfFade.Attr.Dex];
             int vit = s.Attr[(int)VividOfFade.Attr.Vit];
             int wis = s.Attr[(int)VividOfFade.Attr.Wis];
-            int main = s.Attr[(int)cls.MainAttr];
-            int sub = s.Attr[(int)cls.SubAttr];
+            var weaponSpec = ClassInfo.Weapon(kind);     // 攻撃力が伸びる能力値は武器で決まる（短剣は DEX など）
+            s.MainAttr = weaponSpec.MainAttr;
+            s.SubAttr = weaponSpec.SubAttr;
+            int main = s.Attr[(int)s.MainAttr];
+            int sub = s.Attr[(int)s.SubAttr];
 
             s.MaxHp = cls.BaseHp + vit * 8 + (ch.Level - 1) * 6 + bonusHp;
             // MP は WIS だけで増える。レベルアップのたびに、そのときの WIS で上限が積み上がる（MpGrown）
