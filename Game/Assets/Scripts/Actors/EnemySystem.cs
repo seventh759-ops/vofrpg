@@ -430,6 +430,32 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>
+        /// ボスを倒したとき、残りの敵・飛んでいる弾・出てくる予定の分身をまとめて消す（クリアの余韻を壊さないように）。
+        /// 経験値・ドロップはなし（ボスの噴水で十分なので）。黄金のスライムは残す。
+        /// 消した敵の位置を返す（煙の演出用）。
+        /// </summary>
+        public List<Vector2> BanishAll()
+        {
+            var at = new List<Vector2>();
+            foreach (var e in Active)
+            {
+                if (e.Dying || e.IsBoss || e.Kind == EnemyKind.Golden) continue;
+                e.Dying = true;
+                e.DyingTimer = DeathTime;
+                at.Add(e.Pos);
+            }
+            pendingSplits.Clear(); // 分裂する精鋭の分身も出さない
+            // 飛んでいる敵の弾も消す（あとから当たって余韻を壊さないように）
+            foreach (var b in bullets)
+            {
+                b.Sr.gameObject.SetActive(false);
+                freeBullets.Push(b);
+            }
+            bullets.Clear();
+            return at;
+        }
+
         /// <summary>範囲内の敵すべてにダメージ（撃破時の爆発など）。</summary>
         public void DamageArea(Vector2 center, float radius, float amount)
         {

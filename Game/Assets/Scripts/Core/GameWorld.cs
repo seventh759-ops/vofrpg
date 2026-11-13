@@ -735,6 +735,12 @@ namespace VividOfFade
         /// <summary>ボスを倒した：大きな噴水と、低い確率でボス専用の Mythic 装備。</summary>
         void OnBossKilled(Vector2 pos)
         {
+            // ボスが倒れたら、残りの雑魚もまとめて消える（煙のように）
+            foreach (var p in Enemies.BanishAll())
+            {
+                Fx.Ring(p, 0.8f, new Color(0.85f, 0.8f, 0.95f, 0.8f), 0.35f);
+                Fx.Sparks(p, 6, new Color(0.75f, 0.7f, 0.85f, 1f), 1.2f, 0.6f, 2f, true);
+            }
             Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropLevel, GameConfig.BossRarityBonus,
                 GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * 3);
             if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
