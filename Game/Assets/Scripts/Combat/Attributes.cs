@@ -43,28 +43,37 @@ namespace VividOfFade
         public static int LevelCap(CharacterData c) =>
             c != null && c.BossCleared >= GameConfig.MaxFloor ? UnlockedMaxLevel : MaxLevel;
 
-        static int expTo99 = -1;
-        /// <summary>Lv1 から Lv99 になるまでの経験値の合計。</summary>
-        static int ExpTo99
+        /// <summary>ふつうの伸び方での、次のレベルまでの経験値（Lv1〜97 はこのまま使う）。</summary>
+        static int BaseExpToNext(int level) => Mathf.RoundToInt(15f * Mathf.Pow(level, 1.7f));
+
+        static int expTo98 = -1;
+        /// <summary>Lv1 から Lv98 になるまでの経験値の合計。</summary>
+        static int ExpTo98
         {
             get
             {
-                if (expTo99 < 0)
+                if (expTo98 < 0)
                 {
-                    expTo99 = 0;
-                    for (int l = 1; l < MaxLevel; l++) expTo99 += ExpToNext(l);
+                    expTo98 = 0;
+                    for (int l = 1; l < MaxLevel - 1; l++) expTo98 += BaseExpToNext(l);
                 }
-                return expTo99;
+                return expTo98;
             }
         }
 
+        /// <summary>Lv1 から Lv99 になるまでの経験値の合計（98→99 の分を含む。Lv1→98 の合計のちょうど2倍）。</summary>
+        static int ExpTo99 => ExpTo98 * 2;
+
         /// <summary>
-        /// 次のレベルまでの経験値。Lv99 から上は、Lv99→120 の合計が Lv1→99 の合計と同じくらいになるようにする
-        /// （21レベルに分け、後ろほど重くする：平均の 0.6倍 → 1.4倍）。
+        /// 次のレベルまでの経験値。
+        /// ・Lv98→99 は、MMO のように Lv1→98 の合計と同じだけ要る（最後の1レベルが道のりの半分）。
+        /// ・Lv99 から上は、Lv99→120 の合計が Lv1→99 の合計と同じくらいになるようにする
+        ///   （21レベルに分け、後ろほど重くする：平均の 0.6倍 → 1.4倍）。
         /// </summary>
         public static int ExpToNext(int level)
         {
-            if (level < MaxLevel) return Mathf.RoundToInt(15f * Mathf.Pow(level, 1.7f));
+            if (level < MaxLevel - 1) return BaseExpToNext(level);
+            if (level == MaxLevel - 1) return ExpTo98;
             int steps = UnlockedMaxLevel - MaxLevel;
             float t = Mathf.Clamp01((level - MaxLevel) / (float)(steps - 1));
             return Mathf.RoundToInt(ExpTo99 / (float)steps * Mathf.Lerp(0.6f, 1.4f, t));
