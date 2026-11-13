@@ -40,15 +40,13 @@ namespace VividOfFade
         public const float ShotRadius = 0.15f;
 
         // 雑魚（スライム）
-        public const int SlimeContactDamage = 8; // 第1波の値。波が進むと増える（EnemyDamage）
         public const float SlimeRadius = 0.32f;
         public const float SlimeSpeedMin = 1.4f;
         public const float SlimeSpeedMax = 2.1f;
 
         // 波が進むほど、体力も攻撃力も増える（後半ほど伸びが大きい）
-        // 体力の複利を 3% → 2.2%、攻撃力の伸びを 1.2% → 2.5% にした（後半に敵が硬すぎ、攻撃が弱すぎたため）
+        // 体力の複利は 3% → 2.2% にした（後半に敵が硬すぎたため）
         public const float EnemyHpGrowth = 1.022f;
-        public const float EnemyDamageGrowth = 0.025f;
         public static float EnemyHp(int wave) => 20f * (1f + 0.3f * (wave - 1)) * Mathf.Pow(EnemyHpGrowth, wave - 1);
         /// <summary>
         /// 術師の弾のダメージ。体当たりと違い、深い層でも急に強くならない（指数で増えない）。
@@ -59,10 +57,46 @@ namespace VividOfFade
         /// <summary>弾は体当たりの約4割（体当たりが弾の約2.6倍）。</summary>
         public const float BulletToContact = 0.38f;
 
+        // ---- 敵の攻撃力は「基準のキャラ」から決める ----
+        // 基準は極振りではなく、バランス型（VIT に2割振り・その段階の装備）。そのキャラが体当たり1回で HP の何％を削られるかで決める。
+        // 極振りで VIT を捨てればこれより多く削られ、守りを固めればこれより少なく済む（極振りもスタイルとして残す）。
+        public const float RefVitShare = 0.2f;         // 基準のキャラが VIT に振る割合
+        public const float RefHitPctStart = 0.045f;    // 序盤：体当たり1回で HP の 4.5%
+        public const float RefHitPctEnd = 0.08f;       // 段階40（20層）以降：8%
+        public const float RefHitPctRamp = 40f;
+        public const float RefPastCapGrowth = 0.015f;  // Lv上限の後（段階99〜）は、強化・3次職などで1段階ごとに 1.5% ずつ強くなる想定
+
+        /// <summary>基準のキャラのレベル（＝その段階で落ちる装備のレベル）。</summary>
+        public static int RefLevel(int wave) => Mathf.Clamp(wave, 1, Progression.MaxLevel);
+
+        /// <summary>基準のキャラの最大 HP（体力の土台60、VIT、レベル、レアの鎧、HP の効果1つの半分）。</summary>
+        public static float RefHp(int wave)
+        {
+            int lv = RefLevel(wave);
+            float vit = 6f + (lv - 1) * Progression.PointsPerLevel * RefVitShare;
+            return 60f + vit * 8f + (lv - 1) * 6f + (20f + 5f * lv) * 1.24f + 0.5f * (14f + 2f * lv) * 1.24f;
+        }
+
+        /// <summary>基準のキャラの防御（VIT と、防御の効果1つの半分）。</summary>
+        public static float RefArmor(int wave)
+        {
+            int lv = RefLevel(wave);
+            float vit = 6f + (lv - 1) * Progression.PointsPerLevel * RefVitShare;
+            return vit * 0.5f + 0.5f * (10f + 2f * lv) * 1.24f;
+        }
+
+        /// <summary>基準のキャラの「実質の HP」（防御で減る分も入れる）。</summary>
+        public static float RefEffectiveHp(int wave) =>
+            RefHp(wave) * (100f + RefArmor(wave)) / 100f * (1f + RefPastCapGrowth * Mathf.Max(0, wave - Progression.MaxLevel));
+
+        /// <summary>基準のキャラが体当たり1回で削られる割合。</summary>
+        public static float RefHitPct(int wave) => Mathf.Lerp(RefHitPctStart, RefHitPctEnd, (wave - 1) / RefHitPctRamp);
+
         /// <summary>
-        /// 体当たりのダメージ。指数ではなく、2つの直線の掛け算で増える（1層は約9、25層で約150、74層で約860）。
+        /// 体当たりのダメージ（防御で減る前）。基準のキャラの実質の HP × 削る割合
+        /// （1層は約9、25層で約190、50層で約510、74層で約880）。精鋭・ボス・種類の倍率はこれに掛ける。
         /// </summary>
-        public static int EnemyDamage(int wave) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (wave - 1)) * (1f + EnemyDamageGrowth * (wave - 1)));
+        public static int EnemyDamage(int wave) => Mathf.Max(1, Mathf.RoundToInt(RefEffectiveHp(wave) * RefHitPct(wave)));
 
         // 敵の波
         public const int MaxEnemies = 600; // 眠っている敵も含む（層に入った時点で全部の部屋に置く）
