@@ -713,10 +713,10 @@ namespace VividOfFade
                 var big = new Rect((Screen.width - bw) * 0.5f, Screen.height * 0.45f - bh * 0.5f, bw, bh);
                 Fill(big, new Color(0f, 0f, 0f, 0.25f));
                 DrawMapView(big, new Rect(0f, 0f, 1f, 1f), 0.6f, Mathf.Max(5f, bw * 0.014f));
-                // 右上の枠は「閉じる」ボタンになる
-                Fill(r, new Color(0f, 0f, 0f, 0.45f));
-                GUI.Label(r, Loc.T("CLOSE MAP", "地図を閉じる"), centered);
-                if (canTap) Button(r, null, new Color(0f, 0f, 0f, 0f), centered, () => BigMap = false);
+                // 閉じるのは、大きな地図の右上の角の小さな「×」（地図そのものはボタンにしない。指の操作のじゃまをしないように）
+                float cs = Screen.height * 0.04f;
+                var close = new Rect(big.xMax - cs, big.y, cs, cs);
+                if (canTap) Button(close, "×", new Color(0f, 0f, 0f, 0.65f), centered, () => BigMap = false);
                 return;
             }
 
