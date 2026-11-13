@@ -595,7 +595,7 @@ namespace VividOfFade
         /// 部品で描いた絵に、濃淡と影と輪郭を付ける。光は左上から：
         /// 左か上が別の部品なら明るい縁、右か下が別の部品なら影、右下の角はさらに暗く、大きな面の右下寄りも暗くする。
         /// </summary>
-        static Sprite Shaded(string key, string[] rows, Dictionary<char, Color32[]> overrides = null, Color32? auraColor = null)
+        static Sprite Shaded(string key, string[] rows, Dictionary<char, Color32[]> overrides = null, Color32? auraColor = null, int ppu = 0)
         {
             if (cache.TryGetValue(key, out var cached)) return cached;
             int h = rows.Length, w = rows[0].Length;
@@ -661,8 +661,8 @@ namespace VividOfFade
                 }
                 px = halo;
             }
-            // 32ドットを1マスに収める（ほかの絵の半分の縮尺）
-            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), w);
+            // ppu を指定しなければ、絵の幅をちょうど1マスに収める（キャラ・敵は 32 ドットで 1 マス）
+            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), ppu > 0 ? ppu : w);
         }
 
         static readonly string[] LampwrightHdRows =
@@ -823,18 +823,9 @@ namespace VividOfFade
             }
         }
 
-        public static Sprite Fireball => FromArt("Fireball", FireballRows, new Dictionary<char, Color32>
-        {
-            { 'r', new Color32(240, 110, 40, 255) },
-            { 'y', new Color32(255, 214, 90, 255) },
-            { 'w', new Color32(255, 250, 230, 255) },
-        });
+        public static Sprite Fireball => Shaded("Fireball12", FireballRows, null, null, 32);
 
-        public static Sprite Ember => FromArt("Ember", EmberRows, new Dictionary<char, Color32>
-        {
-            { 'y', new Color32(255, 220, 120, 255) },
-            { 'r', new Color32(255, 120, 40, 255) },
-        });
+        public static Sprite Ember => Shaded("Ember10", EmberRows, null, null, 32);
 
         /// <summary>
         /// 装備のアイコン（16ドット）。武器は種類ごとに形を描き分け、ランタン・防具（外套）・指輪もそろえた絵にする。
@@ -1299,44 +1290,125 @@ namespace VividOfFade
             ".kkkkkkkkkk.",
         };
 
-        static readonly Dictionary<char, Color32> ChestPalette = new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(30, 18, 12, 255) },
-            { 'b', new Color32(140, 86, 44, 255) },
-            { 'g', new Color32(230, 180, 70, 255) },
-            { 'y', new Color32(255, 230, 120, 255) },
-            { 'w', new Color32(255, 255, 230, 255) },
-        };
 
         /// <summary>宝の間の宝箱（閉じている／開いた）。</summary>
-        public static Sprite Chest(bool open) => open ? FromArt("ChestOpen", ChestOpenRows, ChestPalette) : FromArt("ChestClosed", ChestClosedRows, ChestPalette);
+        public static Sprite Chest(bool open) => open ? Shaded("ChestOpen28", ChestOpenRows, null, null, 32) : Shaded("ChestClosed28", ChestClosedRows, null, null, 32);
 
+
+
+        // ---- 置き物と弾（陰影つき、1 マス = 32 ドットの細かさ）----
         static readonly string[] ChestClosedRows =
         {
-            "..kkkkkkkkkk..",
-            ".kbbbbbbbbbbk.",
-            "kbbbbbbbbbbbbk",
-            "kggggggggggggk",
-            "kbbbbbgybbbbbk",
-            "kbbbbbyybbbbbk",
-            "kbbbbbbbbbbbbk",
-            "kbbbbbbbbbbbbk",
-            "kggggggggggggk",
-            ".kkkkkkkkkkkk.",
+            "............................",
+            "...wwggwwwwwwwwwwwwwwggww...",
+            "..wwwggwwwwwwwwwwwwwwggwww..",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".wwwwggwwwwggggggwwwwggwwww.",
+            ".gggggggggggggggggggggggggg.",
+            ".gggggggggggggggggggggggggg.",
+            ".ggggggggggggnngggggggggggg.",
+            ".wwwwggwwwwggnnggwwwwggwwww.",
+            ".wwwwggwwwwggggggwwwwggwwww.",
+            ".bbbbggbbbbggggggbbbbggbbbb.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".bbbbggbbbbbbbbbbbbbbggbbbb.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".gggggggggggggggggggggggggg.",
         };
 
         static readonly string[] ChestOpenRows =
         {
-            "..kkkkkkkkkk..",
-            ".kbbbbbbbbbbk.",
-            "kggggggggggggk",
-            "kyyyyyyyyyyyyk",
-            "kyywyyyyywyyyk",
-            "kggggggggggggk",
-            "kbbbbbbbbbbbbk",
-            "kbbbbbbbbbbbbk",
-            "kggggggggggggk",
-            ".kkkkkkkkkkkk.",
+            "..wwwggwwwwwwwwwwwwwwggwww..",
+            "..wwwggwwwwwwwwwwwwwwggwww..",
+            "..wwwggwwwwwwwwwwwwwwggwww..",
+            "..wwwggwwwwwwwwwwwwwwggwww..",
+            "..gggggggggggggggggggggggg..",
+            "..lllllllolllllllollllllll..",
+            "..llllllgglllollgglllllggl..",
+            "..llggllllllggllllllggllll..",
+            "..llllllllggllllllggllllll..",
+            ".gggggggggggggggggggggggggg.",
+            ".wwwwggwwwwggggggwwwwggwwww.",
+            ".wwwwggwwwwggggggwwwwggwwww.",
+            ".bbbbggbbbbggggggbbbbggbbbb.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".bbbbggbbbbbbbbbbbbbbggbbbb.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".wwwwggwwwwwwwwwwwwwwggwwww.",
+            ".gggggggggggggggggggggggggg.",
+        };
+
+        static readonly string[] AltarRows =
+        {
+            "................................",
+            "................L...............",
+            "..............LLLL..............",
+            "............LLLLLLLL............",
+            "............LLLllLLL............",
+            "...........LLLllllLLL...........",
+            "...........LLllllllLL...........",
+            "...........LLlloollLL...........",
+            "...........LLloooolLL...........",
+            "............LloooolL............",
+            "............LLloolLL............",
+            ".........mmmmmLllLmmmmm.........",
+            ".........mmmmmmmmmmmmmm.........",
+            ".......qqqqmmmmmmmmmmqqqq.......",
+            ".......qqqqqqqqqqqqqqqqqq.......",
+            ".......qqqqqqqqqqqqqqqqqq.......",
+            ".......gggggggggggggggggg.......",
+            ".........qqqqqqqqqqqqqq.........",
+            ".........qqqqqqqqqqqqqq.........",
+            ".........qqqqqqnnqqqqqq.........",
+            ".........qqqqqqnnqqqqqq.........",
+            ".........qqqqnnnnnnqqqq.........",
+            ".........qqqqnnnnnnqqqq.........",
+            ".........qqqqqqnnqqqqqq.........",
+            ".........qqqqqqnnqqqqqq.........",
+            ".........qqqqqqqqqqqqqq.........",
+            ".........qqqqqqqqqqqqqq.........",
+            "......gggggggggggggggggggg......",
+            "......qqqqqqqqqqqqqqqqqqqq......",
+            "......qqqqqqqqqqqqqqqqqqqq......",
+            "....qqqqqqqqqqqqqqqqqqqqqqqq....",
+            "....qqqqqqqqqqqqqqqqqqqqqqqq....",
+        };
+
+        static readonly string[] FireballRows =
+        {
+            "............",
+            "...LLLLLL...",
+            "..LLLLLLLL..",
+            ".LLLLlllLLL.",
+            ".LLLlllllLL.",
+            ".LLllloollL.",
+            ".LLlloooolL.",
+            ".LLllooollL.",
+            ".LLLllollLL.",
+            "..LLLlllLL..",
+            "...LLLLLL...",
+            "............",
+        };
+
+        static readonly string[] EmberRows =
+        {
+            "..........",
+            "....LL....",
+            "...LllL...",
+            "..LllllL..",
+            ".LlloollL.",
+            ".LlloollL.",
+            "..LllllL..",
+            "...LllL...",
+            "....LL....",
+            "..........",
         };
 
         // ---- アイコン（16 ドット、縁取りと陰影つき）----
@@ -2679,63 +2751,45 @@ namespace VividOfFade
         };
 
         /// <summary>祭壇（石の台の上に火が灯る）。足元が原点。</summary>
-        public static Sprite Altar => FromArt("Altar", AltarRows, new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(16, 12, 22, 255) },
-            { 'y', new Color32(255, 230, 140, 255) },
-            { 'r', new Color32(255, 130, 50, 255) },
-            { 's', new Color32(120, 112, 140, 255) },
-            { 'd', new Color32(80, 74, 98, 255) },
-            { 'g', new Color32(220, 180, 70, 255) },
-        });
+        public static Sprite Altar => Shaded("Altar32", AltarRows, null, null, 32);
 
-        static readonly string[] AltarRows =
-        {
-            ".......y........",
-            "......yry.......",
-            ".....yrrry......",
-            ".....yrrry......",
-            "......yry.......",
-            "....kkkkkkkk....",
-            "...kggggggggk...",
-            "...kssssssssk...",
-            "....kssssssk....",
-            "....kdsssdsk....",
-            "....ksdssdsk....",
-            "....ksssssdk....",
-            "...kssssssssk...",
-            "..kddddddddddk..",
-            "..kkkkkkkkkkkk..",
-            "................",
-        };
 
-        /// <summary>下り階段（床のひし形に、段の線と金色の縁）。</summary>
+        /// <summary>下り階段（64×32 のひし形。奥の暗がりへ段が下りていき、縁は金色）。</summary>
         public static Sprite Stairs
         {
             get
             {
-                const string key = "Stairs";
+                const string key = "Stairs64";
                 if (cache.TryGetValue(key, out var cached)) return cached;
-                const int w = 32, h = 16;
+                const int w = 64, h = 32;
                 var px = new Color32[w * h];
-                for (int y = 0; y < h; y++)
+                var stone = new Color32(96, 82, 66, 255);
+                for (int ty = 0; ty < h; ty++)
                 {
+                    int sy = h - 1 - ty;
                     for (int x = 0; x < w; x++)
                     {
-                        float d = Mathf.Abs(x - 15.5f) / 16f + Mathf.Abs(y - 7.5f) / 8f;
+                        float u = (x + 0.5f - 32f) / 32f, v = (sy + 0.5f - 16f) / 16f;
+                        float d = Mathf.Abs(u) + Mathf.Abs(v);
                         Color32 c = new Color32(0, 0, 0, 0);
                         if (d <= 1f)
                         {
-                            // 奥へ下っていく段：斜めの縞と、中ほどほど暗く
-                            bool step = ((x + 2 * y) / 5) % 2 == 0;
-                            byte v = (byte)(step ? 70 : 40);
-                            c = new Color32(v, (byte)(v * 0.8f), (byte)(v * 0.5f), 255);
-                            if (d > 0.82f) c = new Color32(255, 205, 90, 255);
+                            // a：左上（0）から右下（2）へ。段は a に沿って下りていき、奥ほど暗い
+                            float a = u + v + 1f;
+                            int step = (int)(a * 3.5f);
+                            float f = a * 3.5f - step;
+                            float dark = Mathf.Clamp01(a / 2f);
+                            var c0 = Shade(stone, -(int)(dark * 70f));
+                            if (f < 0.22f) c0 = Shade(c0, 22);        // 段の縁（光）
+                            else if (f > 0.8f) c0 = Shade(c0, -22);   // 次の段との影
+                            c0 = Shade(c0, (int)((TileNoise(x / 3f, sy / 2f, 81) - 0.5f) * 8f));
+                            c = c0;
+                            if (d > 0.9f) c = d > 0.96f ? new Color32(120, 84, 30, 255) : new Color32(255, 205, 90, 255);
                         }
-                        px[y * w + x] = c;
+                        px[ty * w + x] = c;
                     }
                 }
-                return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp));
+                return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), 32);
             }
         }
 
@@ -2829,24 +2883,7 @@ namespace VividOfFade
             (byte)(a.r + (b.r - a.r) * t), (byte)(a.g + (b.g - a.g) * t), (byte)(a.b + (b.b - a.b) * t), 255);
 
 
-        static readonly string[] FireballRows =
-        {
-            "..rr..",
-            ".ryyr.",
-            "rywwyr",
-            "rywwyr",
-            ".ryyr.",
-            "..rr..",
-        };
 
-        static readonly string[] EmberRows =
-        {
-            "..y..",
-            ".yry.",
-            "yrrry",
-            ".yry.",
-            "..y..",
-        };
 
         static readonly string[] WeaponIconRows =
         {
