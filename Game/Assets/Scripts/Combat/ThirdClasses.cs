@@ -12,7 +12,11 @@ namespace VividOfFade
     public static class ThirdClasses
     {
         public const int ReqLevel = 99;
-        public const int Cost = 2000;        // 火種
+        public const int BaseCost = 2000;    // 1回目の転生の火種。2回目からは倍々（2000→4000→8000…）
+
+        /// <summary>次の転生にかかる火種（転生した回数ぶん倍になる）。</summary>
+        public static int Cost(CharacterData ch) =>
+            (int)System.Math.Min(int.MaxValue, (long)BaseCost << Mathf.Clamp(ch != null ? ch.Rebirths : 0, 0, 30));
         public const int BonusPoints = 60;
         public const int StatsPerRebirth = 5; // 転生1回ごとに、全能力値にずっと足す
 
@@ -119,6 +123,6 @@ namespace VividOfFade
         public static bool MeetsRequirements(CharacterData ch) =>
             ch != null && ch.Advanced >= 0 && ch.Level >= ReqLevel;
 
-        public static bool CanRebirth(CharacterData ch) => MeetsRequirements(ch) && ch.Embers >= Cost;
+        public static bool CanRebirth(CharacterData ch) => MeetsRequirements(ch) && ch.Embers >= Cost(ch);
     }
 }

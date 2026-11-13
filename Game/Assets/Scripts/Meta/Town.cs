@@ -155,7 +155,7 @@ namespace VividOfFade
         public static bool Rebirth(CharacterData ch)
         {
             if (!ThirdClasses.CanRebirth(ch)) return false;
-            ch.Embers -= ThirdClasses.Cost;
+            ch.Embers -= ThirdClasses.Cost(ch);
             ch.Third = true;
             ch.Rebirths++;
             ch.Level = 1;

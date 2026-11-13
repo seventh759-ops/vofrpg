@@ -496,10 +496,10 @@ namespace VividOfFade
                 return;
             }
             string status = ch.Third
-                ? Loc.T($"You are a {third.DisplayName}, reborn {ch.Rebirths} time(s). At Lv {ThirdClasses.ReqLevel} you can be reborn again ({ThirdClasses.Cost} embers): back to Lv 1, {ThirdClasses.BonusPoints} bonus points, all stats +{ThirdClasses.StatsPerRebirth} more.",
-                    $"あなたは{third.DisplayName}（転生 {ch.Rebirths}回）。Lv{ThirdClasses.ReqLevel}になると、火種 {ThirdClasses.Cost} でまた転生できる。Lv1 に戻り、ボーナスで {ThirdClasses.BonusPoints} ポイント振れて、全能力値がさらに+{ThirdClasses.StatsPerRebirth}。")
-                : Loc.T($"You are a {current.DisplayName}. At Lv {ThirdClasses.ReqLevel} you can be reborn ({ThirdClasses.Cost} embers). You go back to Lv 1 and get {ThirdClasses.BonusPoints} bonus points. You can be reborn again and again.",
-                    $"あなたは{current.DisplayName}。Lv{ThirdClasses.ReqLevel}になると、火種 {ThirdClasses.Cost} で転生できる。Lv1 に戻り、ボーナスで {ThirdClasses.BonusPoints} ポイント振れる。何回でも転生できる。");
+                ? Loc.T($"You are a {third.DisplayName}, reborn {ch.Rebirths} time(s). At Lv {ThirdClasses.ReqLevel} you can be reborn again ({ThirdClasses.Cost(ch)} embers): back to Lv 1, {ThirdClasses.BonusPoints} bonus points, all stats +{ThirdClasses.StatsPerRebirth} more.",
+                    $"あなたは{third.DisplayName}（転生 {ch.Rebirths}回）。Lv{ThirdClasses.ReqLevel}になると、火種 {ThirdClasses.Cost(ch)} でまた転生できる。Lv1 に戻り、ボーナスで {ThirdClasses.BonusPoints} ポイント振れて、全能力値がさらに+{ThirdClasses.StatsPerRebirth}。")
+                : Loc.T($"You are a {current.DisplayName}. At Lv {ThirdClasses.ReqLevel} you can be reborn ({ThirdClasses.Cost(ch)} embers). You go back to Lv 1 and get {ThirdClasses.BonusPoints} bonus points. You can be reborn again and again (the cost doubles each time).",
+                    $"あなたは{current.DisplayName}。Lv{ThirdClasses.ReqLevel}になると、火種 {ThirdClasses.Cost(ch)} で転生できる。Lv1 に戻り、ボーナスで {ThirdClasses.BonusPoints} ポイント振れる。何回でも転生できる（火種は毎回倍になる）。");
             float sh = wrap.CalcHeight(new GUIContent(status), W - pad * 2f);
             GUI.Label(new Rect(pad, y, W - pad * 2f, sh), status, wrap);
             y += sh + H * 0.015f;
@@ -542,7 +542,7 @@ namespace VividOfFade
                     ty += lineH;
                 }
                 Req(Loc.T($"Lv {ThirdClasses.ReqLevel}   (now Lv {ch.Level})", $"Lv{ThirdClasses.ReqLevel}   （今 Lv{ch.Level}）"), ch.Level >= ThirdClasses.ReqLevel);
-                Req(Loc.T($"{ThirdClasses.Cost} embers   (have {ch.Embers})", $"火種 {ThirdClasses.Cost}   （持っている {ch.Embers}）"), ch.Embers >= ThirdClasses.Cost);
+                Req(Loc.T($"{ThirdClasses.Cost(ch)} embers   (have {ch.Embers})", $"火種 {ThirdClasses.Cost(ch)}   （持っている {ch.Embers}）"), ch.Embers >= ThirdClasses.Cost(ch));
             }
 
             float btnH = H * 0.055f;
@@ -550,7 +550,7 @@ namespace VividOfFade
             if (ThirdClasses.CanRebirth(ch))
             {
                 string again = ch.Third ? Loc.T($"REBIRTH #{ch.Rebirths + 1}", $"{ch.Rebirths + 1}回目の転生") : Loc.T("REBIRTH", "転生する");
-                Confirm(btn, "rebirth", again + Loc.T($"  ({ThirdClasses.Cost} embers)", $"（火種 {ThirdClasses.Cost}）"), () =>
+                Confirm(btn, "rebirth", again + Loc.T($"  ({ThirdClasses.Cost(ch)} embers)", $"（火種 {ThirdClasses.Cost(ch)}）"), () =>
                 {
                     if (Town.Rebirth(ch)) world.OnRebirth();
                 });
