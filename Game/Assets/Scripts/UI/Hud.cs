@@ -200,15 +200,20 @@ namespace VividOfFade
                 });
             }
 
-            // かかっている強化（下の帯の記録の欄の右側）
-            var buffStyle = new GUIStyle(small) { alignment = TextAnchor.UpperRight };
-            buffStyle.normal.textColor = new Color(1f, 0.85f, 0.5f);
-            var msgR = MessageWindow;
-            float by = msgR.y + BandMargin * 0.8f;
-            for (int b = 0; b < player.BuffCount && b < LogLines; b++)
+            // かかっている強化：ダンジョンの左上（上の帯のすぐ下）に、スキルのアイコンと残り秒数。残り2秒を切ると点滅して、切れたら消える
+            float bs = Screen.height * 0.045f, bgap = bs * 0.15f;
+            var secStyle = new GUIStyle(small) { alignment = TextAnchor.LowerRight, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(9, Mathf.RoundToInt(small.fontSize * 0.85f)) };
+            for (int b = 0; b < player.BuffCount; b++)
             {
-                GUI.Label(new Rect(msgR.x, by, msgR.width - BandMargin, LogLineH), $"{player.BuffName(b)}  {player.BuffRemaining(b):0.0}s", buffStyle);
-                by += LogLineH;
+                float left = player.BuffRemaining(b);
+                var br = new Rect(BandMargin * 2f + b * (bs + bgap), TopBandBottom + BandMargin * 1.5f, bs, bs);
+                float alpha = left < 2f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)) : 1f;
+                var old = GUI.color;
+                GUI.color = new Color(1f, 1f, 1f, alpha);
+                DrawSprite(br, PixelArt.SkillIcon(player.BuffSpec(b)));
+                GUI.color = old;
+                secStyle.normal.textColor = new Color(1f, 1f, 1f, alpha);
+                GUI.Label(new Rect(br.x, br.y, br.width - 1f, br.height + secStyle.fontSize * 0.5f), $"{Mathf.CeilToInt(left)}", secStyle);
             }
         }
 
@@ -591,11 +596,9 @@ namespace VividOfFade
                     c.a = t.T < ToastLife ? 1f : 0.55f;
                     var style = new GUIStyle(small);
                     style.normal.textColor = c;
-                    // 右側に強化の残り時間・「H：操作」がある行だけ、その幅をあける。収まらない文は縮めて1行に収める（切らない）
+                    // 右下に「H：操作」がある行だけ、その幅をあける。収まらない文は縮めて1行に収める（切らない）
                     int row = k - start;
                     float reserve = 0f;
-                    if (row < player.BuffCount && !(World.Paused || player.IsDead))
-                        reserve = small.CalcSize(new GUIContent($"{player.BuffName(row)}  {player.BuffRemaining(row):0.0}s")).x + mm;
                     if (row == LogLines - 1 && !Application.isMobilePlatform)
                         reserve = Mathf.Max(reserve, small.CalcSize(new GUIContent(Loc.T("H: Controls", "H：操作"))).x + mm);
                     FitLabel(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + row * logH, msgR.width - mm * 2f - reserve, logH), "+ " + t.Text, style);

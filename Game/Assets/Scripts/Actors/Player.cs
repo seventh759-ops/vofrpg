@@ -31,6 +31,7 @@ namespace VividOfFade
         public int BuffCount => buffs.Count;
         public string BuffName(int i) => buffs[i].Spec.DisplayName;
         public float BuffRemaining(int i) => buffs[i].Remaining;
+        public SkillSpec BuffSpec(int i) => buffs[i].Spec;
 
         /// <summary>向いている方向（論理座標）。押している間だけ攻撃で、敵がいないときに使う。</summary>
         public Vector2 FacingLogical => Iso.ToLogical(facing).normalized;
