@@ -64,9 +64,21 @@ namespace VividOfFade
         }
 
         /// <summary>メニューを開き直したときは、設定ではなくメニューの最初から。</summary>
-        public void Reset() => settings = false;
+        public void Reset()
+        {
+            settings = false;
+            settingsOnly = false;
+        }
 
         bool settings; // 設定の画面を開いているか
+        bool settingsOnly; // 町から設定だけを開いた（戻ると閉じる）
+
+        /// <summary>設定の画面だけを開く（町から）。「戻る」で閉じる。</summary>
+        public void OpenSettingsOnly()
+        {
+            settings = true;
+            settingsOnly = true;
+        }
 
         /// <summary>設定：音楽・BGM・FPS・言語・操作の一覧。</summary>
         void DrawSettings(GameWorld world, float W, float H, float pad, float gap, GUIStyle centered)
@@ -111,7 +123,15 @@ namespace VividOfFade
                 y += sh + gap;
             }
             y += gap;
-            hud.Button(new Rect(pad, y, bw, sh), Loc.T("BACK", "戻る"), sub, centered, () => settings = false);
+            hud.Button(new Rect(pad, y, bw, sh), Loc.T("BACK", "戻る"), sub, centered, () =>
+            {
+                settings = false;
+                if (settingsOnly)
+                {
+                    settingsOnly = false;
+                    world.OpenPanel(false, false, false); // 町から開いたときは、そのまま閉じる
+                }
+            });
         }
     }
 }

@@ -52,6 +52,9 @@ namespace VividOfFade
 
         /// <summary>メニューを開いたとき（設定の画面ではなく最初から出す）。</summary>
         public void ResetMenu() => menu?.Reset();
+
+        /// <summary>町から設定だけを開いたとき。</summary>
+        public void OpenSettingsOnly() => menu?.OpenSettingsOnly();
         AltarScreen altarScreen;
         public GuideBox Guide { get; private set; }
         public TownScreen Town { get; private set; }
@@ -624,6 +627,7 @@ namespace VividOfFade
             else if (World.ChoosingClass && World.InTown && World.BagOpen) bag.Draw(World);
             else if (World.ChoosingClass && World.InTown && World.StatsOpen) stats.Draw(World);
             else if (World.ChoosingClass && World.InTown && World.SkillsOpen) skills.Draw(World);
+            else if (World.ChoosingClass && World.InTown && World.MenuOpen) menu.Draw(World); // 町から開いた設定
             else if (World.ChoosingClass && World.InTown) Town.Draw(World);
             else if (World.ChoosingClass) DrawClassSelect();
             else if (World.Player.IsDead) DrawGameOver();

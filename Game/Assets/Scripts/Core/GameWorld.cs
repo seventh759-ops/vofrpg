@@ -527,7 +527,7 @@ namespace VividOfFade
                 }
                 else if (InTown && !PendingClass.HasValue)
                 {
-                    if (StatsOpen || SkillsOpen || BagOpen)
+                    if (StatsOpen || SkillsOpen || BagOpen || MenuOpen)
                     {
                         if (Input.CancelPressed || (StatsOpen && Input.StatsPressed) || (SkillsOpen && Input.SkillsPressed) || (BagOpen && Input.BagPressed)) OpenPanel(false, false, false);
                     }
@@ -1169,6 +1169,14 @@ namespace VividOfFade
             OpenPanel(false, false, false);
             Hud.ResetMenu();
             MenuOpen = true;
+        }
+
+        /// <summary>町から設定を開く（攻撃・音楽・BGM・FPS・言語・クレジット）。</summary>
+        public void OpenSettings()
+        {
+            OpenPanel(false, false, false);
+            MenuOpen = true;
+            Hud.OpenSettingsOnly();
         }
 
         /// <summary>BGM のテーマを次へ。</summary>
