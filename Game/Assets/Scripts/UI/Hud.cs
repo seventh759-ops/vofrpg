@@ -747,8 +747,9 @@ namespace VividOfFade
             OrnateFrame(menuR, FrameGold, FrameT);
             if (notice)
             {
-                float bsz = menuR.height * 0.75f * (1f + 0.08f * Mathf.Sin(Time.unscaledTime * 6f));
-                var badge = new Rect(menuR.xMax - bsz * 0.55f, menuR.y - bsz * 0.35f, bsz, bsz);
+                float bsz = menuR.height * 0.95f * (1f + 0.08f * Mathf.Sin(Time.unscaledTime * 6f));
+                // 右上の角に重ねる。画面の上端・右端からはみ出さないように内側へ寄せる
+                var badge = new Rect(Mathf.Min(menuR.xMax - bsz * 0.55f, W - bsz * 0.9f), Mathf.Max(menuR.y - bsz * 0.35f, -bsz * 0.1f), bsz, bsz);
                 var oldC = GUI.color;
                 GUI.color = new Color(0f, 0f, 0f, 0.8f);
                 GUI.DrawTexture(new Rect(badge.x - 1f, badge.y - 1f, badge.width + 2f, badge.height + 2f), TitleArt.SoftGlow);
