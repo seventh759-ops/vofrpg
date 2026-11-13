@@ -1134,7 +1134,7 @@ namespace VividOfFade
         }
 
         /// <summary>(cx, cy) を中心に半径 r のまるい光を重ねる。</summary>
-        static void Glow(float cx, float cy, float r, Color color)
+        public static void Glow(float cx, float cy, float r, Color color)
         {
             var old = GUI.color;
             GUI.color = color;
