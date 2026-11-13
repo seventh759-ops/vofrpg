@@ -245,6 +245,7 @@ namespace VividOfFade
         float slowMoTimer;
         float goldenSparkTimer;
         float stunSparkTimer;
+        int bossAnnouncedFloor = -1;
         float lifeStealBudget; // 吸収で回復できる残り（1秒あたり最大 HP の 2% ずつたまる）
         bool exploding;
         float lifeStealPool; // 与えたダメージから回復する分の端数
@@ -283,6 +284,8 @@ namespace VividOfFade
             Enemies.BossKilled += OnBossKilled;
             Enemies.BossWindup += (pos, radius, time) => Fx.Ring(pos, radius, new Color(1f, 0.2f, 0.2f, 0.7f), time);
             Enemies.BossSlam += OnBossSlam;
+            Enemies.BossTelegraph += OnBossTelegraph;
+            Enemies.BossStrike += OnBossStrike;
             Enemies.BossEnraged += () =>
             {
                 Hud.Toast(Loc.T("The boss is enraged!", "ボスが怒り狂った！"), new Color(1f, 0.4f, 0.3f));
@@ -512,6 +515,14 @@ namespace VividOfFade
 
             float stealCap = Player.MaxHp * GameConfig.LifeStealCapPct;
             lifeStealBudget = Mathf.Min(stealCap, lifeStealBudget + stealCap * dt);
+
+            // ボスが目を覚ましたら、名前を大きく出す（その層で1回）
+            var boss = Enemies.Boss;
+            if (boss != null && bossAnnouncedFloor != Floors.Floor)
+            {
+                bossAnnouncedFloor = Floors.Floor;
+                Hud.ShowBanner(BossInfo.Name(boss.BossKind), Loc.T($"Floor {Floors.Floor} boss", $"{Floors.Floor}層のボス"), new Color(1f, 0.4f, 0.35f));
+            }
 
             // 気絶中は、頭の上に黄色い火花が回る
             if (Player.Stunned)
@@ -753,6 +764,98 @@ namespace VividOfFade
             Sfx.Boom();
             cameraRig.Shake(0.2f, 0.3f);
             if ((Player.Pos - pos).sqrMagnitude <= radius * radius) Player.TakeHit(damage, Enemies.LastBlastSource);
+        }
+
+        static readonly Color BossRed = new Color(1f, 0.25f, 0.2f, 0.85f);
+        static readonly Color BossBlue = new Color(0.4f, 0.75f, 1f, 0.85f);
+        static readonly Color SafeGreen = new Color(0.35f, 1f, 0.5f, 0.9f);
+
+        /// <summary>ボスの攻撃の予告：範囲を赤（気絶は青）で脈打たせる。全体攻撃は部屋を赤く、安全な円を緑で。</summary>
+        void OnBossTelegraph(Enemy e, BossAttack atk, float time)
+        {
+            switch (atk)
+            {
+                case BossAttack.Slam:
+                    Fx.Marker(e.Pos, BossInfo.SlamRadius, BossRed, time);
+                    break;
+                case BossAttack.StunNova:
+                    Fx.Marker(e.Pos, BossInfo.NovaRadius, BossBlue, time);
+                    break;
+                case BossAttack.Cone:
+                    Fx.Fan(e.Pos, e.AttackDir, BossInfo.ConeRange, BossInfo.ConeHalfAngle * 2f, BossRed, time, true);
+                    break;
+                case BossAttack.Charge:
+                    Fx.Fan(e.Pos, e.AttackDir, 7f, 18f, new Color(1f, 0.5f, 0.2f, 0.7f), time, true);
+                    break;
+                case BossAttack.RoomWide:
+                {
+                    float r = e.Home != null ? Mathf.Max(e.Home.W, e.Home.H) * 0.75f : 9f;
+                    Fx.Marker(e.Home != null ? e.Home.Center : e.Pos, r, new Color(1f, 0.15f, 0.15f, 0.35f), time);
+                    foreach (var p in e.SafeSpots) Fx.Marker(p, BossInfo.SafeRadius, SafeGreen, time);
+                    Hud.Toast(Loc.T("Get into a green circle!", "緑の円の中へ！"), new Color(0.5f, 1f, 0.6f));
+                    break;
+                }
+                case BossAttack.Blink:
+                    Fx.Sparks(e.Pos, 16, new Color(0.7f, 0.5f, 1f, 1f), 1.5f, 0.5f, 2f, true);
+                    break;
+                default: // 弾・呼び出し：小さな合図
+                    Fx.Ring(e.Pos, 2f, new Color(1f, 0.85f, 0.5f, 0.8f), time);
+                    break;
+            }
+        }
+
+        /// <summary>ボスの攻撃が決まった：範囲攻撃の当たり判定と弱体効果、演出。</summary>
+        void OnBossStrike(Enemy e, BossAttack atk)
+        {
+            int damage = Mathf.RoundToInt(e.ContactDamage * BossInfo.DamageMult(atk));
+            var debuff = BossInfo.DebuffOf(e.BossKind, atk);
+            bool hit = false;
+            Vector2 to = Player.Pos - e.Pos;
+            switch (atk)
+            {
+                case BossAttack.Slam:
+                    Fx.Ring(e.Pos, BossInfo.SlamRadius, new Color(1f, 0.9f, 0.8f, 0.9f), 0.2f);
+                    Fx.Sparks(e.Pos, 18, new Color(0.8f, 0.75f, 0.7f, 1f), 4f, 0.45f);
+                    cameraRig.Shake(0.2f, 0.3f);
+                    hit = to.sqrMagnitude <= BossInfo.SlamRadius * BossInfo.SlamRadius;
+                    break;
+                case BossAttack.StunNova:
+                    Fx.Disc(e.Pos, BossInfo.NovaRadius, new Color(0.5f, 0.8f, 1f, 0.6f), 0.35f);
+                    Fx.Ring(e.Pos, BossInfo.NovaRadius, BossBlue, 0.3f);
+                    Fx.Sparks(e.Pos, 20, new Color(0.7f, 0.9f, 1f, 1f), 4f, 0.5f);
+                    cameraRig.Shake(0.15f, 0.25f);
+                    hit = to.sqrMagnitude <= BossInfo.NovaRadius * BossInfo.NovaRadius;
+                    break;
+                case BossAttack.Cone:
+                {
+                    Fx.Fan(e.Pos, e.AttackDir, BossInfo.ConeRange, BossInfo.ConeHalfAngle * 2f, new Color(1f, 0.6f, 0.2f, 0.9f), 0.3f, false);
+                    for (int k = 1; k <= 5; k++) Fx.Sparks(e.Pos + e.AttackDir * (k * BossInfo.ConeRange / 5f), 4, new Color(1f, 0.6f, 0.2f, 1f), 1.5f, 0.4f);
+                    cameraRig.Shake(0.15f, 0.25f);
+                    float dist = to.magnitude;
+                    hit = dist <= BossInfo.ConeRange && (dist < 0.5f || Vector2.Angle(e.AttackDir, to) <= BossInfo.ConeHalfAngle);
+                    break;
+                }
+                case BossAttack.RoomWide:
+                {
+                    bool safe = false;
+                    foreach (var p in e.SafeSpots) if ((Player.Pos - p).sqrMagnitude <= BossInfo.SafeRadius * BossInfo.SafeRadius) safe = true;
+                    float r = e.Home != null ? Mathf.Max(e.Home.W, e.Home.H) * 0.75f : 9f;
+                    Fx.Disc(e.Home != null ? e.Home.Center : e.Pos, r, new Color(1f, 0.3f, 0.2f, 0.5f), 0.4f);
+                    cameraRig.Shake(0.3f, 0.4f);
+                    hit = !safe;
+                    break;
+                }
+                case BossAttack.Blink:
+                    Fx.Ring(e.Pos, 1.5f, new Color(0.7f, 0.5f, 1f, 0.9f), 0.3f);
+                    Fx.Sparks(e.Pos, 16, new Color(0.7f, 0.5f, 1f, 1f), 2f, 0.5f);
+                    break;
+                case BossAttack.Summon:
+                    Fx.Ring(e.Pos, 2.5f, new Color(0.5f, 1f, 0.5f, 0.8f), 0.4f);
+                    break;
+            }
+            if (atk == BossAttack.Slam || atk == BossAttack.StunNova || atk == BossAttack.Cone || atk == BossAttack.RoomWide) Sfx.Boom();
+            if (hit && Player.TakeHit(damage, $"Boss {atk}") && debuff.HasValue)
+                Player.AddDebuff(debuff.Value, BossInfo.DebuffTimeOf(debuff.Value));
         }
 
         /// <summary>ボスを倒した：大きな噴水と、低い確率でボス専用の Mythic 装備。</summary>

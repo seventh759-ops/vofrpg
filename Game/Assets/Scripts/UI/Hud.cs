@@ -850,7 +850,7 @@ namespace VividOfFade
             var r = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.72f, w, h);
             Fill(r, new Color(0f, 0f, 0f, 0.7f));
             Fill(new Rect(r.x, r.y, r.width * Mathf.Clamp01(boss.Hp / boss.MaxHp), r.height), new Color(0.9f, 0.2f, 0.25f, 0.95f));
-            GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), Loc.T($"BOSS  -  FLOOR {World.Floors.Floor}", $"ボス  -  {World.Floors.Floor}層"), small);
+            GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), $"{BossInfo.Name(boss.BossKind)}  -  " + Loc.T($"FLOOR {World.Floors.Floor}", $"{World.Floors.Floor}層"), small);
         }
 
         /// <summary>精鋭の頭の上に、名前と小さな体力バー。</summary>

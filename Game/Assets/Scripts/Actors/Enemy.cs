@@ -33,6 +33,12 @@ namespace VividOfFade
         public float SlamTimer;   // 次に叩きつけるまで
         public float Windup;      // 力をためている残り時間（0 より大きい間は動かない）
         public bool Enraged;      // 体力が半分を切って怒った
+        public BossKind BossKind;  // 区域ごとのボス
+        public BossAttack Attack;  // 予告している攻撃
+        public int AttackStep;     // 攻撃の順番のどこまで来たか
+        public Vector2 AttackDir;  // 予告を始めたときのプレイヤーの方向
+        public float BlinkCooldown;
+        public readonly System.Collections.Generic.List<Vector2> SafeSpots = new System.Collections.Generic.List<Vector2>(); // 全体攻撃の安全な円
 
         // 層に入った時点で全部の部屋に置かれ、部屋に入るまで眠っている
         public bool Dormant;

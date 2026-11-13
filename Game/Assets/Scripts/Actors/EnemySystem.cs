@@ -8,7 +8,7 @@ namespace VividOfFade
     /// 敵の群れをまとめて動かす。1体ずつ Update を持たせず、ここで一括処理する。
     /// 当たり判定は物理エンジンを使わず、円同士の距離で計算する。
     /// </summary>
-    public sealed class EnemySystem : MonoBehaviour
+    public sealed partial class EnemySystem : MonoBehaviour
     {
         const float DeathTime = 0.15f;
         static readonly Color HitColor = new Color(1f, 0.55f, 0.55f, 1f);
@@ -126,6 +126,7 @@ namespace VividOfFade
             public float Life;
             public int Damage;
             public int Acc;
+            public DebuffKind? Debuff; // 当たったときにかける弱体効果（ボスの弾）
         }
         readonly List<Bullet> bullets = new List<Bullet>();
         readonly Stack<Bullet> freeBullets = new Stack<Bullet>();
@@ -293,10 +294,18 @@ namespace VividOfFade
             e.BaseScale = GameConfig.BossScale;
             e.Radius = GameConfig.SlimeRadius * GameConfig.BossScale;
             e.Speed = GameConfig.BossSpeed;
-            e.SlamTimer = GameConfig.BossSlamInterval * 0.6f;
+            e.SlamTimer = BossInfo.Interval * 0.6f;
+            e.BossKind = BossInfo.For(zone);
+            e.AttackStep = 0;
+            e.BlinkCooldown = 0f;
+            e.Charging = 0f;
+            e.Windup = 0f;
+            e.Enraged = false;
+            e.SafeSpots.Clear();
+            e.Sr.sprite = PixelArt.BossSprite(e.BossKind);
             e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale, 1f);
-            e.Sr.color = GameConfig.BossTint;
-            e.Tint = GameConfig.BossTint;
+            e.Sr.color = Color.white;
+            e.Tint = Color.white;
             ShowAura(e, new Color(1f, 0.25f, 0.2f));
         }
 
@@ -567,7 +576,7 @@ namespace VividOfFade
                 float speed = e.Speed;
                 if (e.IsBoss)
                 {
-                    if (UpdateBoss(e, dt, dist)) moveDir = Vector2.zero; // 力をためている間は止まる
+                    if (UpdateBoss(e, dt, dist, dir, target, ref moveDir, ref speed, room)) moveDir = Vector2.zero; // 予告している間は止まる
                 }
                 else if (UpdateKind(e, dt, dist, dir, ref moveDir, ref speed, player, room))
                 {
@@ -724,7 +733,7 @@ namespace VividOfFade
 
         int fireAcc; // 次に撃つ弾の命中（撃った術師の命中）
 
-        void Fire(Vector2 pos, Vector2 vel, int damage)
+        void Fire(Vector2 pos, Vector2 vel, int damage, DebuffKind? debuff = null)
         {
             var b = freeBullets.Count > 0 ? freeBullets.Pop() : CreateBullet();
             b.Sr.gameObject.SetActive(true);
@@ -733,6 +742,7 @@ namespace VividOfFade
             b.Life = 3f;
             b.Damage = damage;
             b.Acc = fireAcc;
+            b.Debuff = debuff;
             b.Sr.transform.position = Iso.ToScreen(pos);
             bullets.Add(b);
         }
@@ -757,7 +767,8 @@ namespace VividOfFade
                 b.Life -= dt;
                 b.Pos += b.Vel * dt;
                 bool hit = !player.IsDead && (b.Pos - player.Pos).sqrMagnitude < (GameConfig.PlayerRadius + 0.15f) * (GameConfig.PlayerRadius + 0.15f);
-                if (hit) player.TryHit(b.Damage, "Caster bullet", b.Acc, NearbyCount);
+                if (hit && player.TryHit(b.Damage, b.Debuff.HasValue ? "Boss bullet" : "Caster bullet", b.Acc, NearbyCount) && b.Debuff.HasValue)
+                    player.AddDebuff(b.Debuff.Value, BossInfo.DebuffTimeOf(b.Debuff.Value));
                 if (hit || b.Life <= 0f || !room.Contains(b.Pos))
                 {
                     b.Sr.gameObject.SetActive(false);
@@ -771,39 +782,6 @@ namespace VividOfFade
         }
 
         /// <summary>ボスの叩きつけ。力をためている間は true（動かない）。</summary>
-        bool UpdateBoss(Enemy e, float dt, float distToPlayer)
-        {
-            // 体力が半分を切ったら怒る：速くなり、叩きつけの間隔が短くなる
-            if (!e.Enraged && e.Hp < e.MaxHp * 0.5f)
-            {
-                e.Enraged = true;
-                e.Speed *= GameConfig.BossEnragedSpeedMult;
-                e.Tint = new Color(1f, 0.25f, 0.2f);
-                e.Sr.color = e.Tint;
-                BossEnraged?.Invoke();
-            }
-
-            if (e.Windup > 0f)
-            {
-                e.Windup -= dt;
-                if (e.Windup <= 0f)
-                {
-                    LastBlastSource = "Boss slam";
-                    BossSlam?.Invoke(e.Pos, GameConfig.BossSlamRadius, e.ContactDamage * 2);
-                    e.SlamTimer = e.Enraged ? GameConfig.BossEnragedSlamInterval : GameConfig.BossSlamInterval;
-                }
-                return true;
-            }
-            e.SlamTimer -= dt;
-            if (e.SlamTimer <= 0f && distToPlayer < GameConfig.BossSlamRadius + 2f)
-            {
-                e.Windup = GameConfig.BossWindup;
-                BossWindup?.Invoke(e.Pos, GameConfig.BossSlamRadius, GameConfig.BossWindup);
-                return true;
-            }
-            return false;
-        }
-
         public void Clear()
         {
             pendingSplits.Clear();

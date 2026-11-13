@@ -2161,6 +2161,237 @@ namespace VividOfFade
             "..........",
         };
 
+        /// <summary>区域ごとのボスの絵（32 ドット、陰影つき。BossKind の順）。敵の絵を土台に、色と飾りを変えている。</summary>
+        public static Sprite BossSprite(BossKind kind)
+        {
+            int i = Mathf.Clamp((int)kind, 0, BossRows.Length - 1);
+            return Shaded("Boss32_" + i, BossRows[i], BossColors[i]);
+        }
+
+        static readonly Dictionary<char, Color32[]>[] BossColors =
+        {
+                new Dictionary<char, Color32[]> { { 'q', Ramp(150, 146, 142, 112, 108, 106, 80, 77, 76, 52, 50, 50) } },
+                new Dictionary<char, Color32[]> { { 'G', Ramp(140, 200, 110, 96, 160, 76, 64, 118, 52, 40, 80, 34) }, { 'D', Ramp(80, 130, 60, 58, 100, 44, 40, 74, 32, 26, 50, 22) } },
+                new Dictionary<char, Color32[]> { { 'q', Ramp(176, 96, 66, 136, 70, 48, 100, 50, 36, 66, 32, 24) }, { 'G', Ramp(255, 170, 60, 230, 120, 40, 180, 80, 30, 120, 50, 20) } },
+                new Dictionary<char, Color32[]> { { 'j', Ramp(190, 226, 255, 130, 180, 240, 86, 130, 200, 54, 86, 150) } },
+                new Dictionary<char, Color32[]> { { 'j', Ramp(170, 120, 220, 130, 86, 180, 92, 58, 136, 60, 36, 96) }, { 'w', Ramp(240, 232, 210, 210, 198, 170, 170, 156, 128, 120, 108, 86) } },
+                new Dictionary<char, Color32[]> { { 'P', Ramp(70, 50, 96, 50, 34, 72, 34, 22, 52, 22, 14, 36) }, { 'M', Ramp(46, 32, 64, 34, 22, 50, 24, 14, 36, 16, 10, 26) } },
+        };
+
+        static readonly string[][] BossRows =
+        {
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "..........x..x....x..x..........",
+                "..........x..x....x..x..........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqRRqqqqRRqqq.........",
+                "....x..x.qqqqqqqqqqqqqq.x..x....",
+                "....x..x.qqqqqqqqqqqqqq.x..x....",
+                "...GGGGGGqqqqqqqqqqqqqqGGGGGG...",
+                "...GGGGGGqqqqqqqqqqqqqqGGGGGG...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqnqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqnqqRRqqqqqqqqqqqq...",
+                "...qqqqqqqqqnqqRRqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqRRqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqnqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqnqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqnqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "..qqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqq..qqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqq..qqqqqqqqqqqqq..",
+                "..........qqqqq..qqqqq..........",
+                "..........qqqqq..qqqqq..........",
+                "..........qqqqq..qqqqq..........",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................r...............",
+                "...............rgr..............",
+                "........x.r.....r.....rx........",
+                ".........rgr.........rgr........",
+                ".........xr.GjGGGGGj..r.........",
+                ".........GGGGGGGGGGGGGG.........",
+                "........jGGGGGGGGGGGGGGGj.......",
+                ".......GGGGGGGGGGGGGGGGGG.......",
+                "......GGGooGGGGGGGGGGGGGGG......",
+                ".....GGGoGeGGGGGGGGGGeGGGGG.....",
+                "....GGGGGGGeGGGGGGGGeGGGGGGG....",
+                "....GGGGGGGoeGGGGGGoeGGGGGGG....",
+                "....GGGGGGGeeGGGGGGeeGGGGGGG....",
+                "....GGGGGGGeeGGGGGGeeGGGGGGG....",
+                "....GGGGGGGGGGGGGGGGGGGGGGGG....",
+                "....GGGGGGGGGexeexeGGGGGGGGG....",
+                ".....GGGGGGGGeeeeeeGGGGGGGG.....",
+                "......DDDDDDDDDDDDDDDDDDDD......",
+                ".......DDDDDDDDDDDDDDDDDD.......",
+                "........DDDDDDDDDDDDDDDD........",
+                ".....DDDDDDDDDDDDDDDDDDDDDD.....",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "...............l................",
+                "............l..L..l.............",
+                "............L.....L.............",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".....l...qqqLLqqqqLLqqq...l.....",
+                "....lL.l.qqqqqqqqqqqqqq.l.Ll....",
+                "....L..L.qqqqqqqqqqqqqq.L..L....",
+                "...GGGGGGqqqqqqqqqqqqqqGGGGGG...",
+                "...GGGGGGqqqqqqqqqqqqqqGGGGGG...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqnqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqnqqLLqqqqqqqqqqqq...",
+                "...qqqqqqqqqnqqLLqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqLLqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqnqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqnqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqnqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "..qqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqq..qqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqq..qqqqqqqqqqqqq..",
+                "..........qqqqq..qqqqq..........",
+                "..........qqqqq..qqqqq..........",
+                "..........qqqqq..qqqqq..........",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "........x.......x......x........",
+                ".........x......x.....x.........",
+                ".........x...jjjjjj...x.........",
+                "..........x.jjjjjjjj.x..........",
+                "..........xjjjjjjjjjjx..........",
+                "..........jjjjjjjjjjjj..........",
+                ".........jjjjjjjjjjjjjj.........",
+                ".........jjjjjnnnnjjjjj.........",
+                ".........jjjjnnnnnnjjjj.........",
+                ".........jjjnnnnnnnnjjj.........",
+                ".........jjjnnnnnnnnjjj.........",
+                ".........jjjnnBnnBnnjjj.........",
+                "..........jjnnnnnnnnjj..........",
+                ".........jjjjnnnnnnjjjj.........",
+                "...BB....jjjjjnnnnjjjjj.........",
+                "..BBBB..jggggggggggggggj........",
+                ".BBBBBB.jjjjjjjjjjjjjjjj........",
+                ".BBBoBBjjjjjjjjjjjjjjjjjj.......",
+                "..BBBBjjjjggggggggggggjjj.......",
+                "...BBjjjjjjjjjjjjjjjjjjjjj......",
+                "....ssjjjjjjjjjjjjjjjjjjjj......",
+                ".....jjjjjjjjjjjjjjjjjjjjjj.....",
+                ".....jjjjjjjjjjjjjjjjjjjjjj.....",
+                "....jjjjjjjjjjjjjjjjjjjjjjjj....",
+                "....jjjjjjjjjjjjjjjjjjjjjjjj....",
+                "...jjjjjjjjjjjjjjjjjjjjjjjjjj...",
+                "...jjjjjjjjjjjjjjjjjjjjjjjjjj...",
+                "..jjjjjjjjjjjjjjjjjjjjjjjjjjjj..",
+                "..gggggggggggggggggggggggggggg..",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                ".............jjjjjj.............",
+                "............jjjjjjjj............",
+                "...........jjjjjjjjjj...........",
+                "..........jjjjjjjjjjjj..........",
+                ".........jjjjjjjjjjjjjj.........",
+                ".........jjjjjnnnnjjjjj.........",
+                ".........jjjjnnnnnnjjjj.........",
+                ".........jjjnnnnnnnnjjj.........",
+                ".........jjjnnnnnnnnjjj.........",
+                ".........jjjnnlnnlnnjjj.........",
+                "..........jjnnnnnnnnjj..........",
+                ".........jjjjnnnnnnjjjj.........",
+                ".........jjjjjnnnnjjjjj.........",
+                "..ggggggjggggggggggggggj........",
+                "..wwwnwwjjjjjjjjjjjjjjjj........",
+                "..wwwnwwjjjjjjjjjjjjjjjjj.......",
+                "..wwwnwwjjggggggggggggjjj.......",
+                "..wwwnwwjjjjjjjjjjjjjjjjjj......",
+                "......jjjjjjjjjjjjjjjjjjjj......",
+                ".....jjjjjjjjjjjjjjjjjjjjjj.....",
+                ".....jjjjjjjjjjjjjjjjjjjjjj.....",
+                "....jjjjjjjjjjjjjjjjjjjjjjjj....",
+                "....jjjjjjjjjjjjjjjjjjjjjjjj....",
+                "...jjjjjjjjjjjjjjjjjjjjjjjjjj...",
+                "...jjjjjjjjjjjjjjjjjjjjjjjjjj...",
+                "..jjjjjjjjjjjjjjjjjjjjjjjjjjjj..",
+                "..gggggggggggggggggggggggggggg..",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "...........x........x...........",
+                "...........x........x...........",
+                "x...........xP....Px...........x",
+                ".PP.........xP....Px.........PP.",
+                ".MMPPPP.....PP....PP.....PPPPMM.",
+                "..MMMMMPPPP.PPPPPPPP.PPPPMMMMM..",
+                "..MMMMMMMMMPPPPPPPPPPMMMMMMMMM..",
+                "..MMMMMMMMMMPPPPPPPPMMMMMMMMMM..",
+                "..MMMMMM.MMPPPPPPPPPPMM.MMMMMM..",
+                "..MMMMM...MPPPpPPpPPPM...MMMMM..",
+                "...MM..MPPPPPPpPPpPPPPPPM..MM...",
+                "...MMPPPMMPPPPPPPPPPPPMMPPPMM...",
+                "...PPMMMMMPPPPPPPPPPPPMMMMMPP...",
+                "..x..MMMMP.PPPPPPPPPP.PMMMM..x..",
+                "......MMP...PPPxxPPP...PMM......",
+                ".......P.....PPxxPP.....P.......",
+                "..............PPPP..............",
+                "..............n..n..............",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
+        };
+
         // ---- アイコン（16 ドット、縁取りと陰影つき）----
         // スキルは K の素材をスキルの色で塗る。並びは Nova, Barrage, Dash, Strike, Buff, Heal。
         static readonly string[][] SkillIconRows =
@@ -3338,6 +3569,30 @@ namespace VividOfFade
                 var tex = MakeTexture(key, size, size, px, TextureWrapMode.Clamp);
                 tex.filterMode = FilterMode.Bilinear;
                 return Store(key, tex);
+            }
+        }
+
+        /// <summary>塗りつぶした扇（半径 1 ユニット、右向きに ±60 度）。ボスの扇状の攻撃の予告。縁が少し濃い。</summary>
+        public static Sprite Fan
+        {
+            get
+            {
+                const string key = "Fan";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int size = 64;
+                var px = new Color32[size * size];
+                float c = (size - 1) * 0.5f;
+                for (int y = 0; y < size; y++)
+                    for (int x = 0; x < size; x++)
+                    {
+                        float dx = x - c, dy = y - c;
+                        float d = Mathf.Sqrt(dx * dx + dy * dy) / c;
+                        float ang = Mathf.Abs(Mathf.Atan2(dy, dx) * Mathf.Rad2Deg);
+                        byte a = 0;
+                        if (d <= 1f && ang <= 60f) a = (byte)(d > 0.93f || ang > 56f ? 255 : 110);
+                        px[y * size + x] = new Color32(255, 255, 255, a);
+                    }
+                return Store(key, MakeTexture(key, size, size, px, TextureWrapMode.Clamp), 32);
             }
         }
 

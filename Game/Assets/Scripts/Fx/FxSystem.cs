@@ -14,6 +14,7 @@ namespace VividOfFade
             public float Duration;
             public float Radius;
             public Color Color;
+            public bool Steady;      // 広がらずに脈打つ（ボスの攻撃の予告）
         }
 
         readonly List<Burst> active = new List<Burst>();
@@ -161,9 +162,55 @@ namespace VividOfFade
             b.Duration = duration;
             b.Radius = radius;
             b.Color = color;
+            b.Steady = false;
             b.Sr.sortingOrder = 20990;
             discs.Add(b);
             Apply(b);
+        }
+
+        /// <summary>ボスの攻撃の予告：その場で脈打つ円（中を薄く塗り、縁をはっきり）。</summary>
+        public void Marker(Vector2 pos, float radius, Color color, float duration)
+        {
+            Disc(pos, radius, new Color(color.r, color.g, color.b, color.a * 0.45f), duration);
+            discs[discs.Count - 1].Steady = true;
+            Apply(discs[discs.Count - 1]);
+            Ring(pos, radius, color, duration);
+            active[active.Count - 1].Steady = true;
+            Apply(active[active.Count - 1]);
+        }
+
+        /// <summary>扇（ボスの扇状の攻撃の予告と、その一撃）。steady なら脈打ち、そうでなければ消えていく。</summary>
+        public void Fan(Vector2 pos, Vector2 aim, float range, float arcDeg, Color color, float duration, bool steady)
+        {
+            var b = freeFans.Count > 0 ? freeFans.Pop() : CreateFan();
+            b.Root.gameObject.SetActive(true);
+            b.Root.position = Iso.ToScreen(pos);
+            b.Root.localScale = new Vector3(1.414f * range, 0.707f * range, 1f);
+            float angle = Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg + 45f;
+            b.Sr.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+            b.Sr.transform.localScale = new Vector3(1f, Mathf.Clamp(arcDeg / 120f, 0.2f, 1.6f), 1f);
+            b.T = 0f;
+            b.Duration = duration;
+            b.Color = color;
+            b.Steady = steady;
+            b.Sr.color = color;
+            b.Sr.sortingOrder = 20995;
+            fans.Add(b);
+        }
+
+        readonly List<Burst> fans = new List<Burst>();
+        readonly Stack<Burst> freeFans = new Stack<Burst>();
+
+        Burst CreateFan()
+        {
+            var root = new GameObject("Fan");
+            root.transform.SetParent(transform, false);
+            var child = new GameObject("Shape");
+            child.transform.SetParent(root.transform, false);
+            var sr = child.AddComponent<SpriteRenderer>();
+            sr.sprite = PixelArt.Fan;
+            Lighting.MakeGlow(sr);
+            return new Burst { Sr = sr, Root = root.transform };
         }
 
         /// <summary>立ちのぼる光の柱（落ちてくる技の着弾、強化など）。height はユニット。</summary>
@@ -235,6 +282,7 @@ namespace VividOfFade
             b.Duration = duration;
             b.Radius = radius;
             b.Color = color;
+            b.Steady = false;
             b.Sr.sortingOrder = 21000;
             active.Add(b);
             Apply(b);
@@ -253,6 +301,15 @@ namespace VividOfFade
         public void Tick(float dt)
         {
             UpdateWings(dt);
+            for (int i = fans.Count - 1; i >= 0; i--)
+            {
+                var b = fans[i];
+                b.T += dt;
+                if (b.T >= b.Duration) { b.Root.gameObject.SetActive(false); fans.RemoveAt(i); freeFans.Push(b); continue; }
+                var c = b.Color;
+                c.a = b.Steady ? b.Color.a * (0.55f + 0.45f * Mathf.Abs(Mathf.Sin(b.T * 8f))) : b.Color.a * (1f - b.T / b.Duration);
+                b.Sr.color = c;
+            }
             for (int i = discs.Count - 1; i >= 0; i--)
             {
                 var b = discs[i];
@@ -320,6 +377,15 @@ namespace VividOfFade
         static void Apply(Burst b)
         {
             float t = Mathf.Clamp01(b.T / b.Duration);
+            if (b.Steady)
+            {
+                float r0 = b.Radius;
+                b.Sr.transform.localScale = new Vector3(r0 * 1.414f, r0 * 0.707f, 1f);
+                var c0 = b.Color;
+                c0.a = b.Color.a * (0.55f + 0.45f * Mathf.Abs(Mathf.Sin(b.T * 8f)));
+                b.Sr.color = c0;
+                return;
+            }
             // スプライトは直径 2 ユニット（32 ドット / 16）
             float r = Mathf.Lerp(0.3f, 1f, Mathf.Sqrt(t)) * b.Radius;
             // 床の上の円は、クォータービューでは横長の楕円に見える
@@ -331,6 +397,8 @@ namespace VividOfFade
 
         public void Clear()
         {
+            foreach (var b in fans) { b.Root.gameObject.SetActive(false); freeFans.Push(b); }
+            fans.Clear();
             foreach (var b in discs) { b.Sr.gameObject.SetActive(false); freeDiscs.Push(b); }
             discs.Clear();
             foreach (var b in pillars) { b.Sr.gameObject.SetActive(false); freePillars.Push(b); }
