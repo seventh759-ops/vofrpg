@@ -1523,9 +1523,14 @@ namespace VividOfFade
 
         public static void Fill(Rect guiRect, Color color)
         {
+            // 端を整数のドットにそろえる（割合で決めた半端な座標のせいで、枠の線の太さが1ドットずれないように）。
+            // 幅や高さが1ドット未満の線は消えないよう、最低1ドット残す
+            float x0 = Mathf.Round(guiRect.x), y0 = Mathf.Round(guiRect.y);
+            float x1 = Mathf.Max(x0 + (guiRect.width > 0f ? 1f : 0f), Mathf.Round(guiRect.xMax));
+            float y1 = Mathf.Max(y0 + (guiRect.height > 0f ? 1f : 0f), Mathf.Round(guiRect.yMax));
             var old = GUI.color;
             GUI.color = color;
-            GUI.DrawTexture(guiRect, Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(x0, y0, x1 - x0, y1 - y0), Texture2D.whiteTexture);
             GUI.color = old;
         }
 
