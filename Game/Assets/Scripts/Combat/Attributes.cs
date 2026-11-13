@@ -64,19 +64,24 @@ namespace VividOfFade
         /// <summary>Lv1 から Lv99 になるまでの経験値の合計（98→99 の分を含む。Lv1→98 の合計のちょうど2倍）。</summary>
         static int ExpTo99 => ExpTo98 * 2;
 
+        /// <summary>Lv101 から先、1レベルごとに必要な経験値が何倍になるか。</summary>
+        public const float LateExpGrowth = 1.05f;
+
         /// <summary>
-        /// 次のレベルまでの経験値。
-        /// ・Lv98→99 は、MMO のように Lv1→98 の合計と同じだけ要る（最後の1レベルが道のりの半分）。
-        /// ・Lv99 から上は、Lv99→120 の合計が Lv1→99 の合計と同じくらいになるようにする
-        ///   （21レベルに分け、後ろほど重くする：平均の 0.6倍 → 1.4倍）。
+        /// 次のレベルまでの経験値（MMO のように、節目の1レベルが大きな壁）。
+        /// ・Lv1〜97：ふつうの伸び方。
+        /// ・Lv98→99：Lv1→98 の合計と同じ（ここまでの道のりの半分）。
+        /// ・Lv99→100：ふつうの伸び方の続き（上限が上がってすぐの1レベルは軽い）。
+        /// ・Lv100→101：Lv1→99 の合計と同じ（2つ目の壁）。
+        /// ・Lv101 から先：1レベルごとに LateExpGrowth 倍ずつ重くなる。
         /// </summary>
         public static int ExpToNext(int level)
         {
             if (level < MaxLevel - 1) return BaseExpToNext(level);
             if (level == MaxLevel - 1) return ExpTo98;
-            int steps = UnlockedMaxLevel - MaxLevel;
-            float t = Mathf.Clamp01((level - MaxLevel) / (float)(steps - 1));
-            return Mathf.RoundToInt(ExpTo99 / (float)steps * Mathf.Lerp(0.6f, 1.4f, t));
+            if (level == MaxLevel) return BaseExpToNext(level);
+            double v = ExpTo99 * System.Math.Pow(LateExpGrowth, level - (MaxLevel + 1));
+            return (int)System.Math.Min(int.MaxValue, System.Math.Round(v));
         }
 
         /// <summary>レベルアップ1回で増える最大 MP（そのときの WIS で決まる）。</summary>
