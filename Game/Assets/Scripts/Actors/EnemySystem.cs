@@ -71,7 +71,7 @@ namespace VividOfFade
             {
                 foreach (var e in Active)
                 {
-                    if (e.IsBoss && !e.Dying && !e.Dormant) return e; // 眠っているボスはまだ数えない（曲・体力バー）
+                    if (e.IsBoss && !e.Summoned && !e.Dying && !e.Dormant) return e; // 眠っているボス・呼び出されたボスは数えない（曲・体力バー）
                 }
                 return null;
             }
@@ -203,6 +203,8 @@ namespace VividOfFade
             e.Sr.color = Color.white;
             e.Sr.sprite = slimeSprite != null ? slimeSprite : PixelArt.Slime; // 使い回すので毎回入れ直す
             e.IsBoss = false;
+            e.Summoned = false;
+            e.SummonIndex = 0;
             e.Enraged = false;
             e.Elite = EliteKind.None;
             e.Tint = Color.white;
@@ -320,8 +322,67 @@ namespace VividOfFade
             e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale, 1f);
             e.Sr.color = Color.white;
             e.Tint = Color.white;
+            if (e.BossKind == BossKind.AbyssKing) e.Speed = GameConfig.BossSpeed * 0.25f; // アビスはほとんど動かず、離れた所から攻撃して歴代のボスを呼ぶ
             ShowAura(e, new Color(1f, 0.25f, 0.2f));
         }
+
+        /// <summary>アビスが呼び出す歴代のボス（灰の番人から逆さ月の司祭まで、順番に）。</summary>
+        static readonly BossKind[] summonOrder =
+        {
+            BossKind.Golem, BossKind.Mother, BossKind.Forge, BossKind.Frost, BossKind.Librarian, BossKind.Void,
+            BossKind.RiftWarden, BossKind.StarEater, BossKind.MoonPriest,
+        };
+
+        /// <summary>今いる呼び出されたボスの数（同時に出しすぎないため）。</summary>
+        public int SummonedAlive
+        {
+            get
+            {
+                int n = 0;
+                foreach (var e in Active) if (e.Summoned && !e.Dying) n++;
+                return n;
+            }
+        }
+
+        /// <summary>
+        /// アビスが歴代のボスを1体呼び出す。体力はアビスの一部、少し小さく、もとのボスの攻撃の順番で戦う。
+        /// 呼び出したボスの種類を返す（出せなければ null）。
+        /// </summary>
+        public BossKind? SummonPastBoss(Enemy master, Room room)
+        {
+            var kind = summonOrder[master.SummonIndex % summonOrder.Length];
+            int before = Active.Count;
+            Vector2 p = room.Clamp(master.Pos + UnityEngine.Random.insideUnitCircle.normalized * 3f, GameConfig.SlimeRadius * 2.2f);
+            Spawn(p, master.MaxHp * GameConfig.SummonedBossHpShare, Mathf.RoundToInt(master.ContactDamage * GameConfig.SummonedBossDamageShare));
+            if (Active.Count == before) return null;
+            master.SummonIndex++;
+            var e = Active[Active.Count - 1];
+            e.IsBoss = true;
+            e.Summoned = true;
+            e.Home = master.Home;
+            e.Acc = master.Acc;
+            e.Eva = master.Eva;
+            e.BaseScale = GameConfig.BossScale * 0.7f;
+            e.Radius = GameConfig.SlimeRadius * e.BaseScale;
+            e.Speed = GameConfig.BossSpeed;
+            e.SlamTimer = BossInfo.Interval;
+            e.BossKind = kind;
+            e.AttackStep = 0;
+            e.BlinkCooldown = 0f;
+            e.Charging = 0f;
+            e.Windup = 0f;
+            e.Enraged = false;
+            e.SafeSpots.Clear();
+            e.Sr.sprite = PixelArt.BossSprite(kind);
+            e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale, 1f);
+            e.Sr.color = Color.white;
+            e.Tint = Color.white;
+            ShowAura(e, new Color(1f, 0.85f, 0.95f));
+            return kind;
+        }
+
+        /// <summary>歴代のボスを呼び出した（呼び出したボスの種類）。演出と知らせは GameWorld。</summary>
+        public event Action<Enemy, BossKind> PastBossSummoned;
 
         /// <summary>足元に光る輪を出す（親の大きさに合わせて、床の上の楕円に見えるようにする）。</summary>
         static void ShowAura(Enemy e, Color color)
@@ -447,7 +508,7 @@ namespace VividOfFade
                 Kills++;
                 LastKillExpMult = e.ExpMult;
                 Killed?.Invoke(e.Pos);
-                if (e.IsBoss) BossKilled?.Invoke(e.Pos);
+                if (e.IsBoss && !e.Summoned) BossKilled?.Invoke(e.Pos); // 呼び出された歴代のボスを倒しても、層は終わらない
                 if (e.Elite != EliteKind.None) EliteKilled?.Invoke(e.Pos);
                 if (e.Kind == EnemyKind.Golden) GoldenKilled?.Invoke(e.Pos);
                 if (e.Elite == EliteKind.Splitter)
@@ -469,7 +530,7 @@ namespace VividOfFade
             var at = new List<Vector2>();
             foreach (var e in Active)
             {
-                if (e.Dying || e.IsBoss || e.Kind == EnemyKind.Golden) continue;
+                if (e.Dying || (e.IsBoss && !e.Summoned) || e.Kind == EnemyKind.Golden) continue; // 呼び出された歴代のボスも一緒に消える
                 e.Dying = true;
                 e.DyingTimer = DeathTime;
                 at.Add(e.Pos);

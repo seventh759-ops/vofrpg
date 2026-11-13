@@ -45,8 +45,9 @@ namespace VividOfFade
                 int count = Mathf.Min(GameConfig.RoomEnemies(Floor, area.W * area.H), perRoom);
                 if (area.IsBoss)
                 {
-                    enemies.SpawnBoss(area.Center, GameConfig.EnemyHp(Tier) * GameConfig.BossHpMult,
-                        Mathf.RoundToInt(GameConfig.EnemyDamage(Tier) * GameConfig.BossDamageMult));
+                    bool final = Floor == GameConfig.AbyssLastFloor; // 深淵の最奥（アビス）は、ほかのボスより強い
+                    enemies.SpawnBoss(area.Center, GameConfig.EnemyHp(Tier) * GameConfig.BossHpMult * (final ? GameConfig.FinalBossHpMult : 1f),
+                        Mathf.RoundToInt(GameConfig.EnemyDamage(Tier) * GameConfig.BossDamageMult * (final ? GameConfig.FinalBossDamageMult : 1f)));
                     Sleep(enemies, area);
                     count /= 2; // お供
                 }

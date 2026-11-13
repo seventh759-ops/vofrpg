@@ -378,6 +378,7 @@ namespace VividOfFade
             Player.Sr = Player.gameObject.AddComponent<SpriteRenderer>();
             Player.Sr.sprite = PixelArt.Player;
             Player.Dodged += OnPlayerDodged;
+            Enemies.PastBossSummoned += OnPastBossSummoned;
             Player.Hurt += OnPlayerHurt;
             Player.Evaded += pos => Hud.AddMiss(pos, true);
 
@@ -455,6 +456,7 @@ namespace VividOfFade
             GameConfig.CritResist = GameConfig.EnemyCritResist(ChoosingClass ? GameConfig.Tier(crCh != null ? crCh.BestFloor : 0) : Floors.Tier);
             LootSystem.EmberMult = fx != null ? 1f + fx.EmberFind : 1f;
             Enemies.EliteDamageMult = fx != null ? 1f + fx.EliteDamage : 1f;
+            Music.SetAbyssTown(Profile.AbyssUnlocked); // 深淵へ行けるようになったら、町の曲も深淵版
             Music.SetTown(InTown && ChoosingClass);
 
             potionCooldown = Mathf.Max(0f, potionCooldown - dt);
@@ -848,6 +850,19 @@ namespace VividOfFade
                     Fx.Ring(e.Pos, 2f, new Color(1f, 0.85f, 0.5f, 0.8f), time);
                     break;
             }
+        }
+
+        /// <summary>アビスが歴代のボスを呼び出した：呼び出した場所に光の柱と輪、名前を知らせる。</summary>
+        void OnPastBossSummoned(Enemy master, BossKind kind)
+        {
+            var summoned = Enemies.Active[Enemies.Active.Count - 1];
+            var white = new Color(1f, 0.9f, 0.95f, 0.95f);
+            Fx.Pillar(summoned.Pos, white, 1.4f, 7f, 0.5f);
+            Fx.Ring(summoned.Pos, 2.5f, white, 0.4f);
+            Fx.Sparks(summoned.Pos, 20, new Color(1f, 0.4f, 0.6f, 1f), 4f, 0.7f, 3f, true);
+            cameraRig.Shake(0.15f, 0.3f);
+            Sfx.Landed(Rarity.Mythic);
+            Hud.Toast(Loc.T($"Abyss calls forth: {BossInfo.Name(kind)}", $"アビスが「{BossInfo.Name(kind)}」を呼び出した"), new Color(1f, 0.6f, 0.75f));
         }
 
         /// <summary>ボスの攻撃が決まった：範囲攻撃の当たり判定と弱体効果、演出。</summary>

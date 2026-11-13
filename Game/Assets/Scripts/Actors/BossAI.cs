@@ -12,7 +12,7 @@ namespace VividOfFade
     /// Slam：自分のまわり／Charge：突進／BulletRing：全方向の弾／Summon：手下を呼ぶ／Cone：扇状／
     /// StunNova：気絶する波／BulletFan：扇状の弾／RoomWide：全体（安全な円の中だけ無事）／Blink：瞬間移動。
     /// </summary>
-    public enum BossAttack { Slam, Charge, BulletRing, Summon, Cone, StunNova, BulletFan, RoomWide, Blink }
+    public enum BossAttack { Slam, Charge, BulletRing, Summon, Cone, StunNova, BulletFan, RoomWide, Blink, SummonBoss } // SummonBoss：アビスが歴代のボスを呼ぶ
 
     public static class BossInfo
     {
@@ -72,8 +72,8 @@ namespace VividOfFade
             new[] { BossAttack.BulletRing, BossAttack.BulletFan, BossAttack.BulletRing, BossAttack.RoomWide, BossAttack.BulletFan },
             // 深淵：全体攻撃と気絶で縛る司祭
             new[] { BossAttack.RoomWide, BossAttack.StunNova, BossAttack.BulletFan, BossAttack.Summon, BossAttack.Cone },
-            // アビス（最奥）：すべての技を使う
-            new[] { BossAttack.Slam, BossAttack.Cone, BossAttack.BulletRing, BossAttack.Charge, BossAttack.RoomWide, BossAttack.StunNova, BossAttack.BulletFan, BossAttack.Blink },
+            // アビス（最奥）：ほとんど動かず、離れた所から撃ちながら、歴代のボスを順番に呼び出す
+            new[] { BossAttack.SummonBoss, BossAttack.BulletRing, BossAttack.BulletFan, BossAttack.RoomWide, BossAttack.SummonBoss, BossAttack.BulletRing, BossAttack.StunNova, BossAttack.BulletFan },
         };
 
         public static BossAttack Next(Enemy e) => patterns[(int)e.BossKind][e.AttackStep % patterns[(int)e.BossKind].Length];
@@ -90,6 +90,7 @@ namespace VividOfFade
                 case BossAttack.BulletFan: return 0.5f;
                 case BossAttack.RoomWide: return 2.2f;
                 case BossAttack.Blink: return 0.5f;
+                case BossAttack.SummonBoss: return 1.2f;
                 default: return 0.8f;
             }
         }
@@ -155,7 +156,7 @@ namespace VividOfFade
         bool UpdateBoss(Enemy e, float dt, float dist, Vector2 dir, Vector2 target, ref Vector2 moveDir, ref float speed, Room room)
         {
             // 体力が半分を切ったら怒る：速くなり、予告と間隔が短くなる
-            if (!e.Enraged && e.Hp < e.MaxHp * 0.5f)
+            if (!e.Enraged && !e.Summoned && e.Hp < e.MaxHp * 0.5f)
             {
                 e.Enraged = true;
                 e.Speed *= GameConfig.BossEnragedSpeedMult;
@@ -208,6 +209,7 @@ namespace VividOfFade
                     Begin(e, atk, dir, room);
                     return true;
                 }
+                if (e.BossKind == BossKind.AbyssKing) e.AttackStep++; // アビスはほとんど動かないので、届かない技は飛ばして次へ
             }
             return false;
         }
@@ -268,6 +270,22 @@ namespace VividOfFade
                     break;
                 case BossAttack.Blink:
                     e.Pos = BlinkTarget(e, target, room);
+                    break;
+                case BossAttack.SummonBoss:
+                    // 同時に出せるのは2体まで。多ければ、代わりに全方向の弾
+                    if (SummonedAlive < GameConfig.MaxSummonedBosses)
+                    {
+                        var kind = SummonPastBoss(e, room);
+                        if (kind.HasValue) PastBossSummoned?.Invoke(e, kind.Value);
+                    }
+                    else
+                    {
+                        for (int k = 0; k < 24; k++)
+                        {
+                            float a = k * Mathf.PI * 2f / 24f;
+                            Fire(e.Pos, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * GameConfig.BulletSpeed * 0.8f, bulletDamage, debuff);
+                        }
+                    }
                     break;
             }
             BossStrike?.Invoke(e, e.Attack);

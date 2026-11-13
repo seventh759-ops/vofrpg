@@ -78,6 +78,16 @@ namespace VividOfFade
         }
 
         /// <summary>町にいる間は町の曲（テーマの設定に関係なく）。</summary>
+        bool abyssTown; // 深淵へ行けるようになったら、町の曲を深淵版に
+
+        /// <summary>深淵へ行けるようになったか（町の曲が深淵版に変わる）。</summary>
+        public void SetAbyssTown(bool on)
+        {
+            if (on == abyssTown) return;
+            abyssTown = on;
+            if (townMode) ApplySongs();
+        }
+
         public void SetTown(bool on)
         {
             if (on == townMode) return;
@@ -89,7 +99,7 @@ namespace VividOfFade
         {
             if (titleMode || townMode)
             {
-                Queue(Get(titleMode ? TitleSong : TownSong), boss.clip);
+                Queue(Get(titleMode ? TitleSong : abyssTown ? AbyssTownSong : TownSong), boss.clip);
                 nextBoss = null;
             }
             else if (theme == ZoneMode)
@@ -478,6 +488,31 @@ namespace VividOfFade
             Bass = BassKind.Roots, BassVol = 0.16f, PadVol = 0.04f, ArpVol = 0.05f,
             Kick = "x.......x.......", Hat = "..x...x...x...x.",
             KickVol = 0.22f, HatVol = 0.014f, Echo = 0.25f,
+        };
+
+        /// <summary>
+        /// 深淵へ行けるようになった後の町の曲：町の曲と同じ笛の旋律を、短調に沈めて遅くした編曲。
+        /// 赤い月の下、静まりかえった町のイメージ。
+        /// </summary>
+        static readonly Song AbyssTownSong = new Song
+        {
+            Name = "town_abyss", Bpm = 78f,
+            Chords = new[] { Fm2, Db2, Bbm, C3, Fm2, Db2, Bbm, C3 },
+            Lead = new[]
+            {
+                72, -2, 73, 72, 68, -2, 72, -2,
+                75, -2, -2, 73, 72, -2, -2, -2,
+                73, -2, 77, -2, 75, 73, 72, -2,
+                70, -2, -2, 72, 73, -2, -2, -2,
+                72, -2, 73, 72, 68, -2, 65, -2,
+                67, -2, 68, -2, 72, -2, 75, -2,
+                73, -2, 72, -2, 70, -2, 68, 67,
+                67, -2, -2, -2, -1, -1, -1, -1,
+            },
+            Lead1 = LeadKind.Flute, LeadVol = 0.1f,
+            Bass = BassKind.Sustain, BassVol = 0.17f, PadVol = 0.07f, ArpVol = 0.035f,
+            Kick = "x...............", Hat = "",
+            KickVol = 0.22f, Echo = 0.45f,
         };
 
         /// <summary>黄金のスライムがいる間のボーナスタイムの曲：速い四つ打ちに、駆け上がるファンファーレの鐘。</summary>
