@@ -3251,12 +3251,14 @@ namespace VividOfFade
 
         /// <summary>
         /// 案内役（オリジナルキャラ）。40ドットを、プレイヤーと同じ縮尺（1マス32ドット）で描く。
-        /// 黒い影の体（Q）と灰色の毛（F）に陰影を付け、白い歯（o）だけは陰影なしでくっきり光らせる。
+        /// 黒い影の体（Q）と灰色の毛（F）に陰影を付け、歯（T）は明るい象牙色の陰影で白く浮かせ、上下とすき間に歯茎（U）を入れる。
         /// </summary>
         public static Sprite Guide => Shaded("Guide40", GuideRows, new Dictionary<char, Color32[]>
         {
             { 'Q', Ramp(44, 40, 52, 28, 24, 34, 19, 15, 25, 12, 8, 16) },
             { 'F', Ramp(112, 100, 114, 82, 72, 86, 60, 52, 64, 44, 38, 48) },
+            { 'T', Ramp(255, 255, 250, 244, 238, 222, 230, 222, 202, 212, 202, 180) }, // 歯：左上が白く光る象牙色
+            { 'U', Ramp(176, 74, 92, 138, 50, 68, 104, 34, 50, 70, 20, 34) },          // 歯茎
         }, null, 32);
 
         static readonly string[] GuideRows =
@@ -3285,13 +3287,13 @@ namespace VividOfFade
             ".......QQQFFQQQQQFQQQQQQQFQQFFQQQ.......",
             "........QFFQQQQQQQQQQQQQQQQQQFFQ........",
             ".......QFFQQQQQQQQQQQQQQQQQQQQFFQ.......",
-            "......QFFFooQQQQQQQQQQQQQQQQooFFFQ......",
-            "......QQFFooQooQooQooQooQooQooFFQQ......",
-            ".......QFFQQQooQooQooQooQooQQQFFQ.......",
+            "......QFFFTTUUUUUUUUUUUUUUUUTTFFFQ......",
+            "......QQFFTTUTTUTTUTTUTTUTTUTTFFQQ......",
+            ".......QFFQQQTTUTTUTTUTTUTTQQQFFQ.......",
             ".......QQFFQQQQQQQQQQQQQQQQQQFQQF.......",
-            "........QFQQQooQooQooQooQooQQQFQ........",
-            ".........QQQQooQooQooQooQooQQQQ.........",
-            ".........QFFFFQQQQQQQQQQQQFFFFQ.........",
+            "........QFQQQTTUTTUTTUTTUTTQQQFQ........",
+            ".........QQQQTTUTTUTTUTTUTTQQQQ.........",
+            ".........QFFFFUUUUUUUUUUUUFFFFQ.........",
             "..........QQQFFQQQQQQQQQFFFQQQ..........",
             "...........QQQFFFFQQQQFFFFQQQ...........",
             "..........QFFQQQFFFFFFFFQQQFFQ..........",
