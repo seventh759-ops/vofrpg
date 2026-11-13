@@ -193,7 +193,8 @@ namespace VividOfFade
         // 噴水の数は上限を設ける。火種は粒の数を増やしすぎず、1粒の量で増やす
         public static int FountainItems(int wave) => Mathf.Min(3 + wave / 2, 10);
         public static int FountainEmberOrbs(int wave) => Mathf.Min(6 + wave, 16);
-        public static int EmberAmount(int wave) => 1 + wave / 10;
+        public const float EmberMult = 1.5f; // 火種の量の倍率（少なかったので 1.5倍にした）
+        public static int EmberAmount(int wave) => Mathf.Max(1, Mathf.RoundToInt(EmberMult * (1f + wave / 10f)));
         public const float FountainRarityBonus = 0.6f;
 
         /// <summary>
