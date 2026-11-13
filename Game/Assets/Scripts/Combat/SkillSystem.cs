@@ -33,6 +33,12 @@ namespace VividOfFade
         /// <summary>新しいスキルを覚えた（スキル名）。</summary>
         public event Action<string> SkillLearned;
 
+        /// <summary>スキルを使った（頭の上にスキル名を出すため）。</summary>
+        public event Action<SkillSpec> Casted;
+
+        /// <summary>画面を揺らす（強さ、時間）。GameWorld が入れる。</summary>
+        public Action<float, float> Shake;
+
         public void Init(EnemySystem enemies, ProjectileSystem shots, FxSystem fx, Sfx sfx, Room room)
         {
             this.enemies = enemies;
@@ -169,7 +175,12 @@ namespace VividOfFade
             {
                 case SkillEffect.Nova:
                     Area(origin, radius, damage, st);
+                    // 閃光・大小2重の輪・外へ飛ぶ火花（倒した敵の爆発の輪とは見た目を変える）
+                    fx.Disc(origin, radius, Fade(spec.Color, 0.55f), 0.3f);
                     fx.Ring(origin, radius, spec.Color, 0.35f);
+                    fx.Ring(origin, radius * 0.6f, Color.white, 0.2f);
+                    fx.Sparks(origin, 14 + (int)(radius * 4f), spec.Color, radius * 2.5f, 0.45f);
+                    Shake?.Invoke(0.08f, 0.15f);
                     sfx.Boom();
                     if (spec.HealPct > 0f) player.Heal(Mathf.RoundToInt(player.MaxHp * spec.HealPct * power));
                     break;
@@ -185,6 +196,8 @@ namespace VividOfFade
                         bool crit = UnityEngine.Random.value < st.CritChance;
                         shots.Fire(origin + dir * 0.3f, dir, damage * (crit ? st.CritMult : 1f), crit, 2, spec.Range);
                     }
+                    fx.Disc(origin, 1.2f, Fade(spec.Color, 0.6f), 0.2f);
+                    fx.Sparks(origin, 10, spec.Color, 3f, 0.3f, 1.5f);
                     sfx.Fountain();
                     break;
                 }
@@ -196,7 +209,11 @@ namespace VividOfFade
                     player.SkillDash(aim, spec.Range, room);
                     Vector2 end = player.Pos;
                     HitAlong(start, end, radius, damage, st);
+                    // 通り道に残る火花（残像）と、着いた所の閃光
+                    for (int k = 0; k <= 6; k++) fx.Sparks(Vector2.Lerp(start, end, k / 6f), 3, spec.Color, 0.8f, 0.35f, 1f);
                     fx.Slash(end, aim, 1.8f, 160f, spec.Color);
+                    fx.Disc(end, 1.4f, Fade(spec.Color, 0.5f), 0.25f);
+                    Shake?.Invoke(0.06f, 0.12f);
                     sfx.Boom();
                     break;
                 }
@@ -212,17 +229,25 @@ namespace VividOfFade
 
                 case SkillEffect.Buff:
                     player.AddBuff(spec, power);
+                    // 体のまわりから立ちのぼる火花と、光の柱
+                    fx.Pillar(origin, Fade(spec.Color, 0.7f), 0.9f, 2.5f, 0.5f);
                     fx.Ring(origin, 1.2f, spec.Color, 0.4f);
+                    fx.Sparks(origin, 16, spec.Color, 1f, 0.8f, 2.2f, true);
                     sfx.Pickup();
                     break;
 
                 case SkillEffect.Heal:
                     player.Heal(Mathf.RoundToInt(player.MaxHp * spec.HealPct * power));
-                    fx.Ring(origin, 1.2f, spec.Color, 0.4f);
+                    // 緑の閃光と、立ちのぼる火花
+                    fx.Disc(origin, 1.5f, Fade(spec.Color, 0.5f), 0.4f);
+                    fx.Sparks(origin, 18, spec.Color, 1f, 0.9f, 2f, true);
                     sfx.Pickup();
                     break;
             }
+            Casted?.Invoke(spec);
         }
+
+        static Color Fade(Color c, float a) => new Color(c.r, c.g, c.b, a);
 
         void UpdateStrikes(float dt)
         {
@@ -233,7 +258,12 @@ namespace VividOfFade
                 if (s.Timer > 0f) continue;
                 strikes.RemoveAt(i);
                 enemies.DamageArea(s.Pos, s.Radius, s.Damage);
+                // 落ちた瞬間：光の柱・閃光・輪・火花・揺れ
+                fx.Pillar(s.Pos, Fade(s.Color, 0.9f), s.Radius * 0.8f, 4f, 0.35f);
+                fx.Disc(s.Pos, s.Radius * 1.2f, Fade(s.Color, 0.6f), 0.35f);
                 fx.Ring(s.Pos, s.Radius, s.Color, 0.3f);
+                fx.Sparks(s.Pos, 20, s.Color, s.Radius * 3f, 0.5f, 3f);
+                Shake?.Invoke(0.12f, 0.2f);
                 sfx.Boom();
             }
         }

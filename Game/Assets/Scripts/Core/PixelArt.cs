@@ -3226,6 +3226,48 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>床に広がる閃光（中心ほど濃い白の円。直径 2 ユニット、Ring と同じ大きさ）。</summary>
+        public static Sprite SoftDisc
+        {
+            get
+            {
+                const string key = "SoftDisc";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int size = 32;
+                var px = new Color32[size * size];
+                float c = (size - 1) * 0.5f;
+                for (int y = 0; y < size; y++)
+                    for (int x = 0; x < size; x++)
+                    {
+                        float d = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c)) / c;
+                        float a = Mathf.Clamp01(1f - d);
+                        px[y * size + x] = new Color32(255, 255, 255, (byte)(255 * a * Mathf.Sqrt(a)));
+                    }
+                var tex = MakeTexture(key, size, size, px, TextureWrapMode.Clamp);
+                tex.filterMode = FilterMode.Bilinear;
+                return Store(key, tex);
+            }
+        }
+
+        /// <summary>火花（4 ドットのひし形。中心が白く光る）。</summary>
+        public static Sprite Spark
+        {
+            get
+            {
+                const string key = "Spark";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int size = 4;
+                var px = new Color32[size * size];
+                for (int y = 0; y < size; y++)
+                    for (int x = 0; x < size; x++)
+                    {
+                        float d = Mathf.Abs(x - 1.5f) + Mathf.Abs(y - 1.5f);
+                        px[y * size + x] = d <= 1f ? new Color32(255, 255, 255, 255) : d <= 2f ? new Color32(255, 255, 255, 140) : new Color32(0, 0, 0, 0);
+                    }
+                return Store(key, MakeTexture(key, size, size, px, TextureWrapMode.Clamp), 32);
+            }
+        }
+
         /// <summary>クォータービューの床（32×16 のひし形）。</summary>
         public static Sprite IsoFloor => IsoFloorFor(Zones.For(1), false);
         public static Sprite IsoFloorAlt => IsoFloorFor(Zones.For(1), true);

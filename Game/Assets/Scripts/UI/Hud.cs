@@ -19,6 +19,8 @@ namespace VividOfFade
             public Color Color;
             public float T;
             public bool Big;
+            public float Life = NumberLife;
+            public bool Wide;  // スキル名など、長い文字
         }
 
         sealed class ToastLine
@@ -221,6 +223,21 @@ namespace VividOfFade
             });
         }
 
+        /// <summary>スキルを使ったとき、頭の上にスキル名をスキルの色で出す（少し長く残る）。</summary>
+        public void AddSkillName(Vector2 world, string name, Color color)
+        {
+            if (numbers.Count >= MaxNumbers) numbers.RemoveAt(0);
+            numbers.Add(new FloatNumber
+            {
+                World = Iso.ToScreen(world) + new Vector2(0f, 1.1f),
+                Text = name,
+                Color = new Color(Mathf.Min(1f, color.r + 0.25f), Mathf.Min(1f, color.g + 0.25f), Mathf.Min(1f, color.b + 0.25f), 1f),
+                Big = true,
+                Life = 0.9f,
+                Wide = true,
+            });
+        }
+
         public void AddNumber(Vector2 world, float amount, bool crit)
         {
             if (numbers.Count >= MaxNumbers) numbers.RemoveAt(0);
@@ -360,7 +377,7 @@ namespace VividOfFade
             for (int i = numbers.Count - 1; i >= 0; i--)
             {
                 numbers[i].T += dt;
-                if (numbers[i].T >= NumberLife) numbers.RemoveAt(i);
+                if (numbers[i].T >= numbers[i].Life) numbers.RemoveAt(i);
             }
             for (int i = toasts.Count - 1; i >= 0; i--)
             {
@@ -674,13 +691,13 @@ namespace VividOfFade
             if (cam == null) return;
             foreach (var n in numbers)
             {
-                float t = n.T / NumberLife;
-                Vector3 sp = cam.WorldToScreenPoint(new Vector3(n.World.x, n.World.y + t * 0.6f, 0f));
+                float t = n.T / n.Life;
+                Vector3 sp = cam.WorldToScreenPoint(new Vector3(n.World.x, n.World.y + t * (n.Wide ? 0.35f : 0.6f), 0f));
                 var style = n.Big ? big : number;
                 var c = n.Color;
                 c.a = 1f - t * t;
                 style.normal.textColor = c;
-                float w = style.fontSize * 4f;
+                float w = style.fontSize * (n.Wide ? 12f : 4f);
                 float h = style.fontSize * 1.5f;
                 GUI.Label(new Rect(sp.x - w * 0.5f, Screen.height - sp.y - h * 0.5f, w, h), n.Text, style);
             }

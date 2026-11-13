@@ -20,6 +20,23 @@ namespace VividOfFade
         readonly Stack<Burst> free = new Stack<Burst>();
         readonly List<Burst> slashes = new List<Burst>();
         readonly Stack<Burst> freeSlashes = new Stack<Burst>();
+        readonly List<Burst> discs = new List<Burst>();
+        readonly Stack<Burst> freeDiscs = new Stack<Burst>();
+        readonly List<Burst> pillars = new List<Burst>();
+        readonly Stack<Burst> freePillars = new Stack<Burst>();
+
+        sealed class Particle
+        {
+            public SpriteRenderer Sr;
+            public Vector2 Pos, Vel;  // 床の上の位置と速さ（論理座標）
+            public float H, Vh;       // 高さと上向きの速さ
+            public float Gravity;
+            public float T, Life;
+            public Color Color;
+        }
+        readonly List<Particle> particles = new List<Particle>();
+        readonly Stack<Particle> freeParticles = new Stack<Particle>();
+        const int MaxParticles = 400;
 
         // レベルアップの羽（頭の上で開いて、上がりながら消える）
         public const float LevelUpDuration = 1.5f;
@@ -124,6 +141,91 @@ namespace VividOfFade
             return new Burst { Sr = sr, Root = root.transform };
         }
 
+        /// <summary>床に広がる閃光（中心が濃い円）。スキルの「放った」瞬間に使う。</summary>
+        public void Disc(Vector2 pos, float radius, Color color, float duration = 0.3f)
+        {
+            Burst b;
+            if (freeDiscs.Count > 0) b = freeDiscs.Pop();
+            else
+            {
+                var go = new GameObject("Disc");
+                go.transform.SetParent(transform, false);
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = PixelArt.SoftDisc;
+                Lighting.MakeGlow(sr);
+                b = new Burst { Sr = sr };
+            }
+            b.Sr.gameObject.SetActive(true);
+            b.Sr.transform.position = Iso.ToScreen(pos);
+            b.T = 0f;
+            b.Duration = duration;
+            b.Radius = radius;
+            b.Color = color;
+            b.Sr.sortingOrder = 20990;
+            discs.Add(b);
+            Apply(b);
+        }
+
+        /// <summary>立ちのぼる光の柱（落ちてくる技の着弾、強化など）。height はユニット。</summary>
+        public void Pillar(Vector2 pos, Color color, float width, float height, float duration = 0.4f)
+        {
+            Burst b;
+            if (freePillars.Count > 0) b = freePillars.Pop();
+            else
+            {
+                var go = new GameObject("Pillar");
+                go.transform.SetParent(transform, false);
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = PixelArt.Beam; // 1×32 ドット（16 ドットで 1 ユニット）、足元が原点
+                Lighting.MakeGlow(sr);
+                b = new Burst { Sr = sr };
+            }
+            b.Sr.gameObject.SetActive(true);
+            b.Sr.transform.position = Iso.ToScreen(pos);
+            b.T = 0f;
+            b.Duration = duration;
+            b.Radius = width;
+            b.Color = color;
+            b.Sr.transform.localScale = new Vector3(width * 16f, height / 2f, 1f);
+            b.Sr.sortingOrder = 21000;
+            pillars.Add(b);
+        }
+
+        /// <summary>
+        /// 火花をまき散らす。speed は床の上を広がる速さ、pop は上へ跳ねる強さ。
+        /// rising なら重さなしでふわっと立ちのぼる（強化・回復）。
+        /// </summary>
+        public void Sparks(Vector2 pos, int count, Color color, float speed, float life, float pop = 2f, bool rising = false)
+        {
+            for (int i = 0; i < count && particles.Count < MaxParticles; i++)
+            {
+                Particle p;
+                if (freeParticles.Count > 0) p = freeParticles.Pop();
+                else
+                {
+                    var go = new GameObject("Spark");
+                    go.transform.SetParent(transform, false);
+                    var sr = go.AddComponent<SpriteRenderer>();
+                    sr.sprite = PixelArt.Spark;
+                    Lighting.MakeGlow(sr);
+                    p = new Particle { Sr = sr };
+                }
+                p.Sr.gameObject.SetActive(true);
+                float a = UnityEngine.Random.value * Mathf.PI * 2f;
+                float sp = speed * (0.4f + 0.6f * UnityEngine.Random.value);
+                p.Pos = pos + (rising ? new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 0.5f * UnityEngine.Random.value : Vector2.zero);
+                p.Vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * (rising ? sp * 0.15f : sp);
+                p.H = rising ? UnityEngine.Random.value * 0.3f : 0.2f;
+                p.Vh = rising ? pop * (0.6f + 0.4f * UnityEngine.Random.value) : pop * (0.5f + UnityEngine.Random.value);
+                p.Gravity = rising ? 0f : 9f;
+                p.T = 0f;
+                p.Life = life * (0.7f + 0.3f * UnityEngine.Random.value);
+                p.Color = color;
+                p.Sr.sortingOrder = 21000;
+                particles.Add(p);
+            }
+        }
+
         public void Ring(Vector2 pos, float radius, Color color, float duration = 0.25f)
         {
             var b = free.Count > 0 ? free.Pop() : Create();
@@ -151,6 +253,39 @@ namespace VividOfFade
         public void Tick(float dt)
         {
             UpdateWings(dt);
+            for (int i = discs.Count - 1; i >= 0; i--)
+            {
+                var b = discs[i];
+                b.T += dt;
+                if (b.T >= b.Duration) { b.Sr.gameObject.SetActive(false); discs.RemoveAt(i); freeDiscs.Push(b); continue; }
+                Apply(b);
+            }
+            for (int i = pillars.Count - 1; i >= 0; i--)
+            {
+                var b = pillars[i];
+                b.T += dt;
+                if (b.T >= b.Duration) { b.Sr.gameObject.SetActive(false); pillars.RemoveAt(i); freePillars.Push(b); continue; }
+                float t = b.T / b.Duration;
+                var c = b.Color;
+                c.a = b.Color.a * (1f - t);
+                b.Sr.color = c;
+                var sc = b.Sr.transform.localScale;
+                b.Sr.transform.localScale = new Vector3(b.Radius * 16f * (1f - 0.6f * t), sc.y, 1f); // 細くなりながら消える
+            }
+            for (int i = particles.Count - 1; i >= 0; i--)
+            {
+                var p = particles[i];
+                p.T += dt;
+                if (p.T >= p.Life) { p.Sr.gameObject.SetActive(false); particles.RemoveAt(i); freeParticles.Push(p); continue; }
+                p.Pos += p.Vel * dt;
+                p.Vel *= 1f - Mathf.Min(1f, 3f * dt); // だんだん遅く
+                p.Vh -= p.Gravity * dt;
+                p.H = Mathf.Max(0f, p.H + p.Vh * dt);
+                p.Sr.transform.position = (Vector3)(Iso.ToScreen(p.Pos) + new Vector2(0f, p.H));
+                var c = p.Color;
+                c.a = p.Color.a * (1f - p.T / p.Life);
+                p.Sr.color = c;
+            }
             for (int i = slashes.Count - 1; i >= 0; i--)
             {
                 var b = slashes[i];
@@ -196,6 +331,12 @@ namespace VividOfFade
 
         public void Clear()
         {
+            foreach (var b in discs) { b.Sr.gameObject.SetActive(false); freeDiscs.Push(b); }
+            discs.Clear();
+            foreach (var b in pillars) { b.Sr.gameObject.SetActive(false); freePillars.Push(b); }
+            pillars.Clear();
+            foreach (var p in particles) { p.Sr.gameObject.SetActive(false); freeParticles.Push(p); }
+            particles.Clear();
             if (wingRoot != null) wingRoot.gameObject.SetActive(false);
             wingT = -1f;
             foreach (var b in slashes)
