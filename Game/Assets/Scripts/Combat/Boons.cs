@@ -73,7 +73,7 @@ namespace VividOfFade
             var s = (PlayerStats)MemberwiseClone();
             s.Damage *= 1f + b.Damage;
             s.FireInterval /= 1f + b.AttackSpeed;
-            s.CritChance = Mathf.Min(s.CritChance + b.Crit, 0.75f);
+            s.CritChance = Mathf.Min(s.CritChance + b.Crit, 1f); // 会心率の上限は 100%（会心ビルドができるように、75% の上限はなくした）
             s.CritMult += b.CritDamage;
             s.MaxHp = Mathf.RoundToInt(s.MaxHp * (1f + b.HpPct));
             s.MaxMp = Mathf.RoundToInt(s.MaxMp * (1f + b.MpPct));

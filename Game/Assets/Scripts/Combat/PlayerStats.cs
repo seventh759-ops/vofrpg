@@ -302,7 +302,7 @@ namespace VividOfFade
             s.CooldownMult = 1f - Mathf.Min(0.5f, cdr); // 待ち時間の短縮は 50% まで
             s.FireInterval = w.Interval / (1f + atkSpd);
             s.MoveSpeed = cls.Speed * (1f + moveSpd);
-            s.CritChance = Mathf.Min(s.CritChance + w.CritBonus, 0.75f);
+            s.CritChance = Mathf.Min(s.CritChance + w.CritBonus, 1f); // 会心率の上限は 100%（会心ビルドができるように、75% の上限はなくした）
 
             switch (w.Attack)
             {
