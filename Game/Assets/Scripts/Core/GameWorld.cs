@@ -237,7 +237,7 @@ namespace VividOfFade
             new[] { "Embers buy boons at altars, and potions and gear in town.", "火種は祭壇で加護に、町で薬や装備に変えられる。" },
             new[] { "Every 5 floors a boss waits. Beat it and you can start beyond it.", "5層ごとにボスがいる。倒せば、その先から始められる。" },
             new[] { "Tap the strip above a skill button to cast it automatically.", "スキルのボタンの上の帯を押すと、オートで使ってくれる。" },
-            new[] { "A Shroud drains your light. Take it out first.", "覆いは灯りを奪う。先に倒しな。" },
+            new[] { "A Shroud blinds you: less light, worse hit and evasion. Take it out first.", "覆いは暗闇にする。暗くなって、命中も回避も落ちる。先に倒しな。" },
             new[] { "The storage in town is shared by every class.", "町の倉庫は、どの職業でも使えるよ。" },
         };
         bool altarLatch;
@@ -548,7 +548,9 @@ namespace VividOfFade
                 }
             }
 
-            Player.LightPenalty = Enemies.ShroudNear ? GameConfig.ShroudPenalty : 0f;
+            // 覆いの精鋭の近くにいる間は「暗闇」（離れて少しで切れる）：暗くなり、命中・回避も下がる
+            if (Enemies.ShroudNear) Player.AddDebuff(DebuffKind.Blind, 0.5f);
+            Player.LightPenalty = Player.HasDebuff(DebuffKind.Blind) ? Debuffs.BlindLight : 0f;
             Lighting.Tick(Player.Pos, Player.EffectiveLight, dt);
             cameraRig.CenterShift = Hud.ViewCenterShift; // 上下の帯の間の中心にプレイヤーを置く
             cameraRig.Tick(Player.Pos, Room, dt);
@@ -603,7 +605,7 @@ namespace VividOfFade
             {
                 if (e.Dying || e.Elite == EliteKind.None || (e.Pos - Player.Pos).sqrMagnitude > r * r) continue;
                 Guide("elite", Loc.T("The big ones with names are elites. Tough, but they drop a flood of loot.", "名前の付いた大きいのは精鋭。硬いけど、倒せばドロップがあふれる。"),
-                    Loc.T("A purple Shroud drains your light when close. If your light shrinks, take it out first.", "紫の「覆い」は近くにいると灯りを奪う。灯りが狭まったら、先に片付けな。"));
+                    Loc.T("A purple Shroud blinds you when close: less light, worse hit and evasion. Take it out first.", "紫の「覆い」は近くにいると暗闇にする。暗くなって、命中も回避も落ちる。先に倒しな。"));
                 return;
             }
         }

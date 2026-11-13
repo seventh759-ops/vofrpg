@@ -44,6 +44,12 @@ namespace VividOfFade
         public DebuffKind DebuffAt(int i) => debuffs[i].Kind;
         public float DebuffRemaining(int i) => debuffs[i].Remaining;
 
+        public bool HasDebuff(DebuffKind kind)
+        {
+            foreach (var d in debuffs) if (d.Kind == kind) return true;
+            return false;
+        }
+
         /// <summary>気絶している（動けず、攻撃もスキルも出ない）。</summary>
         public bool Stunned
         {

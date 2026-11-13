@@ -570,12 +570,11 @@ namespace VividOfFade
                 GUI.Label(expBack, $"{Mathf.FloorToInt(expRatio * 100f)}%", expText);
             }
 
-            // 3段目：層（ボス・灯りを奪われているときは添える）と、右に回避の待ち時間
+            // 3段目：層（ボスのときは添える）と、右に回避の待ち時間
             float lineH = small.fontSize * 1.35f;
             var floorRow = new Rect(mm, expBack.yMax + mm * 0.6f, W - mm * 2f, FloorRowH);
             Fill(floorRow, new Color(0.13f, 0.12f, 0.15f, 1f));
             string floorText = Loc.T($"FLOOR {World.Floors.Floor}", $"{World.Floors.Floor}層") + (World.Floors.IsBossFloor ? Loc.T("   BOSS", "   ボス") : "");
-            if (player.LightPenalty > 0f) floorText += Loc.T("   Light drained!", "   灯りを奪われている！");
             var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
             FitLabel(new Rect(floorRow.x + mm, floorRow.y, floorRow.width * 0.7f, floorRow.height), floorText, floorStyle);
             var dodge = new Rect(floorRow.xMax - W * 0.22f - mm, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);

@@ -143,7 +143,6 @@ namespace VividOfFade
         public const int EliteFountainItems = 2;
         public const float EliteRarityBonus = 0.8f;
         public const float ShroudRange = 5f;      // この距離にいると明るさを奪う
-        public const float ShroudPenalty = 2f;
         public const int SplitCount = 3;       // ボスから Mythic 装備が落ちる確率
         public const int BossFountainItems = 8;
         public const float BossRarityBonus = 1.5f;

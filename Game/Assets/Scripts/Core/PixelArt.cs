@@ -933,6 +933,25 @@ namespace VividOfFade
                 "EBBBBBBBBBBBBBBE",
                 "EEEEEEEEEEEEEEEE",
             },
+            new[]
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBrrE",
+                "EBBBBBBBBBBBrrBE",
+                "EBBBdddddddrrBBE",
+                "EBBBdddkkdrrBBBE",
+                "EBBdddkskrrddBBE",
+                "EBdddkkkrrkdddBE",
+                "EBdddkkrrkkdddBE",
+                "EBBdddrrkkdddBBE",
+                "EBBBdrrkkdddBBBE",
+                "EBBBrrdddddBBBBE",
+                "EBBrrBBBBBBBBBBE",
+                "EBrrBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
         };
 
         static readonly string[] SkillArtNames = { "Flame Ring", "Fire Barrage", "Flare", "Meteor", "Ember Shield", "Inferno", "Starfall", "Beacon", "Cataclysm", "Constellation", "Whirlwind", "Shadow Dash", "Frenzy", "Crescent Wave", "Second Wind", "Thousand Cuts", "Eclipse Rush", "Crimson Spiral", "Umbral Storm", "Sanguine Tide", "Holy Pulse", "Mend", "Lantern Ward", "Kindle", "Flame Pillar", "Judgment", "Sunburst", "Iron Vigil", "Daybreak", "Unbreakable" };
