@@ -681,7 +681,7 @@ namespace VividOfFade
             var floorRow = new Rect(mm, expBack.yMax + mm * 0.8f, W - mm * 2f, FloorRowH);
             Fill(floorRow, new Color(0.05f, 0.05f, 0.08f, 1f));
             OrnateFrame(floorRow, FrameGold, FrameT, true, false);
-            string floorText = GameConfig.FloorNameEn(World.Floors.Floor) + (World.Floors.IsBossFloor ? "   BOSS" : ""); // HUD では「FLOOR 71」と英語で（MENU・HP・EXP とそろえる）
+            string floorText = GameConfig.FloorNameEn(World.Floors.Floor) + (World.Floors.IsBossFloor ? "   BOSS" : ""); // HUD では「71F」と短く（MENU・HP・EXP とそろえる）
             var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
             float floorX = floorRow.x + mm;
             FitLabel(new Rect(floorX, floorRow.y, floorRow.width * 0.7f - (floorX - floorRow.x), floorRow.height), floorText, floorStyle);
