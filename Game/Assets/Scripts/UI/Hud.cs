@@ -1162,8 +1162,15 @@ namespace VividOfFade
             float H = Screen.height;
             Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.75f));
 
-            var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
-            Hud.FitLabel(new Rect(0, H * 0.12f, W, H * 0.06f), "VIVID OF FADE", title);
+            // タイトル画面と同じドットのロゴ（小さめ。「キャラクターを選ぶ」の上に収める）
+            var logoTex = TitleArt.Logo;
+            float sc = Mathf.Max(1f, Mathf.Floor(Mathf.Min(W * 0.8f / logoTex.width, H * 0.11f / logoTex.height)));
+            var logoRect = new Rect((W - logoTex.width * sc) * 0.5f, H * 0.175f - logoTex.height * sc, logoTex.width * sc, logoTex.height * sc);
+            var oldColor = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 2f));
+            GUI.DrawTexture(new Rect(logoRect.x - sc, logoRect.y - sc, logoRect.width + sc * 2f, logoRect.height + sc * 2f), TitleArt.Glow);
+            GUI.color = oldColor;
+            GUI.DrawTexture(logoRect, logoTex);
             float pad = W * 0.08f;
             float gap = H * 0.02f;
             float y = H * 0.27f;
