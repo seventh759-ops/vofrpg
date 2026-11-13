@@ -38,6 +38,7 @@ namespace VividOfFade
 
         readonly List<FloatNumber> numbers = new List<FloatNumber>();
         readonly List<ToastLine> toasts = new List<ToastLine>();
+        readonly List<ToastLine> messages = new List<ToastLine>(); // メッセージウィンドウの履歴（消えない。新しい20件まで）
         readonly List<Rect> buttonRects = new List<Rect>();     // 画面座標（左下原点）
         readonly List<Action> buttonActions = new List<Action>();
         readonly List<Rect> pendingRects = new List<Rect>();
@@ -85,12 +86,42 @@ namespace VividOfFade
         /// <summary>上の帯の下端（GUI 座標、上が 0）。</summary>
         public static float TopBandBottom => BandMargin * 3.2f + TopRowH + ExpRowH + FloorRowH;
 
-        /// <summary>下の帯の中、スキルと薬のボタンの上にある記録（ログ）の欄の行数と高さ。</summary>
+        /// <summary>メッセージウィンドウの行数と、1行の高さ。</summary>
         const int LogLines = 4;
         float LogLineH => (small != null ? small.fontSize : Screen.height * 0.016f) * 1.3f; // 起動直後（文字の設定を作る前）は画面の高さから見積もる
 
-        /// <summary>下の帯の上端（GUI 座標）。スキルの上のオートの帯と、その上の記録の欄を含む。</summary>
-        float BottomBandTop => Screen.height - (SkillAutoRect(0).yMax + BandMargin * 2f) - LogLines * LogLineH;
+        /// <summary>ショートカット（スキルと薬）の区画（GUI 座標）。下の帯の下側。</summary>
+        Rect ShortcutPanel
+        {
+            get
+            {
+                float top = Screen.height - (SkillAutoRect(0).yMax + BandMargin * 1.2f);
+                return new Rect(BandMargin * 1.5f, top, Screen.width - BandMargin * 3f, Screen.height - BandMargin * 1.2f - top);
+            }
+        }
+
+        /// <summary>メッセージウィンドウの区画（GUI 座標）。ショートカットの区画のすぐ上。</summary>
+        Rect MessageWindow
+        {
+            get
+            {
+                float h = LogLines * LogLineH + BandMargin * 1.6f;
+                var sc = ShortcutPanel;
+                return new Rect(sc.x, sc.y - BandMargin - h, sc.width, h);
+            }
+        }
+
+        /// <summary>下の帯の上端（GUI 座標）。メッセージウィンドウとショートカットの2つの区画を含む。</summary>
+        float BottomBandTop => MessageWindow.y - BandMargin;
+
+        /// <summary>枠線を描く。</summary>
+        public static void Frame(Rect r, Color c, float t = 1f)
+        {
+            Fill(new Rect(r.x, r.y, r.width, t), c);
+            Fill(new Rect(r.x, r.yMax - t, r.width, t), c);
+            Fill(new Rect(r.x, r.y, t, r.height), c);
+            Fill(new Rect(r.xMax - t, r.y, t, r.height), c);
+        }
 
         /// <summary>カメラのずれ（CameraRig.CenterShift）。上下の帯の高さの差の半分。</summary>
         public float ViewCenterShift => ((Screen.height - BottomBandTop) - TopBandBottom) / (2f * Screen.height);
@@ -100,11 +131,15 @@ namespace VividOfFade
         /// </summary>
         Rect SkillRect(int slot)
         {
-            float s = Mathf.Min(Screen.width, Screen.height) * 0.14f;
-            float m = Screen.height * 0.015f;
-            float gap = s * 0.15f;
-            float extra = slot >= SkillInfo.Slots ? s * 0.35f : 0f; // スキルと薬の間を少しあける
-            return new Rect(m + slot * (s + gap) + extra, m + Screen.height * 0.04f, s, s);
+            // ショートカットの区画の幅いっぱいに、スキル3つと薬2つを中央そろえで並べる
+            const float gapK = 0.12f, extraK = 0.35f;     // ボタンどうしの間・スキルと薬の間（ボタンの大きさに対する割合）
+            int n = SkillInfo.Slots + 2;
+            float avail = Screen.width - BandMargin * 7f;
+            float s = Mathf.Min(avail / (n + (n - 1) * gapK + extraK), Screen.height * 0.09f);
+            float total = s * (n + (n - 1) * gapK + extraK);
+            float x0 = (Screen.width - total) * 0.5f;
+            float extra = slot >= SkillInfo.Slots ? s * extraK : 0f;
+            return new Rect(x0 + slot * s * (1f + gapK) + extra, BandMargin * 2.5f, s, s);
         }
 
         /// <summary>スキルのボタンの上の細い帯（タップでオート／手動を切り替え。緑ならオート）。</summary>
@@ -168,10 +203,11 @@ namespace VividOfFade
             // かかっている強化（下の帯の記録の欄の右側）
             var buffStyle = new GUIStyle(small) { alignment = TextAnchor.UpperRight };
             buffStyle.normal.textColor = new Color(1f, 0.85f, 0.5f);
-            float by = BottomBandTop + BandMargin;
+            var msgR = MessageWindow;
+            float by = msgR.y + BandMargin * 0.8f;
             for (int b = 0; b < player.BuffCount && b < LogLines; b++)
             {
-                GUI.Label(new Rect(0, by, Screen.width - BandMargin * 2f, LogLineH), $"{player.BuffName(b)}  {player.BuffRemaining(b):0.0}s", buffStyle);
+                GUI.Label(new Rect(msgR.x, by, msgR.width - BandMargin, LogLineH), $"{player.BuffName(b)}  {player.BuffRemaining(b):0.0}s", buffStyle);
                 by += LogLineH;
             }
         }
@@ -209,11 +245,11 @@ namespace VividOfFade
         {
             get
             {
-                // 手動攻撃のボタン（右下。下の段のスキルと薬のボタンの上に置く）
+                // 手動攻撃のボタン（右下。下の帯の上に置く）
                 float s = Mathf.Min(Screen.width, Screen.height) * 0.24f;
                 float m = Screen.height * 0.03f;
-                var row = SkillAutoRect(0);
-                return new Rect(Screen.width - s - m, row.yMax + m, s, s);
+                float bandTop = Screen.height - BottomBandTop; // 下の帯の上端（画面座標）。メッセージウィンドウと重ならないように、その上に置く
+                return new Rect(Screen.width - s - m, bandTop + m, s, s);
             }
         }
 
@@ -380,6 +416,8 @@ namespace VividOfFade
         {
             if (toasts.Count >= 5) toasts.RemoveAt(0);
             toasts.Add(new ToastLine { Text = text, Color = color });
+            if (messages.Count >= 20) messages.RemoveAt(0);
+            messages.Add(new ToastLine { Text = text, Color = color });
         }
 
         void Awake()
@@ -412,6 +450,7 @@ namespace VividOfFade
                 toasts[i].T += dt;
                 if (toasts[i].T >= ToastLife) toasts.RemoveAt(i);
             }
+            foreach (var mline in messages) mline.T += dt; // 履歴は消さず、明るさを決めるために時間だけ進める
         }
 
         void OnGUI()
@@ -532,18 +571,27 @@ namespace VividOfFade
                 GUI.Label(new Rect(0, y, W - mm * 2f, lineH), $"FPS:{fps:0}", fpsStyle);
             }
 
-            // 記録（拾った品など）：下の帯の、スキルと薬のボタンの上の欄。新しいものほど下、入りきらない古いものは出さない
+            // 下の帯の2つの区画：メッセージウィンドウ（上）とショートカット（下）。それぞれ背景と枠で仕切る
+            var frameColor = new Color(0.36f, 0.32f, 0.44f, 1f);
+            var msgR = MessageWindow;
+            Fill(msgR, new Color(0.02f, 0.02f, 0.035f, 1f));
+            Frame(msgR, frameColor);
+            var scR = ShortcutPanel;
+            Fill(scR, new Color(0.05f, 0.045f, 0.065f, 1f));
+            Frame(scR, frameColor);
+
+            // メッセージ：直近の行を残す（新しいものほど下）。来たばかりの行は明るく、古い行は少し暗い
             {
-                float logTop = bottomTop + mm, logH = LogLineH;
-                int start = Mathf.Max(0, toasts.Count - LogLines);
-                for (int k = start; k < toasts.Count; k++)
+                float logH = LogLineH;
+                int start = Mathf.Max(0, messages.Count - LogLines);
+                for (int k = start; k < messages.Count; k++)
                 {
-                    var t = toasts[k];
+                    var t = messages[k];
                     var c = t.Color;
-                    c.a = Mathf.Clamp01((ToastLife - t.T) / 0.5f);
+                    c.a = t.T < ToastLife ? 1f : 0.55f;
                     var style = new GUIStyle(small);
                     style.normal.textColor = c;
-                    GUI.Label(new Rect(mm * 2f, logTop + (k - start) * logH, W * 0.62f, logH), "+ " + t.Text, style);
+                    GUI.Label(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + (k - start) * logH, msgR.width * 0.68f, logH), "+ " + t.Text, style);
                 }
             }
 
@@ -585,7 +633,8 @@ namespace VividOfFade
             {
                 var hint = new GUIStyle(small) { alignment = TextAnchor.LowerRight };
                 hint.normal.textColor = new Color(1f, 1f, 1f, 0.5f);
-                GUI.Label(new Rect(0, Screen.height - lineH * 1.2f, Screen.width - mm * 2f, lineH), Loc.T("H: Controls", "H：操作"), hint);
+                var mw = MessageWindow;
+                GUI.Label(new Rect(mw.x, mw.yMax - lineH - mm * 0.4f, mw.width - mm, lineH), Loc.T("H: Controls", "H：操作"), hint);
                 if (ShowHelp) DrawHelp();
             }
         }
