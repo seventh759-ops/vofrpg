@@ -4377,12 +4377,13 @@ namespace VividOfFade
                             else if (k < 0.016f) c = Mix(c, accent, 0.12f);
                             break;
                         }
-                        case FloorPattern.Starless: // 青い燐光の筋と、ときどき強く光る粒
+                        case FloorPattern.Starless: // 青い燐光の細い筋（少なく、つながった線）と、まれに光る粒
                         {
-                            float k = Mathf.Abs(TileNoise(x / 10f, sy / 5f, salt + 61) - 0.5f);
-                            if (k < 0.02f) c = Mix(accent, new Color32(220, 255, 255, 255), 0.3f);
-                            else if (k < 0.06f) c = Mix(c, accent, 0.35f - k * 4f);
-                            if (Hash(x + salt * 3, sy * 5) % 113 == 0) c = new Color32(220, 255, 255, 255);
+                            float k = Mathf.Abs(TileNoise(x / 15f, sy / 7.5f, salt + 61) - 0.5f);
+                            if (k < 0.004f) c = Mix(accent, new Color32(220, 255, 255, 255), 0.25f);
+                            else if (k < 0.009f) c = Mix(c, accent, 0.5f);
+                            else if (k < 0.016f) c = Mix(c, accent, 0.12f);
+                            if (Hash(x + salt * 3, sy * 5) % 331 == 0) c = Mix(c, new Color32(220, 255, 255, 255), 0.7f);
                             break;
                         }
                         case FloorPattern.Rune: // 敷石ごとに、紫に燃える丸い紋様（輪と十字）
@@ -4398,9 +4399,10 @@ namespace VividOfFade
                         }
                         case FloorPattern.Throne: // 目地に金、ところどころ血の色の裂け目
                         {
-                            if (joint) c = Mix(accent, mortar, 0.25f);
-                            float k = Mathf.Abs(TileNoise(x / 7f, sy / 4f, salt + 81) - 0.5f);
-                            if (!joint && k < 0.018f) c = new Color32(230, 30, 40, 255);
+                            if (joint) c = Mix(accent, mortar, 0.7f); // 目地の金は控えめに
+                            float k = Mathf.Abs(TileNoise(x / 13f, sy / 6.5f, salt + 81) - 0.5f);
+                            if (!joint && k < 0.005f) c = new Color32(220, 40, 50, 255);
+                            else if (!joint && k < 0.011f) c = Mix(c, new Color32(220, 40, 50, 255), 0.35f);
                             break;
                         }
                     }
