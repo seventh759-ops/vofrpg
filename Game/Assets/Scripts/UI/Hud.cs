@@ -113,7 +113,7 @@ namespace VividOfFade
                 var iconRect = new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f);
                 var old = GUI.color;
                 GUI.color = enoughMp ? Color.white : new Color(1f, 0.45f, 0.45f, 0.6f);
-                DrawSprite(iconRect, PixelArt.SkillIcon(spec.Effect, spec.Color));
+                DrawSprite(iconRect, PixelArt.SkillIcon(spec));
                 GUI.color = old;
 
                 // 待ち時間（上から暗くする）

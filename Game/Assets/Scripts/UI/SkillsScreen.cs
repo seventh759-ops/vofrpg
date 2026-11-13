@@ -62,7 +62,7 @@ namespace VividOfFade
                 float iconSize = Mathf.Min(rowH * 0.55f, W * 0.14f);
                 var old = GUI.color;
                 GUI.color = learned ? Color.white : new Color(1f, 1f, 1f, 0.3f);
-                Hud.DrawSprite(new Rect(row.x + inner, row.y + inner, iconSize, iconSize), PixelArt.SkillIcon(spec.Effect, spec.Color));
+                Hud.DrawSprite(new Rect(row.x + inner, row.y + inner, iconSize, iconSize), PixelArt.SkillIcon(spec));
                 GUI.color = old;
                 row = new Rect(row.x + iconSize + inner, row.y, row.width - iconSize - inner, row.height);
                 var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold };

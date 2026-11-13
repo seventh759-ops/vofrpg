@@ -418,7 +418,7 @@ namespace VividOfFade
 
                 var skill = adv.Skill;
                 var icon = lineH * 2f;
-                Hud.DrawSprite(new Rect(r.x + inner, ty, icon, icon), PixelArt.SkillIcon(skill.Effect, skill.Color));
+                Hud.DrawSprite(new Rect(r.x + inner, ty, icon, icon), PixelArt.SkillIcon(skill));
                 var sk = new GUIStyle(small) { fontStyle = FontStyle.Bold };
                 GUI.Label(new Rect(r.x + inner + icon * 1.2f, ty, r.width, lineH), Loc.T($"Skill: {skill.DisplayName}   MP {skill.Mp}", $"スキル：{skill.DisplayName}   MP {skill.Mp}"), sk);
                 GUI.Label(new Rect(r.x + inner + icon * 1.2f, ty + lineH, r.width - inner * 2f - icon * 1.2f, lineH), skill.DisplayDesc, small);
@@ -493,7 +493,7 @@ namespace VividOfFade
 
             var skill = third.Skill;
             float icon = lineH * 2f;
-            Hud.DrawSprite(new Rect(r.x + inner, ty, icon, icon), PixelArt.SkillIcon(skill.Effect, skill.Color));
+            Hud.DrawSprite(new Rect(r.x + inner, ty, icon, icon), PixelArt.SkillIcon(skill));
             var sk = new GUIStyle(small) { fontStyle = FontStyle.Bold };
             GUI.Label(new Rect(r.x + inner + icon * 1.2f, ty, r.width, lineH), Loc.T($"Skill: {skill.DisplayName}   MP {skill.Mp}", $"スキル：{skill.DisplayName}   MP {skill.Mp}"), sk);
             GUI.Label(new Rect(r.x + inner + icon * 1.2f, ty + lineH, r.width - inner * 2f - icon * 1.2f, lineH), skill.DisplayDesc, small);
