@@ -1280,8 +1280,16 @@ namespace VividOfFade
                     // 消す（2回押し）。消しても倉庫は残る
                     string id = "del" + slot;
                     bool armed = armedDelete == id && Time.unscaledTime < armedDeleteUntil;
-                    var del = new Rect(r.xMax - r.width * 0.22f - inner * 0.5f, r.y + inner * 0.5f, r.width * 0.22f, r.height * 0.28f);
-                    Button(del, armed ? Loc.T("Delete?", "消す？") : Loc.T("Delete", "消す"), armed ? new Color(0.7f, 0.15f, 0.15f, 0.85f) : new Color(1f, 1f, 1f, 0.08f), centered, () =>
+                    // 右上の小さなごみ箱。1回押すと赤くなり「消す？」と出るので、もう一度押すと消える
+                    float ds = r.height * 0.26f;
+                    var del = new Rect(r.xMax - ds - inner * 0.5f, r.y + inner * 0.5f, ds, ds);
+                    if (armed)
+                    {
+                        var ask = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, fontStyle = FontStyle.Bold };
+                        ask.normal.textColor = new Color(1f, 0.5f, 0.5f);
+                        GUI.Label(new Rect(del.x - r.width * 0.3f - inner * 0.3f, del.y, r.width * 0.3f, ds), Loc.T("Delete?", "消す？"), ask);
+                    }
+                    Button(del, null, armed ? new Color(0.75f, 0.15f, 0.15f, 0.9f) : new Color(1f, 1f, 1f, 0.08f), centered, () =>
                     {
                         if (armedDelete == id && Time.unscaledTime < armedDeleteUntil)
                         {
@@ -1294,6 +1302,8 @@ namespace VividOfFade
                             armedDeleteUntil = Time.unscaledTime + 3f;
                         }
                     });
+                    float ip = ds * 0.12f;
+                    DrawSprite(new Rect(del.x + ip, del.y + ip, ds - ip * 2f, ds - ip * 2f), PixelArt.TrashIcon);
                 }
                 y += bh + gap;
             }

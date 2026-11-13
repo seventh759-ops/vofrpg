@@ -3945,6 +3945,25 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>ごみ箱のアイコン（キャラクターを消すボタン）。</summary>
+        public static Sprite TrashIcon => Shaded("Trash12", new[]
+        {
+            "..............",
+            ".....mmmm.....",
+            "..mmmmmmmmmm..",
+            "..............",
+            "...mmmmmmmm...",
+            "...mm.mm.mm...",
+            "...mm.mm.mm...",
+            "...mm.mm.mm...",
+            "...mm.mm.mm...",
+            "...mm.mm.mm...",
+            "...mm.mm.mm...",
+            "....mmmmmm....",
+            "..............",
+            "..............",
+        }, null, null, 14);
+
         /// <summary>転生の印（小さなひし形の宝石。白と灰色で作り、色は GUI.color で付ける）。</summary>
         public static Sprite RebirthGem
         {
