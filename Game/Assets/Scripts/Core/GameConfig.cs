@@ -194,6 +194,11 @@ namespace VividOfFade
         public static int FountainItems(int wave) => Mathf.Min(3 + wave / 2, 10);
         public static int FountainEmberOrbs(int wave) => Mathf.Min(6 + wave, 16);
         public const float EmberMult = 1.5f; // 火種の量の倍率（少なかったので 1.5倍にした）
+        // 特別な相手・宝箱の火種（1粒の量の倍率）。強化・再抽選に使う量に見合うように多めにした
+        public const int GoldenEmberMult = 6;  // 黄金のスライム（前は2）
+        public const int ChestEmberMult = 3;   // 宝箱（前は1）
+        public const int BossEmberMult = 5;    // ボス（前は3）
+        public const int EliteEmberOrbs = 6;   // 精鋭の火種の粒の数（前は4）
         public static int EmberAmount(int wave) => Mathf.Max(1, Mathf.RoundToInt(EmberMult * (1f + wave / 10f)));
         public const float FountainRarityBonus = 0.6f;
 

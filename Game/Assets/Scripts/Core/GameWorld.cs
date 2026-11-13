@@ -310,7 +310,7 @@ namespace VividOfFade
             Enemies.GoldenKilled += pos =>
             {
                 Loot.Fountain(pos, Room, GameConfig.GoldenFountainItems, DropLevel, GameConfig.GoldenRarityBonus,
-                    GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * 2);
+                    GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * GameConfig.GoldenEmberMult);
                 if (Random.value < GameConfig.GoldenMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
                 Fx.Ring(pos, 2.5f, new Color(1f, 0.85f, 0.3f, 0.9f), 0.5f);
                 Sfx.Fountain();
@@ -560,7 +560,7 @@ namespace VividOfFade
         void OnEliteKilled(Vector2 pos)
         {
             Loot.Fountain(pos, Room, GameConfig.EliteFountainItems, DropLevel, GameConfig.EliteRarityBonus,
-                4, GameConfig.EmberAmount(Floors.Tier));
+                GameConfig.EliteEmberOrbs, GameConfig.EmberAmount(Floors.Tier));
             // まれに神話（赤）の装備（ボスより低い確率）
             if (Random.value < GameConfig.EliteMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
             Fx.Ring(pos, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.35f);
@@ -870,7 +870,7 @@ namespace VividOfFade
                 Fx.Sparks(p, 6, new Color(0.75f, 0.7f, 0.85f, 1f), 1.2f, 0.6f, 2f, true);
             }
             Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropLevel, GameConfig.BossRarityBonus,
-                GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * 3);
+                GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * GameConfig.BossEmberMult);
             if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
             Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
             cameraRig.Shake(0.3f, 0.5f);
@@ -1119,7 +1119,7 @@ namespace VividOfFade
                 chestOpened[i] = true;
                 chests[i].sprite = PixelArt.Chest(true);
                 Loot.Fountain(p, Room, GameConfig.ChestItems, DropLevel, GameConfig.ChestRarityBonus,
-                    GameConfig.FountainEmberOrbs(Floors.Tier) / 2, GameConfig.EmberAmount(Floors.Tier));
+                    GameConfig.FountainEmberOrbs(Floors.Tier) / 2, GameConfig.EmberAmount(Floors.Tier) * GameConfig.ChestEmberMult);
                 Fx.Ring(p, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.4f);
                 Sfx.Fountain();
             }
