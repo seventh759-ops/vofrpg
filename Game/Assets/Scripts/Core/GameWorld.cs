@@ -452,6 +452,7 @@ namespace VividOfFade
                 {
                     Hud.CancelNewCharacter(); // 職業の選択から枠の一覧へ
                 }
+                cameraRig.CenterShift = Hud.ViewCenterShift; // 上下の帯の間の中心にプレイヤーを置く
                 cameraRig.Tick(Player.Pos, Room, dt);
                 return;
             }
@@ -499,6 +500,7 @@ namespace VividOfFade
 
             Player.LightPenalty = Enemies.ShroudNear ? GameConfig.ShroudPenalty : 0f;
             Lighting.Tick(Player.Pos, Player.EffectiveLight, dt);
+            cameraRig.CenterShift = Hud.ViewCenterShift; // 上下の帯の間の中心にプレイヤーを置く
             cameraRig.Tick(Player.Pos, Room, dt);
         }
 

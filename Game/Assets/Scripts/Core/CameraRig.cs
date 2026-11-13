@@ -11,6 +11,12 @@ namespace VividOfFade
         float shakeAmount;
         Vector2 lastShake;
 
+        /// <summary>
+        /// 画面の上下の帯の高さが違うとき、プレイヤーを真ん中の領域の中心に置くためのずれ（画面の高さに対する割合）。
+        /// 正なら真ん中の領域の中心が画面の中心より上にある（カメラを下げる）。
+        /// </summary>
+        public float CenterShift;
+
         /// <summary>迷宮の外の色（区画ごと）。</summary>
         public void SetBackground(Color color)
         {
@@ -47,7 +53,7 @@ namespace VividOfFade
             // 迷宮は画面より広いので、そのまま追う
             Vector2 screen = Iso.ToScreen(target);
             float x = screen.x;
-            float y = screen.y;
+            float y = screen.y - CenterShift * 2f * size;
 
             Vector3 p = cam.transform.position - (Vector3)lastShake;
             float k = 1f - Mathf.Exp(-10f * dt);

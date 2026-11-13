@@ -69,12 +69,31 @@ namespace VividOfFade
         {
             get
             {
-                float w = Screen.width * 0.22f;
-                float h = Screen.height * 0.045f;
-                float m = Screen.height * 0.015f;
+                float w = Screen.width * 0.17f;
+                float h = TopRowH;
+                float m = BandMargin;
                 return new Rect(Screen.width - w - m, Screen.height - h - m, w, h);
             }
         }
+
+        // ---- 上の帯（レベル・HP・MP・メニュー／経験値／層）と下の帯（スキルと薬）。真ん中がダンジョン ----
+        static float BandMargin => Screen.height * 0.008f;
+        static float TopRowH => Screen.height * 0.032f;
+        static float ExpRowH => Screen.height * 0.012f;
+        static float FloorRowH => Screen.height * 0.026f;
+
+        /// <summary>上の帯の下端（GUI 座標、上が 0）。</summary>
+        public static float TopBandBottom => BandMargin * 3.2f + TopRowH + ExpRowH + FloorRowH;
+
+        /// <summary>下の帯の中、スキルと薬のボタンの上にある記録（ログ）の欄の行数と高さ。</summary>
+        const int LogLines = 4;
+        float LogLineH => small.fontSize * 1.3f;
+
+        /// <summary>下の帯の上端（GUI 座標）。スキルの上のオートの帯と、その上の記録の欄を含む。</summary>
+        float BottomBandTop => Screen.height - (SkillAutoRect(0).yMax + BandMargin * 2f) - LogLines * LogLineH;
+
+        /// <summary>カメラのずれ（CameraRig.CenterShift）。上下の帯の高さの差の半分。</summary>
+        public float ViewCenterShift => ((Screen.height - BottomBandTop) - TopBandBottom) / (2f * Screen.height);
 
         /// <summary>
         /// 下の段のボタン（左からスキル3つ、少しあけて薬2つ）。0〜2 がスキル、3・4 が回復薬・魔力の薬。画面座標（左下原点）。
@@ -129,6 +148,14 @@ namespace VividOfFade
                 cost.normal.textColor = enoughMp ? new Color(0.65f, 0.8f, 1f) : new Color(1f, 0.5f, 0.5f);
                 GUI.Label(new Rect(r.x, r.y, r.width - r.width * 0.06f, r.height - r.height * 0.02f), spec.Mp.ToString(), cost);
 
+                // キー（PC は左上に 1・2・3。薬の Q・E と同じ）
+                if (!Application.isMobilePlatform)
+                {
+                    var keyStyle = new GUIStyle(cost) { alignment = TextAnchor.UpperLeft };
+                    keyStyle.normal.textColor = new Color(1f, 1f, 1f, 0.8f);
+                    GUI.Label(new Rect(r.x + r.width * 0.06f, r.y + r.height * 0.02f, r.width, r.height), (i + 1).ToString(), keyStyle);
+                }
+
                 // オート／手動の帯
                 bool auto = ch.SlotAuto[i];
                 Button(ToGui(SkillAutoRect(i)), null, auto ? new Color(0.3f, 0.85f, 0.4f, 0.85f) : new Color(1f, 1f, 1f, 0.15f), centered, () =>
@@ -138,13 +165,14 @@ namespace VividOfFade
                 });
             }
 
-            // かかっている強化
-            float y = Screen.height - SkillAutoRect(0).yMax - small.fontSize * 1.6f * (player.BuffCount + 0.2f);
-            for (int b = 0; b < player.BuffCount; b++)
+            // かかっている強化（下の帯の記録の欄の右側）
+            var buffStyle = new GUIStyle(small) { alignment = TextAnchor.UpperRight };
+            buffStyle.normal.textColor = new Color(1f, 0.85f, 0.5f);
+            float by = BottomBandTop + BandMargin;
+            for (int b = 0; b < player.BuffCount && b < LogLines; b++)
             {
-                GUI.Label(new Rect(Screen.height * 0.015f, y, Screen.width * 0.6f, small.fontSize * 1.5f),
-                    $"{player.BuffName(b)}  {player.BuffRemaining(b):0.0}s", small);
-                y += small.fontSize * 1.5f;
+                GUI.Label(new Rect(0, by, Screen.width - BandMargin * 2f, LogLineH), $"{player.BuffName(b)}  {player.BuffRemaining(b):0.0}s", buffStyle);
+                by += LogLineH;
             }
         }
 
@@ -438,62 +466,85 @@ namespace VividOfFade
         {
             var player = World.Player;
             var inv = World.Inventory;
-            float m = Screen.height * 0.015f;
 
-            // 体力と MP（数字はバーの中に）
-            float barW = Screen.width * 0.5f;
-            var hpBack = new Rect(m, m, barW, Screen.height * 0.024f);
-            Fill(hpBack, new Color(0f, 0f, 0f, 0.6f));
-            float ratio = player.MaxHp > 0 ? (float)player.Hp / player.MaxHp : 0f;
-            Fill(new Rect(hpBack.x, hpBack.y, hpBack.width * ratio, hpBack.height), new Color(0.85f, 0.2f, 0.25f, 0.95f));
-            var barText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(9, Mathf.RoundToInt(small.fontSize * 0.85f)) };
-            GUI.Label(hpBack, $"{player.Hp} / {player.MaxHp}", barText);
-
-            var mpBack = new Rect(m, hpBack.yMax + m * 0.25f, barW, hpBack.height * 0.75f);
-            Fill(mpBack, new Color(0f, 0f, 0f, 0.6f));
-            float mpRatio = player.MaxMp > 0 ? (float)player.Mp / player.MaxMp : 0f;
-            Fill(new Rect(mpBack.x, mpBack.y, mpBack.width * mpRatio, mpBack.height), new Color(0.3f, 0.5f, 1f, 0.95f));
-            GUI.Label(mpBack, $"{player.Mp} / {player.MaxMp}", barText);
-
-            // 経験値と回避（細い線）
             var ch = Profile.Current;
-            var expBack = new Rect(m, mpBack.yMax + m * 0.25f, barW, hpBack.height * 0.22f);
-            Fill(expBack, new Color(0f, 0f, 0f, 0.6f));
+            float W = Screen.width, H = Screen.height, mm = BandMargin;
+            var bandColor = new Color(0.07f, 0.06f, 0.09f, 0.96f);
+            var edgeColor = new Color(0.25f, 0.22f, 0.3f, 1f);
+
+            // 上の帯と下の帯（真ん中はダンジョン）
+            float topBottom = TopBandBottom, bottomTop = BottomBandTop;
+            Fill(new Rect(0, 0, W, topBottom), bandColor);
+            Fill(new Rect(0, topBottom - 1f, W, 1f), edgeColor);
+            Fill(new Rect(0, bottomTop, W, H - bottomTop), bandColor);
+            Fill(new Rect(0, bottomTop, W, 1f), edgeColor);
+
+            // 1段目：レベル・HP・MP（メニューのボタンは右端、あとで描く）
+            float rowY = mm, rowH = TopRowH;
+            var lvBox = new Rect(mm, rowY, W * 0.14f, rowH);
+            Fill(lvBox, new Color(0.18f, 0.17f, 0.2f, 1f));
+            int level = ch != null ? ch.Level : 1;
+            var lvStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
+            FitLabel(lvBox, ch != null && ch.Level >= Progression.MaxLevel ? $"LV{level}★" : $"LV{level}", lvStyle);
+            float barsX = lvBox.xMax + mm, barsW = ToGui(MenuRect).x - mm - barsX;
+            float barW = (barsW - mm) * 0.5f;
+            var barText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            var hpBack = new Rect(barsX, rowY, barW, rowH);
+            Fill(hpBack, new Color(0.15f, 0.04f, 0.05f, 1f));
+            float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
+            Fill(new Rect(hpBack.x, hpBack.y, hpBack.width * ratio, hpBack.height), new Color(0.8f, 0.1f, 0.12f, 1f));
+            FitLabel(hpBack, $"{player.Hp}/{player.MaxHp}", barText);
+            var mpBack = new Rect(hpBack.xMax + mm, rowY, barW, rowH);
+            Fill(mpBack, new Color(0.05f, 0.08f, 0.18f, 1f));
+            float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
+            Fill(new Rect(mpBack.x, mpBack.y, mpBack.width * mpRatio, mpBack.height), new Color(0.2f, 0.35f, 0.75f, 1f));
+            FitLabel(mpBack, $"{player.Mp}/{player.MaxMp}", barText);
+
+            // 2段目：経験値（細い帯に ％）
+            var expBack = new Rect(mm, rowY + rowH + mm * 0.6f, W - mm * 2f, ExpRowH);
+            Fill(expBack, new Color(0.15f, 0.14f, 0.12f, 1f));
             if (ch != null)
             {
-                float expRatio = Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
-                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(1f, 0.85f, 0.3f, 0.9f));
+                float expRatio = ch.Level >= Progression.MaxLevel ? 1f : Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
+                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.95f, 0.88f, 0.7f, 1f));
+                var expText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.Max(8, Mathf.RoundToInt(ExpRowH * 0.85f)) };
+                expText.normal.textColor = new Color(0.15f, 0.12f, 0.1f);
+                GUI.Label(expBack, $"{Mathf.FloorToInt(expRatio * 100f)}%", expText);
             }
-            var dodge = new Rect(m, expBack.yMax + m * 0.2f, barW * 0.4f, expBack.height);
+
+            // 3段目：層（ボス・灯りを奪われているときは添える）と、右に回避の待ち時間
+            float lineH = small.fontSize * 1.35f;
+            var floorRow = new Rect(mm, expBack.yMax + mm * 0.6f, W - mm * 2f, FloorRowH);
+            Fill(floorRow, new Color(0.13f, 0.12f, 0.15f, 1f));
+            string floorText = Loc.T($"FLOOR {World.Floors.Floor}", $"{World.Floors.Floor}層") + (World.Floors.IsBossFloor ? Loc.T("   BOSS", "   ボス") : "");
+            if (player.LightPenalty > 0f) floorText += Loc.T("   Light drained!", "   灯りを奪われている！");
+            var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+            FitLabel(new Rect(floorRow.x + mm, floorRow.y, floorRow.width * 0.7f, floorRow.height), floorText, floorStyle);
+            var dodge = new Rect(floorRow.xMax - W * 0.22f - mm, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
             Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.75f, 0.85f, 1f, 0.9f));
+            float y = topBottom + mm;
 
-            // レベルと層だけを1行で
-            float lineH = small.fontSize * 1.35f;
-            float textW = MenuRect.x - m * 2f;
-            float y = dodge.yMax + m * 0.4f;
-            int level = ch != null ? ch.Level : 1;
-            string lvText = ch != null && ch.Level >= Progression.MaxLevel ? $"Lv {level} (MAX)" : $"Lv {level}";
-            GUI.Label(new Rect(m, y, textW, lineH), Loc.T($"{lvText}    FLOOR {World.Floors.Floor}", $"{lvText}    {World.Floors.Floor}層") + (World.Floors.IsBossFloor ? Loc.T("  BOSS", "  ボス") : ""), small);
-            y += lineH;
-            if (player.LightPenalty > 0f)
+            // FPS（ダンジョンの右上）
+            if (ShowFps)
             {
-                var drained = new GUIStyle(small) { fontStyle = FontStyle.Bold };
-                drained.normal.textColor = new Color(0.8f, 0.6f, 1f);
-                GUI.Label(new Rect(m, y, textW, lineH), Loc.T("Light drained!", "灯りを奪われている！"), drained);
-                y += lineH;
+                var fpsStyle = new GUIStyle(small) { alignment = TextAnchor.UpperRight };
+                GUI.Label(new Rect(0, y, W - mm * 2f, lineH), $"FPS:{fps:0}", fpsStyle);
             }
 
-            // 拾った品の通知
-            float ty = y + lineH * 0.4f;
-            foreach (var t in toasts)
+            // 記録（拾った品など）：下の帯の、スキルと薬のボタンの上の欄。新しいものほど下、入りきらない古いものは出さない
             {
-                var c = t.Color;
-                c.a = Mathf.Clamp01((ToastLife - t.T) / 0.5f);
-                var style = new GUIStyle(small);
-                style.normal.textColor = c;
-                GUI.Label(new Rect(m, ty, Screen.width, lineH), "+ " + t.Text, style);
-                ty += small.fontSize * 1.3f;
+                float logTop = bottomTop + mm, logH = LogLineH;
+                int start = Mathf.Max(0, toasts.Count - LogLines);
+                for (int k = start; k < toasts.Count; k++)
+                {
+                    var t = toasts[k];
+                    var c = t.Color;
+                    c.a = Mathf.Clamp01((ToastLife - t.T) / 0.5f);
+                    var style = new GUIStyle(small);
+                    style.normal.textColor = c;
+                    GUI.Label(new Rect(mm * 2f, logTop + (k - start) * logH, W * 0.62f, logH), "+ " + t.Text, style);
+                }
             }
 
             DrawBossBar();
@@ -534,7 +585,7 @@ namespace VividOfFade
             {
                 var hint = new GUIStyle(small) { alignment = TextAnchor.LowerRight };
                 hint.normal.textColor = new Color(1f, 1f, 1f, 0.5f);
-                GUI.Label(new Rect(0, Screen.height - lineH * 1.3f, Screen.width - m, lineH), ShowFps ? $"FPS {fps:0}   " + Loc.T("H: Controls", "H：操作") : Loc.T("H: Controls", "H：操作"), hint);
+                GUI.Label(new Rect(0, Screen.height - lineH * 1.2f, Screen.width - mm * 2f, lineH), Loc.T("H: Controls", "H：操作"), hint);
                 if (ShowHelp) DrawHelp();
             }
         }
@@ -599,7 +650,7 @@ namespace VividOfFade
         {
             var room = World.Room;
             if (room.Minimap == null) return;
-            var below = ToGui(MenuRect);
+            var below = new Rect(0, 0, Screen.width, TopBandBottom); // 上の帯の下から
             float w = Screen.width * 0.38f;
             float h = w * Room.MiniH / Room.MiniW;
             var r = new Rect(Screen.width - w - Screen.height * 0.015f, below.yMax + Screen.height * 0.01f, w, h);
