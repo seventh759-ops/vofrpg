@@ -1446,8 +1446,9 @@ namespace VividOfFade
                     float lh = small.fontSize * 1.35f;
                     FitLabel(new Rect(tx, r.y + inner, tw * 0.7f, nameStyle.fontSize * 1.4f), key + AdvancedClasses.NameFor(ch), nameStyle);
                     var spec = ClassInfo.Get((ClassType)ch.ClassId);
-                    GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, tw, lh),
-                        $"Lv {ch.Level}   " + Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor) + Loc.T($"   Embers {ch.Embers}", $"   火種 {ch.Embers}"), small);
+                    // 1行に収まらなければ字を小さくする（火種の数が右端で切れないように。枠の右の余白の内側まで）
+                    FitLabel(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, r.xMax - inner - tx, lh),
+                        $"Lv {ch.Level}  " + Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor) + Loc.T($"  Embers {ch.Embers}", $"  火種 {ch.Embers}"), new GUIStyle(small) { alignment = TextAnchor.MiddleLeft });
                     var sub = new GUIStyle(small);
                     sub.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
                     GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh),
