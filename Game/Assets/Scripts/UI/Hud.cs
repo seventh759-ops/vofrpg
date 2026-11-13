@@ -166,7 +166,8 @@ namespace VividOfFade
                 }
 
                 var spec = SkillInfo.Get(ClassInfo.Current, index);
-                bool enoughMp = player.Mp >= spec.Mp;
+                int mpCost = SkillInfo.MpCost(spec, index, ch.Level);
+                bool enoughMp = player.Mp >= mpCost;
                 Button(r, null, new Color(0f, 0f, 0f, 0.55f), centered, () => World.Skills.Press(slot, World.Player));
                 float inset = r.width * 0.12f;
                 var iconRect = new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f);
@@ -181,7 +182,7 @@ namespace VividOfFade
 
                 // 消費 MP（右下に小さく）
                 cost.normal.textColor = enoughMp ? new Color(0.65f, 0.8f, 1f) : new Color(1f, 0.5f, 0.5f);
-                GUI.Label(new Rect(r.x, r.y, r.width - r.width * 0.06f, r.height - r.height * 0.02f), spec.Mp.ToString(), cost);
+                GUI.Label(new Rect(r.x, r.y, r.width - r.width * 0.06f, r.height - r.height * 0.02f), mpCost.ToString(), cost);
 
                 // キー（PC は左上に 1・2・3。薬の Q・E と同じ）
                 if (!Application.isMobilePlatform)

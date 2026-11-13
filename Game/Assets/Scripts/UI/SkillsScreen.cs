@@ -123,7 +123,7 @@ namespace VividOfFade
                 ty += lineH;
                 float cd = spec.Cooldown * SkillInfo.CooldownMult(lv);
                 string power = Loc.T($"Power x{SkillInfo.Power(lv):0.0}", $"威力 x{SkillInfo.Power(lv):0.0}");
-                Hud.FitLabel(new Rect(row.x + inner, ty, textW, lineH), Loc.T($"MP {spec.Mp}   Cooldown {cd:0.0}s   {power}", $"MP {spec.Mp}   待ち時間 {cd:0.0}秒   {power}"), text);
+                Hud.FitLabel(new Rect(row.x + inner, ty, textW, lineH), Loc.T($"MP {SkillInfo.MpCost(spec, i, ch.Level)}   Cooldown {cd:0.0}s   {power}", $"MP {SkillInfo.MpCost(spec, i, ch.Level)}   待ち時間 {cd:0.0}秒   {power}"), text);
 
                 y += rowH + rowGap;
             }

@@ -273,7 +273,7 @@ namespace VividOfFade
             s.MaxMp = 20 + wis * 2 + ch.MpGrown + bonusMp;
             s.MaxHp = Mathf.RoundToInt(s.MaxHp * (1f + hpPct));
             s.HpRegen = vit * 0.05f + hpRegen;
-            s.MpRegen = 1f + wis * 0.1f + (ch.Level - 1) * 0.02f + mpRegen;
+            s.MpRegen = 1f + wis * 0.07f + (ch.Level - 1) * 0.01f + mpRegen;
             s.Armor += vit * 0.5f; // 防御は VIT（STR は攻撃だけ。守りを固めたいなら VIT に振る）
             atkSpd += dex * 0.004f;
             s.Hit = dex + hitBonus;  // 命中・回避は DEX で伸びる

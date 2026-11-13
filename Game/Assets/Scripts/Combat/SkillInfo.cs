@@ -124,6 +124,12 @@ namespace VividOfFade
         /// <summary>スキルレベルによる待ち時間の倍率。1つ上がるごとに -3%。</summary>
         public static float CooldownMult(int skillLevel) => 1f - 0.03f * (Mathf.Max(1, skillLevel) - 1);
 
+        /// <summary>
+        /// 実際の消費 MP。レベルが上がるほど（最大 MP が増えるぶん）、後ろのスキルほど重くなる。
+        /// </summary>
+        public static int MpCost(SkillSpec spec, int index, int level) =>
+            Mathf.RoundToInt(spec.Mp * (1f + GameConfig.SkillMpPerLevel * (Mathf.Max(1, level) - 1)) * (1f + GameConfig.SkillMpPerIndex * Mathf.Max(0, index)));
+
         /// <summary>次のスキルレベルまでに必要な使用回数。</summary>
         public static int UsesToNext(int skillLevel) => 5 + 5 * skillLevel;
     }

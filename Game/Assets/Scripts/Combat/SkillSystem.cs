@@ -96,7 +96,7 @@ namespace VividOfFade
             var spec = SkillInfo.Get(ClassInfo.Current, index);
             // オートは、使って意味のあるときだけ使う
             if (auto && !WorthUsing(spec, player)) return;
-            if (!player.SpendMp(spec.Mp)) return;
+            if (!player.SpendMp(SkillInfo.MpCost(spec, index, ch.Level))) return;
 
             int skillLevel = ch.SkillLv[index];
             Cast(spec, SkillInfo.Power(skillLevel), player);

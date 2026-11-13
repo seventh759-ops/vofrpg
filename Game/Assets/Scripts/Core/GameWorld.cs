@@ -244,6 +244,7 @@ namespace VividOfFade
         bool holdSave; // 起動中・再開の準備中は、中断の保存をしない（上書きを防ぐ）
         float slowMoTimer;
         float goldenSparkTimer;
+        float lifeStealBudget; // 吸収で回復できる残り（1秒あたり最大 HP の 2% ずつたまる）
         bool exploding;
         float lifeStealPool; // 与えたダメージから回復する分の端数
 
@@ -508,6 +509,9 @@ namespace VividOfFade
                 CheckEliteTip();
             }
 
+            float stealCap = Player.MaxHp * GameConfig.LifeStealCapPct;
+            lifeStealBudget = Mathf.Min(stealCap, lifeStealBudget + stealCap * dt);
+
             // 黄金のスライムがいる間、足元からときどき金のきらめき
             var golden = Enemies.Golden;
             if (golden != null)
@@ -710,15 +714,21 @@ namespace VividOfFade
             Hud.AddNumber(pos, amount, crit);
             Sfx.Hit();
 
+            Player.MarkCombat();
             float steal = Player.Stats.LifeSteal;
             if (steal > 0f && !Player.IsDead)
             {
                 lifeStealPool += amount * steal;
                 if (lifeStealPool >= 1f)
                 {
-                    int whole = Mathf.FloorToInt(lifeStealPool);
-                    lifeStealPool -= whole;
-                    Player.Heal(whole);
+                    // 吸収で回復できるのは、1秒あたり最大 HP の 2% まで（殴っているだけで回復し続けないように）
+                    int whole = Mathf.Min(Mathf.FloorToInt(lifeStealPool), Mathf.FloorToInt(lifeStealBudget));
+                    lifeStealPool = 0f;
+                    if (whole > 0)
+                    {
+                        lifeStealBudget -= whole;
+                        Player.Heal(whole);
+                    }
                 }
             }
         }

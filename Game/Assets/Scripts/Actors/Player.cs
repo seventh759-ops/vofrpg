@@ -195,9 +195,15 @@ namespace VividOfFade
         }
 
         /// <summary>ダメージを受けたら true。無敵中は受けない。防御で減らす。</summary>
+        float combatTimer;
+
+        /// <summary>戦闘中にする（攻撃を受けた・与えた）。しばらく自然回復が絞られる。</summary>
+        public void MarkCombat() => combatTimer = GameConfig.CombatTime;
+
         public bool TakeHit(int damage, string source = "?")
         {
             if (invuln > 0f || IsDead) return false;
+            MarkCombat();
             float reduced = damage * Stats.DamageTaken * 100f / (100f + Stats.Armor);
             int dealt = Mathf.Max(1, Mathf.RoundToInt(reduced));
             Hp = Mathf.Max(0, Hp - dealt);
@@ -218,6 +224,7 @@ namespace VividOfFade
         public bool TryHit(int damage, string source, int enemyAcc, int nearbyEnemies)
         {
             if (invuln > 0f || IsDead) return false;
+            MarkCombat(); // 避けても戦闘中
             float chance = Stats.EvadeChanceVs(enemyAcc) * GameConfig.CrowdEvadeMult(nearbyEnemies);
             if (Random.value < chance)
             {
@@ -250,9 +257,11 @@ namespace VividOfFade
             }
             if (expired) RebuildStats();
 
-            // 自然回復
-            mp = Mathf.Min(MaxMp, mp + Stats.MpRegen * dt);
-            regenHp += Stats.HpRegen * dt;
+            // 自然回復（戦闘中＝攻撃を受けるか与えてから少しの間は、絞る）
+            if (combatTimer > 0f) combatTimer -= dt;
+            bool inCombat = combatTimer > 0f;
+            mp = Mathf.Min(MaxMp, mp + Stats.MpRegen * (inCombat ? GameConfig.CombatMpRegenMult : 1f) * dt);
+            regenHp += Stats.HpRegen * (inCombat ? GameConfig.CombatHpRegenMult : 1f) * dt;
             if (regenHp >= 1f)
             {
                 int whole = Mathf.FloorToInt(regenHp);

@@ -79,6 +79,14 @@ namespace VividOfFade
         public const float BossWindup = 0.8f;
         public const float BossSlamRadius = 2.6f;
         public static readonly Color BossTint = new Color(1f, 0.45f, 0.45f, 1f);
+        // ---- 回復と MP の消費（後半ほどシビアに） ----
+        public const float CombatTime = 4f;            // 攻撃を受けるか与えてから、これだけの秒は「戦闘中」
+        public const float CombatHpRegenMult = 0.25f;  // 戦闘中の HP の自然回復の倍率
+        public const float CombatMpRegenMult = 0.5f;   // 戦闘中の MP の自然回復の倍率
+        public const float LifeStealCapPct = 0.02f;    // 吸収で回復できるのは、1秒あたり最大 HP のこの割合まで
+        public const float SkillMpPerLevel = 0.02f;    // スキルの消費 MP：1レベルごとに +2%
+        public const float SkillMpPerIndex = 0.12f;    // スキルの消費 MP：後ろのスキルほど、1つごとに +12%
+
         public const float MythicChance = 0.3f;        // ボスから神話（赤）の装備が落ちる確率
         public const float GoldenMythicChance = 0.1f;  // 黄金のスライム（レア）から神話の装備が落ちる確率
         public const float EliteMythicChance = 0.03f;  // 精鋭（レア敵）から神話の装備が落ちる確率（ボスより低い）
