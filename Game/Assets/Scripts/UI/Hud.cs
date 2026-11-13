@@ -544,24 +544,31 @@ namespace VividOfFade
 
             // 1段目：レベル・HP・MP（メニューのボタンは右端、あとで描く）
             float rowY = mm, rowH = TopRowH;
-            var lvBox = new Rect(mm, rowY, W * 0.14f, rowH);
-            Fill(lvBox, new Color(0.18f, 0.17f, 0.2f, 1f));
+            // レベルの欄：明るくした帯の上でも読めるよう、暗い下地に枠。転生していれば幅を広げ、左に転生の印を置く
+            bool reborn = ch != null && ch.Rebirths > 0;
+            var lvBox = new Rect(mm, rowY, W * (reborn ? 0.21f : 0.14f), rowH);
+            Fill(lvBox, new Color(0.04f, 0.04f, 0.07f, 1f));
+            Frame(lvBox, new Color(0.55f, 0.5f, 0.68f, 1f), Mathf.Max(1f, Mathf.Round(H * 0.0008f)));
             int level = ch != null ? ch.Level : 1;
             var lvStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
             string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
-            if (ch != null && ch.Rebirths > 0)
+            if (reborn)
             {
-                // 転生の印：左にオーラの色の宝石と回数。レベルの文字は残りに入れる
-                float gem = rowH * 0.62f;
-                var gemRect = new Rect(lvBox.x + rowH * 0.12f, lvBox.y + (rowH - gem) * 0.5f, gem, gem);
+                // 転生の印：オーラの色の宝石と回数（同じ色の太字）。区切りの線のあとに LV
+                var aura = ThirdClasses.AuraColor(ch.Rebirths);
+                float gem = rowH * 0.7f;
+                var gemRect = new Rect(lvBox.x + rowH * 0.15f, lvBox.y + (rowH - gem) * 0.5f, gem, gem);
                 var oldColor = GUI.color;
-                GUI.color = ThirdClasses.AuraColor(ch.Rebirths);
+                GUI.color = aura;
                 DrawSprite(gemRect, PixelArt.RebirthGem);
                 GUI.color = oldColor;
-                var countStyle = new GUIStyle(small) { alignment = TextAnchor.LowerRight, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(rowH * 0.42f)) };
-                countStyle.normal.textColor = Color.white;
-                GUI.Label(new Rect(gemRect.x, gemRect.y, gemRect.width + rowH * 0.2f, gemRect.height + rowH * 0.15f), ch.Rebirths.ToString(), countStyle);
-                FitLabel(new Rect(gemRect.xMax + rowH * 0.1f, lvBox.y, lvBox.xMax - gemRect.xMax - rowH * 0.1f, rowH), lvText, lvStyle);
+                var countStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(rowH * 0.55f)) };
+                countStyle.normal.textColor = Color.Lerp(aura, Color.white, 0.35f);
+                float countW = rowH * (ch.Rebirths >= 10 ? 0.75f : 0.45f);
+                GUI.Label(new Rect(gemRect.xMax + rowH * 0.06f, lvBox.y, countW, rowH), ch.Rebirths.ToString(), countStyle);
+                float divX = gemRect.xMax + rowH * 0.1f + countW;
+                Fill(new Rect(divX, lvBox.y + rowH * 0.18f, 1f, rowH * 0.64f), new Color(1f, 1f, 1f, 0.25f));
+                FitLabel(new Rect(divX + rowH * 0.05f, lvBox.y, lvBox.xMax - divX - rowH * 0.05f, rowH), lvText, lvStyle);
             }
             else FitLabel(lvBox, lvText, lvStyle);
             float barsX = lvBox.xMax + mm, barsW = ToGui(MenuRect).x - mm - barsX;
