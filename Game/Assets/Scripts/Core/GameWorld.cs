@@ -417,6 +417,7 @@ namespace VividOfFade
             if (Input.MapPressed && !InTown && !OnTitle) Hud.BigMap = !Hud.BigMap;
             if (Input.NextMusicPressed) NextMusic();
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
+            Music.SetGolden(!ChoosingClass && !Player.IsDead && Enemies.Golden != null); // 黄金のスライムがいる間はボーナスタイムの曲
             Music.SetTitle(OnTitle);
             // 装備の効果のうち、ほかの仕組みが読むもの（町では効かせない）
             var fx = ChoosingClass ? null : Player.Stats;

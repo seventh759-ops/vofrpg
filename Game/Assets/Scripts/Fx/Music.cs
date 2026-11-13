@@ -17,7 +17,9 @@ namespace VividOfFade
 
         AudioSource normal;
         AudioSource boss;
+        AudioSource bonus;   // 黄金のスライムがいる間の曲
         bool bossMode;
+        bool goldenMode;
         bool muted;
         int theme = -1;
         int zoneSong;
@@ -36,6 +38,7 @@ namespace VividOfFade
         {
             normal = MakeSource();
             boss = MakeSource();
+            bonus = MakeSource();
             SetTheme(Profile.MusicTheme);
         }
 
@@ -128,6 +131,13 @@ namespace VividOfFade
             bossMode = on;
         }
 
+        /// <summary>黄金のスライムがいる間は、ボーナスタイムの曲（ボス戦の最中はボスの曲が優先）。</summary>
+        public void SetGolden(bool on)
+        {
+            if (on && bonus.clip == null) bonus.clip = Get(GoldenSong);
+            goldenMode = on;
+        }
+
         public bool Muted => muted;
 
         public void ToggleMute()
@@ -138,10 +148,18 @@ namespace VividOfFade
         void Update()
         {
             float step = Time.unscaledDeltaTime * Volume / 0.8f;
-            float normalTarget = muted || bossMode || nextNormal != null ? 0f : Volume;
+            bool bonusOn = goldenMode && !bossMode;
+            float normalTarget = muted || bossMode || bonusOn || nextNormal != null ? 0f : Volume;
             float bossTarget = muted || !bossMode || nextBoss != null ? 0f : Volume;
+            float bonusTarget = muted || !bonusOn ? 0f : Volume;
             normal.volume = Mathf.MoveTowards(normal.volume, normalTarget, step);
             boss.volume = Mathf.MoveTowards(boss.volume, bossTarget, step);
+            if (bonus.clip != null)
+            {
+                if (bonusOn && !bonus.isPlaying) { bonus.time = 0f; bonus.Play(); } // 出るたびに頭から
+                bonus.volume = Mathf.MoveTowards(bonus.volume, bonusTarget, step * 2f);   // 切り替えは素早く
+                if (!bonusOn && bonus.volume <= 0f && bonus.isPlaying) bonus.Stop();
+            }
             if (nextNormal != null && normal.volume <= 0f) Swap(normal, ref nextNormal);
             if (nextBoss != null && boss.volume <= 0f) Swap(boss, ref nextBoss);
             if (bossMode && boss.volume <= step && !muted) boss.time = 0f; // ボス戦の曲は頭から
@@ -374,6 +392,28 @@ namespace VividOfFade
             Bass = BassKind.Roots, BassVol = 0.16f, PadVol = 0.04f, ArpVol = 0.05f,
             Kick = "x.......x.......", Hat = "..x...x...x...x.",
             KickVol = 0.22f, HatVol = 0.014f, Echo = 0.25f,
+        };
+
+        /// <summary>黄金のスライムがいる間のボーナスタイムの曲：速い四つ打ちに、駆け上がるファンファーレの鐘。</summary>
+        static readonly Song GoldenSong = new Song
+        {
+            Name = "golden", Bpm = 150f,
+            Chords = new[] { C, G2, Am, F, C, G2, F, G2 },
+            Lead = new[]
+            {
+                72, 76, 79, 84, 79, 76, 79, -2,
+                79, -2, 74, 79, 83, -2, 79, -2,
+                81, -2, 76, 81, 84, -2, 81, -2,
+                77, 81, 84, -2, 81, -2, 77, -2,
+                84, -2, 79, -2, 76, 79, 84, -2,
+                86, -2, 83, -2, 79, 83, 86, -2,
+                84, -2, 81, 77, 81, -2, 84, -2,
+                86, 84, 83, 79, 74, -2, -2, -2,
+            },
+            Lead1 = LeadKind.Bell, LeadVol = 0.12f,
+            Bass = BassKind.Octaves, BassVol = 0.2f, PadVol = 0.04f, ArpVol = 0.07f, ArpSaw = true,
+            Kick = "x...x...x...x...", Clap = "....x.......x...", Hat = "..x...x...x...x.",
+            KickVol = 0.38f, HatVol = 0.03f, Duck = 0.3f, Echo = 0.2f,
         };
 
         /// <summary>区画の曲のボス戦版：同じ和音と旋律を、速く、四つ打ちと刻む低音で。</summary>
