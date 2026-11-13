@@ -737,10 +737,26 @@ namespace VividOfFade
             // 右上は MENU だけ（ポイントが余っている・鞄が満杯なら「!」）
             int points = ch != null ? ch.Points : 0;
             bool notice = points > 0 || inv.BagFull;
-            Fill(ToGui(MenuRect), new Color(0.05f, 0.05f, 0.08f, 1f));
-            Button(ToGui(MenuRect), notice ? "MENU !" : "MENU", notice ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.3f), centered,
-                () => World.OpenMenu());
-            OrnateFrame(ToGui(MenuRect), FrameGold, FrameT);
+            // MENU：いつも同じ暗いボタン。お知らせ（ポイントが余っている・鞄が満杯）があるときは、右上に脈打つ赤い丸の「!」
+            var menuR = ToGui(MenuRect);
+            Fill(menuR, new Color(0.05f, 0.05f, 0.08f, 1f));
+            Button(menuR, null, new Color(0f, 0f, 0f, 0.3f), centered, () => World.OpenMenu());
+            var menuStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
+            FitLabel(new Rect(menuR.x + menuR.width * 0.08f, menuR.y, menuR.width * 0.84f, menuR.height), "MENU", menuStyle);
+            OrnateFrame(menuR, FrameGold, FrameT);
+            if (notice)
+            {
+                float bsz = menuR.height * 0.75f * (1f + 0.08f * Mathf.Sin(Time.unscaledTime * 6f));
+                var badge = new Rect(menuR.xMax - bsz * 0.55f, menuR.y - bsz * 0.35f, bsz, bsz);
+                var oldC = GUI.color;
+                GUI.color = new Color(0f, 0f, 0f, 0.8f);
+                GUI.DrawTexture(new Rect(badge.x - 1f, badge.y - 1f, badge.width + 2f, badge.height + 2f), TitleArt.SoftGlow);
+                GUI.color = oldC;
+                Fill(new Rect(badge.x + bsz * 0.15f, badge.y + bsz * 0.15f, bsz * 0.7f, bsz * 0.7f), new Color(0.9f, 0.15f, 0.15f, 1f));
+                Frame(new Rect(badge.x + bsz * 0.15f, badge.y + bsz * 0.15f, bsz * 0.7f, bsz * 0.7f), new Color(1f, 0.85f, 0.5f, 1f), Mathf.Max(1f, FrameT * 0.5f));
+                var bang = new GUIStyle(centered) { fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(bsz * 0.6f)) };
+                GUI.Label(badge, "!", bang);
+            }
 
             DrawSkillButtons(ch);
             DrawPotions(ch);
