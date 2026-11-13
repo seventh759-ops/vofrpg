@@ -726,12 +726,12 @@ namespace VividOfFade
             string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
             FitLabel(new Rect(lvBox.x + lvBox.width * 0.06f, lvBox.y, lvBox.width * 0.88f, lvBox.height), lvText, lvStyle);
             var expBack = new Rect(lvBox.xMax + mm, expY, W - mm * 2f - lvBox.width - mm, ExpRowH);
-            Fill(expBack, new Color(0.15f, 0.14f, 0.12f, 1f));
+            Fill(expBack, new Color(0.03f, 0.1f, 0.09f, 1f));
             if (ch != null)
             {
                 float expRatio = ch.Level >= Progression.LevelCap(ch) ? 1f : Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
-                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.78f, 0.58f, 0.18f, 1f)); // 濃い金（白い文字が読めるように）
-                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.35f), new Color(1f, 0.95f, 0.7f, 0.25f)); // 光沢
+                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.1f, 0.6f, 0.52f, 1f)); // 碧（HP の赤・MP の青と並んでも区別でき、白い文字も読める）
+                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.35f), new Color(0.8f, 1f, 0.95f, 0.22f)); // 光沢
                 for (int k = 1; k < 10; k++) Fill(new Rect(expBack.x + expBack.width * k / 10f, expBack.y + expBack.height * 0.6f, 1f, expBack.height * 0.4f), new Color(0f, 0f, 0f, 0.3f)); // 10% ごとの目盛り
                 var expText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(ExpRowH * 0.7f)) };
                 expText.normal.textColor = new Color(1f, 0.97f, 0.9f);
