@@ -46,7 +46,10 @@ namespace VividOfFade
         public const float SlimeSpeedMax = 2.1f;
 
         // 波が進むほど、体力も攻撃力も増える（後半ほど伸びが大きい）
-        public static float EnemyHp(int wave) => 20f * (1f + 0.3f * (wave - 1)) * Mathf.Pow(1.03f, wave - 1);
+        // 体力の複利を 3% → 2.2%、攻撃力の伸びを 1.2% → 2.5% にした（後半に敵が硬すぎ、攻撃が弱すぎたため）
+        public const float EnemyHpGrowth = 1.022f;
+        public const float EnemyDamageGrowth = 0.025f;
+        public static float EnemyHp(int wave) => 20f * (1f + 0.3f * (wave - 1)) * Mathf.Pow(EnemyHpGrowth, wave - 1);
         /// <summary>
         /// 術師の弾のダメージ。体当たりと違い、深い層でも急に強くならない（指数で増えない）。
         /// 避けにくい分、少しずつ削る攻撃にする。
@@ -57,10 +60,9 @@ namespace VividOfFade
         public const float BulletToContact = 0.38f;
 
         /// <summary>
-        /// 体当たりのダメージ。前は指数で増えていて深い層で一撃死になっていたので、緩やかな増え方にした
-        /// （1層は前とほぼ同じ、30層で約半分、96層で約800）。
+        /// 体当たりのダメージ。指数ではなく、2つの直線の掛け算で増える（1層は約9、25層で約150、74層で約860）。
         /// </summary>
-        public static int EnemyDamage(int wave) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (wave - 1)) * (1f + 0.012f * (wave - 1)));
+        public static int EnemyDamage(int wave) => Mathf.RoundToInt(SlimeContactDamage * (1f + 0.15f * (wave - 1)) * (1f + EnemyDamageGrowth * (wave - 1)));
 
         // 敵の波
         public const int MaxEnemies = 600; // 眠っている敵も含む（層に入った時点で全部の部屋に置く）
