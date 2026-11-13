@@ -730,8 +730,8 @@ namespace VividOfFade
             if (ch != null)
             {
                 float expRatio = ch.Level >= Progression.LevelCap(ch) ? 1f : Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
-                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.95f, 0.88f, 0.7f, 1f));
-                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.35f), new Color(1f, 1f, 1f, 0.3f)); // 光沢
+                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.78f, 0.58f, 0.18f, 1f)); // 濃い金（白い文字が読めるように）
+                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.35f), new Color(1f, 0.95f, 0.7f, 0.25f)); // 光沢
                 for (int k = 1; k < 10; k++) Fill(new Rect(expBack.x + expBack.width * k / 10f, expBack.y + expBack.height * 0.6f, 1f, expBack.height * 0.4f), new Color(0f, 0f, 0f, 0.3f)); // 10% ごとの目盛り
                 var expText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(ExpRowH * 0.7f)) };
                 expText.normal.textColor = new Color(1f, 0.97f, 0.9f);
