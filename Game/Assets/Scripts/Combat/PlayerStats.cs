@@ -109,11 +109,13 @@ namespace VividOfFade
             {
                 var spec = ClassInfo.Get(Class);
                 float dps = Damage * (1f + CritChance * (CritMult - 1f)) * Multiplicity / FireInterval;
-                // MP・自然回復も少しだけ数える（スキルが入ったら重みを見直す）
-                float survive = 1f + MaxHp * 0.002f + Armor * 0.002f + MaxMp * 0.0005f + HpRegen * 0.02f + MpRegen * 0.01f;
+                // 守り：実際に耐えられる量（受けるダメージ = 元 × 被ダメージ倍率 × 100 /（100 + 防御））の平方根。
+                // 体力が 2 割増えても強さは約 1 割増と数え、攻撃（そのまま掛ける）と釣り合わせる（体力の実数値を優遇しすぎないように）
+                float ehp = Mathf.Max(1f, MaxHp) * (100f + Mathf.Max(0f, Armor)) / 100f / Mathf.Max(0.1f, DamageTaken);
+                float survive = Mathf.Sqrt(ehp) * (1f + MaxMp * 0.0005f + HpRegen * 0.02f + MpRegen * 0.01f);
                 float reach = 1f + (Light - spec.BaseLight) * 0.05f;
-                // M6 の効果も少しずつ数える（スキル・被ダメージ・精鋭・範囲・稼ぎ）
-                float extras = (1f + SkillDamage * 0.3f) * (1f + (1f - CooldownMult) * 0.3f) * (spec.DamageTaken / Mathf.Max(0.1f, DamageTaken))
+                // M6 の効果も少しずつ数える（スキル・精鋭・範囲・稼ぎ）。被ダメージは守りの中で数える
+                float extras = (1f + SkillDamage * 0.3f) * (1f + (1f - CooldownMult) * 0.3f)
                     * (1f + EliteDamage * 0.2f) * (1f + (AreaMult - 1f) * 0.2f) * (1f + (ExpGain + EmberFind + MagicFind) * 0.1f);
                 return dps * survive * reach * (1f + ExplodeMult * 0.5f) * (1f + DoubleStrikeChance)
                     * (1f + DodgeNovaMult * 0.1f) * (1f + LifeSteal * 10f) * extras;
