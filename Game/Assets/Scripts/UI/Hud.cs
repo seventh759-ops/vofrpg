@@ -591,7 +591,14 @@ namespace VividOfFade
                     c.a = t.T < ToastLife ? 1f : 0.55f;
                     var style = new GUIStyle(small);
                     style.normal.textColor = c;
-                    GUI.Label(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + (k - start) * logH, msgR.width * 0.68f, logH), "+ " + t.Text, style);
+                    // 右側に強化の残り時間・「H：操作」がある行だけ、その幅をあける。収まらない文は縮めて1行に収める（切らない）
+                    int row = k - start;
+                    float reserve = 0f;
+                    if (row < player.BuffCount && !(World.Paused || player.IsDead))
+                        reserve = small.CalcSize(new GUIContent($"{player.BuffName(row)}  {player.BuffRemaining(row):0.0}s")).x + mm;
+                    if (row == LogLines - 1 && !Application.isMobilePlatform)
+                        reserve = Mathf.Max(reserve, small.CalcSize(new GUIContent(Loc.T("H: Controls", "H：操作"))).x + mm);
+                    FitLabel(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + row * logH, msgR.width - mm * 2f - reserve, logH), "+ " + t.Text, style);
                 }
             }
 
