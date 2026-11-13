@@ -23,6 +23,9 @@ namespace VividOfFade
         public static string FloorName(int floor) =>
             IsAbyss(floor) ? Loc.T($"ABYSS {AbyssDepth(floor)}", $"深淵{AbyssDepth(floor)}層") : Loc.T($"FLOOR {floor}", $"{floor}層");
 
+        /// <summary>層の名前を、言語に関係なく英語で（HUD の層の行：「FLOOR 71」「ABYSS 3」）。</summary>
+        public static string FloorNameEn(int floor) => IsAbyss(floor) ? $"ABYSS {AbyssDepth(floor)}" : $"FLOOR {floor}";
+
         /// <summary>そのキャラクターが下りられる最後の層（深淵に入れなければ100層）。</summary>
         public static int LastFloorFor(CharacterData ch) => CanEnterAbyss(ch) ? AbyssLastFloor : MaxFloor;
         public static bool IsBossFloor(int floor) => floor > 0 && floor % BossFloorEvery == 0;
