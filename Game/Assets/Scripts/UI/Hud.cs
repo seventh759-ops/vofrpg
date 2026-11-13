@@ -1308,9 +1308,13 @@ namespace VividOfFade
             // BGM と言語は1行に並べる（下の案内役と重ならないように。N キーでも BGM を変えられる）
             float half = (W - pad * 2f - W * 0.02f) * 0.5f;
             var musicRect = new Rect(pad, y + gap * 0.5f, half, H * 0.045f);
+            Fill(musicRect, new Color(0.03f, 0.03f, 0.06f, 0.85f));
             Button(musicRect, $"BGM: {World.Music.ThemeName}", new Color(1f, 1f, 1f, 0.1f), centered, () => World.NextMusic());
+            OrnateFrame(musicRect, FrameGold, FrameT, false, false);
             var langRect = new Rect(musicRect.xMax + W * 0.02f, musicRect.y, half, musicRect.height);
+            Fill(langRect, new Color(0.03f, 0.03f, 0.06f, 0.85f));
             Button(langRect, $"Language: {Loc.LanguageName}", new Color(1f, 1f, 1f, 0.1f), centered, () => Loc.Next());
+            OrnateFrame(langRect, FrameGold, FrameT, false, false);
         }
 
         // ---- キャラクター選択（3つの枠） ----
@@ -1360,14 +1364,18 @@ namespace VividOfFade
                 string key = Application.isMobilePlatform ? "" : $"[{i + 1}] ";
                 if (ch == null)
                 {
+                    Fill(r, new Color(0.03f, 0.03f, 0.06f, 0.85f)); // 塔の絵（灯った窓）が透けて文字の邪魔をしないように
                     Button(r, null, new Color(1f, 1f, 1f, 0.06f), centered, () => newSlot = slot);
+                    OrnateFrame(r, FrameGold, FrameT, false, false);
                     var empty = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
                     empty.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
                     GUI.Label(r, key + Loc.T("+  New character", "＋  新しいキャラクター"), empty);
                 }
                 else
                 {
+                    Fill(r, new Color(0.03f, 0.03f, 0.06f, 0.85f));
                     Button(r, null, new Color(1f, 1f, 1f, 0.12f), centered, () => World.ChooseCharacter(slot));
+                    OrnateFrame(r, FrameGold, FrameT);
                     float icon = r.height - inner * 2f;
                     DrawSprite(new Rect(r.x + inner, r.y + inner, icon, icon), PixelArt.PlayerFor(ch));
                     float tx = r.x + icon + inner * 2f;
