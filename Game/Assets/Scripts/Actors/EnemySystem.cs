@@ -52,6 +52,9 @@ namespace VividOfFade
             public Vector2 Pos;
             public float Hp;
             public int Damage;
+            public EnemyKind Kind;   // 元の精鋭と同じ種類・段階で分かれる
+            public int Tier;
+            public float Scale;      // 元の大きさ（精鋭の拡大を除いたもの）
         }
 
         // 分裂は一覧を回している最中に起きるので、次の Tick の最初に出す
@@ -425,7 +428,8 @@ namespace VividOfFade
                 if (e.Elite == EliteKind.Splitter)
                 {
                     for (int k = 0; k < GameConfig.SplitCount; k++)
-                        pendingSplits.Add(new Split { Home = e.Home, Pos = e.Pos, Hp = e.MaxHp / GameConfig.EliteHpMult * 0.5f, Damage = e.ContactDamage });
+                        pendingSplits.Add(new Split { Home = e.Home, Pos = e.Pos, Hp = e.MaxHp / GameConfig.EliteHpMult * 0.5f, Damage = e.ContactDamage,
+                            Kind = e.Kind, Tier = e.Tier, Scale = e.BaseScale / GameConfig.EliteScale });
                 }
             }
         }
@@ -495,14 +499,20 @@ namespace VividOfFade
             foreach (var s in pendingSplits)
             {
                 Vector2 offset = UnityEngine.Random.insideUnitCircle * 0.6f;
-                Spawn(room.Clamp(s.Pos + offset, GameConfig.SlimeRadius), s.Hp, s.Damage);
+                // 元の精鋭と同じ種類で作り、体力・ダメージ・見た目・大きさは元から決めた値で上書きする（種類・段階の補正を二重に掛けないように）
+                Spawn(room.Clamp(s.Pos + offset, GameConfig.SlimeRadius), s.Hp, s.Damage, s.Kind);
                 if (Active.Count == 0) continue;
                 var small = Active[Active.Count - 1];
                 small.Home = s.Home;
-                small.BaseScale = 0.75f;
-                small.Radius = GameConfig.SlimeRadius * 0.75f;
+                small.Hp = s.Hp;
+                small.MaxHp = s.Hp;
+                small.ContactDamage = s.Damage;
+                small.Tier = s.Tier;
+                small.Sr.sprite = s.Kind == EnemyKind.Slime && zone != null ? PixelArt.SlimeFor(zone, s.Tier) : PixelArt.EnemySprite(s.Kind, s.Tier);
+                small.BaseScale = s.Scale * 0.75f;
+                small.Radius = GameConfig.SlimeRadius * small.BaseScale;
                 small.Speed *= 1.3f;
-                small.transform.localScale = new Vector3(0.75f, 0.75f, 1f);
+                small.transform.localScale = new Vector3(small.BaseScale, small.BaseScale, 1f);
             }
             pendingSplits.Clear();
 
