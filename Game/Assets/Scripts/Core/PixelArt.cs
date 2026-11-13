@@ -3251,15 +3251,14 @@ namespace VividOfFade
 
         /// <summary>
         /// 案内役（オリジナルキャラ）。40ドットを、プレイヤーと同じ縮尺（1マス32ドット）で描く。
-        /// 黒い影の体（Q）と灰色の毛（F）に陰影を付け、歯（T）は明るい象牙色の陰影で白く浮かせ、上下とすき間に歯茎（U）を入れ、体との境目は中間の色（V）でなめらかにつなぐ。
+        /// 黒い影の体（Q）と灰色の毛（F）に陰影を付け、口は口角の上がった笑みの形で、中（K）は真っ暗、上下に象牙色の歯（T）が並ぶ。
         /// </summary>
         public static Sprite Guide => Shaded("Guide40", GuideRows, new Dictionary<char, Color32[]>
         {
             { 'Q', Ramp(44, 40, 52, 28, 24, 34, 19, 15, 25, 12, 8, 16) },
             { 'F', Ramp(112, 100, 114, 82, 72, 86, 60, 52, 64, 44, 38, 48) },
             { 'T', Ramp(255, 255, 250, 244, 238, 222, 230, 222, 202, 212, 202, 180) }, // 歯：左上が白く光る象牙色
-            { 'U', Ramp(176, 74, 92, 156, 62, 80, 138, 52, 70, 120, 44, 62) },         // 歯茎（縁が黒くつぶれないよう暗い段も明るめ）
-            { 'V', Ramp(92, 46, 60, 76, 38, 52, 64, 32, 46, 54, 28, 40) },             // 歯茎と体の間（なめらかにつなぐ中間の色）
+            { 'K', Ramp(10, 6, 12, 10, 6, 12, 10, 6, 12, 10, 6, 12) },                 // 口の中（真っ暗）
         }, null, 32);
 
         static readonly string[] GuideRows =
@@ -3287,15 +3286,15 @@ namespace VividOfFade
             "........FFQFFQQFQFQQQQQQFFQQFQFF........",
             ".......QQQFFQQQQQFQQQQQQQFQQFFQQQ.......",
             "........QFFQQQQQQQQQQQQQQQQQQFFQ........",
-            ".......QFFQVVVVVVVVVVVVVVVVVVQFFQ.......",
-            "......QFFFTTUUUUUUUUUUUUUUUUTTFFFQ......",
-            "......QQFFTTUTTUTTUTTUTTUTTUTTFFQQ......",
-            ".......QFFQVVTTUTTUTTUTTUTTVVQFFQ.......",
-            ".......QQFFQQQVVVVVVVVVVVVQQQFQQF.......",
-            "........QFQQQTTUTTUTTUTTUTTQQQFQ........",
-            ".........QQQQTTUTTUTTUTTUTTQQQQ.........",
-            ".........QFFFFUUUUUUUUUUUUFFFFQ.........",
-            "..........QQQFFVVVVVVVVVFFFQQQ..........",
+            ".......QFFTQQQQQQQQQQQQQQQQQQTFFQ.......",
+            "......QFFFKTKTQQQQQQQQQQQQTKTKFFFQ......",
+            "......QQFFKKKTTKTTKTTKTTKTTKKKFFQQ......",
+            ".......QFFQKKKTKTTKTTKTTKTKKKQFFQ.......",
+            ".......QQFFQKTKKKKKKKKKKKKTKQFQQF.......",
+            "........QFQQQQTKKKKKKKKKKTQQQQFQ........",
+            ".........QQQQQQQTTKTTKTTQQQQQQQ.........",
+            ".........QFFFFQQQQQQQQQQQQFFFFQ.........",
+            "..........QQQFFQQQQQQQQQFFFQQQ..........",
             "...........QQQFFFFQQQQFFFFQQQ...........",
             "..........QFFQQQFFFFFFFFQQQFFQ..........",
             ".........QFQFFFQQQQFFQQQQFFFQF..........",
