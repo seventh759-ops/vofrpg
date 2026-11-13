@@ -49,6 +49,9 @@ namespace VividOfFade
         SkillsScreen skills;
         ReturnScreen returnScreen;
         MenuScreen menu;
+
+        /// <summary>メニューを開いたとき（設定の画面ではなく最初から出す）。</summary>
+        public void ResetMenu() => menu?.Reset();
         AltarScreen altarScreen;
         public GuideBox Guide { get; private set; }
         public TownScreen Town { get; private set; }
@@ -1477,7 +1480,11 @@ namespace VividOfFade
         /// <summary>ボタンを描いて、次のタップの判定に登録する。rect は GUI 座標（左上原点）。</summary>
         public void Button(Rect guiRect, string text, Color background, GUIStyle style, Action onTap)
         {
+            // 文字のあるボタンは、どの画面でも同じ見た目：暗い下地＋色＋金の飾り枠（出っぱり）。文字のない当たり判定だけのボタンはそのまま
+            bool decorate = text != null && background.a > 0.02f;
+            if (decorate) Fill(guiRect, new Color(0.04f, 0.04f, 0.07f, 0.92f));
             Fill(guiRect, background);
+            if (decorate) OrnateFrame(guiRect, FrameGold, Mathf.Max(1f, Mathf.Round(FrameT * 0.75f)), false, false);
             if (text != null) FitLabel(guiRect, text, style); // 折り返さず、入らなければ文字を小さく
             if (Event.current.type == EventType.Repaint)
             {

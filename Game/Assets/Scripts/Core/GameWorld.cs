@@ -1084,6 +1084,7 @@ namespace VividOfFade
         public void OpenMenu()
         {
             OpenPanel(false, false, false);
+            Hud.ResetMenu();
             MenuOpen = true;
         }
 
