@@ -37,7 +37,7 @@ namespace VividOfFade
 
             // いちばん下に、スキルのボタン（1・2・3）の枠を固定で置く。その上がスキルの一覧（スクロール）
             float slotS = Mathf.Min(W * 0.17f, H * 0.085f);
-            float hintH = small.fontSize * 1.6f;
+            float hintH = H * 0.01f; // 一覧と下のボタンの間のすき間（説明は初めて開いたときのヒントで出す）
             float slotTop = H - pad * 0.6f - slotS;
             float viewTop = pad + btnH + H * 0.015f, viewBottom = slotTop - hintH - H * 0.01f;
             float y = viewTop;
@@ -144,15 +144,6 @@ namespace VividOfFade
                 float sbY = viewTop + (viewH - sbH) * (scroll / maxScroll);
                 Hud.Fill(new Rect(W - pad * 0.4f, sbY, pad * 0.15f, sbH), new Color(1f, 1f, 1f, 0.35f));
             }
-
-            // 案内の1行
-            var hint = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
-            hint.normal.textColor = new Color(0.85f, 0.85f, 0.9f);
-            string hintText = selected >= 0
-                ? Loc.T($"Tap a button for \"{SkillInfo.Get(ClassInfo.Current, selected).DisplayName}\" (tap its own button again to remove)",
-                        $"「{SkillInfo.Get(ClassInfo.Current, selected).DisplayName}」を付けるボタンをタップ（付いているボタンなら外す）")
-                : Loc.T("Pick a skill, then tap a button below", "スキルを選んで、下のボタンをタップ");
-            Hud.FitLabel(new Rect(pad, slotTop - hintH - H * 0.005f, W - pad * 2f, hintH), hintText, hint);
 
             // スキルのボタン（1・2・3）。選んだスキルを付ける／同じスキルなら外す。何も選んでいなければ、付いているスキルを選ぶ
             float slotGap = slotS * 0.3f;

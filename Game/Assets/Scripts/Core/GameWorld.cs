@@ -790,6 +790,8 @@ namespace VividOfFade
             BagOpen = bag;
             StatsOpen = stats;
             SkillsOpen = skills;
+            if (skills) Guide("skillsScreen", Loc.T("Tap a skill to pick it, then tap one of the buttons at the bottom to set it.", "スキルをタップして選んで、下のボタンをタップすると付けられるよ。"),
+                Loc.T("Tap the same skill's button again to remove it, or pick another skill to swap.", "付いているボタンを同じスキルでもう一度タップすると外れる。別のスキルなら付け替えだ。"));
         }
 
         void GainExp(int amount)
