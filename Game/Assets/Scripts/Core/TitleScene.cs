@@ -7,6 +7,8 @@ namespace VividOfFade
     /// 霧の洞窟・遠くの岩・天井の鍾乳石・中央に大きく沈む逆さの塔（円柱の陰影、窓、バルコニー、つらら、螺旋階段）・
     /// 手前の霧と四隅の暗がり。
     /// 色は素材ごとの段階（ramp）から選び、段階の間はディザ（市松に混ぜる）でつなぐ。
+    /// 深淵へ行けるようになったら、同じ構図の「深淵版」：紫黒の洞窟、塔に走る赤い裂け目、赤く灯る窓、
+    /// 尖塔の真下に口を開ける光る深淵。
     /// </summary>
     public static class TitleScene
     {
@@ -14,16 +16,27 @@ namespace VividOfFade
         public const int TowerX = 90, TowerTop = 0;
         public const int SpireTip = 295;
 
-        static Texture2D texture;
+        static Texture2D texture, abyssTexture;
         static Color32[] img;
+        static bool abyss; // いま描いているのが深淵版か
 
-        /// <summary>背景の絵。</summary>
+        /// <summary>背景の絵（塔）。</summary>
         public static Texture2D Texture
         {
             get
             {
-                if (texture == null) Build();
+                if (texture == null) texture = Build(false);
                 return texture;
+            }
+        }
+
+        /// <summary>背景の絵（深淵版）。</summary>
+        public static Texture2D AbyssTexture
+        {
+            get
+            {
+                if (abyssTexture == null) abyssTexture = Build(true);
+                return abyssTexture;
             }
         }
 
@@ -76,9 +89,17 @@ namespace VividOfFade
             return r;
         }
 
-        static readonly Color32[] Cave = Ramp(8, 8, 13, 14, 15, 22, 22, 24, 33, 33, 36, 47, 47, 51, 64, 64, 69, 83, 84, 90, 104, 106, 113, 127, 130, 137, 150);
-        static readonly Color32[] Stone = Ramp(13, 13, 19, 24, 24, 33, 36, 36, 48, 50, 50, 64, 66, 66, 82, 84, 85, 102, 106, 108, 126, 132, 134, 152);
-        static readonly Color32[] Warm = Ramp(80, 34, 12, 150, 70, 20, 220, 130, 40, 255, 190, 90, 255, 232, 170);
+        static readonly Color32[] TowerCave = Ramp(8, 8, 13, 14, 15, 22, 22, 24, 33, 33, 36, 47, 47, 51, 64, 64, 69, 83, 84, 90, 104, 106, 113, 127, 130, 137, 150);
+        static readonly Color32[] TowerStone = Ramp(13, 13, 19, 24, 24, 33, 36, 36, 48, 50, 50, 64, 66, 66, 82, 84, 85, 102, 106, 108, 126, 132, 134, 152);
+        static readonly Color32[] TowerWarm = Ramp(80, 34, 12, 150, 70, 20, 220, 130, 40, 255, 190, 90, 255, 232, 170);
+        // 深淵版：紫黒の洞窟と岩、赤紫に灯る窓と裂け目
+        static readonly Color32[] AbyssCave = Ramp(6, 3, 10, 12, 6, 18, 20, 8, 28, 30, 11, 40, 42, 14, 52, 58, 18, 66, 78, 22, 80, 102, 28, 94, 130, 38, 108);
+        static readonly Color32[] AbyssStone = Ramp(9, 6, 12, 17, 11, 22, 26, 16, 32, 37, 22, 44, 50, 30, 58, 64, 38, 72, 80, 48, 88, 98, 60, 106);
+        static readonly Color32[] AbyssWarm = Ramp(70, 6, 22, 140, 16, 44, 220, 34, 74, 255, 90, 130, 255, 190, 215);
+        static readonly Color32[] RiftGlow = Ramp(40, 4, 24, 110, 10, 50, 190, 20, 80, 245, 50, 110, 255, 120, 170, 255, 205, 225, 255, 245, 250);
+        static Color32[] Cave => abyss ? AbyssCave : TowerCave;
+        static Color32[] Stone => abyss ? AbyssStone : TowerStone;
+        static Color32[] Warm => abyss ? AbyssWarm : TowerWarm;
 
         static Color32 Pick(Color32[] ramp, float v, int x, int y)
         {
@@ -98,6 +119,7 @@ namespace VividOfFade
             float dx = (x - 90) / 100f, dy = (y - 150) / 130f;
             float v = Mathf.Exp(-(dx * dx + dy * dy) * 1.1f) * 0.85f + 0.12f * Mathf.Exp(-Sq((y - 150) / 90f));
             v += (Fbm(x / 40f, y / 25f, 7) - 0.5f) * 0.12f;
+            if (abyss) v = v * 0.75f + 0.55f * Mathf.Exp(-Sq((x - 90) / 70f) - Sq((y - 330) / 70f)); // 下の深淵の光が霧を照らす
             return v * 0.72f;
         }
 
@@ -118,8 +140,9 @@ namespace VividOfFade
 
         // ---- 組み立て ----
 
-        static void Build()
+        static Texture2D Build(bool abyssVersion)
         {
+            abyss = abyssVersion;
             img = new Color32[W * H];
             for (int y = 0; y < H; y++)
                 for (int x = 0; x < W; x++)
@@ -132,6 +155,7 @@ namespace VividOfFade
             Stairs(false);
             Tower();
             Stairs(true);
+            if (abyss) Rift();
             FogAndVignette();
 
             // テクスチャは下から上へ並ぶので、上下を入れ替える
@@ -139,15 +163,45 @@ namespace VividOfFade
             for (int y = 0; y < H; y++)
                 for (int x = 0; x < W; x++)
                     px[(H - 1 - y) * W + x] = img[y * W + x];
-            texture = new Texture2D(W, H, TextureFormat.RGBA32, false)
+            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false)
             {
-                name = "TitleScene",
+                name = abyss ? "TitleSceneAbyss" : "TitleScene",
                 filterMode = FilterMode.Point,
                 wrapMode = TextureWrapMode.Clamp,
             };
-            texture.SetPixels32(px);
-            texture.Apply(false, true);
+            tex.SetPixels32(px);
+            tex.Apply(false, true);
             img = null;
+            abyss = false;
+            return tex;
+        }
+
+        /// <summary>深淵版：尖塔の真下に口を開ける、光る深淵（ぎざぎざの縁、白く熱い芯、上へ伸びる光の筋）。</summary>
+        static void Rift()
+        {
+            for (int y = 250; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    float dx = (x - TowerX) / 78f, dy = (y - 326f) / 30f;
+                    float edge = 1f + (Fbm(x / 7f, 3f, 91) - 0.5f) * 0.5f;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy) / edge;
+                    if (d < 1f)
+                    {
+                        Put(x, y, RiftGlow, 0.3f + Mathf.Pow(1f - d, 0.7f) * 0.8f + (Fbm(x / 5f, y / 3f, 92) - 0.5f) * 0.2f);
+                        continue;
+                    }
+                    // 縁から上へ伸びる、細い光の筋
+                    float ray = Mathf.Max(0f, Fbm(x / 2.5f, 0f, 93) - 0.6f) * 2.5f;
+                    float fall = Mathf.Exp(-Sq((d - 1f) / 0.5f));
+                    float glow = (0.35f * fall + ray * Mathf.Exp(-Sq((y - 300f) / 30f)) * 0.5f) * Mathf.Exp(-Sq(dx * 0.8f));
+                    if (glow > 0.08f)
+                    {
+                        var c = img[y * W + x];
+                        var g = Pick(RiftGlow, glow * 1.4f, x, y);
+                        float q = Mathf.Floor(Mathf.Min(1f, glow * 1.6f) * 4f + Bay(x, y)) / 4f;
+                        img[y * W + x] = Mix(c, g, q * 0.8f);
+                    }
+                }
         }
 
         /// <summary>遠くの岩の影（霧に霞む）。right=true なら右から、false なら左から張り出す。</summary>
@@ -269,7 +323,12 @@ namespace VividOfFade
                             break;
                         }
                     }
-                    if (!window) Put(x, y, Stone, v, TowerFog(y));
+                    if (!window)
+                    {
+                        // 深淵版：塔の壁を走る、赤く光る裂け目
+                        if (abyss && y > 70 && Mathf.Abs(Fbm(theta * 9f, y / 22f, 95, 2) - 0.5f) < 0.003f + 0.011f * Mathf.Clamp01((y - 90f) / 190f)) Put(x, y, Warm, 0.45f + 0.45f * nz);
+                        else Put(x, y, Stone, v, TowerFog(y));
+                    }
                 }
             }
             // バルコニー下のつらら

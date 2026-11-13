@@ -165,6 +165,18 @@ namespace VividOfFade
             return blank;
         }
 
+        /// <summary>どれかのキャラクターが深淵へ行けるようになったか（行ったことがある・今入れる）。タイトルの背景が深淵に変わる。</summary>
+        public static bool AbyssUnlocked
+        {
+            get
+            {
+                EnsureLoaded();
+                foreach (var c in data.Characters)
+                    if (c != null && (c.BestFloor > GameConfig.MaxFloor || GameConfig.CanEnterAbyss(c))) return true;
+                return false;
+            }
+        }
+
         /// <summary>枠のキャラクター（空なら null）。</summary>
         public static CharacterData InSlot(int slot)
         {

@@ -1045,7 +1045,8 @@ namespace VividOfFade
             Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0f), centered, World.LeaveTitle);
 
             // 背景：ドットの大きさがそろうように整数倍で拡大し、画面を覆う（はみ出す分は切れる）
-            var bgTex = TitleScene.Texture;
+            bool abyss = Profile.AbyssUnlocked; // 深淵へ行けるようになったら、深淵版の背景
+            var bgTex = abyss ? TitleScene.AbyssTexture : TitleScene.Texture;
             float ps = Mathf.Ceil(Mathf.Max(W / TitleScene.W, H / TitleScene.H));
             var bg = new Rect((W - TitleScene.W * ps) * 0.5f, (H - TitleScene.H * ps) * 0.5f, TitleScene.W * ps, TitleScene.H * ps);
             GUI.DrawTexture(bg, bgTex);
@@ -1057,13 +1058,24 @@ namespace VividOfFade
                 float r = TitleScene.TowerRadius(w.y + 4);
                 float wx = bg.x + (TitleScene.TowerX + w.u * r) * ps, wy = bg.y + (w.y + 4) * ps;
                 float f = 0.6f + 0.4f * Mathf.PerlinNoise(t * 3f, w.y * 0.37f + w.u * 5f);
-                Glow(wx, wy, ps * 9f, new Color(1f, 0.65f, 0.3f, 0.35f * f));
+                Glow(wx, wy, ps * 9f, abyss ? new Color(1f, 0.2f, 0.4f, 0.4f * f) : new Color(1f, 0.65f, 0.3f, 0.35f * f));
             }
             // 最深部の灯り（尖塔の先）
             float flick = 0.55f + 0.45f * Mathf.PerlinNoise(t * 2.2f, 0.3f);
             float bx = bg.x + TitleScene.TowerX * ps, by = bg.y + (TitleScene.SpireTip - 1) * ps;
-            Glow(bx, by, ps * 22f, new Color(1f, 0.8f, 0.45f, 0.45f * flick));
-            Glow(bx, by, ps * 6f, new Color(1f, 0.95f, 0.8f, 0.9f * flick));
+            if (abyss)
+            {
+                // 深淵の口が脈打つ
+                float beat = 0.6f + 0.4f * Mathf.Sin(t * 1.6f);
+                Glow(bx, bg.y + 318f * ps, ps * 120f, new Color(1f, 0.15f, 0.45f, 0.35f * beat));
+                Glow(bx, by, ps * 18f, new Color(1f, 0.4f, 0.6f, 0.45f * flick));
+                Glow(bx, by, ps * 5f, new Color(1f, 0.85f, 0.9f, 0.85f * flick));
+            }
+            else
+            {
+                Glow(bx, by, ps * 22f, new Color(1f, 0.8f, 0.45f, 0.45f * flick));
+                Glow(bx, by, ps * 6f, new Color(1f, 0.95f, 0.8f, 0.9f * flick));
+            }
 
             // 漂う塵
             for (int i = 0; i < 30; i++)
@@ -1072,7 +1084,7 @@ namespace VividOfFade
                 float ex = Hash01(i * 5 + 3) * W + Mathf.Sin(t * 0.5f + i) * W * 0.03f;
                 float ey = H * (0.95f - 0.8f * life);
                 float a = Mathf.Sin(life * Mathf.PI) * 0.5f;
-                Fill(new Rect(ex, ey, ps * 0.5f, ps * 0.5f), new Color(0.85f, 0.88f, 0.95f, a));
+                Fill(new Rect(ex, ey, ps * 0.5f, ps * 0.5f), abyss ? new Color(1f, 0.35f, 0.55f, a) : new Color(0.85f, 0.88f, 0.95f, a)); // 深淵では、下から立ちのぼる赤い火の粉
             }
 
             // 下側を暗くして文字を読みやすく
