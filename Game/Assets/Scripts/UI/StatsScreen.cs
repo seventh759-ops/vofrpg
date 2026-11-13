@@ -175,10 +175,11 @@ namespace VividOfFade
                 { "HP", $"{shownHp}", Loc.T("HP regen", "HP回復"), Loc.T($"{st.HpRegen:0.0}/s", $"{st.HpRegen:0.0}/秒") },
                 { "MP", $"{shownMp}", Loc.T("MP regen", "MP回復"), Loc.T($"{st.MpRegen:0.0}/s", $"{st.MpRegen:0.0}/秒") },
                 { Loc.T("Damage", "ダメージ"), $"{st.Damage:0}", Loc.T("Attacks/s", "攻撃/秒"), $"{st.AttacksPerSecond:0.0}" },
-                { "DPS", $"{st.Damage * st.AttacksPerSecond * (1f + st.EffectiveCrit * (st.CritMult - 1f)):0}", Loc.T("Crit", "会心"),
-                    (GameConfig.CritResist > 0f ? $"{st.CritChance * 100f:0}%→{st.EffectiveCrit * 100f:0}%" : $"{st.CritChance * 100f:0}%") + $"  x{st.CritMult:0.00}" }, // 敵の会心耐性があれば、実際の会心率も
-                { Loc.T("Armor", "防御"), $"{st.Armor:0}", Loc.T("Speed", "速さ"), $"{st.MoveSpeed:0.0}" },
-                { Loc.T("Light", "明るさ"), $"{shownLight:0.0}", Loc.T("MP next Lv", "次のLvのMP"), $"+{Progression.MpPerLevel(Progression.BaseWis(ch))}" },
+                { "DPS", $"{st.Damage * st.AttacksPerSecond * (1f + st.EffectiveCrit * (st.CritMult - 1f)):0}", Loc.T("Crit", "会心率"),
+                    GameConfig.CritResist > 0f ? $"{st.CritChance * 100f:0}%→{st.EffectiveCrit * 100f:0}%" : $"{st.CritChance * 100f:0}%" }, // 敵の会心耐性があれば、実際の会心率も
+                { Loc.T("Armor", "防御"), $"{st.Armor:0}", Loc.T("Crit dmg", "会心ダメージ"), $"x{st.CritMult:0.00}" },
+                { Loc.T("Light", "明るさ"), $"{shownLight:0.0}", Loc.T("Speed", "速さ"), $"{st.MoveSpeed:0.0}" },
+                { Loc.T("Life steal", "吸収"), $"{st.LifeSteal * 100f:0.0}%", Loc.T("MP next Lv", "次のLvのMP"), $"+{Progression.MpPerLevel(Progression.BaseWis(ch))}" },
                 { "HIT", Loc.T($"{st.Hit} ({st.HitChance(world.Enemies.FloorTier) * 100f:0}%)", $"{st.Hit}（{st.HitChance(world.Enemies.FloorTier) * 100f:0}%）"),
                   "EVA", Loc.T($"{st.Eva} ({st.EvadeChance(world.Enemies.FloorTier) * 100f:0}%)", $"{st.Eva}（{st.EvadeChance(world.Enemies.FloorTier) * 100f:0}%）") },
             };
