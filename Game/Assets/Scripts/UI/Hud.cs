@@ -578,11 +578,14 @@ namespace VividOfFade
             Fill(hpBack, new Color(0.15f, 0.04f, 0.05f, 1f));
             float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
             Fill(new Rect(hpBack.x, hpBack.y, hpBack.width * ratio, hpBack.height), new Color(0.8f, 0.1f, 0.12f, 1f));
+            float barFrame = Mathf.Max(2f, Mathf.Round(H * 0.0012f));
+            Frame(hpBack, new Color(1f, 0.55f, 0.55f, 1f), barFrame); // 最大値の端がわかるよう、バーに明るい枠
             FitLabel(hpBack, $"{player.Hp}/{player.MaxHp}", barText);
             var mpBack = new Rect(hpBack.xMax + mm, rowY, barW, rowH);
             Fill(mpBack, new Color(0.05f, 0.08f, 0.18f, 1f));
             float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
             Fill(new Rect(mpBack.x, mpBack.y, mpBack.width * mpRatio, mpBack.height), new Color(0.2f, 0.35f, 0.75f, 1f));
+            Frame(mpBack, new Color(0.55f, 0.7f, 1f, 1f), barFrame);
             FitLabel(mpBack, $"{player.Mp}/{player.MaxMp}", barText);
 
             // 2段目：経験値（細い帯に ％）
