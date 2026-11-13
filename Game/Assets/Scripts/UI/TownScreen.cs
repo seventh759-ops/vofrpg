@@ -114,7 +114,7 @@ namespace VividOfFade
             float gap = H * 0.012f;
             var bw = W - pad * 2f;
 
-            hud.Button(new Rect(pad, y, bw, bh), Loc.T("DEPART  -  into the tower", "出撃  -  塔へ"), new Color(0.2f, 0.5f, 0.25f, 0.85f), centered, world.Depart);
+            hud.Button(new Rect(pad, y, bw, bh), (GameConfig.CanEnterAbyss(ch) ? Loc.T("DEPART  -  tower / abyss", "出撃  -  塔・深淵へ") : Loc.T("DEPART  -  into the tower", "出撃  -  塔へ")), new Color(0.2f, 0.5f, 0.25f, 0.85f), centered, world.Depart);
             y += bh + gap * 1.5f;
 
             // 施設はアイコンのタイル（3列×2段）。6つ目は「職業を変える」
