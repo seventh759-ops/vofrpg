@@ -104,7 +104,15 @@ namespace VividOfFade
             title.normal.textColor = new Color(1f, 0.85f, 0.45f);
             Hud.FitLabel(new Rect(0, H * 0.05f, W, H * 0.06f), Loc.T("TOWN", "町"), title);
             // 右上に設定（攻撃・音楽・BGM・FPS・言語・クレジット）
-            hud.Button(new Rect(W - pad - W * 0.2f, H * 0.055f, W * 0.2f, H * 0.04f), Loc.T("SETTINGS", "設定"), new Color(1f, 1f, 1f, 0.1f), hud.CenteredStyle, world.OpenSettings);
+            {
+                float gearS = H * 0.045f;
+                var gearR = new Rect(W - pad - gearS, H * 0.06f, gearS, gearS);
+                Hud.Fill(gearR, new Color(0.04f, 0.04f, 0.07f, 0.92f));
+                hud.Button(gearR, null, new Color(1f, 1f, 1f, 0.08f), hud.CenteredStyle, world.OpenSettings);
+                Hud.OrnateFrame(gearR, Hud.FrameGold, Mathf.Max(1f, Mathf.Round(H * 0.0009f)), false, false);
+                float ip = gearS * 0.14f;
+                Hud.DrawSprite(new Rect(gearR.x + ip, gearR.y + ip, gearS - ip * 2f, gearS - ip * 2f), PixelArt.GearIcon); // 歯車：押すと設定
+            }
             GUI.Label(new Rect(0, H * 0.11f, W, H * 0.035f), $"{ClassTitle(type, ch)}   Lv {ch.Level}" + (ch.Rebirths > 0 ? Loc.T($"   Reborn x{ch.Rebirths}", $"   転生 {ch.Rebirths}回") : ""), centered);
             var info = new GUIStyle(centered) { fontSize = small.fontSize };
             info.normal.textColor = new Color(1f, 0.85f, 0.5f);

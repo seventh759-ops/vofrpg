@@ -3950,6 +3950,27 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>歯車のアイコン（設定のボタン）。</summary>
+        public static Sprite GearIcon => Shaded("Gear16", new[]
+        {
+            "................",
+            "......mmmm......",
+            "..mm..mmmm..mm..",
+            "..mmmmmmmmmmmm..",
+            "...mmmmmmmmmm...",
+            ".mmmmm....mmmmm.",
+            ".mmmm......mmmm.",
+            ".mmmm......mmmm.",
+            ".mmmm......mmmm.",
+            ".mmmm......mmmm.",
+            ".mmmmm....mmmmm.",
+            "...mmmmmmmmmm...",
+            "..mmmmmmmmmmmm..",
+            "..mm..mmmm..mm..",
+            "......mmmm......",
+            "................",
+        }, new Dictionary<char, Color32[]> { { 'm', Ramp(255, 236, 170, 226, 190, 100, 170, 132, 60, 120, 88, 36) } }, null, 16);
+
         /// <summary>ごみ箱のアイコン（キャラクターを消すボタン）。</summary>
         public static Sprite TrashIcon => Shaded("Trash12", new[]
         {
