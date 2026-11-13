@@ -19,6 +19,8 @@ namespace VividOfFade
         public float Damage;
         /// <summary>今の武器で攻撃力が伸びる主能力・副能力。</summary>
         public Attr MainAttr, SubAttr;
+        /// <summary>3次職の追加の能力値（なければ null）。副能力と同じく 1 ポイントで攻撃力 +1%。</summary>
+        public Attr? ThirdAttr;
         /// <summary>
         /// スキルの基準の攻撃力。武器ごとの手数の差（1 回の倍率×弾の数÷攻撃の間隔）を、職業の最初の武器を基準にならす。
         /// 攻撃速度は入れない（攻撃速度を上げてもスキルは強くならない）。
@@ -122,7 +124,7 @@ namespace VividOfFade
                 float extras = (1f + SkillDamage * 0.3f) * (1f + (1f - CooldownMult) * 0.3f)
                     * (1f + EliteDamage * 0.2f) * (1f + (AreaMult - 1f) * 0.2f) * (1f + (ExpGain + EmberFind + MagicFind) * 0.1f);
                 // その職業が重視する能力値（主・副。影刃なら STR と DEX）を少しだけ上乗せ。ほかの能力値は上乗せしない
-                float favored = 1f + 0.001f * (Attr[(int)spec.MainAttr] + Attr[(int)spec.SubAttr]);
+                float favored = 1f + 0.001f * (Attr[(int)spec.MainAttr] + Attr[(int)spec.SubAttr] + (ThirdAttr.HasValue ? Attr[(int)ThirdAttr.Value] : 0));
                 return dps * survive * reach * favored * (1f + ExplodeMult * 0.5f) * (1f + DoubleStrikeChance)
                     * (1f + DodgeNovaMult * 0.1f) * (1f + LifeSteal * 10f) * extras;
             }
@@ -262,6 +264,8 @@ namespace VividOfFade
             s.SubAttr = weaponSpec.SubAttr;
             int main = s.Attr[(int)s.MainAttr];
             int sub = s.Attr[(int)s.SubAttr];
+            s.ThirdAttr = ThirdClasses.Of(type, ch)?.ExtraAttr;
+            int thirdAttr = s.ThirdAttr.HasValue ? s.Attr[(int)s.ThirdAttr.Value] : 0;
 
             s.MaxHp = cls.BaseHp + vit * 8 + (ch.Level - 1) * 6 + bonusHp;
             // MP は WIS だけで増える。レベルアップのたびに、そのときの WIS で上限が積み上がる（MpGrown）
@@ -280,7 +284,7 @@ namespace VividOfFade
             s.Kind = w.Attack;
             s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
             baseDamage += flatDamage; // 「攻撃力 +N」は基礎攻撃力に足す（倍率の前）
-            s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f + sub * 0.01f) * cls.DamageMult;
+            s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f + sub * 0.01f + thirdAttr * 0.01f) * cls.DamageMult;
             var starter = ClassInfo.Weapon(cls.Starter);
             float Throughput(WeaponSpec x) => x.Mult * Mathf.Max(1, x.Attack == AttackKind.Orbit ? x.Orbs : x.Shots) / Mathf.Max(0.05f, x.Interval);
             s.SkillBase = s.Damage / w.Mult * starter.Mult * Mathf.Clamp(Throughput(w) / Throughput(starter), 0.5f, 2f);

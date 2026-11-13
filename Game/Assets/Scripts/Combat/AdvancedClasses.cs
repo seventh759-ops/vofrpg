@@ -11,6 +11,8 @@ namespace VividOfFade
         public string DescJa;
         public BoonSpec Passive;
         public SkillSpec Skill;
+        /// <summary>3次職だけ：攻撃力が伸びる能力値をもう1つ（副能力と同じ、1ポイントで +1%）。</summary>
+        public Attr? ExtraAttr;
 
         public string DisplayName => Loc.T(Name, NameJa);
         public string DisplayDesc => Loc.T(Desc, DescJa);
