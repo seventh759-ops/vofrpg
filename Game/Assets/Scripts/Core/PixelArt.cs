@@ -3568,6 +3568,67 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>
+        /// 転生した人の足元のオーラ（床に寝かせた楕円。幅 2・高さ 1 ユニット）。縁が明るく、内側はうっすら。白で作り、色は SpriteRenderer で付ける。
+        /// </summary>
+        public static Sprite AuraDisc
+        {
+            get
+            {
+                const string key = "AuraDisc";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int w = 64, h = 32;
+                var px = new Color32[w * h];
+                float cx = (w - 1) * 0.5f, cy = (h - 1) * 0.5f;
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                    {
+                        float dx = (x - cx) / cx, dy = (y - cy) / cy;
+                        float d = Mathf.Sqrt(dx * dx + dy * dy);
+                        if (d >= 1f) { px[y * w + x] = new Color32(0, 0, 0, 0); continue; }
+                        float rim = Mathf.Clamp01(1f - Mathf.Abs(d - 0.82f) / 0.16f); // 縁の明るい輪
+                        float fill = 0.35f * (1f - d) + 0.25f * d * d;               // 内側のうっすらした光
+                        float a = Mathf.Clamp01(fill + rim * rim * 0.9f);
+                        px[y * w + x] = new Color32(255, 255, 255, (byte)(255 * a));
+                    }
+                var tex = MakeTexture(key, w, h, px, TextureWrapMode.Clamp);
+                tex.filterMode = FilterMode.Bilinear;
+                return Store(key, tex, 32);
+            }
+        }
+
+        /// <summary>転生の印（小さなひし形の宝石。白と灰色で作り、色は GUI.color で付ける）。</summary>
+        public static Sprite RebirthGem
+        {
+            get
+            {
+                const string key = "RebirthGem";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                string[] rows =
+                {
+                    "....o....",
+                    "...owo...",
+                    "..owwlo..",
+                    ".owwllmo.",
+                    "owwllmmdo",
+                    ".olllmdo.",
+                    "..olmdo..",
+                    "...odo...",
+                    "....o....",
+                };
+                const int n = 9;
+                var px = new Color32[n * n];
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        char c = rows[n - 1 - y][x];
+                        byte v = c == 'w' ? (byte)255 : c == 'l' ? (byte)225 : c == 'm' ? (byte)185 : c == 'd' ? (byte)140 : (byte)60;
+                        px[y * n + x] = c == '.' ? new Color32(0, 0, 0, 0) : new Color32(v, v, v, 255);
+                    }
+                return Store(key, MakeTexture(key, n, n, px, TextureWrapMode.Clamp));
+            }
+        }
+
         /// <summary>床に広がる閃光（中心ほど濃い白の円。直径 2 ユニット、Ring と同じ大きさ）。</summary>
         public static Sprite SoftDisc
         {

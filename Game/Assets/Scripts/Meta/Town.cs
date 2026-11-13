@@ -68,10 +68,10 @@ namespace VividOfFade
             Item item = null;
             for (int i = 0; i < 30; i++)
             {
-                item = ItemGenerator.Roll(ch.Level, 2.5f);
+                item = ItemGenerator.Roll(Mathf.Min(ch.Level, Progression.MaxLevel), 2.5f);
                 if (item.Rarity >= Rarity.Rare && item.Rarity <= Rarity.Relic) break;
             }
-            if (item.Rarity < Rarity.Rare || item.Rarity > Rarity.Relic) item = ItemGenerator.Roll(ch.Level, 2.5f);
+            if (item.Rarity < Rarity.Rare || item.Rarity > Rarity.Relic) item = ItemGenerator.Roll(Mathf.Min(ch.Level, Progression.MaxLevel), 2.5f);
             if (item.Rarity < Rarity.Rare) item.Rarity = Rarity.Rare;
             Pay(ch, GearPrice(ch));
             if (ch.Stash.Count < Inventory.BagCapacity) ch.Stash.Add(item);
@@ -149,14 +149,15 @@ namespace VividOfFade
         }
 
         /// <summary>
-        /// 転生（1回だけ）。3次職になり、Lv1・経験値0に戻って、振った能力値も戻し、ボーナスのポイントだけを振れる状態にする。
-        /// 8つ目のスキルを覚える。スキルの熟練度・装備・火種・最深層はそのまま。
+        /// 転生（Lv99 から何回でも）。1回目で3次職になり8つ目のスキルを覚える。Lv1・経験値0に戻って、振った能力値も戻し、
+        /// ボーナスのポイントだけを振れる状態にする。転生の回数が1つ増える（全能力値+5）。スキルの熟練度・装備・火種・最深層はそのまま。
         /// </summary>
         public static bool Rebirth(CharacterData ch)
         {
             if (!ThirdClasses.CanRebirth(ch)) return false;
             ch.Embers -= ThirdClasses.Cost;
             ch.Third = true;
+            ch.Rebirths++;
             ch.Level = 1;
             ch.Exp = 0;
             for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;

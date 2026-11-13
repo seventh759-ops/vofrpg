@@ -35,10 +35,40 @@ namespace VividOfFade
     /// <summary>レベルと経験値。数値は仮。</summary>
     public static class Progression
     {
-        public const int MaxLevel = 99;
+        public const int MaxLevel = 99;       // ふつうのレベルの上限（装備のレベルもここまで）
+        public const int UnlockedMaxLevel = 120; // 100層のボスを倒すと、ここまで上がれる
         public const int PointsPerLevel = 5;
 
-        public static int ExpToNext(int level) => Mathf.RoundToInt(15f * Mathf.Pow(level, 1.7f));
+        /// <summary>そのキャラクターのレベルの上限。100層のボスを倒したら 120 に上がる。</summary>
+        public static int LevelCap(CharacterData c) =>
+            c != null && c.BossCleared >= GameConfig.MaxFloor ? UnlockedMaxLevel : MaxLevel;
+
+        static int expTo99 = -1;
+        /// <summary>Lv1 から Lv99 になるまでの経験値の合計。</summary>
+        static int ExpTo99
+        {
+            get
+            {
+                if (expTo99 < 0)
+                {
+                    expTo99 = 0;
+                    for (int l = 1; l < MaxLevel; l++) expTo99 += ExpToNext(l);
+                }
+                return expTo99;
+            }
+        }
+
+        /// <summary>
+        /// 次のレベルまでの経験値。Lv99 から上は、Lv99→120 の合計が Lv1→99 の合計と同じくらいになるようにする
+        /// （21レベルに分け、後ろほど重くする：平均の 0.6倍 → 1.4倍）。
+        /// </summary>
+        public static int ExpToNext(int level)
+        {
+            if (level < MaxLevel) return Mathf.RoundToInt(15f * Mathf.Pow(level, 1.7f));
+            int steps = UnlockedMaxLevel - MaxLevel;
+            float t = Mathf.Clamp01((level - MaxLevel) / (float)(steps - 1));
+            return Mathf.RoundToInt(ExpTo99 / (float)steps * Mathf.Lerp(0.6f, 1.4f, t));
+        }
 
         /// <summary>レベルアップ1回で増える最大 MP（そのときの WIS で決まる）。</summary>
         public static int MpPerLevel(int wis) => 2 + wis / 3;
@@ -63,10 +93,11 @@ namespace VividOfFade
         /// <summary>経験値を足す。上がったレベルの数を返す。</summary>
         public static int AddExp(CharacterData c, int amount)
         {
-            if (c.Level >= MaxLevel) return 0;
+            int cap = LevelCap(c);
+            if (c.Level >= cap) return 0;
             c.Exp += amount;
             int gained = 0;
-            while (c.Level < MaxLevel && c.Exp >= ExpToNext(c.Level))
+            while (c.Level < cap && c.Exp >= ExpToNext(c.Level))
             {
                 c.Exp -= ExpToNext(c.Level);
                 c.Level++;
@@ -74,7 +105,7 @@ namespace VividOfFade
                 c.Points += PointsPerLevel;
                 gained++;
             }
-            if (c.Level >= MaxLevel) c.Exp = 0;
+            if (c.Level >= cap) c.Exp = 0;
             return gained;
         }
     }

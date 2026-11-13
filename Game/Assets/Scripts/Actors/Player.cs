@@ -352,12 +352,45 @@ namespace VividOfFade
             {
                 Sr.color = Color.white;
             }
+            UpdateAura();
         }
 
-        /// <summary>職業の見た目に切り替える。</summary>
+        /// <summary>職業の見た目に切り替える。転生していれば、足元にその回数の色のオーラを付ける。</summary>
         public void SetClass(ClassType type)
         {
             Sr.sprite = PixelArt.PlayerFor(type);
+            var ch = Profile.Get(type);
+            Rebirths = ch != null ? ch.Rebirths : 0;
+            if (Rebirths > 0 && aura == null)
+            {
+                var go = new GameObject("Aura");
+                go.transform.SetParent(transform, false);
+                aura = go.AddComponent<SpriteRenderer>();
+                aura.sprite = PixelArt.AuraDisc;
+                Lighting.MakeGlow(aura); // 暗がりでも光って見える
+            }
+            UpdateAura();
+        }
+
+        /// <summary>転生の回数（足元のオーラの色）。</summary>
+        public int Rebirths { get; private set; }
+        SpriteRenderer aura;
+
+        /// <summary>足元のオーラ：ゆっくり明滅して、少しふくらむ。キャラクターのすぐ後ろに描く。</summary>
+        void UpdateAura()
+        {
+            if (aura == null) return;
+            aura.enabled = Rebirths > 0 && Sr.enabled;
+            if (!aura.enabled) return;
+            var c = ThirdClasses.AuraColor(Rebirths);
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.4f);
+            c.a = Mathf.Lerp(0.45f, 0.85f, pulse) * Sr.color.a;
+            aura.color = c;
+            float size = 0.62f + 0.06f * pulse;
+            aura.transform.localScale = new Vector3(size, size, 1f);
+            float feet = Sr.sprite != null ? Sr.sprite.bounds.min.y : -0.5f;
+            aura.transform.localPosition = new Vector3(0f, feet + 0.1f, 0f);
+            aura.sortingOrder = Sr.sortingOrder - 1;
         }
     }
 }

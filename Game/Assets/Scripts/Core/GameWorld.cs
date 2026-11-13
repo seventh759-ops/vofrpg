@@ -171,11 +171,28 @@ namespace VividOfFade
         {
             var ch = Profile.Current;
             if (ch == null) return;
-            Skills.Learn(ch, ThirdClasses.SkillIndex);
+            if (ch.Rebirths == 1) Skills.Learn(ch, ThirdClasses.SkillIndex); // 8つ目のスキルは1回目の転生で覚える
             Profile.Save();
+            Player.SetClass(ClassInfo.Current); // 足元のオーラの色を変える
             var third = ThirdClasses.Of(ClassInfo.Current, ch);
-            if (third != null) Hud.Toast(Loc.T($"Reborn: {third.DisplayName}  (Lv 1, +{ThirdClasses.BonusPoints} points)", $"転生：{third.DisplayName}（Lv1、ポイント +{ThirdClasses.BonusPoints}）") + StoredNote(), new Color(1f, 0.85f, 0.4f));
+            if (third != null) Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: {third.DisplayName}  (Lv 1, +{ThirdClasses.BonusPoints} points, all stats +{ThirdClasses.BonusStats(ch)})",
+                $"転生 {ch.Rebirths}回目：{third.DisplayName}（Lv1、ポイント +{ThirdClasses.BonusPoints}、全能力値 +{ThirdClasses.BonusStats(ch)}）") + StoredNote(), ThirdClasses.AuraColor(ch.Rebirths));
             Sfx.Landed(Rarity.Mythic);
+        }
+
+        float auraMoteTimer;
+
+        /// <summary>転生した人の足元から、オーラの色の光の粒が立ちのぼる（回数が多いほど多い）。</summary>
+        void TickAuraMotes(float dt)
+        {
+            int n = Player.Rebirths;
+            if (n <= 0) return;
+            auraMoteTimer -= dt;
+            if (auraMoteTimer > 0f) return;
+            auraMoteTimer = 0.45f / Mathf.Sqrt(Mathf.Min(n, 6));
+            var c = ThirdClasses.AuraColor(n);
+            c.a = 0.8f;
+            Fx.Sparks(Player.Pos, 1, c, 0.6f, 0.9f, 1.1f, true);
         }
 
         /// <summary>転職・転生で装備できなくなった品を倉庫へ送ったときのひとこと。</summary>
@@ -493,6 +510,7 @@ namespace VividOfFade
             else if (!Paused)
             {
                 Player.Tick(dt, Input, Room);
+                TickAuraMotes(dt);
                 Attack.Tick(dt, Player, !Player.Stunned && (AutoAttack || Input.AttackHeld)); // 気絶中は攻撃しない
                 Skills.Tick(dt, Player, Input.NumberPressed);
                 Floors.Tick(dt, Enemies, Player, Room);
@@ -884,6 +902,8 @@ namespace VividOfFade
                 Profile.Save();
                 if (Floors.Floor < GameConfig.MaxFloor)
                     Hud.Toast(Loc.T($"Checkpoint unlocked: floor {Floors.Floor + 1}", $"{Floors.Floor + 1}層から始められるようになった"), new Color(0.7f, 1f, 0.7f));
+                else // 100層を初めて制覇：レベルの上限が 120 に上がる（この戦いの経験値の後なので、上がるのは次に経験値を得てから）
+                    Hud.Toast(Loc.T($"Level cap raised to {Progression.UnlockedMaxLevel}!", $"レベルの上限が {Progression.UnlockedMaxLevel} に上がった！"), new Color(1f, 0.85f, 0.4f));
             }
             if (Floors.Floor >= GameConfig.MaxFloor)
             {

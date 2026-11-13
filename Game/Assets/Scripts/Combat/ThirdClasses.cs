@@ -3,18 +3,36 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>
-    /// 転生（3次職）。上位職で Lv99 になり、塔の100層にたどり着いたら、町の師匠で火種を払って転生できる（1回だけ）。
-    /// 上位職ごとに決まった3次職になる。Lv1 に戻り、ボーナスのポイントを振れる。
-    /// 3次職の補正（上位職の補正に重なる）、全能力値+10（ずっと）、攻撃力が伸びる能力値がもう1つ（ExtraAttr）、8つ目のスキル、見た目と名前が変わる。
+    /// 転生（3次職）。上位職で Lv99 になったら、町の師匠で火種を払って転生できる（何回でも）。
+    /// 1回目で上位職ごとに決まった3次職になる。Lv1 に戻り、ボーナスのポイントを振れる。
+    /// 3次職の補正（上位職の補正に重なる）、攻撃力が伸びる能力値がもう1つ（ExtraAttr）、8つ目のスキル、見た目と名前が変わる。
+    /// 転生するたびに全能力値+5（ずっと、回数分たまる）。足元のオーラの色が回数で変わる（白→青→黄→紫→金→赤）。
     /// どれもこのゲーム用のオリジナルの名前。数値はすべて仮で、遊んでから調整する。
     /// </summary>
     public static class ThirdClasses
     {
         public const int ReqLevel = 99;
-        public const int ReqFloor = 100;
         public const int Cost = 2000;        // 火種
         public const int BonusPoints = 60;
-        public const int AllStats = 10;      // 全能力値にずっと足す
+        public const int StatsPerRebirth = 5; // 転生1回ごとに、全能力値にずっと足す
+
+        /// <summary>転生の回数で全能力値に足す値。</summary>
+        public static int BonusStats(CharacterData ch) => ch != null ? ch.Rebirths * StatsPerRebirth : 0;
+
+        // 転生の回数ごとのオーラの色（白→青→黄→紫→金→赤。7回目以降は赤のまま）
+        static readonly Color[] auraColors =
+        {
+            new Color(0.95f, 0.97f, 1f),
+            new Color(0.35f, 0.65f, 1f),
+            new Color(1f, 0.95f, 0.35f),
+            new Color(0.75f, 0.4f, 1f),
+            new Color(1f, 0.7f, 0.15f),
+            new Color(1f, 0.22f, 0.2f),
+        };
+
+        /// <summary>転生の回数のオーラの色（0回なら透明）。</summary>
+        public static Color AuraColor(int rebirths) =>
+            rebirths <= 0 ? Color.clear : auraColors[Mathf.Min(rebirths, auraColors.Length) - 1];
         public const int SkillIndex = 7;     // 8つ目のスキルの番号
 
         // [職業][上位職]
@@ -82,7 +100,7 @@ namespace VividOfFade
         static readonly SkillSpec locked = new SkillSpec
         {
             Name = "(Rebirth skill)", NameJa = "（3次職のスキル）",
-            Desc = "Rebirth at the Master in town (Lv 99, floor 100).", DescJa = "町の師匠で転生すると覚える（Lv99・100層到達）。",
+            Desc = "Rebirth at the Master in town (Lv 99).", DescJa = "町の師匠で転生すると覚える（Lv99）。",
             ReqLevel = ReqLevel, Mp = 0, Cooldown = 1f, Effect = SkillEffect.Nova, Color = new Color(0.6f, 0.6f, 0.6f, 0.9f),
         };
 
@@ -99,7 +117,7 @@ namespace VividOfFade
         }
 
         public static bool MeetsRequirements(CharacterData ch) =>
-            ch != null && ch.Advanced >= 0 && !ch.Third && ch.Level >= ReqLevel && ch.BestFloor >= ReqFloor;
+            ch != null && ch.Advanced >= 0 && ch.Level >= ReqLevel;
 
         public static bool CanRebirth(CharacterData ch) => MeetsRequirements(ch) && ch.Embers >= Cost;
     }

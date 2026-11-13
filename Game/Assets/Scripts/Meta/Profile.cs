@@ -36,7 +36,8 @@ namespace VividOfFade
         public int BossCleared;                       // 倒した一番深いボスの層（その次の層がチェックポイント）
         public RunSave Run = new RunSave();           // 中断した挑戦
         public int Advanced = -1;                     // 上位職（-1 はまだ。0 か 1）
-        public bool Third;                            // 転生して3次職になった
+        public bool Third;                            // 転生して3次職になった（Rebirths が1以上）
+        public int Rebirths;                          // 転生した回数（何回でもできる。1回ごとに全能力値+5）
         public int HpPotions;                         // 回復薬（町の商人で買う）
         public int MpPotions;                         // 魔力の薬
 
@@ -51,7 +52,10 @@ namespace VividOfFade
             if (CarrySlots < 1) CarrySlots = 3;
             CarrySlots = Mathf.Min(CarrySlots, Town.MaxCarrySlots);
             if (Advanced < -1 || Advanced > 1) Advanced = -1;
-            if (Advanced < 0) Third = false;
+            if (Advanced < 0) { Third = false; Rebirths = 0; }
+            if (Third && Rebirths < 1) Rebirths = 1; // 転生が1回きりだった頃のセーブ
+            if (Rebirths < 0) Rebirths = 0;
+            Third = Rebirths > 0;
             HpPotions = Mathf.Clamp(HpPotions, 0, Town.MaxPotions);
             MpPotions = Mathf.Clamp(MpPotions, 0, Town.MaxPotions);
             foreach (var it in Loadout) it?.Repair();

@@ -543,7 +543,22 @@ namespace VividOfFade
             Fill(lvBox, new Color(0.18f, 0.17f, 0.2f, 1f));
             int level = ch != null ? ch.Level : 1;
             var lvStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
-            FitLabel(lvBox, ch != null && ch.Level >= Progression.MaxLevel ? $"LV{level}★" : $"LV{level}", lvStyle);
+            string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
+            if (ch != null && ch.Rebirths > 0)
+            {
+                // 転生の印：左にオーラの色の宝石と回数。レベルの文字は残りに入れる
+                float gem = rowH * 0.62f;
+                var gemRect = new Rect(lvBox.x + rowH * 0.12f, lvBox.y + (rowH - gem) * 0.5f, gem, gem);
+                var oldColor = GUI.color;
+                GUI.color = ThirdClasses.AuraColor(ch.Rebirths);
+                DrawSprite(gemRect, PixelArt.RebirthGem);
+                GUI.color = oldColor;
+                var countStyle = new GUIStyle(small) { alignment = TextAnchor.LowerRight, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(rowH * 0.42f)) };
+                countStyle.normal.textColor = Color.white;
+                GUI.Label(new Rect(gemRect.x, gemRect.y, gemRect.width + rowH * 0.2f, gemRect.height + rowH * 0.15f), ch.Rebirths.ToString(), countStyle);
+                FitLabel(new Rect(gemRect.xMax + rowH * 0.1f, lvBox.y, lvBox.xMax - gemRect.xMax - rowH * 0.1f, rowH), lvText, lvStyle);
+            }
+            else FitLabel(lvBox, lvText, lvStyle);
             float barsX = lvBox.xMax + mm, barsW = ToGui(MenuRect).x - mm - barsX;
             float barW = (barsW - mm) * 0.5f;
             var barText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
@@ -563,7 +578,7 @@ namespace VividOfFade
             Fill(expBack, new Color(0.15f, 0.14f, 0.12f, 1f));
             if (ch != null)
             {
-                float expRatio = ch.Level >= Progression.MaxLevel ? 1f : Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
+                float expRatio = ch.Level >= Progression.LevelCap(ch) ? 1f : Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
                 Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.95f, 0.88f, 0.7f, 1f));
                 var expText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontSize = Mathf.Max(8, Mathf.RoundToInt(ExpRowH * 0.85f)) };
                 expText.normal.textColor = new Color(0.15f, 0.12f, 0.1f);
