@@ -2194,6 +2194,7 @@ namespace VividOfFade
         /// <summary>深淵のボス。暗い体に、区画の色で光る目・裂け目と光の縁。k 体・K 暗い所・z 骨・Z 光・M 膜。</summary>
         static Sprite AbyssBossSprite(BossKind kind)
         {
+            if (kind == BossKind.AbyssKing) return GuideAbyss; // 最奥のボス「アビス」は、案内役の白い姿
             int i = Mathf.Clamp((int)kind - (int)BossKind.RiftWarden, 0, AbyssBossRows.Length - 1);
             var z = Zones.For(GameConfig.AbyssFirstFloor + i * GameConfig.BossFloorEvery);
             var glow = z.Accent;
@@ -2209,7 +2210,7 @@ namespace VividOfFade
             return Shaded("AbyssBoss32_" + i, AbyssBossRows[i], over, z.Accent);
         }
 
-        static string[][] AbyssBossRows => new[] { BossRiftWardenRows, BossStarEaterRows, BossMoonPriestRows, BossAbyssKingRows };
+        static string[][] AbyssBossRows => new[] { BossRiftWardenRows, BossStarEaterRows, BossMoonPriestRows };
 
         static readonly string[] BossRiftWardenRows =
         {
@@ -2318,44 +2319,6 @@ namespace VividOfFade
             "................................",
             "................................",
         };
-
-        static readonly string[] BossAbyssKingRows =
-        {
-            "................................",
-            "................g...............",
-            "..............g...g.............",
-            "............g.......g...........",
-            "z...........ggggZgggg.........Mz",
-            "Mzz.........ggggggggg........zz.",
-            "MMMz.........KKKKKK.........zMM.",
-            ".MMMzz......KKKKKKKK......MzMM..",
-            ".MMMMMz.....KKKKKKKK.....zzMMM..",
-            ".MMMMMMzz...KKZKKKZK...MzMMMMM..",
-            ".MMMMMMMMz..KKKKKKKK..MzMMMMMM..",
-            ".MMMMMMMMMzzkKKeeeKk.zzMMMMMMM..",
-            ".MMMMMMMMMMkkkKKKKkkkMMMMMMMMM..",
-            "..MMMMMMMMMkkkkkZkkkkMMMMMMMM...",
-            "..MMMMMMMMkkkkkkZkkkkkMMMMMMM...",
-            "..MMMMMMM.kkkkkZkkkkkk.MMMMMM...",
-            "..MMMMMM.ffkkkkZkkkkkff.MMMMM...",
-            "..MMMMM..ffkkkZokkkkkff.MMMMM...",
-            "..MMMM...ffkkkZkkkkkkff..MMMM...",
-            "...MM...fffkkkkZkkkkkfff..MM....",
-            "...M....ffffkkkkZkkkffff...M....",
-            "........ffffkkkkZkkkffff........",
-            "........ffffkkkkkZkkffff........",
-            ".......fffffkkkkkkkkfffff.......",
-            ".......ffffffkkkkkkffffff.......",
-            ".......ffffffKKkkkKffffff.......",
-            "......fffffKKKK...KKKfffff......",
-            "......ff...KKKK...KKKK..ff......",
-            "...........KKKK...KKKK..........",
-            "...........KKKK...KKKK..........",
-            "...........KKKK...KKKK..........",
-            "................................",
-        };
-
-
 
         static readonly Dictionary<char, Color32[]>[] BossColors =
         {
@@ -4202,6 +4165,18 @@ namespace VividOfFade
             { 'K', Ramp(10, 6, 12, 10, 6, 12, 10, 6, 12, 10, 6, 12) },                 // 口の中（真っ暗）
             { 'Y', Ramp(46, 12, 18, 40, 10, 16, 34, 8, 13, 28, 6, 11) },               // 上下の歯の間の帯（とても暗い赤）
         }, null, 32);
+
+        /// <summary>
+        /// 深淵の最奥のボス「アビス」。案内役と同じ姿の色違い：体と毛は白く、口の中の帯は血の色に光り、まわりに赤い光の縁。
+        /// </summary>
+        public static Sprite GuideAbyss => Shaded("GuideAbyss40", GuideRows, new Dictionary<char, Color32[]>
+        {
+            { 'Q', Ramp(250, 248, 255, 222, 218, 232, 186, 180, 200, 140, 134, 156) },
+            { 'F', Ramp(255, 255, 255, 240, 238, 246, 210, 206, 222, 170, 166, 186) },
+            { 'T', Ramp(60, 50, 66, 44, 36, 50, 32, 26, 38, 22, 18, 28) },            // 歯：白い体に映える黒
+            { 'K', Ramp(10, 6, 12, 10, 6, 12, 10, 6, 12, 10, 6, 12) },
+            { 'Y', new[] { new Color32(255, 40, 60, 255), new Color32(255, 40, 60, 255), new Color32(230, 30, 50, 255), new Color32(200, 20, 40, 255) } }, // 光る血の色
+        }, new Color32(255, 40, 70, 255), 32);
 
         static readonly string[] GuideRows =
         {

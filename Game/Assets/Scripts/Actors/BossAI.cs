@@ -52,7 +52,7 @@ namespace VividOfFade
                 case BossKind.RiftWarden: return Loc.T("Rift Warden", "深淵の門番");
                 case BossKind.StarEater: return Loc.T("Star Eater", "星喰らい");
                 case BossKind.MoonPriest: return Loc.T("Inverted Moon Priest", "逆さ月の司祭");
-                case BossKind.AbyssKing: return Loc.T("King of the Abyss", "深淵の王");
+                case BossKind.AbyssKing: return Loc.T("Abyss", "アビス"); // 最奥のボス。案内役と同じ姿の、白い色違い
                 default: return Loc.T("Ash Warden", "灰の番人");
             }
         }
@@ -72,7 +72,7 @@ namespace VividOfFade
             new[] { BossAttack.BulletRing, BossAttack.BulletFan, BossAttack.BulletRing, BossAttack.RoomWide, BossAttack.BulletFan },
             // 深淵：全体攻撃と気絶で縛る司祭
             new[] { BossAttack.RoomWide, BossAttack.StunNova, BossAttack.BulletFan, BossAttack.Summon, BossAttack.Cone },
-            // 深淵の王：すべての技を使う
+            // アビス（最奥）：すべての技を使う
             new[] { BossAttack.Slam, BossAttack.Cone, BossAttack.BulletRing, BossAttack.Charge, BossAttack.RoomWide, BossAttack.StunNova, BossAttack.BulletFan, BossAttack.Blink },
         };
 
