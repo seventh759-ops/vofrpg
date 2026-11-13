@@ -143,7 +143,7 @@ namespace VividOfFade
         /// <summary>自動分解の段階を 切 → 白 → 青まで → 黄まで → 紫まで → 切 の順に切り替える。</summary>
         public void CycleAutoSalvage()
         {
-            AutoSalvageMax = AutoSalvageMax >= (int)Rarity.Legendary ? -1 : AutoSalvageMax + 1;
+            AutoSalvageMax = AutoSalvageMax >= (int)Rarity.Relic ? -1 : AutoSalvageMax + 1; // なし → 白 → 〜青 → 〜黄 → 〜紫 → 〜橙 → なし
         }
 
         public static bool Fits(Item item, EquipSlot slot)

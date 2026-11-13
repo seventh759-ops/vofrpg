@@ -196,7 +196,7 @@ namespace VividOfFade
             float lineH = small.fontSize * 1.4f;
             GUI.Label(new Rect(area.x, area.y, area.width, lineH), Loc.T("Salvage all at once (locked items are kept):", "まとめて分解（ロック中の品は残ります）："), small);
             float y = area.y + lineH * 1.3f;
-            float h = Mathf.Min(btnH, (area.height - lineH * 1.3f - gap * 5f) / 6f);
+            float h = Mathf.Min(btnH, (area.height - lineH * 1.3f - gap * 6f) / 7f);
 
             void Option(string text, Color back, System.Func<Item, bool> match)
             {
@@ -210,13 +210,13 @@ namespace VividOfFade
                 y += h + gap;
             }
 
-            for (int r = 0; r <= (int)Rarity.Legendary; r++) // 白〜紫まで
+            for (int r = 0; r <= (int)Rarity.Relic; r++) // 白〜橙まで（赤＝神話は一括では分解しない）
             {
                 int max = r;
                 var c = RarityInfo.ColorOf((Rarity)r);
                 Option(r == 0 ? Loc.T("White", "白だけ") : Loc.T($"White to {Short((Rarity)r).ToLower()}", $"白〜{Short((Rarity)r)}"), new Color(c.r, c.g, c.b, 0.3f), it => (int)it.Rarity <= max);
             }
-            Option(Loc.T("Everything that is not an upgrade (up to purple)", "今より強くならない物すべて（紫まで）"), buttonBack, it => it.Rarity <= Rarity.Legendary && !IsUpgrade(inv, it, current));
+            Option(Loc.T("Everything that is not an upgrade (up to orange)", "今より強くならない物すべて（橙まで）"), buttonBack, it => it.Rarity <= Rarity.Relic && !IsUpgrade(inv, it, current));
         }
 
         void SalvageBulk(Inventory inv, System.Func<Item, bool> match)
