@@ -69,9 +69,9 @@ namespace VividOfFade
                 new AdvancedSpec
                 {
                     Name = "Bloodedge", NameJa = "血刃",
-                    Desc = "Heal 1% of damage dealt, max HP +20%, damage +10%.", DescJa = "与えたダメージの1%を回復、最大体力+20%、ダメージ+10%。",
+                    Desc = "Heal 1% of damage dealt, max HP +20%, damage +10%.", DescJa = "与えたダメージの1%を回復、最大HP+20%、ダメージ+10%。",
                     Passive = new BoonSpec { LifeSteal = 0.01f, HpPct = 0.2f, Damage = 0.1f },
-                    Skill = new SkillSpec { Name = "Crimson Spiral", NameJa = "紅の渦", Desc = "Cut everything around you; heals 10%.", DescJa = "周りを斬り、体力10%回復。",
+                    Skill = new SkillSpec { Name = "Crimson Spiral", NameJa = "紅の渦", Desc = "Cut everything around you; heals 10%.", DescJa = "周りを斬り、HP10%回復。",
                         ReqLevel = 1, Mp = 30, Cooldown = 9f, Effect = SkillEffect.Nova, Mult = 10f, Radius = 2.6f, HealPct = 0.1f,
                         Color = new Color(1f, 0.3f, 0.35f, 0.9f) },
                 },
@@ -91,7 +91,7 @@ namespace VividOfFade
                 new AdvancedSpec
                 {
                     Name = "Bastion", NameJa = "城壁",
-                    Desc = "Armor +40, max HP +30%.", DescJa = "防御+40、最大体力+30%。",
+                    Desc = "Armor +40, max HP +30%.", DescJa = "防御+40、最大HP+30%。",
                     Passive = new BoonSpec { Armor = 40f, HpPct = 0.3f },
                     Skill = new SkillSpec { Name = "Iron Vigil", NameJa = "鉄の守り", Desc = "Armor +120, damage taken -50% for 8s.", DescJa = "8秒、防御+120・被ダメージ-50%。",
                         ReqLevel = 1, Mp = 25, Cooldown = 20f, Effect = SkillEffect.Buff, Duration = 8f, BuffArmor = 120f, BuffTaken = 0.5f,

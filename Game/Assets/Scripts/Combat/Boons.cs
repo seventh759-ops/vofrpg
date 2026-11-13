@@ -42,7 +42,7 @@ namespace VividOfFade
             new BoonSpec { Name = "Kindled Wick", NameJa = "灯芯", DescJa = "明るさ+1", Desc = "Light +1", Light = 1f },
             new BoonSpec { Name = "Keen Eye", NameJa = "鋭い目", DescJa = "会心率+5%", Desc = "Crit chance +5%", Crit = 0.05f },
             new BoonSpec { Name = "Ruin", NameJa = "破滅", DescJa = "会心ダメージ+25%", Desc = "Crit damage +25%", CritDamage = 0.25f },
-            new BoonSpec { Name = "Vigor", NameJa = "活力", DescJa = "最大体力+15%", Desc = "Max HP +15%", HpPct = 0.15f },
+            new BoonSpec { Name = "Vigor", NameJa = "活力", DescJa = "最大HP+15%", Desc = "Max HP +15%", HpPct = 0.15f },
             new BoonSpec { Name = "Deep Well", NameJa = "深き泉", DescJa = "最大MP+20%、MP回復+1/秒", Desc = "Max MP +20%, MP regen +1/s", MpPct = 0.2f, MpRegen = 1f },
             new BoonSpec { Name = "Swift Step", NameJa = "軽い足取り", DescJa = "移動速度+8%", Desc = "Move speed +8%", Move = 0.08f },
             new BoonSpec { Name = "Bulwark", NameJa = "防壁", DescJa = "防御+15", Desc = "Armor +15", Armor = 15f },

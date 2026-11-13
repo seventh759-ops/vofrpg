@@ -361,7 +361,7 @@ namespace VividOfFade
             int potion = Town.PotionPrice(ch);
 
             Offer(new Rect(pad, y, W - pad * 2f, bh), Loc.T($"HP Potion   ({ch.HpPotions}/{Town.MaxPotions})", $"回復薬   （{ch.HpPotions}/{Town.MaxPotions}）"),
-                Loc.T($"Restores {Town.HpPotionHeal * 100f:0}% HP. Q key or the HP button.", $"体力を{Town.HpPotionHeal * 100f:0}%回復。Q キーか HP ボタン。"),
+                Loc.T($"Restores {Town.HpPotionHeal * 100f:0}% HP. Q key or the HP button.", $"HPを{Town.HpPotionHeal * 100f:0}%回復。Q キーか HP ボタン。"),
                 potion, ch.HpPotions < Town.MaxPotions && ch.Embers >= potion, () => Town.BuyPotion(ch, true),
                 10, () => Town.BuyPotions(ch, true, 10));
             y += bh + gap;

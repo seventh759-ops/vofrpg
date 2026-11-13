@@ -119,7 +119,7 @@ namespace VividOfFade
                     lines.Add(Loc.T($"Light +{EffBase:0.0}", $"明るさ +{EffBase:0.0}"));
                     break;
                 case ItemSlot.Armor:
-                    lines.Add(Loc.T($"Max HP +{EffBase:0}", $"最大体力 +{EffBase:0}"));
+                    lines.Add(Loc.T($"Max HP +{EffBase:0}", $"最大HP +{EffBase:0}"));
                     break;
             }
             foreach (var a in Affixes) lines.Add(StatText.Format(a.Stat, Eff(a)));
@@ -139,7 +139,7 @@ namespace VividOfFade
                 case StatType.CritChance: return Loc.T($"+{v * 100f:0}% Crit Chance", $"会心率 +{v * 100f:0}%");
                 case StatType.CritDamage: return Loc.T($"+{v * 100f:0}% Crit Damage", $"会心ダメージ +{v * 100f:0}%");
                 case StatType.MoveSpeedPct: return Loc.T($"+{v * 100f:0}% Move Speed", $"移動速度 +{v * 100f:0}%");
-                case StatType.MaxHp: return Loc.T($"+{v:0} Max HP", $"最大体力 +{v:0}");
+                case StatType.MaxHp: return Loc.T($"+{v:0} Max HP", $"最大HP +{v:0}");
                 case StatType.Armor: return Loc.T($"+{v:0} Armor", $"防御 +{v:0}");
                 case StatType.LightRadius: return Loc.T($"+{v:0.0} Light", $"明るさ +{v:0.0}");
                 case StatType.Pierce: return Loc.T($"+{v:0} Pierce", $"貫通 +{v:0}");
@@ -150,7 +150,7 @@ namespace VividOfFade
                 case StatType.Vit: return $"+{v:0} VIT";
                 case StatType.Wis: return $"+{v:0} WIS";
                 case StatType.MaxMp: return Loc.T($"+{v:0} Max MP", $"最大MP +{v:0}");
-                case StatType.HpRegen: return Loc.T($"+{v:0.0} HP/s", $"体力回復 +{v:0.0}/秒");
+                case StatType.HpRegen: return Loc.T($"+{v:0.0} HP/s", $"HP回復 +{v:0.0}/秒");
                 case StatType.MpRegen: return Loc.T($"+{v:0.0} MP/s", $"MP回復 +{v:0.0}/秒");
                 case StatType.LifeSteal: return Loc.T($"Heal {v * 100f:0.0}% of damage dealt", $"与えたダメージの{v * 100f:0.0}%を回復");
                 case StatType.DamageReduction: return Loc.T($"-{v * 100f:0}% Damage Taken", $"被ダメージ -{v * 100f:0}%");
@@ -164,7 +164,7 @@ namespace VividOfFade
                 case StatType.DodgeCooldown: return Loc.T($"-{v * 100f:0}% Dodge Cooldown", $"回避の待ち時間 -{v * 100f:0}%");
                 case StatType.AllStats: return Loc.T($"+{v:0} All Stats", $"全能力値 +{v:0}");
                 case StatType.AreaPct: return Loc.T($"+{v * 100f:0}% Skill Area", $"スキルの範囲 +{v * 100f:0}%");
-                case StatType.MaxHpPct: return Loc.T($"+{v * 100f:0}% Max HP", $"最大体力 +{v * 100f:0}%");
+                case StatType.MaxHpPct: return Loc.T($"+{v * 100f:0}% Max HP", $"最大HP +{v * 100f:0}%");
                 case StatType.Hit: return $"+{v:0} HIT";
                 case StatType.Evasion: return $"+{v:0} EVA";
                 case StatType.FlatDamage: return Loc.T($"+{v:0} Attack", $"攻撃力 +{v:0}");
@@ -189,7 +189,7 @@ namespace VividOfFade
             switch (u)
             {
                 case UniqueType.ExplodeOnKill: return Loc.T("Enemies explode on death", "倒した敵が爆発する");
-                case UniqueType.HealOnKill: return Loc.T("Heal 1 HP on kill", "倒すと体力1回復");
+                case UniqueType.HealOnKill: return Loc.T("Heal 1 HP on kill", "倒すとHP1回復");
                 case UniqueType.SplitShot: return MultiText(2f) + Loc.T(" (unique)", "（固有）");
                 case UniqueType.DodgeNova: return Loc.T("Dodging releases a burst of flame", "回避すると炎が弾ける");
                 case UniqueType.DoubleStrike: return Loc.T("25% chance to attack again", "25%でもう一度攻撃");

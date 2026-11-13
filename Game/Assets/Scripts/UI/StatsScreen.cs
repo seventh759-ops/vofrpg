@@ -172,10 +172,10 @@ namespace VividOfFade
             float bottomY = H - pad - btnH;
             string[,] cells =
             {
-                { Loc.T("HP", "体力"), $"{shownHp}", Loc.T("HP regen", "体力回復"), Loc.T($"{st.HpRegen:0.0}/s", $"{st.HpRegen:0.0}/秒") },
+                { "HP", $"{shownHp}", Loc.T("HP regen", "HP回復"), Loc.T($"{st.HpRegen:0.0}/s", $"{st.HpRegen:0.0}/秒") },
                 { "MP", $"{shownMp}", Loc.T("MP regen", "MP回復"), Loc.T($"{st.MpRegen:0.0}/s", $"{st.MpRegen:0.0}/秒") },
                 { Loc.T("Damage", "ダメージ"), $"{st.Damage:0}", Loc.T("Attacks/s", "攻撃/秒"), $"{st.AttacksPerSecond:0.0}" },
-                { Loc.T("DPS", "秒間ダメージ"), $"{st.Damage * st.AttacksPerSecond * (1f + st.CritChance * (st.CritMult - 1f)):0}", Loc.T("Crit", "会心"), $"{st.CritChance * 100f:0}%  x{st.CritMult:0.00}" },
+                { "DPS", $"{st.Damage * st.AttacksPerSecond * (1f + st.CritChance * (st.CritMult - 1f)):0}", Loc.T("Crit", "会心"), $"{st.CritChance * 100f:0}%  x{st.CritMult:0.00}" },
                 { Loc.T("Armor", "防御"), $"{st.Armor:0}", Loc.T("Speed", "速さ"), $"{st.MoveSpeed:0.0}" },
                 { Loc.T("Light", "明るさ"), $"{shownLight:0.0}", Loc.T("MP next Lv", "次のLvのMP"), $"+{Progression.MpPerLevel(Progression.BaseWis(ch))}" },
                 { "HIT", Loc.T($"{st.Hit} ({st.HitChance(world.Enemies.FloorTier) * 100f:0}%)", $"{st.Hit}（{st.HitChance(world.Enemies.FloorTier) * 100f:0}%）"),

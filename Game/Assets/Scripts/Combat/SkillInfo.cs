@@ -83,7 +83,7 @@ namespace VividOfFade
                     Effect = SkillEffect.Buff, Duration = 6f, BuffAttackSpeed = 0.5f, Color = new Color(1f, 0.35f, 0.35f, 0.9f) },
                 new SkillSpec { Name = "Crescent Wave", NameJa = "三日月の刃", DescJa = "敵へ飛ぶ斬撃を5つ。", Desc = "5 flying blades toward the enemy.", ReqLevel = 18, Mp = 15, Cooldown = 5f,
                     Effect = SkillEffect.Barrage, Mult = 3.8f, Count = 5, Color = new Color(0.85f, 0.9f, 1f, 0.9f) },
-                new SkillSpec { Name = "Second Wind", NameJa = "立て直し", DescJa = "最大体力の35%を回復。", Desc = "Recover 35% of max HP.", ReqLevel = 26, Mp = 20, Cooldown = 12f,
+                new SkillSpec { Name = "Second Wind", NameJa = "立て直し", DescJa = "最大HPの35%を回復。", Desc = "Recover 35% of max HP.", ReqLevel = 26, Mp = 20, Cooldown = 12f,
                     Effect = SkillEffect.Heal, HealPct = 0.35f, Color = new Color(0.5f, 1f, 0.6f, 0.9f) },
                 new SkillSpec { Name = "Thousand Cuts", NameJa = "千の斬撃", DescJa = "周りに刃の嵐。", Desc = "A storm of blades around you.", ReqLevel = 35, Mp = 35, Cooldown = 10f,
                     Effect = SkillEffect.Nova, Mult = 12.5f, Radius = 2.6f, Color = new Color(0.85f, 0.9f, 1f, 0.9f) },
@@ -93,7 +93,7 @@ namespace VividOfFade
             {
                 new SkillSpec { Name = "Holy Pulse", NameJa = "聖なる波動", DescJa = "周りに光の波。", Desc = "Wave of light around you.", ReqLevel = 1, Mp = 8, Cooldown = 3f,
                     Effect = SkillEffect.Nova, Mult = 3.8f, Radius = 2.4f, Color = new Color(1f, 0.9f, 0.5f, 0.9f) },
-                new SkillSpec { Name = "Mend", NameJa = "癒やし", DescJa = "最大体力の30%を回復。", Desc = "Recover 30% of max HP.", ReqLevel = 5, Mp = 12, Cooldown = 7f,
+                new SkillSpec { Name = "Mend", NameJa = "癒やし", DescJa = "最大HPの30%を回復。", Desc = "Recover 30% of max HP.", ReqLevel = 5, Mp = 12, Cooldown = 7f,
                     Effect = SkillEffect.Heal, HealPct = 0.3f, Color = new Color(0.5f, 1f, 0.6f, 0.9f) },
                 new SkillSpec { Name = "Lantern Ward", NameJa = "灯りの守り", DescJa = "6秒、防御+60・被ダメージ-40%。", Desc = "Armor +60, damage taken -40% for 6s.", ReqLevel = 10, Mp = 15, Cooldown = 16f,
                     Effect = SkillEffect.Buff, Duration = 6f, BuffArmor = 60f, BuffTaken = 0.6f, Color = new Color(1f, 0.85f, 0.4f, 0.9f) },
@@ -101,7 +101,7 @@ namespace VividOfFade
                     Effect = SkillEffect.Buff, Duration = 8f, BuffExtra = 3, BuffDamage = 0.2f },
                 new SkillSpec { Name = "Flame Pillar", NameJa = "火柱", DescJa = "一番近い敵に火柱。", Desc = "Pillar of fire on the nearest enemy.", ReqLevel = 26, Mp = 22, Cooldown = 7f,
                     Effect = SkillEffect.Strike, Mult = 7.5f, Radius = 2f, Delay = 0.5f, Range = 7f },
-                new SkillSpec { Name = "Judgment", NameJa = "裁き", DescJa = "とても広い光の波。体力20%回復。", Desc = "Vast wave of light; heals 20%.", ReqLevel = 35, Mp = 45, Cooldown = 14f,
+                new SkillSpec { Name = "Judgment", NameJa = "裁き", DescJa = "とても広い光の波。HP20%回復。", Desc = "Vast wave of light; heals 20%.", ReqLevel = 35, Mp = 45, Cooldown = 14f,
                     Effect = SkillEffect.Nova, Mult = 7.5f, Radius = 4.5f, HealPct = 0.2f, Color = new Color(1f, 0.95f, 0.7f, 0.9f) },
             },
         };

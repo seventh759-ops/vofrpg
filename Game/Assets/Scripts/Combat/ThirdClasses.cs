@@ -74,9 +74,9 @@ namespace VividOfFade
                 new AdvancedSpec
                 {
                     Name = "Bloodsovereign", NameJa = "血の君主", ExtraAttr = Attr.Vit,
-                    Desc = "Heal 1.5% of damage dealt, max HP +30%, damage +15%. VIT also raises damage.", DescJa = "与えたダメージの1.5%を回復、最大体力+30%、ダメージ+15%。VITでも攻撃力が伸びる。",
+                    Desc = "Heal 1.5% of damage dealt, max HP +30%, damage +15%. VIT also raises damage.", DescJa = "与えたダメージの1.5%を回復、最大HP+30%、ダメージ+15%。VITでも攻撃力が伸びる。",
                     Passive = new BoonSpec { LifeSteal = 0.015f, HpPct = 0.3f, Damage = 0.15f },
-                    Skill = new SkillSpec { Name = "Sanguine Tide", NameJa = "血潮", Desc = "A wave of blood around you; heals 20%.", DescJa = "周りに血の波。体力20%回復。",
+                    Skill = new SkillSpec { Name = "Sanguine Tide", NameJa = "血潮", Desc = "A wave of blood around you; heals 20%.", DescJa = "周りに血の波。HP20%回復。",
                         ReqLevel = 1, Mp = 45, Cooldown = 11f, Effect = SkillEffect.Nova, Mult = 15f, Radius = 3f, HealPct = 0.2f, Color = new Color(1f, 0.2f, 0.3f, 0.9f) },
                 },
             },
@@ -93,7 +93,7 @@ namespace VividOfFade
                 new AdvancedSpec
                 {
                     Name = "Aegis", NameJa = "神盾", ExtraAttr = Attr.Str,
-                    Desc = "Armor +80, max HP +40%, damage +10%. STR also raises damage.", DescJa = "防御+80、最大体力+40%、ダメージ+10%。STRでも攻撃力が伸びる。",
+                    Desc = "Armor +80, max HP +40%, damage +10%. STR also raises damage.", DescJa = "防御+80、最大HP+40%、ダメージ+10%。STRでも攻撃力が伸びる。",
                     Passive = new BoonSpec { Armor = 80f, HpPct = 0.4f, Damage = 0.1f },
                     Skill = new SkillSpec { Name = "Unbreakable", NameJa = "不壊", Desc = "Armor +250, damage taken -65% for 10s.", DescJa = "10秒、防御+250・被ダメージ-65%。",
                         ReqLevel = 1, Mp = 40, Cooldown = 24f, Effect = SkillEffect.Buff, Duration = 10f, BuffArmor = 250f, BuffTaken = 0.35f, Color = new Color(0.8f, 0.9f, 1f, 0.9f) },

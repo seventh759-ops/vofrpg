@@ -643,7 +643,7 @@ namespace VividOfFade
             // 右上は MENU だけ（ポイントが余っている・鞄が満杯なら「!」）
             int points = ch != null ? ch.Points : 0;
             bool notice = points > 0 || inv.BagFull;
-            Button(ToGui(MenuRect), notice ? Loc.T("MENU !", "メニュー !") : Loc.T("MENU", "メニュー"), notice ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.55f), centered,
+            Button(ToGui(MenuRect), notice ? "MENU !" : "MENU", notice ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : new Color(0f, 0f, 0f, 0.55f), centered,
                 () => World.OpenMenu());
 
             DrawSkillButtons(ch);
@@ -705,8 +705,8 @@ namespace VividOfFade
             "攻撃モード .. T（押す間：J か右クリック）",
             "鞄 .......... B      能力値 ... C",
             "スキル一覧 .. K      音楽 ... M（オン/オフ）  N（変える）",
-            "薬 .......... Q（体力）  E（MP）",
-            "地図 ........ F（小さな地図をタップでも）",
+            "薬 .......... Q（HP）  E（MP）",
+            "MAP ......... F（小さな地図をタップでも）",
             "メニュー .... Esc（画面を閉じるのも）",
         };
 

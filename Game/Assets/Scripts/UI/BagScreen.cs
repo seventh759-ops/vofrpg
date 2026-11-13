@@ -380,17 +380,17 @@ namespace VividOfFade
             var after = WithBoons(afterBase, player);
             var rows = new List<(string name, float a, float b, string fmt, string unit)>
             {
-                (Loc.T("HP", "体力"), now.MaxHp, after.MaxHp, "0", ""),
+                ("HP", now.MaxHp, after.MaxHp, "0", ""),
                 ("MP", now.MaxMp, after.MaxMp, "0", ""),
                 (Loc.T("Damage", "ダメージ"), now.Damage, after.Damage, "0", ""),
                 (Loc.T("Attacks/s", "攻撃/秒"), now.AttacksPerSecond, after.AttacksPerSecond, "0.00", ""),
-                (Loc.T("DPS", "秒間ダメージ"), Dps(now), Dps(after), "0", ""),
+                ("DPS", Dps(now), Dps(after), "0", ""),
                 (Loc.T("Crit", "会心"), now.CritChance * 100f, after.CritChance * 100f, "0", "%"),
                 (Loc.T("Crit dmg", "会心ダメージ"), now.CritMult * 100f, after.CritMult * 100f, "0", "%"),
                 (Loc.T("Armor", "防御"), now.Armor, after.Armor, "0", ""),
                 (Loc.T("Speed", "速さ"), now.MoveSpeed, after.MoveSpeed, "0.0", ""),
                 (Loc.T("Light", "明るさ"), now.Light, after.Light, "0.0", ""),
-                (Loc.T("HP regen", "体力回復"), now.HpRegen, after.HpRegen, "0.0", ""),
+                (Loc.T("HP regen", "HP回復"), now.HpRegen, after.HpRegen, "0.0", ""),
                 (Loc.T("MP regen", "MP回復"), now.MpRegen, after.MpRegen, "0.0", ""),
             };
             // 能力値は変わるものだけを、最後の1行にまとめる（品によって行の数・高さが変わらないように）
@@ -537,7 +537,7 @@ namespace VividOfFade
             {
                 case "0 Damage": return Loc.T($"Weapon damage {sign}{v:0}", $"武器のダメージ {sign}{v:0}");
                 case "0 Light": return Loc.T($"Light {sign}{v:0.0}", $"明るさ {sign}{v:0.0}");
-                case "0 Max HP": return Loc.T($"Max HP {sign}{v:0}", $"最大体力 {sign}{v:0}");
+                case "0 Max HP": return Loc.T($"Max HP {sign}{v:0}", $"最大HP {sign}{v:0}");
             }
             var stat = (StatType)System.Enum.Parse(typeof(StatType), key.Substring(2));
             // 効果の書き方（+12% Damage など）の先頭の + を、増減の符号に置き換える
