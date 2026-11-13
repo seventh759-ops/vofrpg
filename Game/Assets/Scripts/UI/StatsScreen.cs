@@ -85,6 +85,21 @@ namespace VividOfFade
 
             float rowH = H * 0.06f;
             float plusW = rowH * 1.2f;
+            // 数値の欄の文字の大きさは、5つの能力値でそろえる（いちばん長い行に合わせる。行ごとに大きさが変わらないように）
+            int valueFont = label.fontSize;
+            {
+                float vw = (ch.Points > 0 ? (W - pad) - 4f * (rowH * 0.95f + W * 0.008f) : (W - pad)) - (pad + W * 0.17f) - W * 0.01f;
+                var probe = new GUIStyle(label) { fontStyle = FontStyle.Bold };
+                for (int i = 0; i < Attributes.Count; i++)
+                {
+                    int bv = spec.BaseStats[i] + ch.Alloc[i] + ThirdClasses.BonusStats(ch);
+                    int fg = st.Attr[i] - bv;
+                    var c = new GUIContent($"{st.Attr[i] + pending[i]}" + (fg > 0 ? $"  (+{fg})" : ""));
+                    probe.fontSize = valueFont;
+                    while (probe.fontSize > 8 && probe.CalcSize(c).x > vw * 0.94f) probe.fontSize--;
+                    valueFont = probe.fontSize;
+                }
+            }
             for (int i = 0; i < Attributes.Count; i++)
             {
                 var attr = (Attr)i;
@@ -101,7 +116,7 @@ namespace VividOfFade
                 string gear = fromGear > 0 ? $"  (+{fromGear})" : "";
                 int idx = i;
                 // 仮に振っていれば、確定後の値を金色で出す（ボタンと重ならないよう、数値の欄の中だけで）
-                var valueStyle = new GUIStyle(label);
+                var valueStyle = new GUIStyle(label) { fontSize = valueFont };
                 if (pending[i] > 0)
                 {
                     valueStyle.fontStyle = FontStyle.Bold;
@@ -130,7 +145,8 @@ namespace VividOfFade
                         });
                         else
                         {
-                            Hud.Fill(r, new Color(1f, 1f, 1f, 0.04f));
+                            Hud.Fill(r, new Color(0.04f, 0.04f, 0.07f, 0.92f));
+                            Hud.OrnateFrame(r, new Color(0.45f, 0.4f, 0.3f, 1f), 1f, true, false); // 押せないときは暗い金でへこみ
                             var dimStyle = new GUIStyle(centered);
                             dimStyle.normal.textColor = new Color(0.45f, 0.45f, 0.45f);
                             Hud.FitLabel(r, text, dimStyle);
