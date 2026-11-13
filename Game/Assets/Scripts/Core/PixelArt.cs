@@ -2186,9 +2186,176 @@ namespace VividOfFade
         /// <summary>区域ごとのボスの絵（32 ドット、陰影つき。BossKind の順）。敵の絵を土台に、色と飾りを変えている。</summary>
         public static Sprite BossSprite(BossKind kind)
         {
+            if (BossInfo.IsAbyss(kind)) return AbyssBossSprite(kind);
             int i = Mathf.Clamp((int)kind, 0, BossRows.Length - 1);
             return Shaded("Boss32_" + i, BossRows[i], BossColors[i]);
         }
+
+        /// <summary>深淵のボス。暗い体に、区画の色で光る目・裂け目と光の縁。k 体・K 暗い所・z 骨・Z 光・M 膜。</summary>
+        static Sprite AbyssBossSprite(BossKind kind)
+        {
+            int i = Mathf.Clamp((int)kind - (int)BossKind.RiftWarden, 0, AbyssBossRows.Length - 1);
+            var z = Zones.For(GameConfig.AbyssFirstFloor + i * GameConfig.BossFloorEvery);
+            var glow = z.Accent;
+            var over = new Dictionary<char, Color32[]>
+            {
+                { 'k', RampFrom(Mix(new Color32(12, 8, 16, 255), z.Slime, 0.42f)) },
+                { 'K', RampFrom(Mix(new Color32(6, 3, 8, 255), z.SlimeDark, 0.45f)) },
+                { 'M', RampFrom(Mix(new Color32(10, 5, 12, 255), z.Accent, 0.3f)) },
+                { 'n', RampFrom(Mix(new Color32(12, 8, 18, 255), z.SlimeDark, 0.35f)) },
+                { 'z', Ramp(214, 206, 196, 170, 160, 150, 120, 112, 106, 80, 74, 70) },
+                { 'Z', new[] { glow, glow, glow, glow } },
+            };
+            return Shaded("AbyssBoss32_" + i, AbyssBossRows[i], over, z.Accent);
+        }
+
+        static string[][] AbyssBossRows => new[] { BossRiftWardenRows, BossStarEaterRows, BossMoonPriestRows, BossAbyssKingRows };
+
+        static readonly string[] BossRiftWardenRows =
+        {
+            "......z..................z......",
+            ".......zz..............zz.......",
+            "........zz............zz........",
+            ".........zzz........zzz.........",
+            "..........zzzKKKKKKzzz......zZ..",
+            "...........zzKKKKKKzz.......zZ..",
+            "............KKKKKKKK........zZz.",
+            "............KKKKKKKK........zZz.",
+            "............KZZZoZZZ........zZz.",
+            "............KKKKKKKK........zZz.",
+            "......K.....KKKKKKKK.....K..zZz.",
+            "....KKKKK.KKKKKKKKKKKK.KKKKKzZz.",
+            "...KKKKKKKKKKKKKKKKKKKKKKKKKzZz.",
+            "...KKKKKKKKKKKKKKKKKKKKKKKKKzZz.",
+            "...KKKKKKKKKKKKKZKKKKKKKKKKKzZz.",
+            "....kkkkK.kkKKKKZKKKkk.KkkkkzZz.",
+            "....kkkk..kkkkkkZkkkkk..kkkkzZz.",
+            "....kkkk..kkkkkkZkkkkk..kkkkzZz.",
+            "....kkkk..kkkkkkZkkkkk..kkkkzZz.",
+            "....kkkk..kkkkkkZkkkkk..kkkkzZz.",
+            "....kkkk..kkkkkkZkkkkk..kkkkzZz.",
+            "....kkkk..kkkkkkZkkkkk..kkkkzZz.",
+            "....kkkk..kkkkkkZkkkkk..kkkkzZz.",
+            "....kkkk..kkkkkkkkkkkk....gggggg",
+            "..........kkkkkkkkkkkk......KK..",
+            "..........KKKKK..KKKKK......KK..",
+            "..........KKKKK..KKKKK......KK..",
+            "..........KKKKK..KKKKK..........",
+            "..........KKKKK..KKKKK..........",
+            "..........KKKKK..KKKKK..........",
+            "..........KKKKK..KKKKK..........",
+            "................................",
+        };
+
+        static readonly string[] BossStarEaterRows =
+        {
+            "................................",
+            "................................",
+            "................................",
+            "............kkkkkkkk............",
+            "..........kZkkkkkkkkkZ..........",
+            "........kkkkkkZZZZkkkkkk........",
+            ".......kkkkkZZooooZZkkkkZ.......",
+            "......kkZkkZZooeeooZZkkkkk......",
+            "......kkkkkZZooeeooZZkkkkk......",
+            ".....kkkkkkZZooeeooZZkkkkkk.....",
+            ".....kkkkkkZZooeeooZZkkkkkk.....",
+            ".....kkkkkkkZZooooZZkkkkkkk.....",
+            ".....kkkkkkkkkZZZZkkkkkkkkk.....",
+            ".....kZkkkkkkkeeeekkkkkkkkk.....",
+            ".....kkkkkkzezezezezezkkkkZ.....",
+            "......kkkkeeeeeeeeeeeekkkk......",
+            "......kkkkeeeeeeeeeeeekkkk......",
+            ".......kkkkeeeeeeeeeekkkk.......",
+            "........kkkkzkzezezkzkzk........",
+            "..........kkkkkkkkkkkk..........",
+            "........K...KkkkKkkkK...K.......",
+            "........K...K...K...K...K.......",
+            "........K...K...K...K...K.......",
+            ".......K...K...K...K...K........",
+            ".......K...K...K...K...K........",
+            ".......K...K...K...K...K........",
+            "........K...K...K...K...K.......",
+            "........K...K...K...K...K.......",
+            "........K...K...K...K...K.......",
+            ".........K...K...K...K...K......",
+            ".........Z...Z...Z...Z...Z......",
+            "................................",
+        };
+
+        static readonly string[] BossMoonPriestRows =
+        {
+            "................................",
+            "................................",
+            "...........Z........Z...........",
+            "...........ZZ......ZZ...........",
+            "............ZZZZZZZZ............",
+            "...ZZZZ........ZZ...............",
+            "...ZZZZ......nnnnnn.............",
+            "...ZZoZ.....nnnnnnnn............",
+            "...ZZZZ.....nnzzzznn............",
+            ".....w......nzzzzzzn............",
+            ".....w......nzzzzzzn............",
+            ".....w......nzzZzZzn............",
+            ".....w......nzzzzzzn............",
+            ".....w.......nzeeen.............",
+            ".....w.......nnnnnn.......ZZ....",
+            ".....w......nnnnKnnn.....ZZZZ...",
+            ".....wnnn...nnnnKnnn....nnnoZ...",
+            ".....w...nnnnnnnKnnnnnnn..ZZ....",
+            ".....w.....ggggggggggg..........",
+            ".....w....nnnnnnKnnnnn..........",
+            ".....w....nnnnnnKnnnnn..........",
+            ".....w...nnnnnnnKnnnnnn.........",
+            ".....w...nnnnnnnKnnnnnn.........",
+            ".....w..nnnnnnnnKnnnnnnn........",
+            ".....w..nnnnnnnnKnnnnnnn........",
+            ".....w..nnnnnnnnKnnnnnnn........",
+            ".....w.nnnnnnnnnKnnnnnnnn.......",
+            ".....w.nnnnnnnnnKnnnnnnnn.......",
+            ".....wnnnnnnnnnnKnnnnnnnnn......",
+            "................................",
+            "................................",
+            "................................",
+        };
+
+        static readonly string[] BossAbyssKingRows =
+        {
+            "................................",
+            "................g...............",
+            "..............g...g.............",
+            "............g.......g...........",
+            "z...........ggggZgggg.........Mz",
+            "Mzz.........ggggggggg........zz.",
+            "MMMz.........KKKKKK.........zMM.",
+            ".MMMzz......KKKKKKKK......MzMM..",
+            ".MMMMMz.....KKKKKKKK.....zzMMM..",
+            ".MMMMMMzz...KKZKKKZK...MzMMMMM..",
+            ".MMMMMMMMz..KKKKKKKK..MzMMMMMM..",
+            ".MMMMMMMMMzzkKKeeeKk.zzMMMMMMM..",
+            ".MMMMMMMMMMkkkKKKKkkkMMMMMMMMM..",
+            "..MMMMMMMMMkkkkkZkkkkMMMMMMMM...",
+            "..MMMMMMMMkkkkkkZkkkkkMMMMMMM...",
+            "..MMMMMMM.kkkkkZkkkkkk.MMMMMM...",
+            "..MMMMMM.ffkkkkZkkkkkff.MMMMM...",
+            "..MMMMM..ffkkkZokkkkkff.MMMMM...",
+            "..MMMM...ffkkkZkkkkkkff..MMMM...",
+            "...MM...fffkkkkZkkkkkfff..MM....",
+            "...M....ffffkkkkZkkkffff...M....",
+            "........ffffkkkkZkkkffff........",
+            "........ffffkkkkkZkkffff........",
+            ".......fffffkkkkkkkkfffff.......",
+            ".......ffffffkkkkkkffffff.......",
+            ".......ffffffKKkkkKffffff.......",
+            "......fffffKKKK...KKKfffff......",
+            "......ff...KKKK...KKKK..ff......",
+            "...........KKKK...KKKK..........",
+            "...........KKKK...KKKK..........",
+            "...........KKKK...KKKK..........",
+            "................................",
+        };
+
+
 
         static readonly Dictionary<char, Color32[]>[] BossColors =
         {

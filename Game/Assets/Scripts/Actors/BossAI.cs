@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace VividOfFade
 {
-    /// <summary>区域ごとのボス（FloorPattern の順）。</summary>
-    public enum BossKind { Golem, Mother, Forge, Frost, Librarian, Void }
+    /// <summary>区域ごとのボス（FloorPattern の順）。RiftWarden からは深淵のボス。</summary>
+    public enum BossKind { Golem, Mother, Forge, Frost, Librarian, Void, RiftWarden, StarEater, MoonPriest, AbyssKing }
 
     /// <summary>
     /// ボスの攻撃。どれも予告（Windup）のあとに判定する。
@@ -32,7 +32,13 @@ namespace VividOfFade
         public const float BlinkCooldown = 4f;       // 司書が近づかれて離れる瞬間移動の待ち時間
         public const float KeepAway = 5.5f;          // 司書が保とうとする距離
 
-        public static BossKind For(ZoneSpec z) => z == null ? BossKind.Golem : (BossKind)Mathf.Clamp((int)z.Pattern, 0, 5);
+        public static BossKind For(ZoneSpec z) => z == null ? BossKind.Golem : (BossKind)Mathf.Clamp((int)z.Pattern, 0, (int)BossKind.AbyssKing);
+
+        /// <summary>深淵のボスか（攻撃の間隔が短く、弾が多い）。</summary>
+        public static bool IsAbyss(BossKind k) => k >= BossKind.RiftWarden;
+
+        /// <summary>距離を取って撃ち、近づかれると離れた場所へ瞬間移動するボス。</summary>
+        public static bool KeepsAway(BossKind k) => k == BossKind.Librarian || k == BossKind.StarEater;
 
         public static string Name(BossKind k)
         {
@@ -43,6 +49,10 @@ namespace VividOfFade
                 case BossKind.Frost: return Loc.T("Frost King", "霜の王");
                 case BossKind.Librarian: return Loc.T("Archive Keeper", "書庫の司書");
                 case BossKind.Void: return Loc.T("Hollow Shade", "虚ろの影");
+                case BossKind.RiftWarden: return Loc.T("Rift Warden", "深淵の門番");
+                case BossKind.StarEater: return Loc.T("Star Eater", "星喰らい");
+                case BossKind.MoonPriest: return Loc.T("Inverted Moon Priest", "逆さ月の司祭");
+                case BossKind.AbyssKing: return Loc.T("King of the Abyss", "深淵の王");
                 default: return Loc.T("Ash Warden", "灰の番人");
             }
         }
@@ -56,6 +66,14 @@ namespace VividOfFade
             new[] { BossAttack.StunNova, BossAttack.BulletFan, BossAttack.BulletFan },
             new[] { BossAttack.RoomWide, BossAttack.BulletRing, BossAttack.BulletFan, BossAttack.BulletFan },
             new[] { BossAttack.RoomWide, BossAttack.Cone, BossAttack.StunNova, BossAttack.Blink },
+            // 深淵：突進と扇で押し込んでくる門番
+            new[] { BossAttack.Charge, BossAttack.Cone, BossAttack.Charge, BossAttack.Slam, BossAttack.Summon },
+            // 深淵：離れて弾幕を張り、近づくと消える星喰らい
+            new[] { BossAttack.BulletRing, BossAttack.BulletFan, BossAttack.BulletRing, BossAttack.RoomWide, BossAttack.BulletFan },
+            // 深淵：全体攻撃と気絶で縛る司祭
+            new[] { BossAttack.RoomWide, BossAttack.StunNova, BossAttack.BulletFan, BossAttack.Summon, BossAttack.Cone },
+            // 深淵の王：すべての技を使う
+            new[] { BossAttack.Slam, BossAttack.Cone, BossAttack.BulletRing, BossAttack.Charge, BossAttack.RoomWide, BossAttack.StunNova, BossAttack.BulletFan, BossAttack.Blink },
         };
 
         public static BossAttack Next(Enemy e) => patterns[(int)e.BossKind][e.AttackStep % patterns[(int)e.BossKind].Length];
@@ -100,6 +118,10 @@ namespace VividOfFade
                 case BossKind.Frost: return a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
                 case BossKind.Librarian: return a == BossAttack.RoomWide ? DebuffKind.AttackDown : (DebuffKind?)null;
                 case BossKind.Void: return a == BossAttack.RoomWide ? DebuffKind.DefenseDown : a == BossAttack.Cone ? DebuffKind.AttackDown : (DebuffKind?)null;
+                case BossKind.RiftWarden: return a == BossAttack.Cone ? DebuffKind.DefenseDown : (DebuffKind?)null;
+                case BossKind.StarEater: return a == BossAttack.BulletFan ? DebuffKind.Slow : a == BossAttack.RoomWide ? DebuffKind.Blind : (DebuffKind?)null;
+                case BossKind.MoonPriest: return a == BossAttack.RoomWide ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
+                case BossKind.AbyssKing: return a == BossAttack.RoomWide ? DebuffKind.DefenseDown : a == BossAttack.Cone ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
             }
             return null;
         }
@@ -158,14 +180,14 @@ namespace VividOfFade
                 {
                     e.Sr.color = e.Tint;
                     Resolve(e, target, room);
-                    e.SlamTimer = e.Enraged ? BossInfo.EnragedInterval : BossInfo.Interval;
+                    e.SlamTimer = (e.Enraged ? BossInfo.EnragedInterval : BossInfo.Interval) * (BossInfo.IsAbyss(e.BossKind) ? 0.8f : 1f); // 深淵のボスは手数が多い
                 }
                 return true;
             }
 
             // 書庫の司書：距離を取りながら撃つ。近づかれたら、離れた場所へ瞬間移動（待ち時間つき）
             e.BlinkCooldown -= dt;
-            if (e.BossKind == BossKind.Librarian)
+            if (BossInfo.KeepsAway(e.BossKind))
             {
                 if (dist < 3f && e.BlinkCooldown <= 0f)
                 {
@@ -219,14 +241,17 @@ namespace VividOfFade
                     e.ChargeDir = aim;
                     break;
                 case BossAttack.BulletRing:
-                    for (int k = 0; k < 16; k++)
+                    int ring = BossInfo.IsAbyss(e.BossKind) ? 24 : 16; // 深淵のボスは弾が多い
+                    float spin = UnityEngine.Random.value * Mathf.PI * 2f / ring;
+                    for (int k = 0; k < ring; k++)
                     {
-                        float a = k * Mathf.PI * 2f / 16f;
+                        float a = spin + k * Mathf.PI * 2f / ring;
                         Fire(e.Pos, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * GameConfig.BulletSpeed * 0.8f, bulletDamage, debuff);
                     }
                     break;
                 case BossAttack.BulletFan:
-                    for (int k = -3; k <= 3; k++)
+                    int half = BossInfo.IsAbyss(e.BossKind) ? 5 : 3;
+                    for (int k = -half; k <= half; k++)
                     {
                         float a = Mathf.Atan2(aim.y, aim.x) + k * 10f * Mathf.Deg2Rad;
                         Fire(e.Pos, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * GameConfig.BulletSpeed, bulletDamage, debuff);
@@ -251,7 +276,7 @@ namespace VividOfFade
         /// <summary>瞬間移動の行き先。司書はプレイヤーから一番遠い場所、虚ろの影はプレイヤーのすぐそば。</summary>
         Vector2 BlinkTarget(Enemy e, Vector2 target, Room room)
         {
-            if (e.BossKind == BossKind.Librarian && e.Home != null)
+            if (BossInfo.KeepsAway(e.BossKind) && e.Home != null)
             {
                 Vector2 best = e.Pos;
                 float bestD = -1f;
