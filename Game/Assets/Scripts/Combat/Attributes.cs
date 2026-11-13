@@ -14,9 +14,9 @@ namespace VividOfFade
         {
             "Physical power",
             "Attack speed, crit, HIT, EVA",
-            "Magic power",
+            "Magic power (single-target spells most)",
             "Max HP, HP regen, armor",
-            "Flame power, MP, MP regen",
+            "Flame power, area spells, MP, MP regen",
         };
 
         public static string ShortName(Attr a) => shortNames[(int)a];
@@ -24,9 +24,9 @@ namespace VividOfFade
         {
             "物理の攻撃力",
             "攻撃の速さ、会心、命中、回避",
-            "魔法の攻撃力",
+            "魔法の攻撃力（単体の魔法は特に）",
             "最大体力、体力の回復、防御",
-            "灯りの攻撃力、MP、MPの回復",
+            "灯りの攻撃力、範囲魔法、MP、MPの回復",
         };
 
         public static string Effect(Attr a) => Loc.Ja ? effectsJa[(int)a] : effects[(int)a];

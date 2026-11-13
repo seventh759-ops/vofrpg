@@ -139,11 +139,30 @@ namespace VividOfFade
             if (empty >= 0) ch.Slots[empty] = index;
         }
 
+        /// <summary>
+        /// 魔法の職業（灯術師・灯番。主能力が STR ではない）のスキルにかかる能力値の補正。
+        /// INT は魔法の威力全体を 1 ポイント +1%、さらに単体向け（狙って落とす・弾を撃つ）を +1%。
+        /// WIS は範囲魔法（自分のまわり）を 1 ポイント +2%。物理の職業（影刃）には付かない。
+        /// </summary>
+        public static float MagicMult(SkillSpec spec, PlayerStats st)
+        {
+            if (ClassInfo.Get(ClassInfo.Current).MainAttr == Attr.Str) return 1f;
+            int intel = st.Attr[(int)Attr.Int], wis = st.Attr[(int)Attr.Wis];
+            float m = 1f + intel * 0.01f;
+            switch (spec.Effect)
+            {
+                case SkillEffect.Nova: m *= 1f + wis * 0.02f; break;
+                case SkillEffect.Strike:
+                case SkillEffect.Barrage: m *= 1f + intel * 0.01f; break;
+            }
+            return m;
+        }
+
         void Cast(SkillSpec spec, float power, Player player)
         {
             var st = player.Stats;
             Vector2 origin = player.Pos;
-            float damage = st.SkillBase * spec.Mult * power * (1f + st.SkillDamage);
+            float damage = st.SkillBase * spec.Mult * power * (1f + st.SkillDamage) * MagicMult(spec, st);
             float radius = spec.Radius * st.AreaMult;
 
             switch (spec.Effect)
