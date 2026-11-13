@@ -109,15 +109,21 @@ namespace VividOfFade
             {
                 var spec = ClassInfo.Get(Class);
                 float dps = Damage * (1f + CritChance * (CritMult - 1f)) * Multiplicity / FireInterval;
+                // 命中・回避（DEX）：レベルの半分を層とみなして、その層の敵と比べる
+                int tier = GameConfig.Tier(Mathf.Max(1, Level / 2));
+                if (Kind == AttackKind.Slash) dps *= HitChance(tier);                 // 近接だけ命中の判定がある
                 // 守り：実際に耐えられる量（受けるダメージ = 元 × 被ダメージ倍率 × 100 /（100 + 防御））を、職業ごとの重みで累乗する
                 // （灯術師 0.35・影刃 0.45・灯番 0.6）。攻撃（そのまま掛ける）と釣り合わせ、体力の実数値を優遇しすぎないように
                 float ehp = Mathf.Max(1f, MaxHp) * (100f + Mathf.Max(0f, Armor)) / 100f / Mathf.Max(0.1f, DamageTaken);
+                ehp /= 1f - 0.5f * EvadeChance(tier);                                   // 囲まれると避けにくいので、回避は半分として数える
                 float survive = Mathf.Pow(ehp, spec.DefenseWeight) * (1f + MaxMp * 0.0005f + HpRegen * 0.02f + MpRegen * 0.01f); // 守りの重みは職業ごと
                 float reach = 1f + (Light - spec.BaseLight) * 0.05f;
                 // M6 の効果も少しずつ数える（スキル・精鋭・範囲・稼ぎ）。被ダメージは守りの中で数える
                 float extras = (1f + SkillDamage * 0.3f) * (1f + (1f - CooldownMult) * 0.3f)
                     * (1f + EliteDamage * 0.2f) * (1f + (AreaMult - 1f) * 0.2f) * (1f + (ExpGain + EmberFind + MagicFind) * 0.1f);
-                return dps * survive * reach * (1f + ExplodeMult * 0.5f) * (1f + DoubleStrikeChance)
+                // その職業が重視する能力値（主・副。影刃なら STR と DEX）を少しだけ上乗せ。ほかの能力値は上乗せしない
+                float favored = 1f + 0.001f * (Attr[(int)spec.MainAttr] + Attr[(int)spec.SubAttr]);
+                return dps * survive * reach * favored * (1f + ExplodeMult * 0.5f) * (1f + DoubleStrikeChance)
                     * (1f + DodgeNovaMult * 0.1f) * (1f + LifeSteal * 10f) * extras;
             }
         }
