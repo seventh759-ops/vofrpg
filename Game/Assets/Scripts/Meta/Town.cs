@@ -108,7 +108,7 @@ namespace VividOfFade
         {
             if (item.Locked) return false;
             if (!ch.Stash.Remove(item) && !Profile.Storage.Remove(item)) return false;
-            ch.Embers += RarityInfo.SalvageOf(item.Rarity);
+            ch.Embers += SalvageValue(item);
             Profile.Save();
             return true;
         }
@@ -190,8 +190,25 @@ namespace VividOfFade
         }
 
         /// <summary>次の強化の値段（高いレベル・珍しい品・強化が進んだ品ほど高い）。</summary>
-        public static int EnhancePrice(Item it) =>
-            Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * Mathf.Pow(it.Enhance + 1, 1.4f));
+        public static int EnhancePrice(Item it) => EnhancePriceAt(it, it.Enhance);
+
+        static int EnhancePriceAt(Item it, int enhance) =>
+            Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * Mathf.Pow(enhance + 1, 1.4f));
+
+        /// <summary>分解・売却で戻る、強化に使った火種の割合。</summary>
+        public const float EnhanceRefund = 0.5f;
+
+        /// <summary>その品の強化に使った火種の合計（+0 から今の段まで）。</summary>
+        public static int EnhanceSpent(Item it)
+        {
+            int sum = 0;
+            for (int e = 0; e < it.Enhance; e++) sum += EnhancePriceAt(it, e);
+            return sum;
+        }
+
+        /// <summary>分解・売却で得る火種。珍しさの分に、強化に使った火種の半分を足す。</summary>
+        public static int SalvageValue(Item it) =>
+            RarityInfo.SalvageOf(it.Rarity) + (it.Enhance > 0 ? Mathf.RoundToInt(EnhanceSpent(it) * EnhanceRefund) : 0);
 
         /// <summary>効果の再抽選の値段。</summary>
         /// <summary>再抽選の値段。ロックした効果が1つ増えるごとに倍になる（0:x1 1:x2 2:x4 3:x8）。</summary>

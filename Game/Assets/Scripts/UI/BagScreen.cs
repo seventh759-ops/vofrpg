@@ -186,7 +186,7 @@ namespace VividOfFade
                 GUI.Label(r, Loc.T("LOCKED", "ロック中"), hud.CenteredStyle);
                 return;
             }
-            hud.Button(r, Loc.T($"SALVAGE +{RarityInfo.SalvageOf(item.Rarity)}", $"分解 +{RarityInfo.SalvageOf(item.Rarity)}"), buttonBack, hud.CenteredStyle, () => Salvage(inv, item));
+            hud.Button(r, Loc.T($"SALVAGE +{Town.SalvageValue(item)}", $"分解 +{Town.SalvageValue(item)}"), buttonBack, hud.CenteredStyle, () => Salvage(inv, item));
         }
 
         /// <summary>一括分解の選択欄。ロック中の品は残る。</summary>

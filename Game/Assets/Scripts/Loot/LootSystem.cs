@@ -243,7 +243,7 @@ namespace VividOfFade
             if (victim < 0) victim = 0;
 
             var g = active[victim];
-            inventory.Embers += g.Item == null ? g.Embers : RarityInfo.SalvageOf(g.Item.Rarity);
+            inventory.Embers += g.Item == null ? g.Embers : Town.SalvageValue(g.Item);
             ReleaseAt(victim);
         }
 

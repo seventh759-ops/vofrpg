@@ -127,7 +127,7 @@ namespace VividOfFade
         {
             if (AutoSalvages(item))
             {
-                Embers += RarityInfo.SalvageOf(item.Rarity);
+                Embers += Town.SalvageValue(item);
                 return true;
             }
             if (BagFull) return false;
@@ -195,7 +195,7 @@ namespace VividOfFade
 
         public void Salvage(Item item)
         {
-            if (Bag.Remove(item)) Embers += RarityInfo.SalvageOf(item.Rarity);
+            if (Bag.Remove(item)) Embers += Town.SalvageValue(item);
         }
 
         /// <summary>条件に合う品をまとめて分解する。ロック中の品は残す。分解した数を返す。</summary>
@@ -206,7 +206,7 @@ namespace VividOfFade
             {
                 var item = Bag[i];
                 if (item.Locked || !match(item)) continue;
-                Embers += RarityInfo.SalvageOf(item.Rarity);
+                Embers += Town.SalvageValue(item);
                 Bag.RemoveAt(i);
                 n++;
             }

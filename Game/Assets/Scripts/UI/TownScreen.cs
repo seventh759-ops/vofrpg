@@ -270,7 +270,7 @@ namespace VividOfFade
             }
             else
             {
-                Confirm(new Rect(pad, by, half, btnH), "salvage", Loc.T($"SELL +{RarityInfo.SalvageOf(item.Rarity)} embers", $"売却 火種+{RarityInfo.SalvageOf(item.Rarity)}"),
+                Confirm(new Rect(pad, by, half, btnH), "salvage", Loc.T($"SELL +{Town.SalvageValue(item)} embers", $"売却 火種+{Town.SalvageValue(item)}"),
                     () => { if (Town.Salvage(ch, item)) selected = null; });
                 Confirm(new Rect(pad + half + gap, by, half, btnH), "discard", Loc.T("DISCARD", "破棄"),
                     () => { if (Town.Discard(ch, item)) selected = null; });
