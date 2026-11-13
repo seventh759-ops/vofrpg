@@ -3251,14 +3251,15 @@ namespace VividOfFade
 
         /// <summary>
         /// 案内役（オリジナルキャラ）。40ドットを、プレイヤーと同じ縮尺（1マス32ドット）で描く。
-        /// 黒い影の体（Q）と灰色の毛（F）に陰影を付け、口は口角の上がった笑みの形で、中（K）はごく暗い赤、上下に象牙色の歯（T）が並ぶ。
+        /// 黒い影の体（Q）と灰色の毛（F）に陰影を付け、口は口角の上がった笑みの形で、中（K）は真っ暗、上下の歯の間の帯（Y）だけとても暗い赤、上下に象牙色の歯（T）が並ぶ。
         /// </summary>
         public static Sprite Guide => Shaded("Guide40", GuideRows, new Dictionary<char, Color32[]>
         {
             { 'Q', Ramp(44, 40, 52, 28, 24, 34, 19, 15, 25, 12, 8, 16) },
             { 'F', Ramp(112, 100, 114, 82, 72, 86, 60, 52, 64, 44, 38, 48) },
             { 'T', Ramp(255, 255, 250, 244, 238, 222, 230, 222, 202, 212, 202, 180) }, // 歯：左上が白く光る象牙色
-            { 'K', Ramp(62, 18, 26, 46, 12, 20, 32, 8, 14, 22, 5, 10) },               // 口の中（ごく暗い赤。縁ほど暗く、奥がほんのり赤い）
+            { 'K', Ramp(10, 6, 12, 10, 6, 12, 10, 6, 12, 10, 6, 12) },                 // 口の中（真っ暗）
+            { 'Y', Ramp(46, 12, 18, 40, 10, 16, 34, 8, 13, 28, 6, 11) },               // 上下の歯の間の帯（とても暗い赤）
         }, null, 32);
 
         static readonly string[] GuideRows =
@@ -3290,7 +3291,7 @@ namespace VividOfFade
             "......QFFFKKKTQQQQQQQQQQQQTKKKFFFQ......",
             "......QQFFKKKTTKTTKTTKTTKTTKKKFFQQ......",
             ".......QFFQKKKTKTTKTTKTTKTKKKQFFQ.......",
-            ".......QQFFQKTKKKKKKKKKKKKTKQFQQF.......",
+            ".......QQFFQKTYYYYYYYYYYYYTKQFQQF.......",
             "........QFQQQQTKKKKKKKKKKTQQQQFQ........",
             ".........QQQQQQQTTKTTKTTQQQQQQQ.........",
             ".........QFFFFQQQQQQQQQQQQFFFFQ.........",
