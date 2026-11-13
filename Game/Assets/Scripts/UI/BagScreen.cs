@@ -45,7 +45,7 @@ namespace VividOfFade
             // 見出しと閉じるボタン
             float btnH = H * 0.045f;
             GUI.Label(new Rect(pad, pad, W, btnH), Loc.T($"BAG {inv.Bag.Count}/{Inventory.BagCapacity}   EMBERS {inv.Embers}", $"鞄 {inv.Bag.Count}/{Inventory.BagCapacity}   火種 {inv.Embers}"), hud.LabelStyle);
-            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.BagOpen = false);
+            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.OpenPanel(false, false, false)); // 町で開いたときは、ここで装備を保存する
 
             // 装備欄
             float y = pad + btnH + H * 0.02f;

@@ -109,6 +109,32 @@ namespace VividOfFade
             OpenPanel(false, stats, !stats);
         }
 
+        /// <summary>町で鞄（装備の付け替え）を開いているか。閉じるときに、装備と持ち込む品を保存する。</summary>
+        public bool TownBag { get; private set; }
+
+        /// <summary>
+        /// 町で装備を付け替える。前回帰還したときの装備と「次の挑戦に持ち込む品」を鞄の画面に読み込む。
+        /// 閉じたら装備・持ち込む品を保存し、町で分解した火種はそのキャラクターの火種に入れる。
+        /// </summary>
+        public void OpenTownBag()
+        {
+            var type = ClassInfo.Current;
+            Inventory.Reset(type, Profile.Current);
+            Player.SetClass(type);
+            Player.ResetState(PlayerStats.From(Inventory.Equipped, type));
+            TownBag = true;
+            OpenPanel(true, false, false);
+        }
+
+        void CloseTownBag()
+        {
+            TownBag = false;
+            var ch = Profile.Current;
+            if (ch == null) return;
+            Inventory.SaveForReturn(ch, new List<Item>()); // 鞄の品はすべて「持ち込む品」なので、そのまま残る
+            Profile.Save();
+        }
+
         /// <summary>町から出撃する。チェックポイントか中断した挑戦があれば、開始する層を選ぶ画面へ。</summary>
         public void Depart()
         {
@@ -399,10 +425,11 @@ namespace VividOfFade
                 }
                 else if (InTown && !PendingClass.HasValue)
                 {
-                    if (StatsOpen || SkillsOpen)
+                    if (StatsOpen || SkillsOpen || BagOpen)
                     {
-                        if (Input.CancelPressed || (StatsOpen && Input.StatsPressed) || (SkillsOpen && Input.SkillsPressed)) OpenPanel(false, false, false);
+                        if (Input.CancelPressed || (StatsOpen && Input.StatsPressed) || (SkillsOpen && Input.SkillsPressed) || (BagOpen && Input.BagPressed)) OpenPanel(false, false, false);
                     }
+                    else if (Input.BagPressed) OpenTownBag();
                     else if (Input.StatsPressed) OpenTownPanel(true);
                     else if (Input.SkillsPressed) OpenTownPanel(false);
                     else if (Input.CancelPressed) Hud.Town.Back();
@@ -757,6 +784,7 @@ namespace VividOfFade
         /// <summary>鞄・能力値・スキルの画面のどれか1つだけを開く（全部 false で閉じる）。</summary>
         public void OpenPanel(bool bag, bool stats, bool skills)
         {
+            if (TownBag && !bag) CloseTownBag();
             MenuOpen = false;
             AltarOpen = false;
             BagOpen = bag;

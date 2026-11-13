@@ -410,6 +410,7 @@ namespace VividOfFade
 
             if (World.OnTitle) DrawTitle();
             else if (World.ChoosingClass && World.PendingClass.HasValue) DrawFloorSelect(World.PendingClass.Value);
+            else if (World.ChoosingClass && World.InTown && World.BagOpen) bag.Draw(World);
             else if (World.ChoosingClass && World.InTown && World.StatsOpen) stats.Draw(World);
             else if (World.ChoosingClass && World.InTown && World.SkillsOpen) skills.Draw(World);
             else if (World.ChoosingClass && World.InTown) Town.Draw(World);

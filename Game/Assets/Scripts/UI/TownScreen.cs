@@ -125,14 +125,15 @@ namespace VividOfFade
             Tile(4, PixelArt.TownIcon(4), Loc.T("Blacksmith", "鍛冶屋"), Loc.T("Mythic only", "神話（赤）だけ"), () => Open(Panel.Smith));
             Tile(5, PixelArt.PlayerFor(ch), Loc.T("Characters", "キャラ選択"), Loc.T("Switch", "切り替え"), world.ShowClassSelect);
 
-            // 能力値・スキル（町でも振ったり、ボタンに付けたりできる）
+            // 装備・能力値・スキル（町でも付け替えたり、振ったり、ボタンに付けたりできる）
             y += 2f * (th + tgap);
-            float half = (bw - tgap) * 0.5f;
+            float third = (bw - tgap * 2f) / 3f;
             float sbh = H * 0.05f;
             bool points = ch.Points > 0;
-            hud.Button(new Rect(pad, y, half, sbh), points ? Loc.T($"STATS  +{ch.Points}", $"能力値  +{ch.Points}") : Loc.T("STATS", "能力値"),
+            hud.Button(new Rect(pad, y, third, sbh), Loc.T("GEAR", "装備"), row, centered, world.OpenTownBag);
+            hud.Button(new Rect(pad + third + tgap, y, third, sbh), points ? Loc.T($"STATS +{ch.Points}", $"能力値 +{ch.Points}") : Loc.T("STATS", "能力値"),
                 points ? gold : row, centered, () => world.OpenTownPanel(true));
-            hud.Button(new Rect(pad + half + tgap, y, half, sbh), Loc.T("SKILLS", "スキル"), row, centered, () => world.OpenTownPanel(false));
+            hud.Button(new Rect(pad + (third + tgap) * 2f, y, third, sbh), Loc.T("SKILLS", "スキル"), row, centered, () => world.OpenTownPanel(false));
 
             // 案内役（左下）
             float gs = W * 0.2f;
