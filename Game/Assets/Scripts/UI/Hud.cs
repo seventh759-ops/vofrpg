@@ -123,6 +123,58 @@ namespace VividOfFade
             Fill(new Rect(r.xMax - t, r.y, t, r.height), c);
         }
 
+        static readonly Color StudGold = new Color(0.95f, 0.78f, 0.38f, 1f);
+
+        /// <summary>
+        /// 飾りの付いた枠：外側に暗い線、色の線、内側にうっすら明るい線。四隅に金の鋲（暗い縁つき）。
+        /// </summary>
+        public static void OrnateFrame(Rect r, Color main, float t, bool inset = false)
+        {
+            Frame(new Rect(r.x - t, r.y - t, r.width + t * 2f, r.height + t * 2f), new Color(0f, 0f, 0f, 0.85f), t);
+            // 枠そのものに凹凸：上と左は明るく、下と右は暗い（光は左上から）
+            var lightEdge = Color.Lerp(main, Color.white, 0.45f);
+            var darkEdge = Color.Lerp(main, Color.black, 0.45f);
+            Fill(new Rect(r.x, r.y, r.width, t), lightEdge);
+            Fill(new Rect(r.x, r.y, t, r.height), lightEdge);
+            Fill(new Rect(r.x, r.yMax - t, r.width, t), darkEdge);
+            Fill(new Rect(r.xMax - t, r.y, t, r.height), darkEdge);
+            // 中：inset ならへこみ（上と左に影、下と右に照り返し）、そうでなければ出っぱり（逆）
+            var inner = new Rect(r.x + t, r.y + t, r.width - t * 2f, r.height - t * 2f);
+            float b = Mathf.Max(1f, t * 0.75f);
+            var shade = new Color(0f, 0f, 0f, 0.45f);
+            var shine = new Color(1f, 1f, 1f, 0.16f);
+            var tl = inset ? shade : shine;
+            var br = inset ? shine : shade;
+            Fill(new Rect(inner.x, inner.y, inner.width, b), tl);
+            Fill(new Rect(inner.x, inner.y, b, inner.height), tl);
+            Fill(new Rect(inner.x, inner.yMax - b, inner.width, b), br);
+            Fill(new Rect(inner.xMax - b, inner.y, b, inner.height), br);
+            float s = t * 4f;
+            foreach (var c in new[] { new Vector2(r.x, r.y), new Vector2(r.xMax, r.y), new Vector2(r.x, r.yMax), new Vector2(r.xMax, r.yMax) })
+            {
+                var stud = new Rect(c.x - s * 0.5f, c.y - s * 0.5f, s, s);
+                Fill(stud, new Color(0.15f, 0.1f, 0.04f, 1f));
+                Fill(new Rect(stud.x + t * 0.5f, stud.y + t * 0.5f, s - t, s - t), StudGold);
+                Fill(new Rect(stud.x + t * 0.5f, stud.y + t * 0.5f, (s - t) * 0.5f, (s - t) * 0.5f), new Color(1f, 0.95f, 0.75f, 1f)); // 左上の光
+            }
+        }
+
+        /// <summary>
+        /// 飾りの付いたバー（HP・MP）：暗い下地、中身に光沢（上が明るく下が暗い）、25% ごとの目盛り、飾りの枠。
+        /// </summary>
+        static void OrnateBar(Rect r, float ratio, Color back, Color fill, Color frame)
+        {
+            float t = Mathf.Max(2f, Mathf.Round(Screen.height * 0.0012f));
+            Fill(r, back);
+            var f = new Rect(r.x, r.y, r.width * ratio, r.height);
+            Fill(f, fill);
+            Fill(new Rect(f.x, f.y, f.width, f.height * 0.32f), new Color(1f, 1f, 1f, 0.22f));      // 光沢
+            Fill(new Rect(f.x, f.yMax - f.height * 0.22f, f.width, f.height * 0.22f), new Color(0f, 0f, 0f, 0.25f)); // 下の陰
+            if (ratio > 0f && ratio < 1f) Fill(new Rect(f.xMax - t * 0.5f, f.y, t * 0.5f, f.height), new Color(1f, 1f, 1f, 0.5f)); // 中身の端の光
+            for (int k = 1; k < 4; k++) Fill(new Rect(r.x + r.width * k / 4f, r.y + r.height * 0.55f, 1f, r.height * 0.45f), new Color(0f, 0f, 0f, 0.45f)); // 目盛り
+            OrnateFrame(r, frame, t, true); // バーはへこみ
+        }
+
         /// <summary>カメラのずれ（CameraRig.CenterShift）。上下の帯の高さの差の半分。</summary>
         public float ViewCenterShift => ((Screen.height - BottomBandTop) - TopBandBottom) / (2f * Screen.height);
 
@@ -541,6 +593,9 @@ namespace VividOfFade
             Fill(new Rect(0, bottomTop, W, H - bottomTop), bandColor);
             Fill(new Rect(0, bottomTop, W, edgeT), edgeColor);
             Fill(new Rect(0, bottomTop - edgeT, W, edgeT), edgeDark);
+            // 帯にも凹凸：帯の内側の縁に、照り返しの線と影の線
+            Fill(new Rect(0, bottomTop + edgeT, W, edgeT), new Color(1f, 1f, 1f, 0.08f));
+            Fill(new Rect(0, topBottom - edgeT * 2f, W, edgeT), new Color(0f, 0f, 0f, 0.35f));
 
             // 1段目：レベル・HP・MP（メニューのボタンは右端、あとで描く）
             float rowY = mm, rowH = TopRowH;
@@ -575,17 +630,12 @@ namespace VividOfFade
             float barW = (barsW - mm) * 0.5f;
             var barText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
             var hpBack = new Rect(barsX, rowY, barW, rowH);
-            Fill(hpBack, new Color(0.15f, 0.04f, 0.05f, 1f));
             float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
-            Fill(new Rect(hpBack.x, hpBack.y, hpBack.width * ratio, hpBack.height), new Color(0.8f, 0.1f, 0.12f, 1f));
-            float barFrame = Mathf.Max(2f, Mathf.Round(H * 0.0012f));
-            Frame(hpBack, new Color(1f, 0.55f, 0.55f, 1f), barFrame); // 最大値の端がわかるよう、バーに明るい枠
+            OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), new Color(1f, 0.55f, 0.55f, 1f));
             FitLabel(hpBack, $"{player.Hp}/{player.MaxHp}", barText);
             var mpBack = new Rect(hpBack.xMax + mm, rowY, barW, rowH);
-            Fill(mpBack, new Color(0.05f, 0.08f, 0.18f, 1f));
             float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
-            Fill(new Rect(mpBack.x, mpBack.y, mpBack.width * mpRatio, mpBack.height), new Color(0.2f, 0.35f, 0.75f, 1f));
-            Frame(mpBack, new Color(0.55f, 0.7f, 1f, 1f), barFrame);
+            OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), new Color(0.55f, 0.7f, 1f, 1f));
             FitLabel(mpBack, $"{player.Mp}/{player.MaxMp}", barText);
 
             // 2段目：経験値（細い帯に ％）
@@ -624,10 +674,10 @@ namespace VividOfFade
             float frameT = Mathf.Max(2f, Mathf.Round(H * 0.0012f));
             var msgR = MessageWindow;
             Fill(msgR, new Color(0.03f, 0.03f, 0.05f, 1f));
-            Frame(msgR, frameColor, frameT);
+            OrnateFrame(msgR, frameColor, frameT);
             var scR = ShortcutPanel;
             Fill(scR, new Color(0.08f, 0.075f, 0.11f, 1f));
-            Frame(scR, frameColor, frameT);
+            OrnateFrame(scR, frameColor, frameT);
 
             // メッセージ：直近の行を残す（新しいものほど下）。来たばかりの行は明るく、古い行は少し暗い
             {
