@@ -34,17 +34,19 @@ namespace VividOfFade
                 DrawSettings(world, W, H, pad, gap, centered);
                 return;
             }
-            var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
-            Hud.FitLabel(new Rect(0, H * 0.1f, W, H * 0.06f), "MENU", title);
-
             var ch = Profile.Current;
             var inv = world.Inventory;
             int points = ch != null ? ch.Points : 0;
 
-            // 大きなボタン：鞄・能力値・スキル
+            // 題とボタンの塊を、画面の上下の真ん中に置く
             float bw = W - pad * 2f;
-            float bh = H * 0.075f;
-            float y = H * 0.2f;
+            float bh = H * 0.08f;
+            float sh0 = H * 0.06f;
+            float block = H * 0.07f + 4f * bh + 3f * gap + gap * 2f + sh0;
+            float top = (H - block) * 0.5f;
+            var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
+            Hud.FitLabel(new Rect(0, top, W, H * 0.06f), "MENU", title);
+            float y = top + H * 0.07f;
             hud.Button(new Rect(pad, y, bw, bh), Loc.T($"BAG   {inv.Bag.Count}/{Inventory.BagCapacity}   Embers {inv.Embers}", $"鞄   {inv.Bag.Count}/{Inventory.BagCapacity}   火種 {inv.Embers}"),
                 inv.BagFull ? highlight : main, centered, () => world.OpenPanel(true, false, false));
             y += bh + gap;
@@ -55,7 +57,7 @@ namespace VividOfFade
             y += bh + gap * 2f;
 
             // 設定の画面への入口（攻撃のしかた・音楽・BGM・FPS・言語・操作の一覧）
-            float sh = H * 0.055f;
+            float sh = sh0;
             hud.Button(new Rect(pad, y, bw, bh), Loc.T("SETTINGS", "設定"), main, centered, () => settings = true);
             y += bh + gap * 2f;
             hud.Button(new Rect(pad, y, bw, sh), Loc.T("CLOSE", "閉じる"), sub, centered, () => world.OpenPanel(false, false, false));
@@ -69,11 +71,14 @@ namespace VividOfFade
         /// <summary>設定：音楽・BGM・FPS・言語・操作の一覧。</summary>
         void DrawSettings(GameWorld world, float W, float H, float pad, float gap, GUIStyle centered)
         {
-            var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
-            Hud.FitLabel(new Rect(0, H * 0.1f, W, H * 0.06f), Loc.T("SETTINGS", "設定"), title);
             float bw = W - pad * 2f;
             float sh = H * 0.06f;
-            float y = H * 0.2f;
+            int rows = Application.isMobilePlatform ? 6 : 7; // 攻撃・音楽・BGM・FPS・言語・（操作の一覧）・戻る
+            float block = H * 0.07f + rows * sh + rows * gap;
+            float top = (H - block) * 0.5f; // 画面の上下の真ん中に
+            var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
+            Hud.FitLabel(new Rect(0, top, W, H * 0.06f), Loc.T("SETTINGS", "設定"), title);
+            float y = top + H * 0.07f;
             hud.Button(new Rect(pad, y, bw, sh), world.AutoAttack ? Loc.T("Attack: AUTO", "攻撃：自動") : Loc.T("Attack: HOLD", "攻撃：押す間"), sub, centered,
                 () => world.AutoAttack = !world.AutoAttack);
             y += sh + gap;
