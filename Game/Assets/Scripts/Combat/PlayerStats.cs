@@ -109,10 +109,10 @@ namespace VividOfFade
             {
                 var spec = ClassInfo.Get(Class);
                 float dps = Damage * (1f + CritChance * (CritMult - 1f)) * Multiplicity / FireInterval;
-                // 守り：実際に耐えられる量（受けるダメージ = 元 × 被ダメージ倍率 × 100 /（100 + 防御））の平方根。
-                // 体力が 2 割増えても強さは約 1 割増と数え、攻撃（そのまま掛ける）と釣り合わせる（体力の実数値を優遇しすぎないように）
+                // 守り：実際に耐えられる量（受けるダメージ = 元 × 被ダメージ倍率 × 100 /（100 + 防御））を、職業ごとの重みで累乗する
+                // （灯術師 0.35・影刃 0.45・灯番 0.6）。攻撃（そのまま掛ける）と釣り合わせ、体力の実数値を優遇しすぎないように
                 float ehp = Mathf.Max(1f, MaxHp) * (100f + Mathf.Max(0f, Armor)) / 100f / Mathf.Max(0.1f, DamageTaken);
-                float survive = Mathf.Sqrt(ehp) * (1f + MaxMp * 0.0005f + HpRegen * 0.02f + MpRegen * 0.01f);
+                float survive = Mathf.Pow(ehp, spec.DefenseWeight) * (1f + MaxMp * 0.0005f + HpRegen * 0.02f + MpRegen * 0.01f); // 守りの重みは職業ごと
                 float reach = 1f + (Light - spec.BaseLight) * 0.05f;
                 // M6 の効果も少しずつ数える（スキル・精鋭・範囲・稼ぎ）。被ダメージは守りの中で数える
                 float extras = (1f + SkillDamage * 0.3f) * (1f + (1f - CooldownMult) * 0.3f)
