@@ -2548,43 +2548,62 @@ namespace VividOfFade
         /// <summary>迷宮の壁（高さ10ドットの段。どこも同じ高さ）。足元のひし形の中心が原点。</summary>
         public static Sprite IsoWallLow => IsoWallFor(Zones.For(1));
 
-        /// <summary>区画ごとの壁（高さ10ドット）。</summary>
+        /// <summary>
+        /// 区画ごとの壁（64 ドット幅、側面の高さ 20 ドット）。上面は笠石（縁が光る）、側面はずらして積んだレンガ。
+        /// 足元のひし形の中心が原点。
+        /// </summary>
         public static Sprite IsoWallFor(ZoneSpec z)
         {
+            string key = $"Wall64_{z.Name}";
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            const int w = 64, side = 20, h = 32 + side;
+            var px = new Color32[w * h];
+            var clear = new Color32(0, 0, 0, 0);
+            var edge = Mix(z.WallRight, new Color32(0, 0, 0, 255), 0.55f);
+            float cy = 15.5f + side;
+            for (int y = 0; y < h; y++)
             {
-                string key = $"Wall_{z.Name}";
-                if (cache.TryGetValue(key, out var cached)) return cached;
-                const int w = 32, h = 26, side = 10;
-                var px = new Color32[w * h];
-                var clear = new Color32(0, 0, 0, 0);
-                var top = z.WallTop;
-                var left = z.WallLeft;
-                var right = z.WallRight;
-                var edge = Mix(z.WallRight, new Color32(0, 0, 0, 255), 0.5f);
-                float cy = 7.5f + side;
-                for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
                 {
-                    for (int x = 0; x < w; x++)
+                    float dx = Mathf.Abs(x - 31.5f) / 32f;
+                    float dTop = dx + Mathf.Abs(y - cy) / 16f;
+                    float lowerEdge = cy - 16f * (1f - dx);
+                    Color32 c = clear;
+                    if (dTop <= 1f)
                     {
-                        float dx = Mathf.Abs(x - 15.5f) / 16f;
-                        float dTop = dx + Mathf.Abs(y - cy) / 8f;
-                        float lowerEdge = cy - 8f * (1f - dx);
-                        Color32 c = clear;
-                        if (dTop <= 1f) c = dTop > 0.85f ? edge : top;
-                        else if (y < lowerEdge && y >= lowerEdge - side)
-                        {
-                            c = y < lowerEdge - side + 1 ? edge : (x < 16 ? left : right);
-                            if (y == (int)(lowerEdge - side * 0.5f)) c = edge; // 石積みの目地
-                        }
-                        px[y * w + x] = c;
+                        // 上面：笠石。外側の縁は暗く、その内側の上の縁は光る
+                        float n = TileNoise(x / 4f, y / 2f, 61);
+                        c = Shade(z.WallTop, (int)((n - 0.5f) * 14f));
+                        if (dTop > 0.93f) c = edge;
+                        else if (dTop > 0.82f) c = y > cy ? Shade(z.WallTop, 22) : Shade(z.WallTop, -12);
+                        else if (Hash(x, y + 5) % 71 == 0) c = Shade(c, -16);
                     }
+                    else if (y < lowerEdge && y >= lowerEdge - side)
+                    {
+                        bool left = x < 32;
+                        var face = left ? z.WallLeft : z.WallRight;
+                        float depth = lowerEdge - y;                // 上の縁からの深さ（0〜side）
+                        int row = (int)(depth / 5f);
+                        float inRow = depth - row * 5f;
+                        int along = left ? x : 63 - x;
+                        bool vjoint = (along + row * 5) % 12 == 0;
+                        bool hjoint = inRow < 1f;
+                        int brick = (along + row * 5) / 12 + row * 17 + (left ? 0 : 400);
+                        c = Shade(face, (int)(Hash(brick, 9) % 13) - 6 + (int)((TileNoise(x / 3f, y / 2f, 63) - 0.5f) * 10f));
+                        if (hjoint || vjoint) c = Mix(face, edge, 0.6f);
+                        else if (inRow < 2f) c = Shade(c, 12);      // レンガの上の縁は光る
+                        if (depth < 1f) c = Shade(z.WallTop, -6);   // 上面との境目
+                        if (depth > side - 1f) c = edge;            // 足元
+                        if (left && x == 31) c = Shade(face, 18);   // 角は少し明るい
+                    }
+                    px[y * w + x] = c;
                 }
-                var tex = MakeTexture(key, w, h, px, TextureWrapMode.Clamp);
-                var sprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, (cy - side) / h), PixelsPerUnit, 0, SpriteMeshType.FullRect);
-                sprite.name = key;
-                cache[key] = sprite;
-                return sprite;
             }
+            var tex = MakeTexture(key, w, h, px, TextureWrapMode.Clamp);
+            var sprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, (cy - side) / h), 32, 0, SpriteMeshType.FullRect);
+            sprite.name = key;
+            cache[key] = sprite;
+            return sprite;
         }
 
         /// <summary>案内役（オリジナルキャラ）。40ドットを、プレイヤーと同じ縮尺（1マス32ドット）で描く。</summary>
@@ -2720,59 +2739,90 @@ namespace VividOfFade
             }
         }
 
+        // ---- 床と壁（64 ドット幅。キャラと同じ細かさ：1 マス = 32 ドット）----
+
+        static float TileNoise(float x, float y, int s)
+        {
+            int xi = Mathf.FloorToInt(x), yi = Mathf.FloorToInt(y);
+            float fx = x - xi, fy = y - yi;
+            fx = fx * fx * (3f - 2f * fx);
+            fy = fy * fy * (3f - 2f * fy);
+            float R(int a, int b) => (Hash(a + s * 131, b + s * 71) & 0xffff) / 65535f;
+            float top = Mathf.Lerp(R(xi, yi), R(xi + 1, yi), fx), bottom = Mathf.Lerp(R(xi, yi + 1), R(xi + 1, yi + 1), fx);
+            return Mathf.Lerp(top, bottom, fy);
+        }
+
+        static Color32 Shade(Color32 c, int d) => new Color32(
+            (byte)Mathf.Clamp(c.r + d, 0, 255), (byte)Mathf.Clamp(c.g + d, 0, 255), (byte)Mathf.Clamp(c.b + d, 0, 255), 255);
+
+        /// <summary>
+        /// 床（64×32 のひし形）。4 枚の敷石に分かれ、目地・面取りの光と影・石ごとの色むら・細かな凹凸がある。
+        /// その上に区画ごとの模様（苔・溶岩のひび・氷のつや・金の象嵌・星）を重ねる。
+        /// </summary>
         static Sprite IsoTile(string key, Color32 stone, Color32 edge, Color32 accent, FloorPattern pattern, int salt)
         {
             if (cache.TryGetValue(key, out var cached)) return cached;
-            const int w = 32, h = 16;
+            const int w = 64, h = 32;
             var px = new Color32[w * h];
             var clear = new Color32(0, 0, 0, 0);
-            for (int y = 0; y < h; y++)
+            var mortar = Mix(stone, edge, 0.55f);
+            for (int ty = 0; ty < h; ty++)
             {
+                int sy = h - 1 - ty; // 上から数えた行
                 for (int x = 0; x < w; x++)
                 {
-                    float d = Mathf.Abs(x - 15.5f) / 16f + Mathf.Abs(y - 7.5f) / 8f;
-                    if (d > 1f)
+                    float u = (x + 0.5f - 32f) / 32f, v = (sy + 0.5f - 16f) / 16f;
+                    float d = Mathf.Abs(u) + Mathf.Abs(v);
+                    if (d > 1f) { px[ty * w + x] = clear; continue; }
+                    // ひし形の中の座標（0〜2）：a は右下へ、b は左下へ
+                    float a = (u + v + 1f), b = (v - u + 1f);
+                    int ia = Mathf.Clamp((int)a, 0, 1), ib = Mathf.Clamp((int)b, 0, 1);
+                    float fa = a - ia, fb = b - ib;
+                    int stoneId = ia * 2 + ib + salt * 4;
+                    int vary = (int)(Hash(stoneId, salt * 7 + 3) % 11) - 5;
+                    float n = TileNoise(x / 3f, sy / 2f, salt + 5);
+                    var c = Shade(stone, vary + (int)((n - 0.5f) * 6f));
+                    bool seam = d > 0.95f;
+                    bool joint = fa < 0.045f || fb < 0.045f || fa > 0.97f || fb > 0.97f;
+                    if (seam || joint) c = mortar;
+                    else
                     {
-                        px[y * w + x] = clear;
-                        continue;
+                        if (fa < 0.12f || fb < 0.12f) c = Shade(c, 9);        // 上側の面取り（光）
+                        else if (fa > 0.88f || fb > 0.88f) c = Shade(c, -9);  // 下側の面取り（影）
+                        if ((Hash(x + salt * 13, sy) % 97) == 0) c = Shade(c, -18); // 小さなくぼみ
                     }
-                    if (d > 0.9f)
-                    {
-                        px[y * w + x] = edge;
-                        continue;
-                    }
-                    uint hsh = Hash(x + salt * 31, y + salt * 17);
-                    int n = (int)(hsh % 9) - 4;
-                    Color32 c = new Color32(
-                        (byte)Mathf.Clamp(stone.r + n, 0, 255),
-                        (byte)Mathf.Clamp(stone.g + n, 0, 255),
-                        (byte)Mathf.Clamp(stone.b + n, 0, 255),
-                        255);
-                    // 区画ごとの模様
+
                     switch (pattern)
                     {
-                        case FloorPattern.Moss: // 苔の点と小さな固まり
-                            if (hsh % 13 == 0 || (Hash(x / 2 + salt, y / 2) % 9 == 0 && hsh % 3 == 0)) c = accent;
+                        case FloorPattern.Stone: // ところどころのひび
+                            if (!seam && Mathf.Abs(TileNoise(x / 7f, sy / 4f, salt + 11) - 0.5f) < 0.018f) c = Shade(c, -26);
                             break;
-                        case FloorPattern.Lava: // 細いひび
-                            if (Hash(x / 3 + salt, y) % 17 == 0 && d < 0.8f) c = accent;
+                        case FloorPattern.Moss: // 目地からはみ出す苔
+                        {
+                            float m = TileNoise(x / 6f, sy / 3f, salt + 21);
+                            if ((joint && m > 0.55f) || m > 0.8f) c = Mix(c, Shade(accent, (int)((TileNoise(x / 2f, sy, salt + 22) - 0.5f) * 24f)), 0.75f);
+                            break;
+                        }
+                        case FloorPattern.Lava: // 目地の一部が赤く光る
+                            if (joint && TileNoise(x / 5f, sy / 3f, salt + 31) > 0.64f) c = Mix(accent, new Color32(255, 230, 150, 255), 0.2f);
+                            else if ((joint || seam) && TileNoise(x / 5f, sy / 3f, salt + 31) > 0.5f) c = Mix(mortar, accent, 0.45f);
                             break;
                         case FloorPattern.Ice: // 斜めのつやと、きらめき
-                            if ((x - 2 * y + salt + 64) % 14 == 0 && d < 0.75f) c = Mix(c, accent, 0.45f);
-                            if (hsh % 47 == 0) c = accent;
+                            if (!joint && !seam && Mathf.Abs(fa - fb * 0.3f - 0.45f) < 0.05f) c = Mix(c, accent, 0.4f);
+                            if (Hash(x + salt, sy * 3) % 89 == 0) c = Mix(c, accent, 0.7f);
                             break;
-                        case FloorPattern.Gold: // 縁に沿った金の筋
-                            if (d > 0.7f && d < 0.76f) c = Mix(c, accent, 0.7f);
+                        case FloorPattern.Gold: // 目地に金の象嵌
+                            if (joint) c = Mix(accent, mortar, 0.3f);
                             break;
-                        case FloorPattern.Void: // 星のような点
-                            if (hsh % 41 == 0) c = accent;
-                            else if (hsh % 23 == 0) c = Mix(c, accent, 0.35f);
+                        case FloorPattern.Void: // 星のような点と、ぼんやりした色
+                            if (Hash(x + salt * 5, sy) % 71 == 0) c = accent;
+                            else if (TileNoise(x / 9f, sy / 5f, salt + 41) > 0.7f) c = Mix(c, accent, 0.12f);
                             break;
                     }
-                    px[y * w + x] = c;
+                    px[ty * w + x] = c;
                 }
             }
-            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp));
+            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), 32);
         }
 
         static Color32 Mix(Color32 a, Color32 b, float t) => new Color32(
