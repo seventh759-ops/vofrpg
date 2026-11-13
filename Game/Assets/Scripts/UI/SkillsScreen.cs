@@ -12,6 +12,7 @@ namespace VividOfFade
         static readonly Color buttonBack = new Color(1f, 1f, 1f, 0.15f);
 
         readonly Hud hud;
+        float scroll; // スキルの行のスクロール量（ピクセル）
 
         public SkillsScreen(Hud hud)
         {
@@ -32,11 +33,9 @@ namespace VividOfFade
             var centered = hud.CenteredStyle;
 
             Hud.Fill(new Rect(0, 0, W, H), panel);
-            var title = new GUIStyle(label) { fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(pad, pad, W, btnH), Loc.T($"SKILLS   Lv {ch.Level}", $"スキル   Lv {ch.Level}"), title);
-            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.OpenPanel(false, false, false));
 
-            float y = pad + btnH + H * 0.015f;
+            float viewTop = pad + btnH + H * 0.015f, viewBottom = H - pad * 0.5f;
+            float y = viewTop;
             // 出すのは、今の職業で覚えられるスキルだけ（上位職・3次職のスキルは、転職・転生したときだけ）
             var visible = new System.Collections.Generic.List<int>();
             for (int i = 0; i < SkillInfo.PerClass; i++)
@@ -48,11 +47,17 @@ namespace VividOfFade
             // 説明と MP などの行は、経験値のバーをアイコンの下に移した分だけ文字を大きくする
             var text = new GUIStyle(small) { fontSize = Mathf.RoundToInt(small.fontSize * 1.15f) };
             float lineH = text.fontSize * 1.3f;
-            // 行の高さは中身（名前・説明・MP などの3行）にぴったり合わせる。入りきらなければ画面に合わせて縮める
-            float rowH = Mathf.Min(lineH * 3.35f / 0.88f, (H - y - pad) / visible.Count - H * 0.008f);
+            // 行の高さは中身（名前・説明・MP などの3行）にぴったり合わせる。入りきらなければスクロールする
+            float rowH = lineH * 3.35f / 0.88f;
+            float rowGap = H * 0.008f;
+            float contentH = visible.Count * (rowH + rowGap);
+            float maxScroll = Mathf.Max(0f, contentH - (viewBottom - viewTop));
+            scroll = Mathf.Clamp(scroll + ScrollInput.Delta(), 0f, maxScroll);
+            y = viewTop - scroll;
 
             foreach (int i in visible)
             {
+                if (y + rowH < viewTop || y > viewBottom) { y += rowH + rowGap; continue; } // 見えない行は描かない
                 int index = i;
                 var spec = SkillInfo.Get(ClassInfo.Current, i);
                 bool learned = SkillInfo.Learned(ClassInfo.Current, i, ch.Level);
@@ -105,11 +110,28 @@ namespace VividOfFade
                         int slot = s;
                         bool here = ch.Slots[s] == i;
                         var r = new Rect(row.xMax - inner - (SkillInfo.Slots - s) * (bw + inner), row.y + (rowH - bh) * 0.5f, bw, bh);
+                        if (r.y < viewTop || r.yMax > viewBottom) continue; // 見える範囲からはみ出したボタンは押せない
                         hud.Button(r, (s + 1).ToString(), here ? new Color(0.3f, 0.6f, 1f, 0.8f) : buttonBack, centered,
                             () => Assign(ch, slot, index));
                     }
                 }
-                y += rowH + H * 0.008f;
+                y += rowH + rowGap;
+            }
+
+            // はみ出した行を隠すため、上下を塗り直してから見出しと「閉じる」を描く
+            Hud.Fill(new Rect(0, 0, W, viewTop), new Color(0.02f, 0.02f, 0.03f, 1f));
+            Hud.Fill(new Rect(0, viewBottom, W, H - viewBottom), new Color(0.02f, 0.02f, 0.03f, 1f));
+            var title = new GUIStyle(label) { fontStyle = FontStyle.Bold };
+            GUI.Label(new Rect(pad, pad, W, btnH), Loc.T($"SKILLS   Lv {ch.Level}", $"スキル   Lv {ch.Level}"), title);
+            hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.OpenPanel(false, false, false));
+
+            // スクロールできるときは、右端に今の位置を細いバーで出す
+            if (maxScroll > 0f)
+            {
+                float viewH = viewBottom - viewTop;
+                float barH = viewH * viewH / contentH;
+                float barY = viewTop + (viewH - barH) * (scroll / maxScroll);
+                Hud.Fill(new Rect(W - pad * 0.4f, barY, pad * 0.15f, barH), new Color(1f, 1f, 1f, 0.35f));
             }
         }
 
