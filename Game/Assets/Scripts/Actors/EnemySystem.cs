@@ -11,6 +11,7 @@ namespace VividOfFade
     public sealed partial class EnemySystem : MonoBehaviour
     {
         const float DeathTime = 0.15f;
+        const float MaxKnock = 4f; // のけぞりの速さの上限（毎秒20で減るので、最大で約0.4マス飛ぶ）
         static readonly Color HitColor = new Color(1f, 0.55f, 0.55f, 1f);
 
         public readonly List<Enemy> Active = new List<Enemy>();
@@ -422,7 +423,9 @@ namespace VividOfFade
             e.Hp -= amount;
             e.FlashTimer = 0.08f;
             e.Sr.color = HitColor;
-            e.Knock += dir * (crit ? 5f : 3f) * (e.IsBoss ? 0.05f : 1f); // ボスはほとんどのけぞらない
+            // のけぞり。攻撃が速いと何度も足されて遠くまで飛ぶので、速さに上限をつける（1回のけぞると最大 0.4 マスほど）
+            float knockMult = e.IsBoss ? 0.05f : e.Elite != EliteKind.None ? 0.5f : 1f; // ボスはほとんど、精鋭は半分しかのけぞらない
+            e.Knock = Vector2.ClampMagnitude(e.Knock + dir * (crit ? 5f : 3f) * knockMult, MaxKnock * knockMult);
             Damaged?.Invoke(e.Pos, amount, crit);
             if (e.Hp <= 0f)
             {
