@@ -140,6 +140,7 @@ namespace VividOfFade
         public const float SummonedBossHpShare = 0.06f;     // 呼び出したボスの体力（アビスの最大体力に対して）
         public const float SummonedBossDamageShare = 0.7f;  // 呼び出したボスの攻撃（アビスに対して）
         public const int MaxSummonedBosses = 2;             // 同時に出せる数
+        public const float FinalCollapseTime = 3.5f;        // アビスが崩れていく演出の長さ（そのあとエンディング）
         public static readonly Color BossTint = new Color(1f, 0.45f, 0.45f, 1f);
         // ---- 回復と MP の消費（後半ほどシビアに） ----
         public const float CombatTime = 4f;            // 攻撃を受けるか与えてから、これだけの秒は「戦闘中」

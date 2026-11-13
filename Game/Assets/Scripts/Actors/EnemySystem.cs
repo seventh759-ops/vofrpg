@@ -200,6 +200,7 @@ namespace VividOfFade
             e.FlashTimer = 0f;
             e.Dying = false;
             e.DyingTimer = 0f;
+            e.DeathLength = 0f;
             e.Sr.color = Color.white;
             e.Sr.sprite = slimeSprite != null ? slimeSprite : PixelArt.Slime; // 使い回すので毎回入れ直す
             e.IsBoss = false;
@@ -505,6 +506,11 @@ namespace VividOfFade
             {
                 e.Dying = true;
                 e.DyingTimer = e.IsBoss ? DeathTime * 4f : DeathTime;
+                if (e.BossKind == BossKind.AbyssKing && e.IsBoss && !e.Summoned)
+                {
+                    e.DeathLength = GameConfig.FinalCollapseTime; // アビスは、ふるえながら崩れていく
+                    e.DyingTimer = e.DeathLength;
+                }
                 Kills++;
                 LastKillExpMult = e.ExpMult;
                 Killed?.Invoke(e.Pos);
@@ -632,8 +638,20 @@ namespace VividOfFade
 
                 if (e.Dying)
                 {
-                    // 倒れたら少し膨らんで消える
                     e.DyingTimer -= dt;
+                    if (e.DeathLength > 0f)
+                    {
+                        // アビスの崩壊：小刻みにふるえ、白く明滅しながら、縮んで薄れていく
+                        float tc = 1f - Mathf.Clamp01(e.DyingTimer / e.DeathLength);
+                        float shake = 0.06f + 0.12f * tc;
+                        e.transform.position = Iso.ToScreen(e.Pos) + UnityEngine.Random.insideUnitCircle * shake;
+                        e.transform.localScale = Vector3.one * (e.BaseScale * (1f - 0.35f * tc * tc));
+                        bool flash = Mathf.Repeat(Time.time * (6f + 18f * tc), 1f) < 0.5f;
+                        e.Sr.color = flash ? new Color(1f, 1f, 1f, 1f - tc * tc) : new Color(1f, 0.55f, 0.7f, 1f - tc * tc);
+                        if (e.DyingTimer <= 0f) ReleaseAt(i);
+                        continue;
+                    }
+                    // 倒れたら少し膨らんで消える
                     float t = 1f - Mathf.Clamp01(e.DyingTimer / (e.IsBoss ? DeathTime * 4f : DeathTime));
                     e.transform.localScale = Vector3.one * (e.BaseScale * (1f + t * 0.6f));
                     var c = e.Sr.color;

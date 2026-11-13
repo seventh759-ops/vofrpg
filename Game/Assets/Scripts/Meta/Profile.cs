@@ -34,6 +34,7 @@ namespace VividOfFade
         public int CarrySlots = 3;                    // 今回拾った品から持ち帰れる数
         public int BestFloor;                         // たどり着いた一番深い層
         public int BossCleared;                       // 倒した一番深いボスの層（その次の層がチェックポイント）
+        public bool EndingSeen;                       // アビスを倒して、エンディングを見た
         public RunSave Run = new RunSave();           // 中断した挑戦
         public int Advanced = -1;                     // 上位職（-1 はまだ。0 か 1）
         public bool Third;                            // 転生して3次職になった（Rebirths が1以上）
@@ -173,6 +174,17 @@ namespace VividOfFade
                 EnsureLoaded();
                 foreach (var c in data.Characters)
                     if (c != null && (c.BestFloor > GameConfig.MaxFloor || GameConfig.CanEnterAbyss(c))) return true;
+                return false;
+            }
+        }
+
+        /// <summary>どれかのキャラクターがエンディングを見たか（設定から見返せる）。</summary>
+        public static bool AnyEndingSeen
+        {
+            get
+            {
+                EnsureLoaded();
+                foreach (var c in data.Characters) if (c != null && c.EndingSeen) return true;
                 return false;
             }
         }

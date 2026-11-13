@@ -16,9 +16,10 @@ namespace VividOfFade
         public const int TowerX = 90, TowerTop = 0;
         public const int SpireTip = 295;
 
-        static Texture2D texture, abyssTexture;
+        static Texture2D texture, abyssTexture, dawnTexture;
         static Color32[] img;
         static bool abyss; // いま描いているのが深淵版か
+        static bool dawn;  // いま描いているのが夜明け版か（エンディング：灯りが戻り、世界が晴れていく）
 
         /// <summary>背景の絵（塔）。</summary>
         public static Texture2D Texture
@@ -37,6 +38,16 @@ namespace VividOfFade
             {
                 if (abyssTexture == null) abyssTexture = Build(true);
                 return abyssTexture;
+            }
+        }
+
+        /// <summary>背景の絵（夜明け版：明るい空色の洞窟、金色に灯る窓、尖塔の下からあふれる暖かい光）。エンディングで使う。</summary>
+        public static Texture2D DawnTexture
+        {
+            get
+            {
+                if (dawnTexture == null) dawnTexture = Build(false, true);
+                return dawnTexture;
             }
         }
 
@@ -97,9 +108,15 @@ namespace VividOfFade
         static readonly Color32[] AbyssStone = Ramp(9, 6, 12, 17, 11, 22, 26, 16, 32, 37, 22, 44, 50, 30, 58, 64, 38, 72, 80, 48, 88, 98, 60, 106);
         static readonly Color32[] AbyssWarm = Ramp(70, 6, 22, 140, 16, 44, 220, 34, 74, 255, 90, 130, 255, 190, 215);
         static readonly Color32[] RiftGlow = Ramp(40, 4, 24, 110, 10, 50, 190, 20, 80, 245, 50, 110, 255, 120, 170, 255, 205, 225, 255, 245, 250);
-        static Color32[] Cave => abyss ? AbyssCave : TowerCave;
-        static Color32[] Stone => abyss ? AbyssStone : TowerStone;
-        static Color32[] Warm => abyss ? AbyssWarm : TowerWarm;
+        // 夜明け版：明るい青から暖かい白へ、石も明るく、窓は金
+        static readonly Color32[] DawnCave = Ramp(40, 46, 72, 60, 70, 102, 86, 98, 132, 114, 126, 160, 146, 156, 186, 178, 184, 208, 206, 208, 224, 230, 228, 236, 248, 242, 238);
+        static readonly Color32[] DawnStone = Ramp(32, 32, 46, 50, 50, 66, 72, 70, 88, 98, 94, 112, 128, 122, 136, 158, 150, 160, 188, 180, 184, 218, 210, 208);
+        static readonly Color32[] DawnWarm = Ramp(120, 80, 30, 200, 140, 50, 250, 200, 90, 255, 230, 150, 255, 248, 215);
+        static readonly Color32[] DawnGlow = Ramp(120, 90, 50, 190, 150, 80, 240, 200, 120, 255, 228, 170, 255, 244, 214, 255, 252, 240, 255, 255, 252);
+        static Color32[] Cave => abyss ? AbyssCave : dawn ? DawnCave : TowerCave;
+        static Color32[] Stone => abyss ? AbyssStone : dawn ? DawnStone : TowerStone;
+        static Color32[] Warm => abyss ? AbyssWarm : dawn ? DawnWarm : TowerWarm;
+        static Color32[] Glow => dawn ? DawnGlow : RiftGlow;
 
         static Color32 Pick(Color32[] ramp, float v, int x, int y)
         {
@@ -120,6 +137,7 @@ namespace VividOfFade
             float v = Mathf.Exp(-(dx * dx + dy * dy) * 1.1f) * 0.85f + 0.12f * Mathf.Exp(-Sq((y - 150) / 90f));
             v += (Fbm(x / 40f, y / 25f, 7) - 0.5f) * 0.12f;
             if (abyss) v = v * 0.75f + 0.55f * Mathf.Exp(-Sq((x - 90) / 70f) - Sq((y - 330) / 70f)); // 下の深淵の光が霧を照らす
+            if (dawn) v = 0.35f + v * 0.6f + 0.45f * Mathf.Exp(-Sq((x - 90) / 80f) - Sq((y - 330) / 110f)); // 明るい霧と、下からあふれる光
             return v * 0.72f;
         }
 
@@ -140,9 +158,10 @@ namespace VividOfFade
 
         // ---- 組み立て ----
 
-        static Texture2D Build(bool abyssVersion)
+        static Texture2D Build(bool abyssVersion, bool dawnVersion = false)
         {
             abyss = abyssVersion;
+            dawn = dawnVersion;
             img = new Color32[W * H];
             for (int y = 0; y < H; y++)
                 for (int x = 0; x < W; x++)
@@ -155,7 +174,7 @@ namespace VividOfFade
             Stairs(false);
             Tower();
             Stairs(true);
-            if (abyss) Rift();
+            if (abyss || dawn) Rift(); // 深淵版は光る深淵、夜明け版は下からあふれる暖かい光
             FogAndVignette();
 
             // テクスチャは下から上へ並ぶので、上下を入れ替える
@@ -165,7 +184,7 @@ namespace VividOfFade
                     px[(H - 1 - y) * W + x] = img[y * W + x];
             var tex = new Texture2D(W, H, TextureFormat.RGBA32, false)
             {
-                name = abyss ? "TitleSceneAbyss" : "TitleScene",
+                name = abyss ? "TitleSceneAbyss" : dawn ? "TitleSceneDawn" : "TitleScene",
                 filterMode = FilterMode.Point,
                 wrapMode = TextureWrapMode.Clamp,
             };
@@ -173,6 +192,7 @@ namespace VividOfFade
             tex.Apply(false, true);
             img = null;
             abyss = false;
+            dawn = false;
             return tex;
         }
 
@@ -187,7 +207,7 @@ namespace VividOfFade
                     float d = Mathf.Sqrt(dx * dx + dy * dy) / edge;
                     if (d < 1f)
                     {
-                        Put(x, y, RiftGlow, 0.3f + Mathf.Pow(1f - d, 0.7f) * 0.8f + (Fbm(x / 5f, y / 3f, 92) - 0.5f) * 0.2f);
+                        Put(x, y, Glow, 0.3f + Mathf.Pow(1f - d, 0.7f) * 0.8f + (Fbm(x / 5f, y / 3f, 92) - 0.5f) * 0.2f);
                         continue;
                     }
                     // 縁から上へ伸びる、細い光の筋
@@ -197,7 +217,7 @@ namespace VividOfFade
                     if (glow > 0.08f)
                     {
                         var c = img[y * W + x];
-                        var g = Pick(RiftGlow, glow * 1.4f, x, y);
+                        var g = Pick(Glow, glow * 1.4f, x, y);
                         float q = Mathf.Floor(Mathf.Min(1f, glow * 1.6f) * 4f + Bay(x, y)) / 4f;
                         img[y * W + x] = Mix(c, g, q * 0.8f);
                     }
@@ -379,7 +399,7 @@ namespace VividOfFade
         /// <summary>手前を漂う霧と、四隅の暗がり。</summary>
         static void FogAndVignette()
         {
-            var dark = new Color32(5, 5, 9, 255);
+            var dark = dawn ? new Color32(70, 66, 90, 255) : new Color32(5, 5, 9, 255); // 夜明け版は、四隅もあまり暗くしない
             for (int y = 0; y < H; y++)
                 for (int x = 0; x < W; x++)
                 {

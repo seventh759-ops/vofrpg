@@ -47,7 +47,55 @@ namespace VividOfFade
         /// <summary>この層の祭壇はもう使った。</summary>
         public bool AltarUsed { get; private set; }
 
-        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen || MenuOpen || AltarOpen || (Hud != null && Hud.Guide.Active);
+        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen || MenuOpen || AltarOpen || EndingOpen || (Hud != null && Hud.Guide.Active);
+
+        /// <summary>エンディングを見ている（アビスを初めて倒した少しあと。設定から見返すこともできる）。</summary>
+        public bool EndingOpen { get; private set; }
+        float endingDelay = -1f;
+
+        float collapseTimer = -1f;
+        Vector2 collapsePos;
+
+        /// <summary>アビスの崩壊の演出：まわりから光の粒が噴き上がり、輪が広がり、揺れがだんだん強くなる。最後に白い閃光。</summary>
+        void TickCollapse(float dt)
+        {
+            if (collapseTimer <= 0f) return;
+            float before = collapseTimer;
+            collapseTimer -= dt;
+            float tc = 1f - Mathf.Clamp01(collapseTimer / GameConfig.FinalCollapseTime);
+            if (Mathf.FloorToInt(before * 8f) != Mathf.FloorToInt(collapseTimer * 8f))
+            {
+                var p = collapsePos + Random.insideUnitCircle * 1.6f;
+                Fx.Sparks(p, 6 + Mathf.RoundToInt(10 * tc), Color.Lerp(new Color(1f, 0.4f, 0.6f, 1f), Color.white, tc), 2f + 3f * tc, 0.8f, 2.5f, true);
+                Fx.Ring(collapsePos, 1.5f + 3f * tc, new Color(1f, 0.85f, 0.95f, 0.7f), 0.35f);
+                cameraRig.Shake(0.05f + 0.25f * tc, 0.2f);
+                Sfx.Boom();
+            }
+            if (collapseTimer <= 0f)
+            {
+                // 崩れきった：白い閃光と、大きな光の柱
+                Fx.Pillar(collapsePos, Color.white, 3f, 14f, 1.2f);
+                Fx.Ring(collapsePos, 9f, new Color(1f, 1f, 1f, 0.9f), 1f);
+                Fx.Disc(collapsePos, 6f, new Color(1f, 1f, 1f, 0.8f), 0.8f);
+                cameraRig.Shake(0.5f, 0.8f);
+                Sfx.Landed(Rarity.Mythic);
+                Hud.Flash(1.2f);
+            }
+        }
+
+        /// <summary>エンディングを出す（今の画面を止めて、上に重ねる）。creditsOnly なら、エンドロールから（設定の「クレジット」）。</summary>
+        public void ShowEnding(bool creditsOnly = false)
+        {
+            OpenPanel(false, false, false);
+            EndingOpen = true;
+            Hud.StartEnding(creditsOnly);
+        }
+
+        /// <summary>エンディングを閉じて、元の画面に戻る（深淵20層なら、そのまま階段から帰還できる）。</summary>
+        public void CloseEnding()
+        {
+            EndingOpen = false;
+        }
 
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
         public bool ChoosingClass { get; private set; }
@@ -447,7 +495,18 @@ namespace VividOfFade
             if (Input.NextMusicPressed) NextMusic();
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
             Music.SetGolden(!ChoosingClass && !Player.IsDead && Enemies.Golden != null); // 黄金のスライムがいる間はボーナスタイムの曲
-            Music.SetTitle(OnTitle);
+            Music.SetTitle(OnTitle || EndingOpen); // エンディングの間はタイトルの曲
+            if (endingDelay > 0f && (endingDelay -= Time.unscaledDeltaTime) <= 0f)
+            {
+                endingDelay = -1f;
+                var endCh = Profile.Current;
+                if (endCh != null)
+                {
+                    endCh.EndingSeen = true;
+                    Profile.Save();
+                }
+                ShowEnding();
+            }
             // 装備の効果のうち、ほかの仕組みが読むもの（町では効かせない）
             var fx = ChoosingClass ? null : Player.Stats;
             ItemGenerator.MagicFind = fx != null ? fx.MagicFind : 0f;
@@ -523,6 +582,7 @@ namespace VividOfFade
                 Player.Tick(dt, Input, Room);
                 TickAuraMotes(dt);
                 TickAbyssGear(dt);
+                TickCollapse(dt);
                 Attack.Tick(dt, Player, !Player.Stunned && (AutoAttack || Input.AttackHeld)); // 気絶中は攻撃しない
                 Skills.Tick(dt, Player, Input.NumberPressed);
                 Floors.Tick(dt, Enemies, Player, Room);
@@ -957,6 +1017,10 @@ namespace VividOfFade
             }
             else if (Floors.Floor >= GameConfig.AbyssLastFloor)
             {
+                // アビスが崩れていく演出（光の粒・輪・揺れ）。最後に白い閃光。初めて倒したなら、そのあとエンディング
+                collapseTimer = GameConfig.FinalCollapseTime;
+                collapsePos = pos;
+                if (ch != null && !ch.EndingSeen) endingDelay = GameConfig.FinalCollapseTime + 0.6f;
                 Hud.ShowBanner(Loc.T("ABYSS CONQUERED", "深淵を制覇した"), Loc.T("Even the darkness below has been lit.", "底なしの闇にまで、灯りがともった。"), new Color(1f, 0.3f, 0.5f));
                 Sfx.Landed(Rarity.Mythic);
             }

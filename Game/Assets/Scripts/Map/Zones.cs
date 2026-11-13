@@ -137,6 +137,12 @@ namespace VividOfFade
 
         public static int Count => table.Length;
 
+        /// <summary>塔の区画の名前（エンドロール用）。</summary>
+        public static System.Collections.Generic.IEnumerable<string> TowerNames { get { foreach (var z in table) yield return Loc.T(z.Name, z.NameJa); } }
+
+        /// <summary>深淵の区画の名前（エンドロール用）。</summary>
+        public static System.Collections.Generic.IEnumerable<string> AbyssNames { get { foreach (var z in abyss) yield return Loc.T(z.Name, z.NameJa); } }
+
         /// <summary>その層の区画。2周目以降は全体の光を少し暗くする。101層からは深淵の区画。</summary>
         public static ZoneSpec For(int floor)
         {

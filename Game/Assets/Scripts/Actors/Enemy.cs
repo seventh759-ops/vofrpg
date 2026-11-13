@@ -25,6 +25,7 @@ namespace VividOfFade
         public float FlashTimer;
         public bool Dying;
         public float DyingTimer;
+        public float DeathLength;  // 倒れる演出の長さ（0 ならふつう。アビスは崩れていく長い演出）
 
         // ボス
         public bool IsBoss;

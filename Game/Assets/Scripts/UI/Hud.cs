@@ -633,7 +633,9 @@ namespace VividOfFade
             else if (World.ReturnOpen) returnScreen.Draw(World);
             else if (World.MenuOpen) menu.Draw(World);
             else if (World.AltarOpen) altarScreen.Draw(World);
-            if (!World.ChoosingClass || World.InTown) Guide.Draw();
+            if (World.EndingOpen) DrawEnding();
+            else if (!World.ChoosingClass || World.InTown) Guide.Draw();
+            DrawFlash();
 
             if (repaint)
             {
@@ -643,6 +645,179 @@ namespace VividOfFade
                 buttonActions.Clear();
                 buttonActions.AddRange(pendingActions);
             }
+        }
+
+        // ---------------- 画面の白い閃光 ----------------
+        float flashTime = -1f, flashLife = 1f;
+
+        /// <summary>画面全体を白く光らせて、ゆっくり戻す（アビスが崩れきったとき）。</summary>
+        public void Flash(float duration)
+        {
+            flashTime = 0f;
+            flashLife = Mathf.Max(0.1f, duration);
+        }
+
+        void DrawFlash()
+        {
+            if (flashTime < 0f) return;
+            if (Event.current.type == EventType.Repaint) flashTime += Time.unscaledDeltaTime;
+            float a = 1f - flashTime / flashLife;
+            if (a <= 0f) { flashTime = -1f; return; }
+            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(1f, 1f, 1f, a * a));
+        }
+
+        // ---------------- エンディング（1回だけ。見たあとは設定の「クレジット」から見返せる） ----------------
+        float endingTime = -1f;
+        // 流れ：白い閃光が引く → 深淵の塔 → ふつうの塔 → 夜明けの塔（世界が晴れていく）と言葉 → エンドロール → ロゴとお礼と記録
+        const float RollStart = 12f, RollLength = 26f;
+        const float EndingTapReady = RollStart + RollLength + 6f;
+
+        /// <summary>エンディングを始める。creditsOnly なら、夜明けの塔のエンドロールから（設定の「クレジット」）。</summary>
+        public void StartEnding(bool creditsOnly = false) => endingTime = creditsOnly ? RollStart - 1f : 0f;
+
+        List<(string text, int size)> creditLines;
+
+        /// <summary>エンドロールの中身：この世界の場所・立ちはだかった者・灯りを運んだ者たち。</summary>
+        List<(string text, int size)> CreditLines()
+        {
+            var l = new List<(string, int)>();
+            void Head(string t) { l.Add(("", 0)); l.Add((t, 2)); }
+            l.Add(("VIVID OF FADE", 3));
+            Head(Loc.T("- The Tower -", "― 塔 ―"));
+            foreach (var n in Zones.TowerNames) l.Add((n, 1));
+            Head(Loc.T("- The Abyss -", "― 深淵 ―"));
+            foreach (var n in Zones.AbyssNames) l.Add((n, 1));
+            Head(Loc.T("- Those Who Stood in the Way -", "― 立ちはだかった者たち ―"));
+            foreach (BossKind k in System.Enum.GetValues(typeof(BossKind))) l.Add((BossInfo.Name(k), 1));
+            Head(Loc.T("- Those Who Carried the Light -", "― 灯りを運んだ者たち ―"));
+            for (int c = 0; c < ClassInfo.Count; c++)
+            {
+                var type = (ClassType)c;
+                l.Add((ClassInfo.Get(type).DisplayName, 1));
+                for (int a = 0; a < 2; a++) l.Add(($"{AdvancedClasses.Get(type, a).DisplayName}  /  {ThirdClasses.Get(type, a).DisplayName}", 1));
+            }
+            Head(Loc.T("- Guide -", "― 案内役 ―"));
+            l.Add(("？？？", 1));
+            l.Add(("", 0));
+            l.Add(("", 0));
+            return l;
+        }
+
+        void DrawEnding()
+        {
+            if (endingTime < 0f) endingTime = 0f;
+            if (Event.current.type == EventType.Repaint) endingTime += Time.unscaledDeltaTime;
+            float t = endingTime;
+            float W = Screen.width, H = Screen.height;
+            Fill(new Rect(0, 0, W, H), Color.black);
+
+            // 背景：深淵の塔 → ふつうの塔 → 夜明けの塔（灯りが戻り、世界が晴れていく）
+            float ps = Mathf.Ceil(Mathf.Max(W / TitleScene.W, H / TitleScene.H));
+            var bg = new Rect((W - TitleScene.W * ps) * 0.5f, (H - TitleScene.H * ps) * 0.5f, TitleScene.W * ps, TitleScene.H * ps);
+            float toNight = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 2.5f) / 3f));
+            float toDawn = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 6f) / 4f));
+            var old = GUI.color;
+            GUI.color = Color.white;
+            GUI.DrawTexture(bg, TitleScene.AbyssTexture);
+            GUI.color = new Color(1f, 1f, 1f, toNight);
+            GUI.DrawTexture(bg, TitleScene.Texture);
+            GUI.color = new Color(1f, 1f, 1f, toDawn);
+            GUI.DrawTexture(bg, TitleScene.DawnTexture);
+            GUI.color = old;
+            // 夜明けの光：下から上へ、ゆっくり差し込む
+            if (toDawn > 0f)
+            {
+                GUI.color = new Color(1f, 0.92f, 0.7f, 0.35f * toDawn * (0.85f + 0.15f * Mathf.Sin(t * 0.8f)));
+                GUI.DrawTexture(new Rect(-W * 0.3f, H * 0.35f, W * 1.6f, H * 1.1f), TitleArt.SoftGlow);
+                GUI.color = old;
+            }
+            // 最初は、崩壊の白い閃光が引いていく
+            if (t < 1.5f) Fill(new Rect(0, 0, W, H), new Color(1f, 1f, 1f, 1f - t / 1.5f));
+            // 言葉とエンドロールが読めるよう、うっすら暗く
+            Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.03f, 0.35f + 0.15f * Mathf.Clamp01((t - RollStart + 1f) / 2f)));
+
+            var line = new GUIStyle(centered) { wordWrap = true, fontSize = Mathf.RoundToInt(label.fontSize * 1.05f) };
+            void Line(float at, float until, float y, string text, Color color, GUIStyle style = null)
+            {
+                float a = Mathf.Clamp01((t - at) / 1.2f) * (until > 0f ? Mathf.Clamp01((until - t) / 1.2f) : 1f);
+                if (a <= 0f) return;
+                var st = style ?? line;
+                st.normal.textColor = new Color(color.r, color.g, color.b, a);
+                OutlinedLabel(new Rect(W * 0.06f, y, W * 0.88f, H * 0.05f), text, st, new Color(0f, 0f, 0f, 0.8f * a));
+            }
+            var soft = new Color(0.95f, 0.92f, 1f);
+            // 世界が晴れていく間の言葉（エンドロールが始まる前に消える）
+            Line(1.5f, RollStart, H * 0.2f, Loc.T("The light reached deeper than the bottom of the tower.", "灯りは、塔のいちばん底よりも、さらに深くへ届いた。"), soft);
+            Line(4.5f, RollStart, H * 0.26f, Loc.T("The white shadow waiting in the dark quietly came undone.", "闇の底で待っていた白い影は、静かにほどけていった。"), soft);
+            Line(7.5f, RollStart, H * 0.32f, Loc.T("Colors that were fading glow vivid once more.", "消えかけた色が、もう一度あざやかに灯る。"), new Color(1f, 0.9f, 0.6f));
+
+            // エンドロール：下から上へ流れる
+            if (t > RollStart && t < RollStart + RollLength + 1f)
+            {
+                if (creditLines == null || Event.current.type == EventType.Layout) creditLines = CreditLines();
+                float lh = label.fontSize * 1.6f;
+                float total = 0f;
+                foreach (var c in creditLines) total += c.size == 3 ? lh * 2f : lh;
+                float k = (t - RollStart) / RollLength;
+                float y = Mathf.Lerp(H, -total, k);
+                foreach (var c in creditLines)
+                {
+                    float h = c.size == 3 ? lh * 2f : lh;
+                    if (c.size > 0 && y > -h && y < H)
+                    {
+                        float fade = Mathf.Clamp01(Mathf.Min(y - H * 0.08f, H * 0.92f - y) / (H * 0.12f)); // 上下の端では薄く
+                        var st = new GUIStyle(centered) { fontStyle = c.size >= 2 ? FontStyle.Bold : FontStyle.Normal,
+                            fontSize = c.size == 3 ? label.fontSize * 2 : c.size == 2 ? Mathf.RoundToInt(label.fontSize * 1.1f) : label.fontSize };
+                        var col = c.size == 3 ? new Color(1f, 0.9f, 0.6f) : c.size == 2 ? new Color(1f, 0.82f, 0.45f) : new Color(0.95f, 0.95f, 1f);
+                        st.normal.textColor = new Color(col.r, col.g, col.b, fade);
+                        OutlinedLabel(new Rect(W * 0.06f, y, W * 0.88f, h), c.text, st, new Color(0f, 0f, 0f, 0.8f * fade));
+                    }
+                    y += h;
+                }
+            }
+
+            // 最後：ロゴ・お礼・記録
+            float end = RollStart + RollLength;
+            float la = Mathf.Clamp01((t - end) / 1.5f);
+            if (la > 0f)
+            {
+                var logo = TitleArt.Logo;
+                float sc = Mathf.Max(1f, Mathf.Floor(W * 0.85f / logo.width));
+                var lr = new Rect((W - logo.width * sc) * 0.5f, H * 0.34f, logo.width * sc, logo.height * sc);
+                GUI.color = new Color(1f, 1f, 1f, la * (0.75f + 0.25f * Mathf.Sin(t * 2f)));
+                GUI.DrawTexture(new Rect(lr.x - sc, lr.y - sc, lr.width + sc * 2f, lr.height + sc * 2f), TitleArt.Glow);
+                GUI.color = new Color(1f, 1f, 1f, la);
+                GUI.DrawTexture(lr, logo);
+                GUI.color = old;
+            }
+            var thanks = new GUIStyle(centered) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(label.fontSize * 1.3f) };
+            Line(end + 1.5f, -1f, H * 0.5f, "Thank you for playing", new Color(1f, 0.85f, 0.45f), thanks);
+            var ch = Profile.Current;
+            if (ch != null && t > end + 3f)
+            {
+                string record = $"{AdvancedClasses.NameFor(ch)}   Lv {ch.Level}" + (ch.Rebirths > 0 ? Loc.T($"   Reborn x{ch.Rebirths}", $"   転生 {ch.Rebirths}回") : "")
+                    + "\n" + Loc.T("Deepest: ", "最深：") + GameConfig.FloorName(ch.BestFloor);
+                var rs = new GUIStyle(centered) { wordWrap = true };
+                rs.normal.textColor = new Color(0.9f, 0.9f, 0.95f, Mathf.Clamp01((t - end - 3f) / 1.2f));
+                GUI.Label(new Rect(W * 0.06f, H * 0.58f, W * 0.88f, H * 0.08f), record, rs);
+            }
+
+            if (t >= EndingTapReady)
+            {
+                var tap = new GUIStyle(centered);
+                tap.normal.textColor = new Color(1f, 1f, 1f, 0.5f + 0.5f * Mathf.Sin(t * 3f));
+                GUI.Label(new Rect(0, H * 0.86f, W, H * 0.04f), Loc.T("Tap to continue", "タップで続ける"), tap);
+            }
+            // 全面のタップ：途中なら最後（ロゴ）まで飛ばし、最後なら閉じる
+            Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0f), centered, () =>
+            {
+                if (endingTime < end) endingTime = end;
+                else if (endingTime >= EndingTapReady)
+                {
+                    endingTime = -1f;
+                    World.CloseEnding();
+                }
+            });
         }
 
         void DrawHud()
