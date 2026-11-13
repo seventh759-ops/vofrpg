@@ -143,7 +143,7 @@ namespace VividOfFade
         {
             var st = player.Stats;
             Vector2 origin = player.Pos;
-            float damage = st.Damage * spec.Mult * power * (1f + st.SkillDamage);
+            float damage = st.SkillBase * spec.Mult * power * (1f + st.SkillDamage);
             float radius = spec.Radius * st.AreaMult;
 
             switch (spec.Effect)

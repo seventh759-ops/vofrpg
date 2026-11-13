@@ -17,6 +17,11 @@ namespace VividOfFade
         public float MpRegen;
 
         public float Damage;
+        /// <summary>
+        /// スキルの基準の攻撃力。武器ごとの手数の差（1 回の倍率×弾の数÷攻撃の間隔）を、職業の最初の武器を基準にならす。
+        /// 攻撃速度は入れない（攻撃速度を上げてもスキルは強くならない）。
+        /// </summary>
+        public float SkillBase;
         public float FireInterval;
         public float CritChance;
         public float CritMult;
@@ -264,6 +269,9 @@ namespace VividOfFade
             s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
             baseDamage += flatDamage; // 「攻撃力 +N」は基礎攻撃力に足す（倍率の前）
             s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f + sub * 0.01f) * cls.DamageMult;
+            var starter = ClassInfo.Weapon(cls.Starter);
+            float Throughput(WeaponSpec x) => x.Mult * Mathf.Max(1, x.Attack == AttackKind.Orbit ? x.Orbs : x.Shots) / Mathf.Max(0.05f, x.Interval);
+            s.SkillBase = s.Damage / w.Mult * starter.Mult * Mathf.Clamp(Throughput(w) / Throughput(starter), 0.5f, 2f);
             s.DamageTaken = cls.DamageTaken * (1f - Mathf.Min(0.6f, reduction)); // 被ダメージの軽減は 60% まで
             s.DodgeCooldown = GameConfig.DodgeCooldown * cls.DodgeCooldownMult * (1f - Mathf.Min(0.5f, dodgeCdr));
             s.CooldownMult = 1f - Mathf.Min(0.5f, cdr); // 待ち時間の短縮は 50% まで

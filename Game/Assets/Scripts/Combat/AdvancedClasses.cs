@@ -39,7 +39,7 @@ namespace VividOfFade
                     Desc = "Damage +20%, crit damage +30%, enemies explode on death.", DescJa = "ダメージ+20%、会心ダメージ+30%、倒した敵が爆発する。",
                     Passive = new BoonSpec { Damage = 0.2f, CritDamage = 0.3f, Explode = 0.3f },
                     Skill = new SkillSpec { Name = "Starfall", NameJa = "星降り", Desc = "A huge star falls on the nearest enemy.", DescJa = "一番近い敵に、大きな星が落ちる。",
-                        ReqLevel = 1, Mp = 35, Cooldown = 8f, Effect = SkillEffect.Strike, Mult = 6f, Radius = 2.4f, Delay = 0.7f, Range = 9f,
+                        ReqLevel = 1, Mp = 35, Cooldown = 8f, Effect = SkillEffect.Strike, Mult = 15f, Radius = 2.4f, Delay = 0.7f, Range = 9f,
                         Color = new Color(1f, 0.6f, 0.3f, 0.9f) },
                 },
                 new AdvancedSpec
@@ -61,7 +61,7 @@ namespace VividOfFade
                     Desc = "Crit chance +10%, crit damage +40%, attack speed +10%.", DescJa = "会心率+10%、会心ダメージ+40%、攻撃速度+10%。",
                     Passive = new BoonSpec { Crit = 0.1f, CritDamage = 0.4f, AttackSpeed = 0.1f },
                     Skill = new SkillSpec { Name = "Eclipse Rush", NameJa = "蝕の突進", Desc = "A long dash that tears through enemies.", DescJa = "長く突進し、敵を切り裂く。",
-                        ReqLevel = 1, Mp = 25, Cooldown = 6f, Effect = SkillEffect.Dash, Mult = 5f, Radius = 1.2f, Range = 6f,
+                        ReqLevel = 1, Mp = 25, Cooldown = 6f, Effect = SkillEffect.Dash, Mult = 12.5f, Radius = 1.2f, Range = 6f,
                         Color = new Color(0.55f, 0.4f, 0.95f, 0.9f) },
                 },
                 new AdvancedSpec
@@ -70,7 +70,7 @@ namespace VividOfFade
                     Desc = "Heal 1% of damage dealt, max HP +20%, damage +10%.", DescJa = "与えたダメージの1%を回復、最大体力+20%、ダメージ+10%。",
                     Passive = new BoonSpec { LifeSteal = 0.01f, HpPct = 0.2f, Damage = 0.1f },
                     Skill = new SkillSpec { Name = "Crimson Spiral", NameJa = "紅の渦", Desc = "Cut everything around you; heals 10%.", DescJa = "周りを斬り、体力10%回復。",
-                        ReqLevel = 1, Mp = 30, Cooldown = 9f, Effect = SkillEffect.Nova, Mult = 4f, Radius = 2.6f, HealPct = 0.1f,
+                        ReqLevel = 1, Mp = 30, Cooldown = 9f, Effect = SkillEffect.Nova, Mult = 10f, Radius = 2.6f, HealPct = 0.1f,
                         Color = new Color(1f, 0.3f, 0.35f, 0.9f) },
                 },
             },
@@ -83,7 +83,7 @@ namespace VividOfFade
                     Desc = "+1 flame, damage +15%, light +1.", DescJa = "灯り+1、ダメージ+15%、明るさ+1。",
                     Passive = new BoonSpec { Extra = 1, Damage = 0.15f, Light = 1f },
                     Skill = new SkillSpec { Name = "Sunburst", NameJa = "日輪", Desc = "A blazing ring of sunlight.", DescJa = "まぶしい日の光の輪。",
-                        ReqLevel = 1, Mp = 35, Cooldown = 10f, Effect = SkillEffect.Nova, Mult = 4f, Radius = 3.5f,
+                        ReqLevel = 1, Mp = 35, Cooldown = 10f, Effect = SkillEffect.Nova, Mult = 10f, Radius = 3.5f,
                         Color = new Color(1f, 0.85f, 0.35f, 0.9f) },
                 },
                 new AdvancedSpec
