@@ -112,6 +112,7 @@ namespace VividOfFade
         /// <summary>町から出撃する。チェックポイントか中断した挑戦があれば、開始する層を選ぶ画面へ。</summary>
         public void Depart()
         {
+            Hud.BigMap = false;
             var type = ClassInfo.Current;
             var ch = Profile.Get(type);
             if (Checkpoints(ch).Count > 1 || ch.Run.Active) PendingClass = type;
@@ -375,6 +376,7 @@ namespace VividOfFade
                 Input.ClearQueued();
             }
             if (Input.HelpPressed) Hud.ShowHelp = !Hud.ShowHelp;
+            if (Input.MapPressed && !InTown && !OnTitle) Hud.BigMap = !Hud.BigMap;
             if (Input.NextMusicPressed) NextMusic();
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
             Music.SetTitle(OnTitle);

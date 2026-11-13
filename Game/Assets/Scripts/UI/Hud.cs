@@ -529,6 +529,7 @@ namespace VividOfFade
             "Bag ......... B      Stats ... C",
             "Skill list .. K      Music ... M (on/off)  N (change)",
             "Potions ..... Q (HP)   E (MP)",
+            "Map ......... F (or tap the minimap)",
             "Menu ........ Esc (also closes screens)",
         };
 
@@ -541,6 +542,7 @@ namespace VividOfFade
             "鞄 .......... B      能力値 ... C",
             "スキル一覧 .. K      音楽 ... M（オン/オフ）  N（変える）",
             "薬 .......... Q（体力）  E（MP）",
+            "地図 ........ F（小さな地図をタップでも）",
             "メニュー .... Esc（画面を閉じるのも）",
         };
 
@@ -558,31 +560,69 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>小さな地図（右上のボタンの下）。歩いて見た場所、自分、階段。</summary>
+        /// <summary>大きな地図（画面中央に、半透明で地図全体を重ねる）を出しているか。ゲームは止めない。</summary>
+        public static bool BigMap;
+
+        /// <summary>右上の小さな地図の拡大率（自分のまわりを、地図全体のこの分の1だけ切り出して見せる）。</summary>
+        const float MiniZoom = 2f;
+
+        /// <summary>
+        /// 小さな地図（右上のボタンの下）。自分のまわりを拡大して、歩いて見た場所・自分・階段・祭壇を出す。
+        /// タップ（PC は F キー）で、地図全体を画面中央に大きく半透明で重ねる。もう一度で閉じる。
+        /// </summary>
         void DrawMinimap()
         {
             var room = World.Room;
             if (room.Minimap == null) return;
             var below = ToGui(MenuRect);
-            float w = Screen.width * 0.34f;
+            float w = Screen.width * 0.38f;
             float h = w * Room.MiniH / Room.MiniW;
             var r = new Rect(Screen.width - w - Screen.height * 0.015f, below.yMax + Screen.height * 0.01f, w, h);
+            bool canTap = !(World.Paused || World.Player.IsDead || World.ChoosingClass);
+
+            if (BigMap)
+            {
+                // 画面中央に、地図全体を大きく（背景は少しだけ暗く、地図は半透明）
+                float bw = Screen.width * 0.96f, bh = bw * Room.MiniH / Room.MiniW;
+                var big = new Rect((Screen.width - bw) * 0.5f, Screen.height * 0.45f - bh * 0.5f, bw, bh);
+                Fill(big, new Color(0f, 0f, 0f, 0.25f));
+                DrawMapView(big, new Rect(0f, 0f, 1f, 1f), 0.6f, Mathf.Max(5f, bw * 0.014f));
+                // 右上の枠は「閉じる」ボタンになる
+                Fill(r, new Color(0f, 0f, 0f, 0.45f));
+                GUI.Label(r, Loc.T("CLOSE MAP", "地図を閉じる"), centered);
+                if (canTap) Button(r, null, new Color(0f, 0f, 0f, 0f), centered, () => BigMap = false);
+                return;
+            }
+
+            // 自分のまわりを切り出す（地図の端では、はみ出さないように止める）
+            Vector2 me = room.MinimapPixel(World.Player.Pos);
+            float uw = 1f / MiniZoom, vh = 1f / MiniZoom;
+            float u0 = Mathf.Clamp(me.x / Room.MiniW - uw * 0.5f, 0f, 1f - uw);
+            float v0 = Mathf.Clamp(me.y / Room.MiniH - vh * 0.5f, 0f, 1f - vh);
             Fill(r, new Color(0f, 0f, 0f, 0.45f));
+            DrawMapView(r, new Rect(u0, v0, uw, vh), 0.85f, Mathf.Max(4f, w * 0.045f));
+            if (canTap) Button(r, null, new Color(0f, 0f, 0f, 0f), centered, () => BigMap = true);
+        }
+
+        /// <summary>地図の一部（view は地図全体を 0〜1 とした範囲、下が 0）を r に描き、自分・階段・祭壇の点を重ねる。</summary>
+        void DrawMapView(Rect r, Rect view, float alpha, float dot)
+        {
+            var room = World.Room;
             var old = GUI.color;
-            GUI.color = new Color(1f, 1f, 1f, 0.85f);
-            GUI.DrawTexture(r, room.Minimap);
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+            GUI.DrawTextureWithTexCoords(r, room.Minimap, view);
             GUI.color = old;
 
-            float sx = w / Room.MiniW, sy = h / Room.MiniH;
-            Rect Dot(Vector2 logical, float size)
+            void Dot(Vector2 logical, float size, Color c)
             {
                 Vector2 m = room.MinimapPixel(logical);
-                return new Rect(r.x + m.x * sx - size * 0.5f, r.yMax - m.y * sy - size * 0.5f, size, size);
+                float fx = (m.x / Room.MiniW - view.x) / view.width, fy = (m.y / Room.MiniH - view.y) / view.height;
+                if (fx < 0f || fx > 1f || fy < 0f || fy > 1f) return; // 切り出した範囲の外
+                Fill(new Rect(r.x + fx * r.width - size * 0.5f, r.yMax - fy * r.height - size * 0.5f, size, size), c);
             }
-            float s = Mathf.Max(3f, w * 0.035f);
-            if (World.Floors.StairsOpen) Fill(Dot(room.StairsPos, s * 1.3f), new Color(1f, 0.8f, 0.3f));
-            if (room.HasAltar && !World.AltarUsed) Fill(Dot(room.AltarPos, s), new Color(1f, 0.5f, 0.2f));
-            Fill(Dot(World.Player.Pos, s), Color.white);
+            if (World.Floors.StairsOpen) Dot(room.StairsPos, dot * 1.3f, new Color(1f, 0.8f, 0.3f));
+            if (room.HasAltar && !World.AltarUsed) Dot(room.AltarPos, dot, new Color(1f, 0.5f, 0.2f));
+            Dot(World.Player.Pos, dot, Color.white);
         }
 
         /// <summary>ボスがいる間、画面の下に体力バーを出す。</summary>

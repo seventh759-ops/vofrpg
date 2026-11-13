@@ -38,6 +38,8 @@ namespace VividOfFade
         public bool MusicPressed { get; private set; }
         public bool HelpPressed { get; private set; }
         public bool NextMusicPressed { get; private set; }
+        /// <summary>大きな地図の開け閉め（F キー）。</summary>
+        public bool MapPressed { get; private set; }
         public bool HpPotionPressed { get; private set; }
         public bool MpPotionPressed { get; private set; }
         /// <summary>数字キー 1〜3 を押したときの番号（0 始まり）。押していなければ -1。</summary>
@@ -138,6 +140,7 @@ namespace VividOfFade
             MusicPressed = false;
             HelpPressed = false;
             NextMusicPressed = false;
+            MapPressed = false;
             HpPotionPressed = false;
             MpPotionPressed = false;
             NumberPressed = -1;
@@ -166,6 +169,7 @@ namespace VividOfFade
                 MusicPressed = kb.mKey.wasPressedThisFrame;
                 HelpPressed = kb.hKey.wasPressedThisFrame;
                 NextMusicPressed = kb.nKey.wasPressedThisFrame;
+                MapPressed = kb.fKey.wasPressedThisFrame;
                 HpPotionPressed = kb.qKey.wasPressedThisFrame;
                 MpPotionPressed = kb.eKey.wasPressedThisFrame;
                 if (kb.digit1Key.wasPressedThisFrame) NumberPressed = 0;
