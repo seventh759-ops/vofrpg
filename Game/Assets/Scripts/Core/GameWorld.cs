@@ -72,7 +72,8 @@ namespace VividOfFade
         public static List<int> Checkpoints(CharacterData ch)
         {
             var list = new List<int> { 1 };
-            for (int boss = GameConfig.BossFloorEvery; boss <= ch.BossCleared && boss + 1 <= GameConfig.MaxFloor; boss += GameConfig.BossFloorEvery) list.Add(boss + 1);
+            int last = GameConfig.LastFloorFor(ch); // 深淵の層は、入れるときだけ（Lv100以上・100層制覇）
+            for (int boss = GameConfig.BossFloorEvery; boss <= ch.BossCleared && boss + 1 <= last; boss += GameConfig.BossFloorEvery) list.Add(boss + 1);
             return list;
         }
 
@@ -539,7 +540,7 @@ namespace VividOfFade
             if (boss != null && bossAnnouncedFloor != Floors.Floor)
             {
                 bossAnnouncedFloor = Floors.Floor;
-                Hud.ShowBanner(BossInfo.Name(boss.BossKind), Loc.T($"Floor {Floors.Floor} boss", $"{Floors.Floor}層のボス"), new Color(1f, 0.4f, 0.35f));
+                Hud.ShowBanner(BossInfo.Name(boss.BossKind), GameConfig.FloorName(Floors.Floor) + Loc.T(" boss", "のボス"), new Color(1f, 0.4f, 0.35f));
             }
 
             // 気絶中は、頭の上に黄色い火花が回る
@@ -663,11 +664,11 @@ namespace VividOfFade
         /// <summary>次の層へ。地面に残ったドロップは拾える分だけ拾ってから下りる。</summary>
         public void Descend()
         {
-            if (Floors.Floor >= GameConfig.MaxFloor) return; // 塔は100層まで
+            if (Floors.Floor >= GameConfig.LastFloorFor(Profile.Current)) return; // 塔は100層まで（深淵に入れるなら120層まで）
             Loot.CollectAll(Inventory);
             ReturnOpen = false;
             EnterFloor(Floors.Floor + 1);
-            Hud.Toast(Loc.T($"FLOOR {Floors.Floor}", $"{Floors.Floor}層") + (Floors.IsBossFloor ? Loc.T("  -  BOSS", "  -  ボス") : ""), new Color(1f, 0.85f, 0.5f));
+            Hud.Toast(GameConfig.FloorName(Floors.Floor) + (Floors.IsBossFloor ? Loc.T("  -  BOSS", "  -  ボス") : ""), new Color(1f, 0.85f, 0.5f));
         }
 
         /// <summary>階段の画面を閉じて、この層に残る。</summary>
@@ -688,7 +689,7 @@ namespace VividOfFade
             if (zone.Key != currentZone)
             {
                 currentZone = zone.Key;
-                Hud.ShowBanner(Loc.T($"FLOOR {floor}  -  {zone.Title}", $"{floor}層  -  {zone.Title}"), zone.DisplaySubtitle, zone.Accent);
+                Hud.ShowBanner($"{GameConfig.FloorName(floor)}  -  {zone.Title}", zone.DisplaySubtitle, zone.Accent);
             }
         }
 
@@ -900,14 +901,23 @@ namespace VividOfFade
             {
                 ch.BossCleared = Floors.Floor;
                 Profile.Save();
-                if (Floors.Floor < GameConfig.MaxFloor)
-                    Hud.Toast(Loc.T($"Checkpoint unlocked: floor {Floors.Floor + 1}", $"{Floors.Floor + 1}層から始められるようになった"), new Color(0.7f, 1f, 0.7f));
-                else // 100層を初めて制覇：レベルの上限が 120 に上がる（この戦いの経験値の後なので、上がるのは次に経験値を得てから）
+                if (Floors.Floor != GameConfig.MaxFloor && Floors.Floor < GameConfig.AbyssLastFloor)
+                    Hud.Toast(Loc.T($"Checkpoint unlocked: {GameConfig.FloorName(Floors.Floor + 1)}", $"{GameConfig.FloorName(Floors.Floor + 1)}から始められるようになった"), new Color(0.7f, 1f, 0.7f));
+                else if (Floors.Floor == GameConfig.MaxFloor) // 100層を初めて制覇：レベルの上限が 120 に上がる（この戦いの経験値の後なので、上がるのは次に経験値を得てから）
                     Hud.Toast(Loc.T($"Level cap raised to {Progression.UnlockedMaxLevel}!", $"レベルの上限が {Progression.UnlockedMaxLevel} に上がった！"), new Color(1f, 0.85f, 0.4f));
             }
-            if (Floors.Floor >= GameConfig.MaxFloor)
+            if (Floors.Floor == GameConfig.MaxFloor)
             {
-                Hud.ShowBanner(Loc.T("TOWER CONQUERED", "塔を制覇した"), Loc.T("The light reaches the very bottom.", "灯りが、塔のいちばん底まで届いた。"), new Color(1f, 0.85f, 0.4f));
+                bool abyss = GameConfig.CanEnterAbyss(ch);
+                Hud.ShowBanner(Loc.T("TOWER CONQUERED", "塔を制覇した"),
+                    abyss ? Loc.T("Below the bottom, the Abyss opens.", "底のさらに下に、深淵が口を開けた。")
+                          : Loc.T($"The light reaches the very bottom. At Lv {GameConfig.AbyssReqLevel}, something lies below...", $"灯りが、塔のいちばん底まで届いた。Lv{GameConfig.AbyssReqLevel}になれば、その先へ…"),
+                    new Color(1f, 0.85f, 0.4f));
+                Sfx.Landed(Rarity.Mythic);
+            }
+            else if (Floors.Floor >= GameConfig.AbyssLastFloor)
+            {
+                Hud.ShowBanner(Loc.T("ABYSS CONQUERED", "深淵を制覇した"), Loc.T("Even the darkness below has been lit.", "底なしの闇にまで、灯りがともった。"), new Color(1f, 0.3f, 0.5f));
                 Sfx.Landed(Rarity.Mythic);
             }
             Hud.Toast(Loc.T("The stairs have appeared", "階段が現れた"), new Color(1f, 0.85f, 0.5f));

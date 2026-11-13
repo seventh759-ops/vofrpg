@@ -589,7 +589,7 @@ namespace VividOfFade
             float lineH = small.fontSize * 1.35f;
             var floorRow = new Rect(mm, expBack.yMax + mm * 0.6f, W - mm * 2f, FloorRowH);
             Fill(floorRow, new Color(0.13f, 0.12f, 0.15f, 1f));
-            string floorText = Loc.T($"FLOOR {World.Floors.Floor}", $"{World.Floors.Floor}層") + (World.Floors.IsBossFloor ? Loc.T("   BOSS", "   ボス") : "");
+            string floorText = GameConfig.FloorName(World.Floors.Floor) + (World.Floors.IsBossFloor ? Loc.T("   BOSS", "   ボス") : "");
             var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
             FitLabel(new Rect(floorRow.x + mm, floorRow.y, floorRow.width * 0.7f, floorRow.height), floorText, floorStyle);
             var dodge = new Rect(floorRow.xMax - W * 0.22f - mm, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
@@ -864,7 +864,7 @@ namespace VividOfFade
             var r = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.72f, w, h);
             Fill(r, new Color(0f, 0f, 0f, 0.7f));
             Fill(new Rect(r.x, r.y, r.width * Mathf.Clamp01(boss.Hp / boss.MaxHp), r.height), new Color(0.9f, 0.2f, 0.25f, 0.95f));
-            GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), $"{BossInfo.Name(boss.BossKind)}  -  " + Loc.T($"FLOOR {World.Floors.Floor}", $"{World.Floors.Floor}層"), small);
+            GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), $"{BossInfo.Name(boss.BossKind)}  -  " + GameConfig.FloorName(World.Floors.Floor), small);
         }
 
         /// <summary>精鋭の頭の上に、名前と小さな体力バー。</summary>
@@ -915,7 +915,7 @@ namespace VividOfFade
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 3, fontStyle = FontStyle.Bold };
             Hud.FitLabel(new Rect(0, h * 0.38f, Screen.width, h * 0.08f), Loc.T("GAME OVER", "力尽きた"), title);
             GUI.Label(new Rect(0, h * 0.47f, Screen.width, h * 0.05f),
-                Loc.T($"FLOOR {World.Floors.Floor}   KILL {World.Enemies.Kills}   EMBERS {World.Inventory.Embers}", $"{World.Floors.Floor}層   撃破 {World.Enemies.Kills}   火種 {World.Inventory.Embers}"), centered);
+                GameConfig.FloorName(World.Floors.Floor) + Loc.T($"   KILL {World.Enemies.Kills}   EMBERS {World.Inventory.Embers}", $"   撃破 {World.Enemies.Kills}   火種 {World.Inventory.Embers}"), centered);
             GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), Loc.T("Tap / Enter to continue", "タップか Enter で続ける"), centered);
         }
 
@@ -953,7 +953,7 @@ namespace VividOfFade
 
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
             Hud.FitLabel(new Rect(0, H * 0.12f, W, H * 0.06f), Loc.T("Choose a starting floor", "始める層を選ぶ"), title);
-            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T($"{AdvancedClasses.NameOf(type)}   Lv {ch.Level}   Best floor {ch.BestFloor}", $"{AdvancedClasses.NameOf(type)}   Lv {ch.Level}   最深 {ch.BestFloor}層"), centered);
+            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), $"{AdvancedClasses.NameOf(type)}   Lv {ch.Level}   " + Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor), centered);
 
             var floors = GameWorld.Checkpoints(ch);
             const int cols = 3;
@@ -966,7 +966,7 @@ namespace VividOfFade
             // 中断した挑戦があれば、いちばん上に「続きから」
             if (ch.Run.Active)
             {
-                Button(new Rect(pad, y, W - pad * 2f, bh), Loc.T($"CONTINUE  -  Floor {ch.Run.Floor}", $"続きから  -  {ch.Run.Floor}層"), new Color(0.2f, 0.5f, 0.25f, 0.85f), centered,
+                Button(new Rect(pad, y, W - pad * 2f, bh), Loc.T("CONTINUE  -  ", "続きから  -  ") + GameConfig.FloorName(ch.Run.Floor), new Color(0.2f, 0.5f, 0.25f, 0.85f), centered,
                     () => confirmFloor = 0); // 0 は「続きから」
                 y += bh + gap;
                 var warn = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
@@ -974,12 +974,15 @@ namespace VividOfFade
                 GUI.Label(new Rect(0, y, W, small.fontSize * 1.5f), Loc.T("Starting a new run abandons the suspended one.", "新しく始めると、中断中の挑戦は消えます。"), warn);
                 y += small.fontSize * 2f;
             }
+            // 深淵の層が増えて行が多いときは、ボタンを低くして画面に収める
+            int rowCount = (floors.Count + cols - 1) / cols;
+            bh = Mathf.Min(bh, (H * 0.92f - y - H * 0.05f - gap * 2f) / Mathf.Max(1, rowCount) - gap);
             for (int i = 0; i < floors.Count; i++)
             {
                 int floor = floors[i];
                 var r = new Rect(pad + (i % cols) * (bw + gap), y + (i / cols) * (bh + gap), bw, bh);
                 string key = Application.isMobilePlatform || i >= 9 ? "" : $"[{i + 1}] ";
-                Button(r, Loc.T($"{key}Floor {floor}", $"{key}{floor}層"), i == floors.Count - 1 ? new Color(0.5f, 0.4f, 0.1f, 0.7f) : new Color(1f, 1f, 1f, 0.12f), centered,
+                Button(r, key + GameConfig.FloorName(floor), GameConfig.IsAbyss(floor) ? new Color(0.45f, 0.08f, 0.35f, 0.8f) : i == floors.Count - 1 ? new Color(0.5f, 0.4f, 0.1f, 0.7f) : new Color(1f, 1f, 1f, 0.12f), centered,
                     () => confirmFloor = floor);
             }
             int rows = (floors.Count + cols - 1) / cols;
@@ -1012,7 +1015,7 @@ namespace VividOfFade
             var title = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
             title.normal.textColor = new Color(1f, 0.88f, 0.5f);
             FitLabel(new Rect(box.x, box.y + box.height * 0.1f, box.width, box.height * 0.2f),
-                resume ? Loc.T($"Continue from floor {floor}?", $"{floor}層から続けますか？") : Loc.T($"Start from floor {floor}?", $"{floor}層から始めますか？"), title);
+                resume ? Loc.T($"Continue from {GameConfig.FloorName(floor)}?", $"{GameConfig.FloorName(floor)}から続けますか？") : Loc.T($"Start from {GameConfig.FloorName(floor)}?", $"{GameConfig.FloorName(floor)}から始めますか？"), title);
             var note = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
             note.normal.textColor = new Color(1f, 0.7f, 0.5f);
             string warn = !resume && ch.Run.Active ? Loc.T("The suspended run will be lost.", "中断中の挑戦は消えます。") : "";
@@ -1236,11 +1239,11 @@ namespace VividOfFade
                     FitLabel(new Rect(tx, r.y + inner, tw * 0.7f, nameStyle.fontSize * 1.4f), key + AdvancedClasses.NameFor(ch), nameStyle);
                     var spec = ClassInfo.Get((ClassType)ch.ClassId);
                     GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, tw, lh),
-                        Loc.T($"Lv {ch.Level}   Best {ch.BestFloor}F   Embers {ch.Embers}", $"Lv {ch.Level}   最深 {ch.BestFloor}層   火種 {ch.Embers}"), small);
+                        $"Lv {ch.Level}   " + Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor) + Loc.T($"   Embers {ch.Embers}", $"   火種 {ch.Embers}"), small);
                     var sub = new GUIStyle(small);
                     sub.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
                     GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh),
-                        spec.DisplayName + (ch.Run.Active ? Loc.T($"   (suspended: floor {ch.Run.Floor})", $"   （中断中：{ch.Run.Floor}層）") : ""), sub);
+                        spec.DisplayName + (ch.Run.Active ? Loc.T("   (suspended: ", "   （中断中：") + GameConfig.FloorName(ch.Run.Floor) + Loc.T(")", "）") : ""), sub);
 
                     // 消す（2回押し）。消しても倉庫は残る
                     string id = "del" + slot;

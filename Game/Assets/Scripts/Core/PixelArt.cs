@@ -3984,6 +3984,41 @@ namespace VividOfFade
                             if (Hash(x + salt * 5, sy) % 71 == 0) c = accent;
                             else if (TileNoise(x / 9f, sy / 5f, salt + 41) > 0.7f) c = Mix(c, accent, 0.12f);
                             break;
+                        // ---- 深淵 ----
+                        case FloorPattern.Rift: // 黒い岩を走る、赤く光る裂け目（芯は白く熱い）
+                        {
+                            float k = Mathf.Abs(TileNoise(x / 8f, sy / 4f, salt + 51) - 0.5f);
+                            if (k < 0.01f) c = Mix(accent, new Color32(255, 220, 200, 255), 0.45f);
+                            else if (k < 0.024f) c = accent;
+                            else if (k < 0.045f) c = Mix(c, accent, 0.3f);
+                            break;
+                        }
+                        case FloorPattern.Starless: // 青い燐光の筋と、ときどき強く光る粒
+                        {
+                            float k = Mathf.Abs(TileNoise(x / 10f, sy / 5f, salt + 61) - 0.5f);
+                            if (k < 0.02f) c = Mix(accent, new Color32(220, 255, 255, 255), 0.3f);
+                            else if (k < 0.06f) c = Mix(c, accent, 0.35f - k * 4f);
+                            if (Hash(x + salt * 3, sy * 5) % 113 == 0) c = new Color32(220, 255, 255, 255);
+                            break;
+                        }
+                        case FloorPattern.Rune: // 敷石ごとに、紫に燃える丸い紋様（輪と十字）
+                        {
+                            float ra = fa - 0.5f, rb = fb - 0.5f;
+                            float r = Mathf.Sqrt(ra * ra + rb * rb);
+                            bool rune = (Hash(stoneId, salt + 71) % 5) == 0;
+                            if (rune && !joint && (Mathf.Abs(r - 0.3f) < 0.035f || (r < 0.26f && (Mathf.Abs(ra) < 0.025f || Mathf.Abs(rb) < 0.025f))))
+                                c = Mix(accent, new Color32(255, 230, 255, 255), 0.2f);
+                            else if (rune && r < 0.36f) c = Mix(c, accent, 0.14f);
+                            if (joint) c = Mix(mortar, accent, 0.25f);
+                            break;
+                        }
+                        case FloorPattern.Throne: // 目地に金、ところどころ血の色の裂け目
+                        {
+                            if (joint) c = Mix(accent, mortar, 0.25f);
+                            float k = Mathf.Abs(TileNoise(x / 7f, sy / 4f, salt + 81) - 0.5f);
+                            if (!joint && k < 0.018f) c = new Color32(230, 30, 40, 255);
+                            break;
+                        }
                     }
                     px[ty * w + x] = c;
                 }

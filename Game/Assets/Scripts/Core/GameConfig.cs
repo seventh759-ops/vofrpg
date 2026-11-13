@@ -9,6 +9,22 @@ namespace VividOfFade
         // 塔：5層ごとにボスの層。敵の強さ・経験値・ドロップは「段階」（層×2）で決める（試作の波の数と同じ尺度）
         public const int BossFloorEvery = 5;
         public const int MaxFloor = 100; // 塔の最後の層（ボス）
+
+        // 深淵（アビス）：塔の底のさらに先。101〜120層として扱い、画面には「深淵1〜20層」と出す。
+        // 100層のボスを倒し、Lv100 以上なら入れる（町の層選び・100層の階段から）。ここでだけ Lv100〜120 の装備が落ちる
+        public const int AbyssFirstFloor = 101;
+        public const int AbyssLastFloor = 120;
+        public const int AbyssReqLevel = 100;
+        public static bool IsAbyss(int floor) => floor > MaxFloor;
+        public static int AbyssDepth(int floor) => floor - MaxFloor;
+        public static bool CanEnterAbyss(CharacterData ch) => ch != null && ch.Level >= AbyssReqLevel && ch.BossCleared >= MaxFloor;
+
+        /// <summary>層の名前（「74層」「深淵3層」）。</summary>
+        public static string FloorName(int floor) =>
+            IsAbyss(floor) ? Loc.T($"ABYSS {AbyssDepth(floor)}", $"深淵{AbyssDepth(floor)}層") : Loc.T($"FLOOR {floor}", $"{floor}層");
+
+        /// <summary>そのキャラクターが下りられる最後の層（深淵に入れなければ100層）。</summary>
+        public static int LastFloorFor(CharacterData ch) => CanEnterAbyss(ch) ? AbyssLastFloor : MaxFloor;
         public static bool IsBossFloor(int floor) => floor > 0 && floor % BossFloorEvery == 0;
         public static int Tier(int floor) => floor * 2;
         public static int RoomEnemies(int floor, int roomArea) => Mathf.Min(5 + Mathf.RoundToInt(floor * 1.2f) + roomArea / 14, 45); // 前の約6割の密度

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>床の模様の種類（区画ごとに変える）。</summary>
-    public enum FloorPattern { Stone, Moss, Lava, Ice, Gold, Void }
+    public enum FloorPattern { Stone, Moss, Lava, Ice, Gold, Void, Rift, Starless, Rune, Throne } // Rift 以降は深淵
 
     /// <summary>塔の区画（5層ごと）の見た目。どれもこのゲーム用のオリジナルの名前と配色。</summary>
     public sealed class ZoneSpec
@@ -94,11 +94,54 @@ namespace VividOfFade
             },
         };
 
+        /// <summary>深淵（101〜120層）の区画。黒い岩に、区画ごとの色で光る模様（裂け目・燐光・紋様・金と血の玉座）。</summary>
+        static readonly ZoneSpec[] abyss =
+        {
+            new ZoneSpec
+            {
+                Name = "Abyss Gate", NameJa = "深淵の門", SubtitleJa = "黒い岩を裂く、赤い光", Subtitle = "Red light splitting black rock", Pattern = FloorPattern.Rift,
+                Floor = new Color32(24, 18, 24, 255), FloorAlt = new Color32(20, 15, 20, 255), Edge = new Color32(8, 4, 8, 255),
+                Accent = new Color32(255, 50, 60, 255),
+                WallTop = new Color32(34, 24, 32, 255), WallLeft = new Color32(20, 12, 18, 255), WallRight = new Color32(12, 6, 10, 255),
+                AmbientColor = new Color(1f, 0.35f, 0.4f), Ambient = 0.2f, Background = new Color(0.05f, 0f, 0.01f),
+                Slime = new Color32(200, 30, 50, 255), SlimeDark = new Color32(90, 10, 25, 255),
+            },
+            new ZoneSpec
+            {
+                Name = "Starless Deep", NameJa = "星喰いの淵", SubtitleJa = "星を呑んだ闇に、青い燐光", Subtitle = "Blue phosphor in a sky that ate the stars", Pattern = FloorPattern.Starless,
+                Floor = new Color32(14, 20, 30, 255), FloorAlt = new Color32(11, 16, 25, 255), Edge = new Color32(3, 6, 10, 255),
+                Accent = new Color32(60, 230, 255, 255),
+                WallTop = new Color32(22, 32, 46, 255), WallLeft = new Color32(12, 18, 28, 255), WallRight = new Color32(6, 10, 18, 255),
+                AmbientColor = new Color(0.35f, 0.85f, 1f), Ambient = 0.19f, Background = new Color(0f, 0.02f, 0.05f),
+                Slime = new Color32(40, 200, 230, 255), SlimeDark = new Color32(10, 70, 100, 255),
+            },
+            new ZoneSpec
+            {
+                Name = "Inverted Moon", NameJa = "逆さ月の祭壇", SubtitleJa = "床一面に、紫に燃える紋様", Subtitle = "Violet sigils burning across the floor", Pattern = FloorPattern.Rune,
+                Floor = new Color32(26, 16, 36, 255), FloorAlt = new Color32(21, 12, 30, 255), Edge = new Color32(8, 3, 14, 255),
+                Accent = new Color32(220, 90, 255, 255),
+                WallTop = new Color32(38, 24, 54, 255), WallLeft = new Color32(22, 12, 34, 255), WallRight = new Color32(13, 6, 22, 255),
+                AmbientColor = new Color(0.8f, 0.4f, 1f), Ambient = 0.19f, Background = new Color(0.03f, 0f, 0.06f),
+                Slime = new Color32(190, 70, 255, 255), SlimeDark = new Color32(70, 15, 110, 255),
+            },
+            new ZoneSpec
+            {
+                Name = "Abyssal Throne", NameJa = "深淵の玉座", SubtitleJa = "金と血に彩られた、最奥", Subtitle = "The innermost dark, gilded in gold and blood", Pattern = FloorPattern.Throne,
+                Floor = new Color32(26, 18, 14, 255), FloorAlt = new Color32(22, 14, 11, 255), Edge = new Color32(8, 4, 2, 255),
+                Accent = new Color32(255, 200, 60, 255),
+                WallTop = new Color32(40, 26, 18, 255), WallLeft = new Color32(24, 14, 10, 255), WallRight = new Color32(14, 8, 5, 255),
+                AmbientColor = new Color(1f, 0.6f, 0.35f), Ambient = 0.2f, Background = new Color(0.05f, 0.01f, 0f),
+                Slime = new Color32(255, 170, 40, 255), SlimeDark = new Color32(120, 30, 20, 255),
+            },
+        };
+
         public static int Count => table.Length;
 
-        /// <summary>その層の区画。2周目以降は全体の光を少し暗くする。</summary>
+        /// <summary>その層の区画。2周目以降は全体の光を少し暗くする。101層からは深淵の区画。</summary>
         public static ZoneSpec For(int floor)
         {
+            if (GameConfig.IsAbyss(floor))
+                return abyss[Mathf.Clamp((floor - GameConfig.AbyssFirstFloor) / GameConfig.BossFloorEvery, 0, abyss.Length - 1)];
             int index = Mathf.Max(0, floor - 1) / GameConfig.BossFloorEvery;
             int cycle = index / table.Length;
             var b = table[index % table.Length];

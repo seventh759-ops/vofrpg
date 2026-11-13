@@ -60,11 +60,12 @@ namespace VividOfFade
             title.normal.textColor = new Color(1f, 0.85f, 0.4f);
             float y = pad;
             int next = world.Floors.Floor + 1;
-            Hud.FitLabel(new Rect(pad, y, W, lineH * 1.6f), Loc.T($"Stairs  -  Floor {world.Floors.Floor}", $"階段  -  {world.Floors.Floor}層"), title);
+            Hud.FitLabel(new Rect(pad, y, W, lineH * 1.6f), Loc.T("Stairs  -  ", "階段  -  ") + GameConfig.FloorName(world.Floors.Floor), title);
             y += lineH * 1.8f;
-            bool last = world.Floors.Floor >= GameConfig.MaxFloor;
+            bool last = world.Floors.Floor >= GameConfig.LastFloorFor(ch);
             string lead = last ? Loc.T("This is the last floor. Return home to keep your gear.", "ここが最後の層。帰還して装備を持ち帰ろう。")
-                : Loc.T($"Return home to keep your gear, or descend to floor {next}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), $"帰還して装備を持ち帰るか、{next}層へ下りるか" + (GameConfig.IsBossFloor(next) ? "（ボス）。" : "。"));
+                : next == GameConfig.AbyssFirstFloor ? Loc.T("Return home, or descend into the ABYSS.", "帰還するか、深淵へ下りるか。")
+                : Loc.T($"Return home to keep your gear, or descend to {GameConfig.FloorName(next)}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), $"帰還して装備を持ち帰るか、{GameConfig.FloorName(next)}へ下りるか" + (GameConfig.IsBossFloor(next) ? "（ボス）。" : "。"));
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), lead, small);
             y += lineH;
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T("Equipped gear and carried-in items are always kept.", "装備中の品と、持ち込んだ品はいつも持ち帰れます。"), small);
