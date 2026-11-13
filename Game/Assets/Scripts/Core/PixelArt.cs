@@ -843,6 +843,98 @@ namespace VividOfFade
             },
         };
 
+        /// <summary>弱体効果のアイコン（スキルと同じバッジ、平塗り。赤い縁）。DebuffKind の順。</summary>
+        public static Sprite DebuffIcon(DebuffKind kind)
+        {
+            var pal = new Dictionary<char, Color32>(SkillBadgePalette)
+            {
+                { 'B', new Color32(44, 12, 16, 255) },
+                { 'E', new Color32(214, 56, 56, 255) },
+            };
+            int i = Mathf.Clamp((int)kind, 0, DebuffRows.Length - 1);
+            return FromArt("Debuff_" + i, DebuffRows[i], pal);
+        }
+
+        static readonly string[][] DebuffRows =
+        {
+            new[]
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBByBBBBBBBByBBE",
+                "EBByBBddddBByBBE",
+                "EyywyyBBBByywyyE",
+                "EBdyBBBBBBBBydBE",
+                "EBdyBBBBBBBBydBE",
+                "EBdBBBBByBBBBdBE",
+                "EBddBBBByBBBddBE",
+                "EBBBddyywyydBBBE",
+                "EBBBBBddydBBBBBE",
+                "EBBBBBBByBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[]
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBccBBccBBBBE",
+                "EBBBBccBBccBBBBE",
+                "EBBBBBcBBcBBBBBE",
+                "EBBBBBBccBBBBBBE",
+                "EBBcBBBwwBBBcBBE",
+                "EBcccccwwcccccBE",
+                "EBBBBBBccBBBBBBE",
+                "EBBBBBcBBcBBBBBE",
+                "EBBBBccBBccBBBBE",
+                "EBBBBccBBccBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[]
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBswrrrBE",
+                "EBBBBBBBswBrrrBE",
+                "EBBBBBBswBBrrrBE",
+                "EBBBBBBswBBrrrBE",
+                "EBBBBBswBBBrrrBE",
+                "EBBBBswBBrrrrrrE",
+                "EBBBswBBBBrrrrrE",
+                "EoBBswBBBBrrrrrE",
+                "EBoswBBBBBBrrrBE",
+                "EBsoBBBBBBBrrrBE",
+                "EBBBoBBBBBBBrBBE",
+                "EoBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[]
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EsssssssssBBBBBE",
+                "EsssssssssBrrrBE",
+                "EssssddsssBrrrBE",
+                "EssssddsssBrrrBE",
+                "EssssddsssBrrrBE",
+                "EBsssddsssBrrrBE",
+                "EBBssddssrrrrrrE",
+                "EBBBsddsBBrrrrrE",
+                "EBBBssssBBrrrrrE",
+                "EBBBBssBBBBrrrBE",
+                "EBBBBBBBBBBrrrBE",
+                "EBBBBBBBBBBBrBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+        };
+
         static readonly string[] SkillArtNames = { "Flame Ring", "Fire Barrage", "Flare", "Meteor", "Ember Shield", "Inferno", "Starfall", "Beacon", "Cataclysm", "Constellation", "Whirlwind", "Shadow Dash", "Frenzy", "Crescent Wave", "Second Wind", "Thousand Cuts", "Eclipse Rush", "Crimson Spiral", "Umbral Storm", "Sanguine Tide", "Holy Pulse", "Mend", "Lantern Ward", "Kindle", "Flame Pillar", "Judgment", "Sunburst", "Iron Vigil", "Daybreak", "Unbreakable" };
 
         /// <summary>そのスキルの職業（0 灯術師・1 影刃・2 灯番）。背景と縁の色を決める。</summary>

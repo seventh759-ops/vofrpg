@@ -33,6 +33,41 @@ namespace VividOfFade
         public float BuffRemaining(int i) => buffs[i].Remaining;
         public SkillSpec BuffSpec(int i) => buffs[i].Spec;
 
+        // ---- 弱体効果（ボスの攻撃など）。強化と同じく、残り時間のあいだ能力に掛かる ----
+        sealed class ActiveDebuff
+        {
+            public DebuffKind Kind;
+            public float Remaining;
+        }
+        readonly System.Collections.Generic.List<ActiveDebuff> debuffs = new System.Collections.Generic.List<ActiveDebuff>();
+        public int DebuffCount => debuffs.Count;
+        public DebuffKind DebuffAt(int i) => debuffs[i].Kind;
+        public float DebuffRemaining(int i) => debuffs[i].Remaining;
+
+        /// <summary>気絶している（動けず、攻撃もスキルも出ない）。</summary>
+        public bool Stunned
+        {
+            get
+            {
+                foreach (var d in debuffs) if (d.Kind == DebuffKind.Stun) return true;
+                return false;
+            }
+        }
+
+        /// <summary>弱体効果をかける。同じものがかかっていれば、長いほうの残り時間にする。</summary>
+        public void AddDebuff(DebuffKind kind, float time)
+        {
+            if (IsDead || time <= 0f) return;
+            foreach (var d in debuffs)
+            {
+                if (d.Kind != kind) continue;
+                d.Remaining = Mathf.Max(d.Remaining, time);
+                return;
+            }
+            debuffs.Add(new ActiveDebuff { Kind = kind, Remaining = time });
+            RebuildStats();
+        }
+
         /// <summary>向いている方向（論理座標）。押している間だけ攻撃で、敵がいないときに使う。</summary>
         public Vector2 FacingLogical => Iso.ToLogical(facing).normalized;
 
@@ -76,6 +111,7 @@ namespace VividOfFade
         public void ResetState(PlayerStats stats)
         {
             buffs.Clear();
+            debuffs.Clear();
             Boons.Clear();
             BaseStats = stats;
             RebuildStats();
@@ -153,6 +189,7 @@ namespace VividOfFade
             var s = BaseStats;
             foreach (int k in Boons) s = s.WithBoon(VividOfFade.Boons.Get(k));
             foreach (var b in buffs) s = s.WithBuff(b.Spec, b.Power);
+            foreach (var d in debuffs) s = s.WithDebuff(d.Kind);
             Stats = s;
         }
 
@@ -255,6 +292,13 @@ namespace VividOfFade
                 buffs.RemoveAt(i);
                 expired = true;
             }
+            for (int i = debuffs.Count - 1; i >= 0; i--)
+            {
+                debuffs[i].Remaining -= dt;
+                if (debuffs[i].Remaining > 0f) continue;
+                debuffs.RemoveAt(i);
+                expired = true;
+            }
             if (expired) RebuildStats();
 
             // 自然回復（戦闘中＝攻撃を受けるか与えてから少しの間は、絞る）
@@ -270,9 +314,11 @@ namespace VividOfFade
             }
 
             Vector2 move = input.Move;
+            bool stunned = Stunned;
+            if (stunned) move = Vector2.zero; // 気絶中は動けない（回避もできない）
             if (move.sqrMagnitude > 0.0001f) facing = move.normalized;
 
-            if (input.ConsumeDodge(out var dodgeDir) && dodgeCooldown <= 0f && dashTimer <= 0f)
+            if (input.ConsumeDodge(out var dodgeDir) && !stunned && dodgeCooldown <= 0f && dashTimer <= 0f)
             {
                 dashDir = dodgeDir.sqrMagnitude > 0.0001f ? dodgeDir.normalized : facing;
                 dashTimer = GameConfig.DodgeTime;

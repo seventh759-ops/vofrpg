@@ -216,6 +216,19 @@ namespace VividOfFade
                 secStyle.normal.textColor = new Color(1f, 1f, 1f, alpha);
                 GUI.Label(new Rect(br.x, br.y, br.width - 1f, br.height + secStyle.fontSize * 0.5f), $"{Mathf.CeilToInt(left)}", secStyle);
             }
+            // 弱体効果：強化のアイコンの右に続けて（赤い縁のアイコン）。残り2秒を切ると点滅
+            for (int d = 0; d < player.DebuffCount; d++)
+            {
+                float left = player.DebuffRemaining(d);
+                var br = new Rect(BandMargin * 2f + (player.BuffCount + d) * (bs + bgap), TopBandBottom + BandMargin * 1.5f, bs, bs);
+                float alpha = left < 2f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)) : 1f;
+                var old = GUI.color;
+                GUI.color = new Color(1f, 1f, 1f, alpha);
+                DrawSprite(br, PixelArt.DebuffIcon(player.DebuffAt(d)));
+                GUI.color = old;
+                secStyle.normal.textColor = new Color(1f, 0.75f, 0.75f, alpha);
+                GUI.Label(new Rect(br.x, br.y, br.width - 1f, br.height + secStyle.fontSize * 0.5f), $"{Mathf.CeilToInt(left)}", secStyle);
+            }
         }
 
         /// <summary>薬のボタン（スキルの右に並ぶ。0 回復薬・1 魔力の薬）。画面座標（左下原点）。</summary>

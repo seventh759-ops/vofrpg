@@ -90,7 +90,7 @@ namespace VividOfFade
         void TryCast(int slot, Player player, CharacterData ch, bool auto)
         {
             int index = ch.Slots[slot];
-            if (index < 0 || cooldowns[slot] > 0f) return;
+            if (index < 0 || cooldowns[slot] > 0f || player.Stunned) return; // 気絶中はスキルも出ない
             if (!SkillInfo.Learned(ClassInfo.Current, index, ch.Level)) return;
 
             var spec = SkillInfo.Get(ClassInfo.Current, index);

@@ -244,6 +244,7 @@ namespace VividOfFade
         bool holdSave; // 起動中・再開の準備中は、中断の保存をしない（上書きを防ぐ）
         float slowMoTimer;
         float goldenSparkTimer;
+        float stunSparkTimer;
         float lifeStealBudget; // 吸収で回復できる残り（1秒あたり最大 HP の 2% ずつたまる）
         bool exploding;
         float lifeStealPool; // 与えたダメージから回復する分の端数
@@ -489,7 +490,7 @@ namespace VividOfFade
             else if (!Paused)
             {
                 Player.Tick(dt, Input, Room);
-                Attack.Tick(dt, Player, AutoAttack || Input.AttackHeld);
+                Attack.Tick(dt, Player, !Player.Stunned && (AutoAttack || Input.AttackHeld)); // 気絶中は攻撃しない
                 Skills.Tick(dt, Player, Input.NumberPressed);
                 Floors.Tick(dt, Enemies, Player, Room);
                 Room.UpdateFlow(Player.Pos);
@@ -511,6 +512,18 @@ namespace VividOfFade
 
             float stealCap = Player.MaxHp * GameConfig.LifeStealCapPct;
             lifeStealBudget = Mathf.Min(stealCap, lifeStealBudget + stealCap * dt);
+
+            // 気絶中は、頭の上に黄色い火花が回る
+            if (Player.Stunned)
+            {
+                stunSparkTimer -= dt;
+                if (stunSparkTimer <= 0f)
+                {
+                    stunSparkTimer = 0.15f;
+                    float a = Time.time * 9f;
+                    Fx.Sparks(Player.Pos + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 0.35f, 1, new Color(1f, 0.9f, 0.3f, 1f), 0.1f, 0.35f, 4f, true);
+                }
+            }
 
             // 黄金のスライムがいる間、足元からときどき金のきらめき
             var golden = Enemies.Golden;
