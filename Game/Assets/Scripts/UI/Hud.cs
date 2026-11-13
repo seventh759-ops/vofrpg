@@ -1274,7 +1274,11 @@ namespace VividOfFade
         {
             float W = Screen.width;
             float H = Screen.height;
-            Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.75f));
+            // 背景：タイトルと同じ塔の絵（深淵へ行けるようになったら深淵版）を、文字が読めるように暗くして敷く
+            var bgTex = Profile.AbyssUnlocked ? TitleScene.AbyssTexture : TitleScene.Texture;
+            float ps = Mathf.Ceil(Mathf.Max(W / TitleScene.W, H / TitleScene.H));
+            GUI.DrawTexture(new Rect((W - TitleScene.W * ps) * 0.5f, (H - TitleScene.H * ps) * 0.5f, TitleScene.W * ps, TitleScene.H * ps), bgTex);
+            Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.02f, 0.62f));
 
             // タイトル画面と同じドットのロゴ（小さめ。「キャラクターを選ぶ」の上に収める）
             var logoTex = TitleArt.Logo;
