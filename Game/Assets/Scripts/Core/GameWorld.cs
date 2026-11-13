@@ -271,6 +271,7 @@ namespace VividOfFade
             {
                 Loot.Fountain(pos, Room, GameConfig.GoldenFountainItems, DropLevel, GameConfig.GoldenRarityBonus,
                     GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * 2);
+                if (Random.value < GameConfig.GoldenMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
                 Fx.Ring(pos, 2.5f, new Color(1f, 0.85f, 0.3f, 0.9f), 0.5f);
                 Sfx.Fountain();
                 cameraRig.Shake(0.2f, 0.4f);

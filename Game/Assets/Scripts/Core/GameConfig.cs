@@ -79,7 +79,8 @@ namespace VividOfFade
         public const float BossWindup = 0.8f;
         public const float BossSlamRadius = 2.6f;
         public static readonly Color BossTint = new Color(1f, 0.45f, 0.45f, 1f);
-        public const float MythicChance = 0.25f;       // ボスから神話（赤）の装備が落ちる確率
+        public const float MythicChance = 0.3f;        // ボスから神話（赤）の装備が落ちる確率
+        public const float GoldenMythicChance = 0.1f;  // 黄金のスライム（レア）から神話の装備が落ちる確率
         public const float EliteMythicChance = 0.03f;  // 精鋭（レア敵）から神話の装備が落ちる確率（ボスより低い）
         public const float BossEnragedSpeedMult = 1.7f;   // 体力が半分を切ったら
         public const float BossEnragedSlamInterval = 2f;
