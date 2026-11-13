@@ -193,7 +193,7 @@ namespace VividOfFade
                     {
                         float angle = spec.AllAround ? 360f * k / n : (k - (n - 1) * 0.5f) * 12f;
                         Vector2 dir = Rotate(aim, angle);
-                        bool crit = UnityEngine.Random.value < st.CritChance;
+                        bool crit = UnityEngine.Random.value < st.EffectiveCrit;
                         shots.Fire(origin + dir * 0.3f, dir, damage * (crit ? st.CritMult : 1f), crit, 2, spec.Range);
                     }
                     fx.Disc(origin, 1.2f, Fade(spec.Color, 0.6f), 0.2f);
@@ -278,7 +278,7 @@ namespace VividOfFade
                 if (e.Dying || e.Dormant) continue;
                 Vector2 d = e.Pos - center;
                 if (d.sqrMagnitude > r2) continue;
-                bool crit = UnityEngine.Random.value < st.CritChance;
+                bool crit = UnityEngine.Random.value < st.EffectiveCrit;
                 enemies.Damage(e, damage * (crit ? st.CritMult : 1f), d.sqrMagnitude > 0.0001f ? d.normalized : Vector2.up, crit);
             }
         }
@@ -296,7 +296,7 @@ namespace VividOfFade
                 Vector2 closest = a + ab * t;
                 float r = radius + e.Radius;
                 if ((e.Pos - closest).sqrMagnitude > r * r) continue;
-                bool crit = UnityEngine.Random.value < st.CritChance;
+                bool crit = UnityEngine.Random.value < st.EffectiveCrit;
                 enemies.Damage(e, damage * (crit ? st.CritMult : 1f), ab.normalized, crit);
             }
         }

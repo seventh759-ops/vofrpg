@@ -446,6 +446,9 @@ namespace VividOfFade
             // 装備の効果のうち、ほかの仕組みが読むもの（町では効かせない）
             var fx = ChoosingClass ? null : Player.Stats;
             ItemGenerator.MagicFind = fx != null ? fx.MagicFind : 0f;
+            // 敵の会心耐性：塔の中ではいまの層、町では最深層の値（装備の比べ方・能力値の表示に使う）
+            var crCh = Profile.Current;
+            GameConfig.CritResist = GameConfig.EnemyCritResist(ChoosingClass ? GameConfig.Tier(crCh != null ? crCh.BestFloor : 0) : Floors.Tier);
             LootSystem.EmberMult = fx != null ? 1f + fx.EmberFind : 1f;
             Enemies.EliteDamageMult = fx != null ? 1f + fx.EliteDamage : 1f;
             Music.SetTown(InTown && ChoosingClass);

@@ -178,6 +178,13 @@ namespace VividOfFade
         public static int EnemyEvasion(int tier) => 12 + tier;         // 敵の回避（プレイヤーの HIT と比べる）
         public const float MaxEvade = 0.6f;
 
+        // 会心の耐性：深い層の敵ほど会心を受けにくい。実際の会心率 = 自分の会心率 − 敵の耐性（100% を超えた会心率も無駄にならない）
+        public const float CritResistPerTier = 0.0015f; // 50層で15%、100層で30%、深淵の最奥で36%
+        public const float MaxCritChance = 1.5f;        // 会心率そのものの上限（150%）
+        public static float EnemyCritResist(int tier) => Mathf.Max(0, tier) * CritResistPerTier;
+        /// <summary>いまの敵の会心耐性（GameWorld が毎フレーム入れる。町では最深層の値）。</summary>
+        public static float CritResist;
+
         // 敵の種類ごとの命中・回避の倍率（スライム・コウモリ・術師・岩鬼・爆弾虫・黄金）
         public static readonly float[] KindAcc = { 1f, 0.9f, 1.2f, 1.25f, 0.8f, 0f };
         public static readonly float[] KindEva = { 1f, 1.8f, 1f, 0.5f, 0.7f, 2.5f };

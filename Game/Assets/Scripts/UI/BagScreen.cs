@@ -448,7 +448,7 @@ namespace VividOfFade
             return s;
         }
 
-        static float Dps(PlayerStats s) => s.Damage * s.AttacksPerSecond * (1f + s.CritChance * (s.CritMult - 1f));
+        static float Dps(PlayerStats s) => s.Damage * s.AttacksPerSecond * (1f + s.EffectiveCrit * (s.CritMult - 1f));
 
         void DrawItemDiff(Item item, Item equipped, EquipSlot slot, Rect area)
         {

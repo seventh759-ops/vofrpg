@@ -87,7 +87,7 @@ namespace VividOfFade
             {
                 float angle = (k - (n - 1) * 0.5f) * st.SpreadDeg;
                 Vector2 dir = Rotate(aim, angle);
-                bool crit = Random.value < st.CritChance;
+                bool crit = Random.value < st.EffectiveCrit;
                 shots.Fire(player.Pos + dir * 0.3f, dir, st.Damage * (crit ? st.CritMult : 1f), crit, st.Pierce, player.EffectiveLight);
             }
         }
@@ -118,7 +118,7 @@ namespace VividOfFade
                 Vector2 d = e.Pos - origin;
                 float dist = d.magnitude;
                 if (Random.value > st.HitChanceVs(e.Eva)) { enemies.ReportMiss(e.Pos); continue; } // 近距離は外れることがある（HIT）
-                bool crit = Random.value < st.CritChance;
+                bool crit = Random.value < st.EffectiveCrit;
                 float scale = i == 0 ? 1f : PlayerStats.SecondaryHit;
                 enemies.Damage(e, st.Damage * scale * (crit ? st.CritMult : 1f), dist > 0.001f ? d / dist : aim, crit);
             }
@@ -137,7 +137,7 @@ namespace VividOfFade
                 Vector2 d = e.Pos - origin;
                 if (d.sqrMagnitude > r2) continue;
                 if (Random.value > st.HitChanceVs(e.Eva)) { enemies.ReportMiss(e.Pos); continue; } // 近距離は外れることがある（HIT）
-                bool crit = Random.value < st.CritChance;
+                bool crit = Random.value < st.EffectiveCrit;
                 enemies.Damage(e, st.Damage * (crit ? st.CritMult : 1f), d.sqrMagnitude > 0.0001f ? d.normalized : Vector2.up, crit);
             }
             fx.Ring(origin, st.PulseRadius, new Color(1f, 0.75f, 0.3f, 0.8f), 0.3f);
@@ -176,7 +176,7 @@ namespace VividOfFade
                 float r = OrbHitRadius + e.Radius;
                 if (d.sqrMagnitude > r * r) continue;
                 if (Random.value > st.HitChanceVs(e.Eva)) { enemies.ReportMiss(e.Pos); continue; } // 近距離は外れることがある（HIT）
-                bool crit = Random.value < st.CritChance;
+                bool crit = Random.value < st.EffectiveCrit;
                 enemies.Damage(e, st.Damage * (crit ? st.CritMult : 1f), d.sqrMagnitude > 0.0001f ? d.normalized : Vector2.up, crit);
             }
         }

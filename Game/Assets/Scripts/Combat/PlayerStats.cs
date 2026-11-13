@@ -28,6 +28,8 @@ namespace VividOfFade
         public float SkillBase;
         public float FireInterval;
         public float CritChance;
+        /// <summary>実際に会心が出る確率（会心率から、いまの敵の会心耐性を引く）。</summary>
+        public float EffectiveCrit => Mathf.Clamp01(CritChance - GameConfig.CritResist);
         public float CritMult;
         public float MoveSpeed;
         public int MaxHp;
@@ -115,7 +117,7 @@ namespace VividOfFade
             get
             {
                 var spec = ClassInfo.Get(Class);
-                float dps = Damage * (1f + CritChance * (CritMult - 1f)) * Multiplicity / FireInterval;
+                float dps = Damage * (1f + EffectiveCrit * (CritMult - 1f)) * Multiplicity / FireInterval;
                 // 命中・回避（DEX）：レベルの半分を層とみなして、その層の敵と比べる
                 int tier = GameConfig.Tier(Mathf.Max(1, Level / 2));
                 if (Kind == AttackKind.Slash) dps *= HitChance(tier);                 // 近接だけ命中の判定がある
@@ -302,7 +304,7 @@ namespace VividOfFade
             s.CooldownMult = 1f - Mathf.Min(0.5f, cdr); // 待ち時間の短縮は 50% まで
             s.FireInterval = w.Interval / (1f + atkSpd);
             s.MoveSpeed = cls.Speed * (1f + moveSpd);
-            s.CritChance = Mathf.Min(s.CritChance + w.CritBonus, 1f); // 会心率の上限は 100%（会心ビルドができるように、75% の上限はなくした）
+            s.CritChance = Mathf.Min(s.CritChance + w.CritBonus, GameConfig.MaxCritChance); // 会心率の上限は 150%（敵の会心耐性で減るので、100% を超えても意味がある）
 
             switch (w.Attack)
             {
