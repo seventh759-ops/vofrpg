@@ -579,6 +579,7 @@ namespace VividOfFade
             float h = w * Room.MiniH / Room.MiniW;
             var r = new Rect(Screen.width - w - Screen.height * 0.015f, below.yMax + Screen.height * 0.01f, w, h);
             bool canTap = !(World.Paused || World.Player.IsDead || World.ChoosingClass);
+            if (!canTap) BigMap = false; // 祭壇・鞄・メニューなどを開いたら、大きな地図は閉じる（重なって操作がわかりにくくならないように）
 
             if (BigMap)
             {
