@@ -87,7 +87,7 @@ namespace VividOfFade
 
         /// <summary>下の帯の中、スキルと薬のボタンの上にある記録（ログ）の欄の行数と高さ。</summary>
         const int LogLines = 4;
-        float LogLineH => small.fontSize * 1.3f;
+        float LogLineH => (small != null ? small.fontSize : Screen.height * 0.016f) * 1.3f; // 起動直後（文字の設定を作る前）は画面の高さから見積もる
 
         /// <summary>下の帯の上端（GUI 座標）。スキルの上のオートの帯と、その上の記録の欄を含む。</summary>
         float BottomBandTop => Screen.height - (SkillAutoRect(0).yMax + BandMargin * 2f) - LogLines * LogLineH;
