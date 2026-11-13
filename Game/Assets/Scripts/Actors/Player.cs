@@ -243,6 +243,9 @@ namespace VividOfFade
         /// <summary>戦闘中にする（攻撃を受けた・与えた）。しばらく自然回復が絞られる。</summary>
         public void MarkCombat() => combatTimer = GameConfig.CombatTime;
 
+        /// <summary>攻撃を受けた（受けたダメージ）。深淵の装備の反撃に使う。</summary>
+        public event System.Action<int> Hurt;
+
         public bool TakeHit(int damage, string source = "?")
         {
             if (invuln > 0f || IsDead) return false;
@@ -252,6 +255,7 @@ namespace VividOfFade
             Hp = Mathf.Max(0, Hp - dealt);
             invuln = GameConfig.HitInvuln;
             hurtTimer = GameConfig.HitInvuln;
+            Hurt?.Invoke(dealt);
             if (LogDamage)
                 Debug.Log($"[Damage] {source}: raw {damage} -> {dealt} (armor {Stats.Armor:0}, taken x{Stats.DamageTaken:0.00})  HP {Hp}/{MaxHp}" + (IsDead ? "  DEAD" : ""));
             return true;

@@ -374,6 +374,7 @@ namespace VividOfFade
             Player.Sr = Player.gameObject.AddComponent<SpriteRenderer>();
             Player.Sr.sprite = PixelArt.Player;
             Player.Dodged += OnPlayerDodged;
+            Player.Hurt += OnPlayerHurt;
             Player.Evaded += pos => Hud.AddMiss(pos, true);
 
             Inventory.Changed += () => Player.ApplyStats(PlayerStats.From(Inventory.Equipped));
@@ -512,6 +513,7 @@ namespace VividOfFade
             {
                 Player.Tick(dt, Input, Room);
                 TickAuraMotes(dt);
+                TickAbyssGear(dt);
                 Attack.Tick(dt, Player, !Player.Stunned && (AutoAttack || Input.AttackHeld)); // 気絶中は攻撃しない
                 Skills.Tick(dt, Player, Input.NumberPressed);
                 Floors.Tick(dt, Enemies, Player, Room);
@@ -756,6 +758,13 @@ namespace VividOfFade
 
         void OnEnemyDamaged(Vector2 pos, float amount, bool crit)
         {
+            // 深淵の星：会心のときに、その場所へ星が落ちてくる（少し遅れて）
+            if (crit && starfallCooldown <= 0f && Player.Stats != null && Player.Stats.StarfallChance > 0f && Random.value < Player.Stats.StarfallChance)
+            {
+                starfallCooldown = 0.5f;
+                starfalls.Add(new Vector3(pos.x, pos.y, 0.35f));
+                Fx.Marker(pos, 1.8f, new Color(0.6f, 0.95f, 1f, 0.45f), 0.35f);
+            }
             Hud.AddNumber(pos, amount, crit);
             Sfx.Hit();
 
@@ -924,6 +933,86 @@ namespace VividOfFade
         }
 
         /// <summary>ボス装備の固有効果：回避した場所で炎が弾ける。</summary>
+        // ---------------- 深淵の装備の固有効果 ----------------
+        bool abyssBlasting;
+        float riftTimer, riftLife, riftTick, retributionCooldown;
+        Vector2 riftPos;
+        readonly List<Vector3> starfalls = new List<Vector3>(); // 落ちる星（x, y, 落ちるまでの秒）
+        float starfallCooldown;
+
+        /// <summary>裂け目（一定時間ごと）と、落ちてくる星の処理。</summary>
+        void TickAbyssGear(float dt)
+        {
+            var st = Player.Stats;
+            if (st == null) return;
+            retributionCooldown = Mathf.Max(0f, retributionCooldown - dt);
+            starfallCooldown = Mathf.Max(0f, starfallCooldown - dt);
+
+            // 落ちる星：予告の光の柱 → 着弾で爆発
+            for (int i = starfalls.Count - 1; i >= 0; i--)
+            {
+                var s = starfalls[i];
+                s.z -= dt;
+                var p = new Vector2(s.x, s.y);
+                if (s.z > 0f) { starfalls[i] = s; continue; }
+                starfalls.RemoveAt(i);
+                const float radius = 1.8f;
+                var star = new Color(0.6f, 0.95f, 1f, 0.95f);
+                Fx.Pillar(p, star, 0.9f, 6f, 0.35f);
+                Fx.Disc(p, radius, new Color(0.8f, 1f, 1f, 0.7f), 0.25f);
+                Fx.Ring(p, radius, star, 0.35f);
+                Fx.Sparks(p, 14, star, 5f, 0.5f, 3.5f);
+                Sfx.Boom();
+                cameraRig.Shake(0.08f, 0.2f);
+                Enemies.DamageArea(p, radius, st.Damage * 4f);
+            }
+
+            // 裂け目：近くの敵の場所に開き、2秒のあいだ吸い込んで切り裂く
+            if (st.VoidRift <= 0) { riftLife = 0f; return; }
+            if (riftLife > 0f)
+            {
+                riftLife -= dt;
+                riftTick -= dt;
+                Enemies.Pull(riftPos, 3.2f, 2.2f);
+                if (riftTick <= 0f)
+                {
+                    riftTick = 0.25f;
+                    var violet = new Color(0.75f, 0.2f, 1f, 0.9f);
+                    Fx.Marker(riftPos, 0.9f, new Color(0.2f, 0f, 0.3f, 0.85f), 0.3f);
+                    Fx.Ring(riftPos, 2.2f, violet, 0.25f);
+                    Fx.Sparks(riftPos, 4, RarityInfo.AbyssColor, 1.5f, 0.5f, 1.5f, true);
+                    Enemies.DamageArea(riftPos, 2.2f, st.Damage * 0.6f);
+                }
+                return;
+            }
+            riftTimer -= dt;
+            if (riftTimer > 0f) return;
+            var target = Enemies.FindNearest(Player.Pos, 7f);
+            if (target == null) { riftTimer = 0.5f; return; }
+            riftTimer = 5f / st.VoidRift;
+            riftLife = 2f;
+            riftTick = 0f;
+            riftPos = target.Pos;
+            Fx.Ring(riftPos, 3.2f, new Color(1f, 0.4f, 1f, 0.9f), 0.3f);
+            Sfx.Boom();
+        }
+
+        /// <summary>深淵の反撃：受けたら闇の波動（2.5秒に1回まで）。</summary>
+        void OnPlayerHurt(int dealt)
+        {
+            var st = Player.Stats;
+            if (st == null || st.RetributionMult <= 0f || retributionCooldown > 0f) return;
+            retributionCooldown = 2.5f;
+            var pos = Player.Pos;
+            const float radius = 3.2f;
+            Fx.Disc(pos, radius, new Color(0.3f, 0f, 0.35f, 0.7f), 0.3f);
+            Fx.Ring(pos, radius, RarityInfo.AbyssColor, 0.4f);
+            Fx.Ring(pos, radius * 0.55f, new Color(1f, 0.8f, 1f, 0.9f), 0.25f);
+            Fx.Sparks(pos, 16, RarityInfo.AbyssColor, 5f, 0.5f, 2.5f);
+            cameraRig.Shake(0.12f, 0.25f);
+            Enemies.DamageArea(pos, radius, st.Damage * st.RetributionMult);
+        }
+
         void OnPlayerDodged(Vector2 pos)
         {
             var st = Player.Stats;
@@ -942,6 +1031,23 @@ namespace VividOfFade
             if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(DropLevel, 0f), Room);
             if (Random.value < GameConfig.EmberDropChance) Loot.DropEmbers(pos, GameConfig.EmberAmount(Floors.Tier), Room, 0.6f);
             if (stats.HealOnKill > 0) Player.Heal(stats.HealOnKill);
+
+            // 深淵の業火：倒した場所で大爆発（業火で倒した敵からは、さらに起きない）
+            if (stats.AbyssBlastChance > 0f && !abyssBlasting && Random.value < stats.AbyssBlastChance)
+            {
+                const float radius = 2.6f;
+                var crimson = new Color(1f, 0.15f, 0.3f, 0.95f);
+                Fx.Disc(pos, radius, new Color(0.25f, 0f, 0.15f, 0.8f), 0.35f);
+                Fx.Ring(pos, radius * 0.6f, new Color(1f, 0.75f, 0.85f, 0.95f), 0.2f);
+                Fx.Ring(pos, radius, crimson, 0.4f);
+                Fx.Sparks(pos, 18, crimson, 6f, 0.6f, 3f);
+                Fx.Sparks(pos, 8, RarityInfo.AbyssColorDark, 2f, 0.9f, 2f, true);
+                Sfx.Boom();
+                cameraRig.Shake(0.12f, 0.25f);
+                abyssBlasting = true;
+                Enemies.DamageArea(pos, radius, stats.Damage * 3f);
+                abyssBlasting = false;
+            }
 
             // 爆発で倒した敵は、さらに爆発しない（連鎖で群れ全体が一度に消えるのを防ぐ）
             if (stats.ExplodeMult > 0f && !exploding)
@@ -1086,6 +1192,12 @@ namespace VividOfFade
 
         void OnLootLanded(Item item, Vector2 pos)
         {
+            if (item != null && item.Abyss)
+            {
+                // 深淵の装備：赤紫の輪と、立ちのぼる闇の粒
+                Fx.Ring(pos, 1.3f, new Color(RarityInfo.AbyssColor.r, RarityInfo.AbyssColor.g, RarityInfo.AbyssColor.b, 0.9f), 0.35f);
+                Fx.Sparks(pos, 10, RarityInfo.AbyssColor, 1.2f, 0.9f, 2f, true);
+            }
             if (item == null || item.Rarity < Rarity.Rare) return;
             Sfx.Landed(item.Rarity);
             if (item.Rarity == Rarity.Legendary)

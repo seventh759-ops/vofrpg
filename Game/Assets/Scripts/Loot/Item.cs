@@ -25,6 +25,9 @@ namespace VividOfFade
         public WeaponKind Weapon;
         public int Level = 1;
 
+        /// <summary>深淵で落ちた装備（Lv100以上）。数値が高く、深淵だけの固有効果が1つ付く。</summary>
+        public bool Abyss;
+
         /// <summary>ロック中は一括分解・自動分解の対象にしない。</summary>
         public bool Locked;
 
@@ -101,7 +104,7 @@ namespace VividOfFade
             }
         }
 
-        public string Name => (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
+        public string Name => (Abyss ? Loc.T("Abyssal ", "深淵・") : "") + (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
 
         public List<string> Describe()
         {
@@ -191,6 +194,10 @@ namespace VividOfFade
                 case UniqueType.DodgeNova: return Loc.T("Dodging releases a burst of flame", "回避すると炎が弾ける");
                 case UniqueType.DoubleStrike: return Loc.T("25% chance to attack again", "25%でもう一度攻撃");
                 case UniqueType.Vampiric: return Loc.T("Heal 1% of damage dealt", "与えたダメージの1%を回復");
+                case UniqueType.AbyssBlast: return Loc.T("[Abyss] 30% on kill: a huge blast of abyssal flame (300%)", "【深淵】倒すと30%で、深淵の業火が大爆発（300%）");
+                case UniqueType.VoidRift: return Loc.T("[Abyss] Every 5s, a rift drags enemies in and tears at them", "【深淵】5秒ごとに裂け目が開き、敵を吸い込んで切り裂く");
+                case UniqueType.Starfall: return Loc.T("[Abyss] Crits may call down a falling star (400%)", "【深淵】会心でときどき星が落ちる（400%）");
+                case UniqueType.Retribution: return Loc.T("[Abyss] When hit, unleash a wave of darkness (500%)", "【深淵】攻撃を受けると、闇の波動で反撃（500%）");
                 default: return "";
             }
         }

@@ -167,14 +167,14 @@ namespace VividOfFade
                     if (t >= 1f)
                     {
                         g.Landed = true;
-                        if (g.Item != null && g.Item.Rarity >= Rarity.Rare)
+                        if (g.Item != null && (g.Item.Rarity >= Rarity.Rare || g.Item.Abyss)) // 深淵の装備は、どの珍しさでも柱が立つ
                         {
                             g.Beam.enabled = true;
                             var c = RarityInfo.ColorOf(g.Item.Rarity);
                             c.a = 0.55f;
                             g.Beam.color = c;
                             g.Beam.sortingOrder = g.Sr.sortingOrder - 1;
-                            if (g.Item.Rarity == Rarity.Mythic) g.Beam.transform.localScale = MythicBeamScale; // 神話は太く高い柱
+                            if (g.Item.Rarity == Rarity.Mythic || (g.Item.Abyss && g.Item.Rarity >= Rarity.Legendary)) g.Beam.transform.localScale = MythicBeamScale; // 神話は太く高い柱
                         }
                         Landed?.Invoke(g.Item, g.To);
                     }
@@ -201,7 +201,15 @@ namespace VividOfFade
                 }
 
                 // 神話の柱は赤く脈打つ
-                if (g.Beam.enabled && g.Item != null && g.Item.Rarity == Rarity.Mythic)
+                // 深淵の柱は、珍しさの色と深淵の色（赤紫）を行き来しながら揺らめく
+                if (g.Beam.enabled && g.Item != null && g.Item.Abyss && g.Item.Rarity != Rarity.Mythic)
+                {
+                    float wave = 0.5f + 0.5f * Mathf.Sin(g.Age * 4f);
+                    var c = Color.Lerp(RarityInfo.ColorOf(g.Item.Rarity), RarityInfo.AbyssColor, wave);
+                    c.a = 0.5f + 0.3f * wave;
+                    g.Beam.color = c;
+                }
+                else if (g.Beam.enabled && g.Item != null && g.Item.Rarity == Rarity.Mythic)
                 {
                     float pulse = Mathf.Sin(g.Age * 6f);
                     var c = RarityInfo.ColorOf(Rarity.Mythic);

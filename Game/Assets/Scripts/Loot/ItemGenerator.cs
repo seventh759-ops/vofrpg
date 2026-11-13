@@ -50,6 +50,16 @@ namespace VividOfFade
 
         static readonly UniqueType[] allUniques = { UniqueType.ExplodeOnKill, UniqueType.HealOnKill, UniqueType.SplitShot };
         static readonly UniqueType[] bossUniques = { UniqueType.DodgeNova, UniqueType.DoubleStrike, UniqueType.Vampiric };
+        static readonly UniqueType[] abyssUniques = { UniqueType.AbyssBlast, UniqueType.VoidRift, UniqueType.Starfall, UniqueType.Retribution };
+
+        /// <summary>Lv100以上の装備を深淵の装備にする：印を付け、深淵だけの固有効果を1つ足す（数値の倍率は作るときに掛けてある）。</summary>
+        static void MakeAbyss(Item item)
+        {
+            if (item.Level <= Progression.MaxLevel) return;
+            item.Abyss = true;
+            item.Uniques.RemoveAll(u => System.Array.IndexOf(abyssUniques, u) >= 0);
+            item.Uniques.Add(abyssUniques[Random.Range(0, abyssUniques.Length)]);
+        }
 
         /// <summary>bonus が大きいほど、珍しい段階が出やすくなる（0 で通常）。</summary>
         public static Rarity RollRarity(float bonus)
@@ -91,7 +101,7 @@ namespace VividOfFade
                     item.BaseValue = Mathf.Min(2f + 0.1f * item.Level, 4f) * Random.Range(0.9f, 1.1f);
                     break;
                 case ItemSlot.Armor:
-                    item.BaseValue = Mathf.Round((20f + 5f * item.Level) * RarityMult(item.Rarity) * Random.Range(0.9f, 1.1f));
+                    item.BaseValue = Mathf.Round((20f + 5f * item.Level) * RarityMult(item.Rarity) * GameConfig.GearLevelMult(item.Level) * Random.Range(0.9f, 1.1f));
                     break;
             }
 
@@ -115,6 +125,7 @@ namespace VividOfFade
                     pool.RemoveAt(k);
                 }
             }
+            MakeAbyss(item);
             return item;
         }
 
@@ -126,13 +137,14 @@ namespace VividOfFade
             var item = Roll(level, 0f);
             item.Rarity = Rarity.Mythic;
             if (item.Slot == ItemSlot.Weapon) item.BaseValue = WeaponDamage(item.Weapon, item.Level, Rarity.Mythic);
-            else if (item.Slot == ItemSlot.Armor) item.BaseValue = Mathf.Round((20f + 5f * item.Level) * RarityMult(Rarity.Mythic));
+            else if (item.Slot == ItemSlot.Armor) item.BaseValue = Mathf.Round((20f + 5f * item.Level) * RarityMult(Rarity.Mythic) * GameConfig.GearLevelMult(item.Level));
             item.Affixes.Clear();
             item.Uniques.Clear();
             AddAffixes(item, 4);
             item.Uniques.Add(allUniques[Random.Range(0, allUniques.Length)]);
             item.Uniques.Add(bossUniques[Random.Range(0, bossUniques.Length)]);
             SetMythicRequirement(item);
+            MakeAbyss(item);
             return item;
         }
 
@@ -192,7 +204,7 @@ namespace VividOfFade
         static float WeaponDamage(WeaponKind kind, int level, Rarity rarity)
         {
             float b = ClassInfo.Weapon(kind).BaseDamage;
-            return Mathf.Round(b * (1f + 0.2f * (level - 1)) * RarityMult(rarity) * Random.Range(0.9f, 1.1f));
+            return Mathf.Round(b * (1f + 0.2f * (level - 1)) * RarityMult(rarity) * GameConfig.GearLevelMult(level) * Random.Range(0.9f, 1.1f));
         }
 
         static int AffixCount(Rarity r)
@@ -274,7 +286,7 @@ namespace VividOfFade
 
         static float RollValue(StatType s, int level, Rarity rarity)
         {
-            float m = RarityMult(rarity);
+            float m = RarityMult(rarity) * GameConfig.GearLevelMult(level); // 深淵の装備は効果の値も高い
             switch (s)
             {
                 case StatType.DamagePct: return (Random.Range(0.05f, 0.15f) + 0.005f * level) * m;

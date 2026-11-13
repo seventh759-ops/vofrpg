@@ -487,6 +487,20 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>範囲内の敵を中心へ引き寄せる（深淵の裂け目）。ボスは動かない。</summary>
+        public void Pull(Vector2 center, float radius, float strength)
+        {
+            float r2 = radius * radius;
+            foreach (var e in Active)
+            {
+                if (e.Dying || e.Dormant || e.IsBoss) continue;
+                Vector2 d = center - e.Pos;
+                float sq = d.sqrMagnitude;
+                if (sq > r2 || sq < 0.04f) continue;
+                e.Knock = Vector2.ClampMagnitude(e.Knock + d.normalized * strength, MaxKnock * 1.5f);
+            }
+        }
+
         /// <summary>一番近い敵（眠っている敵は狙わない）。</summary>
         public Enemy FindNearest(Vector2 from, float range)
         {

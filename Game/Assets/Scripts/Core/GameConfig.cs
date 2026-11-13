@@ -83,14 +83,15 @@ namespace VividOfFade
         public const float RefPastCapGrowth = 0.015f;  // Lv上限の後（段階99〜）は、強化・3次職などで1段階ごとに 1.5% ずつ強くなる想定
 
         /// <summary>基準のキャラのレベル（＝その段階で落ちる装備のレベル）。</summary>
-        public static int RefLevel(int wave) => Mathf.Clamp(wave, 1, Progression.MaxLevel);
+        public static int RefLevel(int wave) => IsAbyss(wave / 2) ? DropLevel(wave, Progression.UnlockedMaxLevel) : Mathf.Clamp(wave, 1, Progression.MaxLevel);
 
         /// <summary>基準のキャラの最大 HP（体力の土台60、VIT、レベル、レアの鎧、HP の効果1つの半分）。</summary>
         public static float RefHp(int wave)
         {
             int lv = RefLevel(wave);
             float vit = 6f + (lv - 1) * Progression.PointsPerLevel * RefVitShare;
-            return 60f + vit * 8f + (lv - 1) * 6f + (20f + 5f * lv) * 1.24f + 0.5f * (14f + 2f * lv) * 1.24f;
+            float gear = 1.24f * GearLevelMult(lv); // 深淵では、深淵の装備（数値が高い）を付けている想定
+            return 60f + vit * 8f + (lv - 1) * 6f + (20f + 5f * lv) * gear + 0.5f * (14f + 2f * lv) * gear;
         }
 
         /// <summary>基準のキャラの防御（VIT と、防御の効果1つの半分）。</summary>
@@ -98,12 +99,12 @@ namespace VividOfFade
         {
             int lv = RefLevel(wave);
             float vit = 6f + (lv - 1) * Progression.PointsPerLevel * RefVitShare;
-            return vit * 0.5f + 0.5f * (10f + 2f * lv) * 1.24f;
+            return vit * 0.5f + 0.5f * (10f + 2f * lv) * 1.24f * GearLevelMult(lv);
         }
 
         /// <summary>基準のキャラの「実質の HP」（防御で減る分も入れる）。</summary>
         public static float RefEffectiveHp(int wave) =>
-            RefHp(wave) * (100f + RefArmor(wave)) / 100f * (1f + RefPastCapGrowth * Mathf.Max(0, wave - Progression.MaxLevel));
+            RefHp(wave) * (100f + RefArmor(wave)) / 100f * (1f + RefPastCapGrowth * Mathf.Clamp(wave - Progression.MaxLevel, 0, Tier(MaxFloor) - Progression.MaxLevel)); // 深淵では、伸びは装備とレベルで見る
 
         /// <summary>基準のキャラが体当たり1回で削られる割合。</summary>
         public static float RefHitPct(int wave) => Mathf.Lerp(RefHitPctStart, RefHitPctEnd, (wave - 1) / RefHitPctRamp);
@@ -223,7 +224,20 @@ namespace VividOfFade
         /// （レベルが波に追いつかなくなっても、付けられる装備が落ち続けるように）。
         /// </summary>
         public const int DropLevelAhead = 3;
-        public static int DropLevel(int wave, int characterLevel) =>
-            Mathf.Clamp(wave, 1, Mathf.Min(characterLevel + DropLevelAhead, Progression.MaxLevel)); // Lv上限を超える装備は出さない
+        public static int DropLevel(int wave, int characterLevel)
+        {
+            int floor = wave / 2;
+            if (IsAbyss(floor))
+            {
+                // 深淵：Lv100（深淵1層）〜120（深淵20層）の装備。自分のレベル＋3 までで、100 より下にはしない
+                int abyssLevel = Progression.MaxLevel + 1 + Mathf.RoundToInt((floor - AbyssFirstFloor) * (Progression.UnlockedMaxLevel - Progression.MaxLevel - 1) / (float)(AbyssLastFloor - AbyssFirstFloor));
+                return Mathf.Clamp(abyssLevel, Progression.MaxLevel + 1, Mathf.Max(Progression.MaxLevel + 1, Mathf.Min(characterLevel + DropLevelAhead, Progression.UnlockedMaxLevel)));
+            }
+            return Mathf.Clamp(wave, 1, Mathf.Min(characterLevel + DropLevelAhead, Progression.MaxLevel)); // 塔では Lv99 を超える装備は出さない
+        }
+
+        /// <summary>深淵の装備（Lv100以上）の数値の倍率。基本の数値と効果の値に掛ける。</summary>
+        public const float AbyssGearMult = 1.3f;
+        public static float GearLevelMult(int itemLevel) => itemLevel > Progression.MaxLevel ? AbyssGearMult : 1f;
     }
 }

@@ -28,7 +28,7 @@ namespace VividOfFade
 
     /// <summary>橙・紫の装備だけが持つ固有効果。</summary>
     /// <summary>DodgeNova・DoubleStrike・Vampiric はボスの Mythic 装備だけに付く。</summary>
-    public enum UniqueType { None, ExplodeOnKill, HealOnKill, SplitShot, DodgeNova, DoubleStrike, Vampiric }
+    public enum UniqueType { None, ExplodeOnKill, HealOnKill, SplitShot, DodgeNova, DoubleStrike, Vampiric, AbyssBlast, VoidRift, Starfall, Retribution } // AbyssBlast 以降は深淵の装備だけ
 
     public static class RarityInfo
     {
@@ -47,6 +47,10 @@ namespace VividOfFade
         static readonly int[] salvage = { 1, 3, 8, 20, 50, 100 };
 
         public static Color ColorOf(Rarity r) => colors[(int)r];
+
+        /// <summary>深淵の装備の色（枠・名前の印・光の柱）。</summary>
+        public static readonly Color AbyssColor = new Color(0.95f, 0.15f, 0.55f);
+        public static readonly Color AbyssColorDark = new Color(0.35f, 0.05f, 0.4f);
         public static string LabelOf(Rarity r) => Loc.Ja ? labelsJa[(int)r] : labels[(int)r];
         public static int SalvageOf(Rarity r) => salvage[(int)r];
     }

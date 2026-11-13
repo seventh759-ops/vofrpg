@@ -1631,9 +1631,12 @@ namespace VividOfFade
                     break;
             }
             Color32 c = RarityInfo.ColorOf(item.Rarity);
-            string key = $"ItemIcon16_{kind}_{item.Rarity}";
+            string key = $"ItemIcon16_{kind}_{item.Rarity}" + (item.Abyss ? "_Abyss" : "");
             // m 金属・w 木・g 金・L と l 光・e 内側の線・A 珍しさの色（縁取りと陰影は Shaded が付ける）
-            return Shaded(key, rows, new Dictionary<char, Color32[]> { { 'A', RampFrom(c) } }, null, 32);
+            // 深淵の装備は、金属が黒ずみ、まわりに赤紫のもやがかかる
+            var over = new Dictionary<char, Color32[]> { { 'A', RampFrom(c) } };
+            if (item.Abyss) over['m'] = RampFrom(new Color32(70, 40, 80, 255));
+            return Shaded(key, rows, over, item.Abyss ? (Color32?)new Color32(230, 40, 140, 255) : null, 32);
         }
 
         static readonly string[] LanternIcon16 =

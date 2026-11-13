@@ -51,6 +51,11 @@ namespace VividOfFade
         public float PulseRadius;
 
         public float ExplodeMult; // 撃破時の爆発（攻撃力に対する倍率）
+        // 深淵の装備の固有効果（同じ効果を重ねると強くなる）
+        public float AbyssBlastChance;   // 倒したときの大爆発の確率
+        public int VoidRift;             // 裂け目（重ねるほど間隔が短い）
+        public float StarfallChance;     // 会心で星が落ちる確率
+        public float RetributionMult;    // 受けたときの反撃の倍率
         public int HealOnKill;
         public float DodgeNovaMult;       // 回避したときの炎（攻撃力に対する倍率）
         public float DoubleStrikeChance;
@@ -251,6 +256,10 @@ namespace VividOfFade
                         case UniqueType.DodgeNova: s.DodgeNovaMult += 1.5f; break;
                         case UniqueType.DoubleStrike: s.DoubleStrikeChance += 0.25f; break;
                         case UniqueType.Vampiric: s.LifeSteal += 0.01f; break;
+                        case UniqueType.AbyssBlast: s.AbyssBlastChance += 0.3f; break;
+                        case UniqueType.VoidRift: s.VoidRift++; break;
+                        case UniqueType.Starfall: s.StarfallChance += 0.15f; break;
+                        case UniqueType.Retribution: s.RetributionMult += 5f; break;
                     }
                 }
             }

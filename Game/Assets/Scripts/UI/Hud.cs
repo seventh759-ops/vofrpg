@@ -1352,6 +1352,27 @@ namespace VividOfFade
         }
 
         /// <summary>強化した品なら、アイコンの右下に強化の紋章を重ねる。</summary>
+        /// <summary>深淵の装備の枠：赤紫の二重の枠が、ゆっくり明滅する。</summary>
+        public static void DrawAbyssFrame(Rect cell, Item item)
+        {
+            if (item == null || !item.Abyss) return;
+            float t = Mathf.Max(2f, cell.width * 0.05f);
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3f);
+            var outer = RarityInfo.AbyssColor;
+            outer.a = 0.6f + 0.4f * pulse;
+            var inner = RarityInfo.AbyssColorDark;
+            inner.a = 0.9f;
+            void Frame(Rect r, Color c, float w)
+            {
+                Fill(new Rect(r.x, r.y, r.width, w), c);
+                Fill(new Rect(r.x, r.yMax - w, r.width, w), c);
+                Fill(new Rect(r.x, r.y, w, r.height), c);
+                Fill(new Rect(r.xMax - w, r.y, w, r.height), c);
+            }
+            Frame(cell, outer, t);
+            Frame(new Rect(cell.x + t, cell.y + t, cell.width - t * 2f, cell.height - t * 2f), inner, t * 0.6f);
+        }
+
         public static void DrawEnhance(Rect cell, Item item)
         {
             if (item == null || item.Enhance <= 0) return;
