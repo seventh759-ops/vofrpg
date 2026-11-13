@@ -243,6 +243,7 @@ namespace VividOfFade
         bool altarLatch;
         bool holdSave; // 起動中・再開の準備中は、中断の保存をしない（上書きを防ぐ）
         float slowMoTimer;
+        float goldenSparkTimer;
         bool exploding;
         float lifeStealPool; // 与えたダメージから回復する分の端数
 
@@ -289,6 +290,14 @@ namespace VividOfFade
             Enemies.GoldenAppeared += () =>
             {
                 Hud.Toast(Loc.T("A golden slime appeared! Catch it before it escapes!", "黄金のスライムが現れた！逃げられる前に倒せ！"), new Color(1f, 0.85f, 0.3f));
+                Hud.ShowBanner(Loc.T("GOLDEN SLIME!", "黄金のスライム！"), Loc.T("Catch it before it escapes", "逃げられる前に倒せ"), new Color(1f, 0.85f, 0.3f));
+                var g = Enemies.Golden;
+                if (g != null)
+                {
+                    Fx.Pillar(g.Pos, new Color(1f, 0.85f, 0.3f, 0.9f), 1.2f, 5f, 0.8f);
+                    Fx.Sparks(g.Pos, 24, new Color(1f, 0.9f, 0.4f, 1f), 3f, 0.7f, 3f);
+                }
+                cameraRig.Shake(0.12f, 0.3f);
                 Sfx.Landed(Rarity.Legendary);
                 Guide("golden", Loc.T("A golden one! It runs away and vanishes after a while.", "黄金のやつだ！逃げ回って、しばらくすると消えちゃう。"),
                     Loc.T("Beat it in time and it bursts with loot and embers.", "時間内に倒せば、装備と火種があふれ出すよ。"));
@@ -496,6 +505,18 @@ namespace VividOfFade
                 CheckChests();
                 CheckGuideNpc();
                 CheckEliteTip();
+            }
+
+            // 黄金のスライムがいる間、足元からときどき金のきらめき
+            var golden = Enemies.Golden;
+            if (golden != null)
+            {
+                goldenSparkTimer -= dt;
+                if (goldenSparkTimer <= 0f)
+                {
+                    goldenSparkTimer = 0.35f;
+                    Fx.Sparks(golden.Pos, 4, new Color(1f, 0.88f, 0.35f, 1f), 0.8f, 0.8f, 1.8f, true);
+                }
             }
 
             Player.LightPenalty = Enemies.ShroudNear ? GameConfig.ShroudPenalty : 0f;

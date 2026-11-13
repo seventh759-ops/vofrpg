@@ -30,6 +30,17 @@ namespace VividOfFade
         public event Action BossEnraged;
         /// <summary>黄金の敵が出た／倒された（位置）／逃げた。</summary>
         public event Action GoldenAppeared;
+
+        /// <summary>今いる黄金のスライム（いなければ null）。画面の目印に使う。</summary>
+        public Enemy Golden
+        {
+            get
+            {
+                foreach (var e in Active)
+                    if (e.Kind == EnemyKind.Golden && !e.Dying) return e;
+                return null;
+            }
+        }
         public event Action<Vector2> GoldenKilled;
         public event Action GoldenEscaped;
         /// <summary>精鋭を倒した（位置）。</summary>

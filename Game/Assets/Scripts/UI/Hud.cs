@@ -606,6 +606,7 @@ namespace VividOfFade
             }
 
             DrawBossBar();
+            DrawGoldenMarker();
             DrawMinimap();
             DrawBanner();
 
@@ -759,6 +760,70 @@ namespace VividOfFade
             if (World.Floors.StairsOpen) Dot(room.StairsPos, dot * 1.3f, new Color(1f, 0.8f, 0.3f));
             if (room.HasAltar && !World.AltarUsed) Dot(room.AltarPos, dot, new Color(1f, 0.5f, 0.2f));
             Dot(World.Player.Pos, dot, Color.white);
+        }
+
+        /// <summary>
+        /// 黄金のスライムの目印。画面の中にいれば頭の上で揺れる金色の「▼」（壁の陰でも見えるよう、画面の一番手前に描く）、
+        /// 画面の外なら、ダンジョンの領域の端にその方向を指す金色の矢印。
+        /// </summary>
+        void DrawGoldenMarker()
+        {
+            var g = World.Enemies.Golden;
+            var cam = Camera.main;
+            if (g == null || cam == null || World.Paused) return;
+            Vector2 world = Iso.ToScreen(g.Pos) + new Vector2(0f, 0.9f);
+            Vector3 sp = cam.WorldToScreenPoint(new Vector3(world.x, world.y, 0f));
+            var p = new Vector2(sp.x, Screen.height - sp.y); // GUI 座標
+            float size = Screen.height * 0.022f;
+            float top = TopBandBottom + size * 1.5f, bottom = BottomBandTop - size * 1.5f;
+            float leftX = size * 1.5f, rightX = Screen.width - size * 1.5f;
+            var gold = new Color(1f, 0.85f, 0.3f, 1f);
+            var dark = new Color(0.1f, 0.06f, 0f, 0.9f);
+            if (p.x >= leftX && p.x <= rightX && p.y >= top && p.y <= bottom)
+            {
+                float bob = Mathf.Sin(Time.unscaledTime * 6f) * size * 0.3f;
+                var c = new Vector2(p.x, p.y - size + bob);
+                var upSide = new Vector2(0f, -1f);          // 底辺は上（GUI 座標は下が +）→ 先が下を向く「▼」
+                Triangle(c, upSide, size * 1.3f, dark);     // 縁取り
+                Triangle(c, upSide, size, gold);
+                return;
+            }
+            // 画面の外：ダンジョンの領域の中心から、スライムの方向へ伸ばして、端で止める
+            var center = new Vector2(Screen.width * 0.5f, (TopBandBottom + BottomBandTop) * 0.5f);
+            Vector2 d = p - center;
+            if (d.sqrMagnitude < 1f) return;
+            float tx = d.x > 0 ? (rightX - center.x) / d.x : d.x < 0 ? (leftX - center.x) / d.x : float.MaxValue;
+            float ty = d.y > 0 ? (bottom - center.y) / d.y : d.y < 0 ? (top - center.y) / d.y : float.MaxValue;
+            var edge = center + d * Mathf.Min(tx, ty);
+            var dir = d.normalized;
+            float pulse = 1f + 0.15f * Mathf.Sin(Time.unscaledTime * 8f);
+            Triangle(edge, -dir, size * 1.5f * pulse, dark); // 先が外を向く三角
+            Triangle(edge, -dir, size * 1.2f * pulse, gold);
+        }
+
+        /// <summary>
+        /// 三角形を小さな四角を並べて描く（GUI 座標、下が +）。back は底辺のある側の向きで、先はその反対側を向く。
+        /// </summary>
+        static void Triangle(Vector2 center, Vector2 back, float size, Color color)
+        {
+            // 先 = center - back * size*0.6、底辺の中心 = center + back * size*0.4
+            Vector2 tip = center - back * size * 0.6f;
+            Vector2 baseC = center + back * size * 0.4f;
+            Vector2 side = new Vector2(-back.y, back.x);
+            float step = Mathf.Max(1f, size / 10f);
+            int n = Mathf.CeilToInt(size / step);
+            for (int i = 0; i <= n; i++)
+            {
+                float t = i / (float)n;
+                Vector2 c = Vector2.Lerp(tip, baseC, t);
+                float half = size * 0.55f * t;
+                int m = Mathf.Max(1, Mathf.CeilToInt(half * 2f / step));
+                for (int j = 0; j <= m; j++)
+                {
+                    Vector2 q = c + side * Mathf.Lerp(-half, half, j / (float)m);
+                    Fill(new Rect(q.x - step * 0.6f, q.y - step * 0.6f, step * 1.2f, step * 1.2f), color);
+                }
+            }
         }
 
         /// <summary>ボスがいる間、画面の下に体力バーを出す。</summary>
