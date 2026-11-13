@@ -78,7 +78,7 @@ namespace VividOfFade
         }
 
         // ---- 上の帯と下の帯（スキルと薬）。真ん中がダンジョン ----
-        // 上の帯：1段目 ゲームのロゴと MENU／2段目 HP・MP／3段目 レベルと経験値／3.5段目 転生の印・層・回避
+        // 上の帯：1段目 ゲームのロゴ・転生の印・MENU／2段目 HP・MP／3段目 レベルと経験値／3.5段目 層・回避
         static float BandMargin => Screen.height * 0.008f;
         static float TitleRowH => Screen.height * 0.024f;
         static float TopRowH => Screen.height * 0.028f;
@@ -620,6 +620,23 @@ namespace VividOfFade
                 GUI.DrawTexture(new Rect(logoRect.x - lh * 0.05f, logoRect.y - lh * 0.05f, logoRect.width + lh * 0.1f, logoRect.height + lh * 0.1f), TitleArt.Glow);
                 GUI.color = oldColor;
                 GUI.DrawTexture(logoRect, logo);
+                if (ch != null && ch.Rebirths > 0)
+                {
+                    // 転生の印：MENU の左に、オーラの色の宝石と「転生N」
+                    var aura = ThirdClasses.AuraColor(ch.Rebirths);
+                    var countStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, fontStyle = FontStyle.Bold };
+                    countStyle.normal.textColor = Color.Lerp(aura, Color.white, 0.35f);
+                    string count = Loc.T($"Reborn x{ch.Rebirths}", $"転生{ch.Rebirths}");
+                    float cw = countStyle.CalcSize(new GUIContent(count)).x;
+                    float right = ToGui(MenuRect).x - mm * 1.2f;
+                    GUI.Label(new Rect(right - cw, titleRow.y, cw, titleRow.height), count, countStyle);
+                    float gem = titleRow.height * 0.8f;
+                    var gemRect = new Rect(right - cw - mm * 0.4f - gem, titleRow.y + (titleRow.height - gem) * 0.5f, gem, gem);
+                    var old2 = GUI.color;
+                    GUI.color = aura;
+                    DrawSprite(gemRect, PixelArt.RebirthGem);
+                    GUI.color = old2;
+                }
             }
 
             // 2段目：HP と MP（横いっぱい）
@@ -658,7 +675,7 @@ namespace VividOfFade
             }
             OrnateFrame(expBack, FrameGold, FrameT, true, false);
 
-            // 3.5段目：転生の印・層（ボスのときは添える）と、右に回避の待ち時間
+            // 3.5段目：層（ボスのときは添える）と、右に回避の待ち時間
             float lineH = small.fontSize * 1.35f;
             var floorRow = new Rect(mm, expBack.yMax + mm * 0.8f, W - mm * 2f, FloorRowH);
             Fill(floorRow, new Color(0.05f, 0.05f, 0.08f, 1f));
@@ -666,23 +683,6 @@ namespace VividOfFade
             string floorText = GameConfig.FloorName(World.Floors.Floor) + (World.Floors.IsBossFloor ? Loc.T("   BOSS", "   ボス") : "");
             var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
             float floorX = floorRow.x + mm;
-            if (ch != null && ch.Rebirths > 0)
-            {
-                // 転生の印：オーラの色の宝石と回数（同じ色の太字）。そのあとに層
-                var aura = ThirdClasses.AuraColor(ch.Rebirths);
-                float gem = floorRow.height * 0.8f;
-                var gemRect = new Rect(floorX, floorRow.y + (floorRow.height - gem) * 0.5f, gem, gem);
-                var oldColor = GUI.color;
-                GUI.color = aura;
-                DrawSprite(gemRect, PixelArt.RebirthGem);
-                GUI.color = oldColor;
-                var countStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
-                countStyle.normal.textColor = Color.Lerp(aura, Color.white, 0.35f);
-                string count = Loc.T($"Reborn x{ch.Rebirths}", $"転生{ch.Rebirths}");
-                float cw = countStyle.CalcSize(new GUIContent(count)).x;
-                GUI.Label(new Rect(gemRect.xMax + mm * 0.4f, floorRow.y, cw + mm, floorRow.height), count, countStyle);
-                floorX = gemRect.xMax + mm * 0.4f + cw + mm * 1.5f;
-            }
             FitLabel(new Rect(floorX, floorRow.y, floorRow.width * 0.7f - (floorX - floorRow.x), floorRow.height), floorText, floorStyle);
             var dodge = new Rect(floorRow.xMax - W * 0.22f - mm, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
