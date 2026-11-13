@@ -646,11 +646,11 @@ namespace VividOfFade
             var hpBack = new Rect(mm, rowY, barW, rowH);
             float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
             OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold);
-            FitLabel(hpBack, $"HP  {player.Hp}/{player.MaxHp}", barText);
+            OutlinedLabel(hpBack, $"HP  {player.Hp}/{player.MaxHp}", barText, new Color(0f, 0f, 0f, 0.85f));
             var mpBack = new Rect(hpBack.xMax + mm, rowY, barW, rowH);
             float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
             OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), FrameGold);
-            FitLabel(mpBack, $"MP  {player.Mp}/{player.MaxMp}", barText);
+            OutlinedLabel(mpBack, $"MP  {player.Mp}/{player.MaxMp}", barText, new Color(0f, 0f, 0f, 0.85f));
 
             // 3段目：レベル（左。「LV120★」まで入る幅）と経験値のバー
             float expY = rowY + rowH + mm * 0.8f;
@@ -670,8 +670,8 @@ namespace VividOfFade
                 Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.35f), new Color(1f, 1f, 1f, 0.3f)); // 光沢
                 for (int k = 1; k < 10; k++) Fill(new Rect(expBack.x + expBack.width * k / 10f, expBack.y + expBack.height * 0.6f, 1f, expBack.height * 0.4f), new Color(0f, 0f, 0f, 0.3f)); // 10% ごとの目盛り
                 var expText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(ExpRowH * 0.7f)) };
-                expText.normal.textColor = expRatio > 0.45f ? new Color(0.15f, 0.12f, 0.1f) : new Color(0.95f, 0.9f, 0.8f);
-                GUI.Label(expBack, $"EXP {Mathf.FloorToInt(expRatio * 100f)}%", expText);
+                expText.normal.textColor = new Color(1f, 0.97f, 0.9f);
+                OutlinedLabel(expBack, $"EXP {Mathf.FloorToInt(expRatio * 100f)}%", expText, new Color(0.1f, 0.07f, 0.04f, 0.9f));
             }
             OrnateFrame(expBack, FrameGold, FrameT, true, false);
 
@@ -1465,6 +1465,22 @@ namespace VividOfFade
             var content = new GUIContent(text);
             float max = guiRect.width * 0.94f;
             while (s.fontSize > 8 && s.CalcSize(content).x > max) s.fontSize--;
+            GUI.Label(guiRect, content, s);
+        }
+
+        /// <summary>縁取りの付いた文字（バーの上の数字など。明るい所にも暗い所にもかかって読めるように）。</summary>
+        public static void OutlinedLabel(Rect guiRect, string text, GUIStyle style, Color outline)
+        {
+            var s = new GUIStyle(style) { wordWrap = false, clipping = TextClipping.Overflow };
+            var content = new GUIContent(text);
+            float max = guiRect.width * 0.94f;
+            while (s.fontSize > 8 && s.CalcSize(content).x > max) s.fontSize--;
+            var shadow = new GUIStyle(s);
+            shadow.normal.textColor = outline;
+            float o = Mathf.Max(1f, Mathf.Round(s.fontSize * 0.08f));
+            for (int dx = -1; dx <= 1; dx++)
+                for (int dy = -1; dy <= 1; dy++)
+                    if (dx != 0 || dy != 0) GUI.Label(new Rect(guiRect.x + dx * o, guiRect.y + dy * o, guiRect.width, guiRect.height), content, shadow);
             GUI.Label(guiRect, content, s);
         }
 
