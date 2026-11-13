@@ -60,6 +60,13 @@ namespace VividOfFade
             { 'x', Ramp(250, 250, 252, 210, 214, 224, 160, 166, 180, 110, 116, 130) },  // 白
             { 'f', Ramp(190, 60, 60, 150, 40, 44, 110, 26, 32, 76, 16, 22) },           // 深紅
             { 'u', Ramp(90, 120, 190, 60, 86, 150, 40, 60, 110, 26, 40, 76) },          // 青い鎧
+            { 'q', Ramp(168, 160, 150, 128, 120, 112, 92, 86, 80, 60, 56, 54) },        // 石（岩の巨人）
+            { 'i', Ramp(120, 124, 144, 84, 88, 108, 58, 60, 78, 38, 40, 54) },          // 鉄（爆弾）
+            { 'j', Ramp(110, 190, 130, 70, 150, 100, 44, 108, 72, 28, 72, 50) },        // 緑の衣（術士）
+            { 'G', Ramp(150, 230, 140, 100, 200, 100, 64, 150, 70, 40, 100, 48) },      // スライム
+            { 'D', Ramp(70, 160, 80, 48, 120, 58, 34, 88, 42, 22, 60, 30) },            // スライムの底
+            { 'P', Ramp(150, 100, 190, 112, 70, 150, 80, 48, 112, 52, 30, 78) },        // 蝙蝠
+            { 'M', Ramp(96, 70, 120, 70, 50, 92, 50, 34, 68, 34, 22, 48) },             // 蝙蝠の膜
         };
 
         /// <summary>影を付けずに光らせる素材（ランタン・香炉の火、上位職の光る刃・光輪）。</summary>
@@ -931,25 +938,6 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>区画ごとの色のスライム。</summary>
-        public static Sprite SlimeFor(ZoneSpec z) => FromArt($"Slime_{z.Name}", SlimeRows, new Dictionary<char, Color32>
-        {
-            { 'k', Mix(z.SlimeDark, new Color32(0, 0, 0, 255), 0.6f) },
-            { 'g', z.Slime },
-            { 'w', Mix(z.Slime, new Color32(255, 255, 255, 255), 0.65f) },
-            { 'e', new Color32(16, 16, 24, 255) },
-            { 'd', z.SlimeDark },
-        });
-
-        public static Sprite Slime => FromArt("Slime", SlimeRows, new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(20, 40, 26, 255) },
-            { 'g', new Color32(79, 191, 90, 255) },
-            { 'w', new Color32(200, 255, 208, 255) },
-            { 'e', new Color32(16, 32, 26, 255) },
-            { 'd', new Color32(47, 138, 60, 255) },
-        });
-
         public static Sprite Fireball => FromArt("Fireball", FireballRows, new Dictionary<char, Color32>
         {
             { 'r', new Color32(240, 110, 40, 255) },
@@ -1277,316 +1265,23 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>
-        /// 敵の段階（0 下級・1 中級・2 上級）の見た目。上級ほど角・牙・光る目が付き、色が暗く厳つくなる。
-        /// スライムは区画の色を使う。
-        /// </summary>
-        public static Sprite EnemySprite(EnemyKind kind, int tier)
-        {
-            if (tier <= 0 || kind == EnemyKind.Golden || kind == EnemyKind.Slime) return EnemySprite(kind);
-            switch (kind)
-            {
-                case EnemyKind.Bat: return tier == 1 ? FromArt("Enemy_Bat_1", BatRows1, BatPalette1) : FromArt("Enemy_Bat_2", BatRows2, BatPalette2);
-                case EnemyKind.Caster: return tier == 1 ? FromArt("Enemy_Caster_1", CasterRows1, CasterPalette1) : FromArt("Enemy_Caster_2", CasterRows2, CasterPalette2);
-                case EnemyKind.Brute: return tier == 1 ? FromArt("Enemy_Brute_1", BruteRows1, BrutePalette1) : FromArt("Enemy_Brute_2", BruteRows2, BrutePalette2);
-                case EnemyKind.Bomber: return tier == 1 ? FromArt("Enemy_Bomber_1", BomberRows1, BomberPalette1) : FromArt("Enemy_Bomber_2", BomberRows2, BomberPalette2);
-                default: return EnemySprite(kind);
-            }
-        }
 
-        /// <summary>区画の色のスライム（段階つき）。</summary>
-        public static Sprite SlimeFor(ZoneSpec z, int tier)
-        {
-            if (tier <= 0) return SlimeFor(z);
-            float f = tier == 1 ? 0.82f : 0.65f;
-            Color32 Dark(Color32 c) => new Color32((byte)(c.r * f), (byte)(c.g * f), (byte)(c.b * f), 255);
-            return FromArt($"Slime_{z.Name}_{tier}", tier == 1 ? SlimeRows1 : SlimeRows2, new Dictionary<char, Color32>
-            {
-                { 'k', new Color32(20, 30, 26, 255) },
-                { 'g', Dark(z.Slime) },
-                { 'w', new Color32(220, 255, 228, 255) },
-                { 'e', new Color32(16, 24, 20, 255) },
-                { 'd', Dark(z.SlimeDark) },
-                { 'h', new Color32(230, 220, 200, 255) },
-                { 'o', new Color32(255, 80, 60, 255) },
-            });
-        }
 
-        static readonly string[] SlimeRows1 =
-        {
-            "............",
-            "...h....h...",
-            "...hk..kh...",
-            "....kkkk....",
-            "..kkggggkk..",
-            ".kgwggggggk.",
-            ".kwwggggggk.",
-            "kgggkeekgggk",
-            "kgggeggegggk",
-            "kggggggggggk",
-            ".kddddddddk.",
-            "..kkkkkkkk..",
-        };
 
-        static readonly string[] SlimeRows2 =
-        {
-            "..h......h..",
-            "..hh....hh..",
-            "...hk..kh...",
-            "....kkkk....",
-            "..kkggggkk..",
-            ".kgwggggggk.",
-            ".kwwggggggk.",
-            "kgggkggkgggk",
-            "kgggoggogggk",
-            "kggwkwkwkwgk",
-            ".kddddddddk.",
-            "..kkkkkkkk..",
-        };
 
-        static readonly Dictionary<char, Color32> BatPalette1 = new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(19, 13, 24, 255) },
-            { 'p', new Color32(90, 57, 114, 255) },
-            { 'r', new Color32(255, 70, 70, 255) },
-            { 'h', new Color32(230, 220, 200, 255) },
-            { 'o', new Color32(255, 250, 210, 255) },
-        };
 
-        static readonly string[] BatRows1 =
-        {
-            "................",
-            "................",
-            "................",
-            "......h..h......",
-            "k.....hkkh.....k",
-            "kk.....kk.....kk",
-            "kpk...kppk...kpk",
-            "kppk.kprrpk.kppk",
-            "kpppkppppppkpppk",
-            ".kppppppppppppk.",
-            "..kpk.kwwk.kpk..",
-            "...k..kppk..k...",
-            "......k..k......",
-            "................",
-            "................",
-            "................",
-        };
 
-        static readonly Dictionary<char, Color32> BatPalette2 = new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(15, 10, 19, 255) },
-            { 'p', new Color32(71, 45, 91, 255) },
-            { 'r', new Color32(255, 70, 70, 255) },
-            { 'h', new Color32(230, 220, 200, 255) },
-            { 'o', new Color32(255, 250, 210, 255) },
-            { 'a', new Color32(230, 180, 70, 255) },
-        };
 
-        static readonly string[] BatRows2 =
-        {
-            "................",
-            ".....h....h.....",
-            ".....hh..hh.....",
-            "h.....hkkh.....h",
-            "k..............k",
-            "kk.....kk.....kk",
-            "kpk...kppk...kpk",
-            "kppk.kpoopk.kppk",
-            "kpppkppppppkpppk",
-            ".kppppppppppppk.",
-            "..kpk.w.ww.kpk..",
-            ".h.k..kppk..k.h.",
-            "......k..k......",
-            "................",
-            "................",
-            "................",
-        };
 
-        static readonly Dictionary<char, Color32> CasterPalette1 = new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(16, 19, 18, 255) },
-            { 'g', new Color32(57, 122, 90, 255) },
-            { 'd', new Color32(32, 82, 57, 255) },
-            { 'y', new Color32(255, 240, 140, 255) },
-            { 'o', new Color32(255, 250, 210, 255) },
-            { 'h', new Color32(230, 220, 200, 255) },
-        };
 
-        static readonly string[] CasterRows1 =
-        {
-            ".....h....h.....",
-            ".....hkkkkh.....",
-            ".....kggggk.....",
-            "....kggggggk....",
-            "....kgkkkkgk....",
-            "...kgkyyyykgk...",
-            "...kgkyryykgk...",
-            "...kggkkkkggk...",
-            "..kgggggggggk...",
-            "..kggdggggdggk..",
-            "..kgdggggggdgk..",
-            "..kggggggggggk..",
-            "...kggggggggk...",
-            "....kgkgkgkgk...",
-            ".....k.k.k.k....",
-            "................",
-        };
 
-        static readonly Dictionary<char, Color32> CasterPalette2 = new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(13, 15, 14, 255) },
-            { 'g', new Color32(45, 97, 71, 255) },
-            { 'd', new Color32(26, 65, 45, 255) },
-            { 'y', new Color32(255, 240, 140, 255) },
-            { 'o', new Color32(255, 250, 210, 255) },
-            { 'h', new Color32(230, 220, 200, 255) },
-            { 'a', new Color32(230, 180, 70, 255) },
-        };
 
-        static readonly string[] CasterRows2 =
-        {
-            "....h..h..hh....",
-            "....hkkkkkkh....",
-            ".....kggggk.....",
-            "....kggggggk....",
-            "....kgkkkkgk....",
-            "...kgkyyyykgk...",
-            "...kgkrorykgk...",
-            "...kggkkkkggk...",
-            "..kgggggggggk...",
-            "..kgadggggdagk..",
-            "..kgaggggggagk..",
-            "..kggggggggggk..",
-            "...kggggggggk...",
-            "....kakakakak...",
-            ".....k.k.k.k....",
-            "................",
-        };
 
-        static readonly Dictionary<char, Color32> BrutePalette1 = new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(21, 18, 16, 255) },
-            { 's', new Color32(106, 98, 90, 255) },
-            { 'd', new Color32(73, 67, 60, 255) },
-            { 'y', new Color32(255, 140, 60, 255) },
-            { 'h', new Color32(230, 220, 200, 255) },
-            { 'o', new Color32(255, 250, 210, 255) },
-        };
 
-        static readonly string[] BruteRows1 =
-        {
-            "................",
-            "....h......h....",
-            "....hkkkkkkh....",
-            "....kssssssk....",
-            "...kssyssyssk...",
-            "...kssssssssk...",
-            "..kssssssssssk..",
-            ".kssskssssksssk.",
-            "kssssksssskssssk",
-            "kssdssssssssdssk",
-            "kssdsysssssddssk",
-            ".kkkssssssssskk.",
-            "...ksssk.kssk...",
-            "...kddk...kddk..",
-            "...kkkk...kkkk..",
-            "................",
-        };
 
-        static readonly Dictionary<char, Color32> BrutePalette2 = new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(16, 14, 13, 255) },
-            { 's', new Color32(84, 78, 71, 255) },
-            { 'd', new Color32(58, 53, 48, 255) },
-            { 'y', new Color32(255, 140, 60, 255) },
-            { 'h', new Color32(230, 220, 200, 255) },
-            { 'o', new Color32(255, 250, 210, 255) },
-            { 'a', new Color32(230, 180, 70, 255) },
-        };
 
-        static readonly string[] BruteRows2 =
-        {
-            "...h........h...",
-            "...hh......hh...",
-            "....hkkkkkkh....",
-            "....kssssssk....",
-            "...kssossossk...",
-            ".h.kssssssssk.h.",
-            ".hksssssssssskh.",
-            ".kssskssssksssk.",
-            "ksssskyssskssssk",
-            "kssdsssyysysdssk",
-            "kssdssyssssddssk",
-            ".kkkssssssssskk.",
-            "...ksssk.kssk...",
-            "...kddk...kddk..",
-            "...kkkk...kkkk..",
-            "................",
-        };
 
-        static readonly Dictionary<char, Color32> BomberPalette1 = new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(16, 14, 19, 255) },
-            { 'b', new Color32(49, 47, 62, 255) },
-            { 'w', new Color32(160, 160, 180, 255) },
-            { 'r', new Color32(255, 90, 60, 255) },
-            { 'y', new Color32(255, 220, 90, 255) },
-            { 'o', new Color32(255, 90, 60, 255) },
-            { 'h', new Color32(230, 220, 200, 255) },
-        };
 
-        static readonly string[] BomberRows1 =
-        {
-            "..........y.....",
-            ".........yoy....",
-            "..........w.....",
-            ".........w......",
-            ".....hkkkhk.....",
-            "....hkbbbbkhk...",
-            "...kbbbwbbbbbk..",
-            "...kbbwbbbbbbk..",
-            "..kbbbbbbbbbbbk.",
-            "..kbbrrbbbrrbbk.",
-            "..kbbbbbbbbbbbk.",
-            "...kbbbbbbbbbk..",
-            "...kbbbkkkbbbk..",
-            "....kkk...kkk...",
-            "....kk.....kk...",
-            "................",
-        };
-
-        static readonly Dictionary<char, Color32> BomberPalette2 = new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(13, 11, 15, 255) },
-            { 'b', new Color32(39, 37, 49, 255) },
-            { 'w', new Color32(160, 160, 180, 255) },
-            { 'r', new Color32(255, 90, 60, 255) },
-            { 'y', new Color32(255, 220, 90, 255) },
-            { 'o', new Color32(255, 90, 60, 255) },
-            { 'h', new Color32(230, 220, 200, 255) },
-            { 'a', new Color32(230, 180, 70, 255) },
-        };
-
-        static readonly string[] BomberRows2 =
-        {
-            "..........y.....",
-            ".........yoy....",
-            "..........w.....",
-            "....h....w.h....",
-            "....hkkkkkkh....",
-            "..h.kkbbbbbkkh..",
-            "...kbbbwbbbbbk..",
-            "...kbbwbbbbbbk..",
-            ".hkbbbbbbbbbbbh.",
-            "..kboorbbboobbk.",
-            "..kbbbbbbbbbbbk.",
-            "...kbbwkwbbbbk..",
-            "...kbbbkkkbbbk..",
-            "....kkk...kkk...",
-            "....kk.....kk...",
-            "................",
-        };
 
         /// <summary>
         /// 強化の紋章（24ドット）。+1〜+4 で黄色のひし形が上・下・右・左に1つずつ、+5 で中央の橙の四角、
@@ -1719,16 +1414,6 @@ namespace VividOfFade
             ".kkkkkkkkkk.",
         };
 
-        /// <summary>黄金のスライム（出会うと逃げる、倒すとドロップがあふれる）。</summary>
-        public static Sprite GoldenSlime => FromArt("GoldenSlime", SlimeRows, new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(70, 46, 10, 255) },
-            { 'g', new Color32(255, 204, 60, 255) },
-            { 'w', new Color32(255, 252, 220, 255) },
-            { 'e', new Color32(60, 36, 8, 255) },
-            { 'd', new Color32(200, 140, 30, 255) },
-        });
-
         static readonly Dictionary<char, Color32> ChestPalette = new Dictionary<char, Color32>
         {
             { 'k', new Color32(30, 18, 12, 255) },
@@ -1769,132 +1454,648 @@ namespace VividOfFade
             ".kkkkkkkkkkkk.",
         };
 
-        /// <summary>スライム以外の敵の絵（16ドット）。どれもこのゲーム用のオリジナル。</summary>
-        public static Sprite EnemySprite(EnemyKind kind)
+        // ---- 敵（32 ドット、キャラと同じ陰影つきの描き方）----
+        // 段階 0 下級・1 中級・2 上級。上級ほど角・牙・とげ・光る赤い目が付き、体の色が暗く厳つくなる。
+
+        /// <summary>段階に応じて体の色を暗くする（上級ほど暗い）。</summary>
+        static Dictionary<char, Color32[]> TierDarken(int tier, params char[] parts)
         {
+            if (tier <= 0) return null;
+            float f = tier == 1 ? 0.85f : 0.7f;
+            var o = new Dictionary<char, Color32[]>();
+            foreach (var p in parts) o[p] = Scale(ramps[p], f);
+            return o;
+        }
+
+        static Color32[] Scale(Color32[] r, float f)
+        {
+            var o = new Color32[r.Length];
+            for (int i = 0; i < r.Length; i++) o[i] = new Color32((byte)(r[i].r * f), (byte)(r[i].g * f), (byte)(r[i].b * f), 255);
+            return o;
+        }
+
+        /// <summary>1色から4段階の濃淡を作る（明るい・元・暗い・いちばん暗い）。</summary>
+        static Color32[] RampFrom(Color32 c, float f = 1f)
+        {
+            var b = new Color32((byte)(c.r * f), (byte)(c.g * f), (byte)(c.b * f), 255);
+            return new[] { Mix(b, new Color32(255, 255, 255, 255), 0.3f), b, Mix(b, new Color32(0, 0, 0, 255), 0.28f), Mix(b, new Color32(0, 0, 0, 255), 0.5f) };
+        }
+
+        /// <summary>敵の絵（段階つき）。スライムはここでは緑（区画の色は SlimeFor）。</summary>
+        public static Sprite EnemySprite(EnemyKind kind, int tier = 0)
+        {
+            tier = Mathf.Clamp(tier, 0, 2);
             switch (kind)
             {
-                case EnemyKind.Bat: return FromArt("Enemy_Bat", BatRows, BatPalette);
-                case EnemyKind.Caster: return FromArt("Enemy_Caster", CasterRows, CasterPalette);
-                case EnemyKind.Brute: return FromArt("Enemy_Brute", BruteRows, BrutePalette);
-                case EnemyKind.Bomber: return FromArt("Enemy_Bomber", BomberRows, BomberPalette);
+                case EnemyKind.Bat: return Shaded($"Bat32_{tier}", BatRows32[tier], TierDarken(tier, 'P', 'M'));
+                case EnemyKind.Caster: return Shaded($"Caster32_{tier}", CasterRows32[tier], TierDarken(tier, 'j'));
+                case EnemyKind.Brute: return Shaded($"Brute32_{tier}", BruteRows32[tier], TierDarken(tier, 'q'));
+                case EnemyKind.Bomber: return Shaded($"Bomber32_{tier}", BomberRows32[tier], TierDarken(tier, 'i'));
                 case EnemyKind.Golden: return GoldenSlime;
-                default: return Slime;
+                default: return Shaded($"Slime32_{tier}", SlimeRows32[tier], TierDarken(tier, 'G', 'D'));
             }
         }
 
-        static readonly Dictionary<char, Color32> BatPalette = new Dictionary<char, Color32>
+        /// <summary>区画の色のスライム（段階つき。上級ほど暗い）。</summary>
+        public static Sprite SlimeFor(ZoneSpec z, int tier = 0)
         {
-            { 'k', new Color32(24, 16, 30, 255) },
-            { 'p', new Color32(110, 70, 140, 255) },
-            { 'r', new Color32(255, 70, 70, 255) },
+            tier = Mathf.Clamp(tier, 0, 2);
+            float f = tier == 0 ? 1f : tier == 1 ? 0.85f : 0.7f;
+            return Shaded($"Slime32_{z.Name}_{tier}", SlimeRows32[tier], new Dictionary<char, Color32[]>
+            {
+                { 'G', RampFrom(z.Slime, f) },
+                { 'D', RampFrom(z.SlimeDark, f) },
+            });
+        }
+
+        public static Sprite Slime => EnemySprite(EnemyKind.Slime);
+
+        /// <summary>黄金のスライム（出会うと逃げる、倒すとドロップがあふれる）。銀の王冠ときらめきで、金色の区画のスライムと見分ける。</summary>
+        public static Sprite GoldenSlime => Shaded("GoldenSlime32", GoldenRows32, new Dictionary<char, Color32[]>
+        {
+            { 'G', Ramp(255, 236, 140, 240, 196, 60, 196, 148, 30, 140, 100, 20) },
+            { 'D', Ramp(214, 160, 40, 170, 120, 24, 128, 88, 16, 90, 60, 10) },
+        });
+
+        static readonly string[] GoldenRows32 =
+        {
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "...............mm...............",
+            "............m..mm..m............",
+            "............m..mm..m....o.......",
+            "............mmmRRmmm............",
+            "............mmmmmmmm............",
+            "................................",
+            "............GGGGGGGG............",
+            "....o....GGGGGGGGGGGGGG.........",
+            "...o.o..GGGGGGGGGGGGGGGG........",
+            "....o..GGGGGGGGGGGGGGGGGG.......",
+            "......GGGooGGGGGGGGGGGGGGG.o....",
+            ".....GGGoGGGGGGGGGGGGGGGGGo.o...",
+            "....GGGGGGGGGGGGGGGGGGGGGGGo....",
+            "....GGGGGGGoeGGGGGGoeGGGGGGG....",
+            "....GGGGGGGeeGGGGGGeeGGGGGGG....",
+            "....GGGGGGGeeGGGGGGeeGGGGGGG....",
+            "....GGGGGGGGGGGGGGGGGGGGGGGG....",
+            "....GGGGGGGGGGGeeGGGGGGGGGGG....",
+            ".....GGGGGGGGGGGGGGGGGGGGGG.....",
+            "......DDDDDDDDDDDDDDDDDDDD......",
+            ".......DDDDDDDDDDDDDDDDDD.......",
+            "........DDDDDDDDDDDDDDDD........",
+            ".....DDDDDDDDDDDDDDDDDDDDDD.....",
+            "................................",
+            "................................",
         };
 
-        static readonly string[] BatRows =
+        static readonly string[][] SlimeRows32 =
         {
-            "................",
-            "................",
-            "................",
-            "................",
-            "k..............k",
-            "kk.....kk.....kk",
-            "kpk...kppk...kpk",
-            "kppk.kprrpk.kppk",
-            "kpppkppppppkpppk",
-            ".kppppppppppppk.",
-            "..kpk.kppk.kpk..",
-            "...k..kppk..k...",
-            "......k..k......",
-            "................",
-            "................",
-            "................",
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "............GGGGGGGG............",
+                ".........GGGGGGGGGGGGGG.........",
+                "........GGGGGGGGGGGGGGGG........",
+                ".......GGGGGGGGGGGGGGGGGG.......",
+                "......GGGooGGGGGGGGGGGGGGG......",
+                ".....GGGoGGGGGGGGGGGGGGGGGG.....",
+                "....GGGGGGGGGGGGGGGGGGGGGGGG....",
+                "....GGGGGGGoeGGGGGGoeGGGGGGG....",
+                "....GGGGGGGeeGGGGGGeeGGGGGGG....",
+                "....GGGGGGGeeGGGGGGeeGGGGGGG....",
+                "....GGGGGGGGGGGGGGGGGGGGGGGG....",
+                "....GGGGGGGGGGGeeGGGGGGGGGGG....",
+                ".....GGGGGGGGGGGGGGGGGGGGGG.....",
+                "......DDDDDDDDDDDDDDDDDDDD......",
+                ".......DDDDDDDDDDDDDDDDDD.......",
+                "........DDDDDDDDDDDDDDDD........",
+                ".....DDDDDDDDDDDDDDDDDDDDDD.....",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "........x..............x........",
+                ".........x............x.........",
+                ".........x..GGGGGGGG..x.........",
+                ".........GGGGGGGGGGGGGG.........",
+                "........GGGGGGGGGGGGGGGG........",
+                ".......GGGGGGGGGGGGGGGGGG.......",
+                "......GGGooGGGGGGGGGGGGGGG......",
+                ".....GGGoGeGGGGGGGGGGeGGGGG.....",
+                "....GGGGGGGeGGGGGGGGeGGGGGGG....",
+                "....GGGGGGGoeGGGGGGoeGGGGGGG....",
+                "....GGGGGGGeeGGGGGGeeGGGGGGG....",
+                "....GGGGGGGeeGGGGGGeeGGGGGGG....",
+                "....GGGGGGGGGGGGGGGGGGGGGGGG....",
+                "....GGGGGGGGGexeexeGGGGGGGGG....",
+                ".....GGGGGGGGeeeeeeGGGGGGGG.....",
+                "......DDDDDDDDDDDDDDDDDDDD......",
+                ".......DDDDDDDDDDDDDDDDDD.......",
+                "........DDDDDDDDDDDDDDDD........",
+                ".....DDDDDDDDDDDDDDDDDDDDDD.....",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                ".......xx..............xx.......",
+                "........xx............xx........",
+                "........xx............xx........",
+                ".........xx..........xx.........",
+                ".........xx.GGGGGGGG.xx.........",
+                ".........GGGGGGGGGGGGGG.........",
+                "........GGGGGGGGGGGGGGGG........",
+                ".......GGGGGGGGGGGGGGGGGG.......",
+                "......GGGooGGGGGGGGGGGGGGG......",
+                ".....GGGoGeGGGGGGGGGGeGGGGG.....",
+                "....GGGGGGGeGGGGGGGGeGGGGGGG....",
+                "....GGGGGGGRRGGGGGGRRGGGGGGG....",
+                "....GGGGGGGRRGGGGGGRRGGGGGGG....",
+                "....GGGGGGGRRGGGGGGRRGGGGGGG....",
+                "....GGGGGGGGGGGGGGGGGGGGGGGG....",
+                "....GGGGGGGGGexeexeGGGGGGGGG....",
+                ".....GGGGGGGGxeeeexGGGGGGGG.....",
+                "......DDDDDDDDDDDDDDDDDDDD......",
+                ".......DDDDDDDDDDDDDDDDDD.......",
+                "........DDDDDDDDDDDDDDDD........",
+                ".....DDDDDDDDDDDDDDDDDDDDDD.....",
+                "................................",
+                "................................",
+            },
         };
 
-        static readonly Dictionary<char, Color32> CasterPalette = new Dictionary<char, Color32>
+        static readonly string[][] BatRows32 =
         {
-            { 'k', new Color32(20, 24, 22, 255) },
-            { 'g', new Color32(70, 150, 110, 255) },
-            { 'd', new Color32(40, 100, 70, 255) },
-            { 'y', new Color32(255, 240, 140, 255) },
-            { 'o', new Color32(255, 255, 255, 255) },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                ".............P....P.............",
+                ".PP..........P....P..........PP.",
+                ".MMPPPP.....PP....PP.....PPPPMM.",
+                "..MMMMMPPPP.PPPPPPPP.PPPPMMMMM..",
+                "..MMMMMMMMMPPPPPPPPPPMMMMMMMMM..",
+                "..MMMMMMMMMMPPPPPPPPMMMMMMMMMM..",
+                "..MMMMMM.MMPPPPPPPPPPMM.MMMMMM..",
+                "..MMMMM...MPPPPPPPPPPM...MMMMM..",
+                "...MM..MPPPPPPRPPRPPPPPPM..MM...",
+                "...MMPPPMMPPPPPPPPPPPPMMPPPMM...",
+                "...PPMMMMMPPPPPPPPPPPPMMMMMPP...",
+                ".....MMMMP.PPPPPPPPPP.PMMMM.....",
+                "......MMP...PPPxxPPP...PMM......",
+                ".......P.....PPPPPP.....P.......",
+                "..............PPPP..............",
+                "..............n..n..............",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                ".............P....P.............",
+                ".PP..........P....P..........PP.",
+                ".MMPPPP.....PP....PP.....PPPPMM.",
+                "..MMMMMPPPP.PPPPPPPP.PPPPMMMMM..",
+                "..MMMMMMMMMPPPPPPPPPPMMMMMMMMM..",
+                "..MMMMMMMMMMPPPPPPPPMMMMMMMMMM..",
+                "..MMMMMM.MMPPPPPPPPPPMM.MMMMMM..",
+                "..MMMMM...MPPPRPPRPPPM...MMMMM..",
+                "...MM..MPPPPPPRPPRPPPPPPM..MM...",
+                "...MMPPPMMPPPPPPPPPPPPMMPPPMM...",
+                "...PPMMMMMPPPPPPPPPPPPMMMMMPP...",
+                ".....MMMMP.PPPPPPPPPP.PMMMM.....",
+                "......MMP...PPPxxPPP...PMM......",
+                ".......P.....PPxxPP.....P.......",
+                "..............PPPP..............",
+                "..............n..n..............",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "...........x........x...........",
+                "...........x........x...........",
+                "x...........xP....Px...........x",
+                ".PP.........xP....Px.........PP.",
+                ".MMPPPP.....PP....PP.....PPPPMM.",
+                "..MMMMMPPPP.PPPPPPPP.PPPPMMMMM..",
+                "..MMMMMMMMMPPPPPPPPPPMMMMMMMMM..",
+                "..MMMMMMMMMMPPPPPPPPMMMMMMMMMM..",
+                "..MMMMMM.MMPPPPPPPPPPMM.MMMMMM..",
+                "..MMMMM...MPPPRPPRPPPM...MMMMM..",
+                "...MM..MPPPPPPRPPRPPPPPPM..MM...",
+                "...MMPPPMMPPPPPPPPPPPPMMPPPMM...",
+                "...PPMMMMMPPPPPPPPPPPPMMMMMPP...",
+                "..x..MMMMP.PPPPPPPPPP.PMMMM..x..",
+                "......MMP...PPPxxPPP...PMM......",
+                ".......P.....PPxxPP.....P.......",
+                "..............PPPP..............",
+                "..............n..n..............",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+            },
         };
 
-        static readonly string[] CasterRows =
+        static readonly string[][] CasterRows32 =
         {
-            "................",
-            "......kkkk......",
-            ".....kggggk.....",
-            "....kggggggk....",
-            "....kgkkkkgk....",
-            "...kgkyyyykgk...",
-            "...kgkyoyykgk...",
-            "...kggkkkkggk...",
-            "..kgggggggggk...",
-            "..kggdggggdggk..",
-            "..kgdggggggdgk..",
-            "..kggggggggggk..",
-            "...kggggggggk...",
-            "....kgkgkgkgk...",
-            ".....k.k.k.k....",
-            "................",
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                ".............jjjjjj.............",
+                "............jjjjjjjj............",
+                "...........jjjjjjjjjj...........",
+                "..........jjjjjjjjjjjj..........",
+                ".........jjjjjjjjjjjjjj.........",
+                ".........jjjjjnnnnjjjjj.........",
+                ".........jjjjnnnnnnjjjj.........",
+                ".........jjjnnnnnnnnjjj.........",
+                ".........jjjnnnnnnnnjjj.........",
+                ".........jjjnnlnnlnnjjj.........",
+                "..........jjnnnnnnnnjj..........",
+                ".........jjjjnnnnnnjjjj.........",
+                "...BB....jjjjjnnnnjjjjj.........",
+                "..BBBB..jjjjjjjjjjjjjjjj........",
+                ".BBBBBB.jjjjjjjjjjjjjjjj........",
+                ".BBBoBBjjjjjjjjjjjjjjjjjj.......",
+                "..BBBBjjjjddddddddddddjjj.......",
+                "...BBjjjjjjjjjjjjjjjjjjjjj......",
+                "....ssjjjjjjjjjjjjjjjjjjjj......",
+                ".....jjjjjjjjjjjjjjjjjjjjjj.....",
+                ".....jjjjjjjjjjjjjjjjjjjjjj.....",
+                "....jjjjjjjjjjjjjjjjjjjjjjjj....",
+                "....jjjjjjjjjjjjjjjjjjjjjjjj....",
+                "...jjjjjjjjjjjjjjjjjjjjjjjjjj...",
+                "...jjjjjjjjjjjjjjjjjjjjjjjjjj...",
+                "..jjjjjjjjjjjjjjjjjjjjjjjjjjjj..",
+                "..dddddddddddddddddddddddddddd..",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                ".............jjjjjj.............",
+                "............jjjjjjjj............",
+                "...........jjjjjjjjjj...........",
+                "..........jjjjjjjjjjjj..........",
+                ".........jjjjjjjjjjjjjj.........",
+                ".........jjjjjnnnnjjjjj.........",
+                ".........jjjjnnnnnnjjjj.........",
+                ".........jjjnnnnnnnnjjj.........",
+                ".........jjjnnnnnnnnjjj.........",
+                ".........jjjnnlnnlnnjjj.........",
+                "..........jjnnnnnnnnjj..........",
+                ".........jjjjnnnnnnjjjj.........",
+                "...BB....jjjjjnnnnjjjjj.........",
+                "..BBBB..jggggggggggggggj........",
+                ".BBBBBB.jjjjjjjjjjjjjjjj........",
+                ".BBBoBBjjjjjjjjjjjjjjjjjj.......",
+                "..BBBBjjjjggggggggggggjjj.......",
+                "...BBjjjjjjjjjjjjjjjjjjjjj......",
+                "....ssjjjjjjjjjjjjjjjjjjjj......",
+                ".....jjjjjjjjjjjjjjjjjjjjjj.....",
+                ".....jjjjjjjjjjjjjjjjjjjjjj.....",
+                "....jjjjjjjjjjjjjjjjjjjjjjjj....",
+                "....jjjjjjjjjjjjjjjjjjjjjjjj....",
+                "...jjjjjjjjjjjjjjjjjjjjjjjjjj...",
+                "...jjjjjjjjjjjjjjjjjjjjjjjjjj...",
+                "..jjjjjjjjjjjjjjjjjjjjjjjjjjjj..",
+                "..gggggggggggggggggggggggggggg..",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "........x.......x......x........",
+                ".........x......x.....x.........",
+                ".........x...jjjjjj...x.........",
+                "..........x.jjjjjjjj.x..........",
+                "..........xjjjjjjjjjjx..........",
+                "..........jjjjjjjjjjjj..........",
+                ".........jjjjjjjjjjjjjj.........",
+                ".........jjjjjnnnnjjjjj.........",
+                ".........jjjjnnnnnnjjjj.........",
+                ".........jjjnnnnnnnnjjj.........",
+                ".........jjjnnnnnnnnjjj.........",
+                ".........jjjnnRnnRnnjjj.........",
+                "..........jjnnnnnnnnjj..........",
+                ".........jjjjnnnnnnjjjj.........",
+                "...RR....jjjjjnnnnjjjjj.........",
+                "..RRRR..jggggggggggggggj........",
+                ".RRRRRR.jjjjjjjjjjjjjjjj........",
+                ".RRRoRRjjjjjjjjjjjjjjjjjj.......",
+                "..RRRRjjjjggggggggggggjjj.......",
+                "...RRjjjjjjjjjjjjjjjjjjjjj......",
+                "....ssjjjjjjjjjjjjjjjjjjjj......",
+                ".....jjjjjjjjjjjjjjjjjjjjjj.....",
+                ".....jjjjjjjjjjjjjjjjjjjjjj.....",
+                "....jjjjjjjjjjjjjjjjjjjjjjjj....",
+                "....jjjjjjjjjjjjjjjjjjjjjjjj....",
+                "...jjjjjjjjjjjjjjjjjjjjjjjjjj...",
+                "...jjjjjjjjjjjjjjjjjjjjjjjjjj...",
+                "..jjjjjjjjjjjjjjjjjjjjjjjjjjjj..",
+                "..gggggggggggggggggggggggggggg..",
+                "................................",
+                "................................",
+            },
         };
 
-        static readonly Dictionary<char, Color32> BrutePalette = new Dictionary<char, Color32>
+        static readonly string[][] BruteRows32 =
         {
-            { 'k', new Color32(26, 22, 20, 255) },
-            { 's', new Color32(130, 120, 110, 255) },
-            { 'd', new Color32(90, 82, 74, 255) },
-            { 'y', new Color32(255, 140, 60, 255) },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqLLqqqqLLqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                "........qqqqqqqqqqqqqqqq........",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqnqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqnqqLLqqqqqqqqqqqq...",
+                "...qqqqqqqqqnqqLLqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqLLqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqnqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqnqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqnqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "..qqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqq..qqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqq..qqqqqqqqqqqqq..",
+                "..........qqqqq..qqqqq..........",
+                "..........qqqqq..qqqqq..........",
+                "..........qqqqq..qqqqq..........",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqLLqqqqLLqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                "...GGGGGGqqqqqqqqqqqqqqGGGGGG...",
+                "...GGGGGGqqqqqqqqqqqqqqGGGGGG...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqnqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqnqqLLqqqqqqqqqqqq...",
+                "...qqqqqqqqqnqqLLqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqLLqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqnqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqnqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqnqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "..qqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqq..qqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqq..qqqqqqqqqqqqq..",
+                "..........qqqqq..qqqqq..........",
+                "..........qqqqq..qqqqq..........",
+                "..........qqqqq..qqqqq..........",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                "................................",
+                "................................",
+                "................................",
+                "..........x..x....x..x..........",
+                "..........x..x....x..x..........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqqqqqqqqqqqq.........",
+                ".........qqqRRqqqqRRqqq.........",
+                "....x..x.qqqqqqqqqqqqqq.x..x....",
+                "....x..x.qqqqqqqqqqqqqq.x..x....",
+                "...GGGGGGqqqqqqqqqqqqqqGGGGGG...",
+                "...GGGGGGqqqqqqqqqqqqqqGGGGGG...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqnqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqnqqRRqqqqqqqqqqqq...",
+                "...qqqqqqqqqnqqRRqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqRRqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqnqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqnqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqnqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "...qqqqqqqqqqqqqqqqqqqqqqqqqq...",
+                "..qqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqq..qqqqqqqqqqqqq..",
+                "..qqqqqqqqqqqqq..qqqqqqqqqqqqq..",
+                "..........qqqqq..qqqqq..........",
+                "..........qqqqq..qqqqq..........",
+                "..........qqqqq..qqqqq..........",
+                "................................",
+            },
         };
 
-        static readonly string[] BruteRows =
+        static readonly string[][] BomberRows32 =
         {
-            "................",
-            "................",
-            ".....kkkkkk.....",
-            "....kssssssk....",
-            "...kssyssyssk...",
-            "...kssssssssk...",
-            "..kssssssssssk..",
-            ".kssskssssksssk.",
-            "kssssksssskssssk",
-            "kssdssssssssdssk",
-            "kssdsssssssddssk",
-            ".kkkssssssssskk.",
-            "...ksssk.kssk...",
-            "...kddk...kddk..",
-            "...kkkk...kkkk..",
-            "................",
-        };
-
-        static readonly Dictionary<char, Color32> BomberPalette = new Dictionary<char, Color32>
-        {
-            { 'k', new Color32(20, 18, 24, 255) },
-            { 'b', new Color32(60, 58, 76, 255) },
-            { 'w', new Color32(160, 160, 180, 255) },
-            { 'r', new Color32(255, 90, 60, 255) },
-            { 'y', new Color32(255, 220, 90, 255) },
-            { 'o', new Color32(255, 255, 230, 255) },
-        };
-
-        static readonly string[] BomberRows =
-        {
-            "..........y.....",
-            ".........yoy....",
-            "..........w.....",
-            ".........w......",
-            "......kkkkk.....",
-            "....kkbbbbbkk...",
-            "...kbbbwbbbbbk..",
-            "...kbbwbbbbbbk..",
-            "..kbbbbbbbbbbbk.",
-            "..kbbrrbbbrrbbk.",
-            "..kbbbbbbbbbbbk.",
-            "...kbbbbbbbbbk..",
-            "...kbbbkkkbbbk..",
-            "....kkk...kkk...",
-            "....kk.....kk...",
-            "................",
+            new[]
+            {
+                "................................",
+                ".....................Lo.........",
+                ".....................lL.........",
+                "...................ww...........",
+                "..................w.............",
+                ".................w..............",
+                "..............iiii..............",
+                "..............iiii..............",
+                ".............iiiiii.............",
+                "...........iiiiiiiiii...........",
+                ".........iiiiiiiiiiiiii.........",
+                "........iiiiiiiiiiiiiiii........",
+                "........iiiiiiiiiiiiiiii........",
+                ".......iiiiiiiiiiiiiiiiii.......",
+                ".......iiiiiiiiiiiiiiiiii.......",
+                "......iiiiiiiiiiiiiiiiiiii......",
+                "......iiiiiiRRiiiiRRiiiiii......",
+                "......iiiiiiRRiiiiRRiiiiii......",
+                "......iiiiiiiiiiiiiiiiiiii......",
+                "......iiiiiiiiiiiiiiiiiiii......",
+                "......iiiiiiiiiiiiiiiiiiii......",
+                ".......iiiiiiinnnniiiiiii.......",
+                ".......iiiiiiiiiiiiiiiiii.......",
+                "........iiiiiiiiiiiiiiii........",
+                "........iiiiiiiiiiiiiiii........",
+                ".........iiiiiiiiiiiiii.........",
+                "...........iiiiiiiiii...........",
+                "..........bbbiiiiiibbb..........",
+                "..........bbb......bbb..........",
+                "..........bbb......bbb..........",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                ".....................Lo.........",
+                ".....................lL.........",
+                "...................ww...........",
+                "..................w.............",
+                ".................w..............",
+                "..............iiii..............",
+                "..............iiii..............",
+                ".............iiiiii.............",
+                "...........iiiiiiiiii...........",
+                ".........iiiiiiiiiiiiii.........",
+                "........iiiiiiiiiiiiiiii........",
+                "........iiiiiiiiiiiiiiii........",
+                ".......iiiiiiiiiiiiiiiiii.......",
+                ".......iigiiiiiiiiiiiiigi.......",
+                "......iiiiiniiiiiiiiniiiii......",
+                "......iiiiiiRRiiiiRRiiiiii......",
+                "......iiiiiiRRiiiiRRiiiiii......",
+                "......iiiiiiiiiiiiiiiiiiii......",
+                "......iiiiiiiiiiiiiiiiiiii......",
+                "......iigiiiiiiiiiiiiiiigi......",
+                ".......iiiiiiinnnniiiiiii.......",
+                ".......iiiiiiiiiiiiiiiiii.......",
+                "........iiiiiiiiiiiiiiii........",
+                "........iiiiiiiiiiiiiiii........",
+                ".........igiiiiiiiiiiig.........",
+                "...........iiiiiiiiii...........",
+                "..........bbbiiiiiibbb..........",
+                "..........bbb......bbb..........",
+                "..........bbb......bbb..........",
+                "................................",
+                "................................",
+            },
+            new[]
+            {
+                "................................",
+                ".....................Lo.........",
+                ".....................lL.........",
+                "...................ww...........",
+                "..................w.............",
+                ".................w..............",
+                "..............iiii..............",
+                "..............iixi..............",
+                ".............iiiiii.............",
+                "........x..iiiiiiiiii...x.......",
+                ".........xiiiiiiiiiiiiix........",
+                "........iiiiiiiiiiiiiiii........",
+                "........iiiiiiiiiiiiiiii........",
+                ".......iiiiiiiiiiiiiiiiii.......",
+                ".......iigiiiiiiiiiiiiigi.......",
+                "......iiiiiniiiiiiiiniiiii......",
+                "......iiiiiiRRiiiiRRiiiiii......",
+                "......iiiiiiRRiiiiRRiiiiii......",
+                "....xxiiiiiiiiiiiiiiiiiiiixx....",
+                "......iiiiiiiiiiiiiiiiiiii......",
+                "......iigiiiiiiiiiiiiiiigi......",
+                ".......iiiiiiinnnniiiiiii.......",
+                ".......iiiiiiixxxxiiiiiii.......",
+                "........iiiiiiiiiiiiiiii........",
+                "........iiiiiiiiiiiiiiii........",
+                ".........igiiiiiiiiiiig.........",
+                "...........iiiiiiiiii...........",
+                "..........bbbiiiiiibbb..........",
+                "..........bbb......bbb..........",
+                "..........bbb......bbb..........",
+                "................................",
+                "................................",
+            },
         };
 
         /// <summary>町の施設のアイコン（12ドット）。0 倉庫番・1 商人・2 師匠・3 荷運び・4 鍛冶屋。</summary>
@@ -2532,18 +2733,6 @@ namespace VividOfFade
         static Color32 Mix(Color32 a, Color32 b, float t) => new Color32(
             (byte)(a.r + (b.r - a.r) * t), (byte)(a.g + (b.g - a.g) * t), (byte)(a.b + (b.b - a.b) * t), 255);
 
-        static readonly string[] SlimeRows =
-        {
-            "....kkkk....",
-            "..kkggggkk..",
-            ".kgwggggggk.",
-            ".kwwggggggk.",
-            "kggggggggggk",
-            "kgggeggegggk",
-            "kggggggggggk",
-            ".kddddddddk.",
-            "..kkkkkkkk..",
-        };
 
         static readonly string[] FireballRows =
         {
