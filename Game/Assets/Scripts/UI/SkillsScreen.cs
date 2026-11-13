@@ -46,7 +46,9 @@ namespace VividOfFade
                 visible.Add(i);
             }
             float rowH = Mathf.Min(H * 0.13f, (H - y - pad) / visible.Count - H * 0.008f);
-            float lineH = small.fontSize * 1.3f;
+            // 説明と MP などの行は、経験値のバーをアイコンの下に移した分だけ文字を大きくする
+            var text = new GUIStyle(small) { fontSize = Mathf.RoundToInt(small.fontSize * 1.15f) };
+            float lineH = text.fontSize * 1.3f;
 
             foreach (int i in visible)
             {
@@ -58,16 +60,25 @@ namespace VividOfFade
 
                 float inner = rowH * 0.06f;
 
-                // アイコン（左）。文字はその右に並べる
-                float iconSize = Mathf.Min(rowH * 0.55f, W * 0.14f);
+                // アイコン（左）と、その下に熟練度（使った回数）のバー。文字はその右に並べる
+                float barH = Mathf.Max(3f, rowH * 0.07f);
+                float iconSize = Mathf.Min(rowH - inner * 3f - barH, W * 0.15f);
+                var iconRect = new Rect(row.x + inner, row.y + inner, iconSize, iconSize);
                 var old = GUI.color;
                 GUI.color = learned ? Color.white : new Color(1f, 1f, 1f, 0.3f);
-                Hud.DrawSprite(new Rect(row.x + inner, row.y + inner, iconSize, iconSize), PixelArt.SkillIcon(spec));
+                Hud.DrawSprite(iconRect, PixelArt.SkillIcon(spec));
                 GUI.color = old;
-                row = new Rect(row.x + iconSize + inner, row.y, row.width - iconSize - inner, row.height);
+                int lv = ch.SkillLv[i];
+                if (learned)
+                {
+                    var bar = new Rect(iconRect.x, iconRect.yMax + inner, iconSize, barH);
+                    Hud.Fill(bar, new Color(1f, 1f, 1f, 0.12f));
+                    float ratio = lv >= SkillInfo.MaxSkillLevel ? 1f : Mathf.Clamp01((float)ch.SkillUses[i] / SkillInfo.UsesToNext(lv));
+                    Hud.Fill(new Rect(bar.x, bar.y, bar.width * ratio, bar.height), new Color(0.6f, 0.85f, 1f, 0.9f));
+                }
+                row = new Rect(row.x + iconSize + inner * 2f, row.y, row.width - iconSize - inner * 2f, row.height);
                 var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold };
                 nameStyle.normal.textColor = learned ? Color.white : new Color(0.55f, 0.55f, 0.55f);
-                int lv = ch.SkillLv[i];
                 string header = learned ? $"{spec.DisplayName}   Lv {lv}" : Loc.T($"{spec.DisplayName}   (learn at Lv {spec.ReqLevel})", $"{spec.DisplayName}   （Lv {spec.ReqLevel}で覚える）");
                 // 1・2・3 のボタンは右側に縦の真ん中で並べ、文字はその左の幅に1行ずつ収める（折り返さない）
                 float bw = row.width * 0.12f;
@@ -76,7 +87,6 @@ namespace VividOfFade
                 float textW = row.width - inner - buttonsW;
                 Hud.FitLabel(new Rect(row.x + inner, row.y + inner, textW, lineH * 1.2f), header, nameStyle);
 
-                var text = new GUIStyle(small);
                 text.normal.textColor = learned ? new Color(0.85f, 0.85f, 0.85f) : new Color(0.5f, 0.5f, 0.5f);
                 float ty = row.y + inner + lineH * 1.25f;
                 Hud.FitLabel(new Rect(row.x + inner, ty, textW, lineH), spec.DisplayDesc, text);
@@ -85,22 +95,6 @@ namespace VividOfFade
                 string power = Loc.T($"Power x{SkillInfo.Power(lv):0.0}", $"威力 x{SkillInfo.Power(lv):0.0}");
                 Hud.FitLabel(new Rect(row.x + inner, ty, textW, lineH), Loc.T($"MP {spec.Mp}   Cooldown {cd:0.0}s   {power}", $"MP {spec.Mp}   待ち時間 {cd:0.0}秒   {power}"), text);
                 ty += lineH;
-
-                // 熟練度（使った回数）
-                if (learned)
-                {
-                    var bar = new Rect(row.x + inner, ty + lineH * 0.25f, Mathf.Min(row.width * 0.45f, textW), lineH * 0.4f);
-                    Hud.Fill(bar, new Color(1f, 1f, 1f, 0.12f));
-                    if (lv >= SkillInfo.MaxSkillLevel)
-                    {
-                        Hud.Fill(bar, new Color(0.6f, 0.85f, 1f, 0.9f));
-                    }
-                    else
-                    {
-                        float ratio = Mathf.Clamp01((float)ch.SkillUses[i] / SkillInfo.UsesToNext(lv));
-                        Hud.Fill(new Rect(bar.x, bar.y, bar.width * ratio, bar.height), new Color(0.6f, 0.85f, 1f, 0.9f));
-                    }
-                }
 
                 // ボタンに付ける（1・2・3）
                 if (learned)
