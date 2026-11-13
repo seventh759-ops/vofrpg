@@ -85,11 +85,20 @@ namespace VividOfFade
         /// <summary>直前に倒した敵の経験値の倍率（段階）。Killed の中で読む。</summary>
         public float LastKillExpMult { get; private set; } = 1f;
 
+        /// <summary>今の区画での、その種類の敵の絵（深淵では深淵の敵の絵。黄金のスライムはいつも同じ）。</summary>
+        Sprite SpriteFor(EnemyKind kind, int tier)
+        {
+            if (kind == EnemyKind.Golden) return PixelArt.EnemySprite(kind, tier);
+            if (zone != null && zone.Pattern >= FloorPattern.Rift) return PixelArt.AbyssEnemy(kind, zone, tier);
+            if (kind == EnemyKind.Slime && zone != null) return PixelArt.SlimeFor(zone, tier);
+            return PixelArt.EnemySprite(kind, tier);
+        }
+
         /// <summary>区画が変わったら、これから出るスライムの色と、敵の種類の割合を変える。</summary>
         public void SetZone(ZoneSpec zone)
         {
-            slimeSprite = PixelArt.SlimeFor(zone);
             this.zone = zone;
+            slimeSprite = SpriteFor(EnemyKind.Slime, 0);
             zoneIndex = (int)zone.Pattern;
         }
 
@@ -102,6 +111,10 @@ namespace VividOfFade
             new[] { 35, 20, 30, 15, 0 },  // 凍てる墓所
             new[] { 30, 15, 25, 20, 10 }, // 沈んだ書庫
             new[] { 20, 20, 20, 20, 20 }, // 虚ろの淵
+            new[] { 30, 15, 15, 25, 15 }, // 深淵の門
+            new[] { 25, 30, 25, 10, 10 }, // 星喰いの淵
+            new[] { 20, 15, 35, 15, 15 }, // 逆さ月の祭壇
+            new[] { 20, 20, 20, 25, 15 }, // 深淵の玉座
         };
 
         EnemyKind PickKind()
@@ -204,7 +217,7 @@ namespace VividOfFade
             e.Charging = 0f;
             e.Phase = UnityEngine.Random.value * 6.28f;
             e.ActTimer = UnityEngine.Random.Range(0.5f, 1.5f);
-            if (kind != EnemyKind.Slime) e.Sr.sprite = PixelArt.EnemySprite(kind);
+            if (kind != EnemyKind.Slime) e.Sr.sprite = SpriteFor(kind, 0);
             switch (kind)
             {
                 case EnemyKind.Bat:
@@ -253,7 +266,7 @@ namespace VividOfFade
                 e.BaseScale *= GameConfig.TierScale[tier];
                 e.Radius *= GameConfig.TierScale[tier];
                 e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale, 1f);
-                e.Sr.sprite = kind == EnemyKind.Slime && zone != null ? PixelArt.SlimeFor(zone, tier) : PixelArt.EnemySprite(kind, tier);
+                e.Sr.sprite = SpriteFor(kind, tier);
             }
             else
             {
@@ -534,7 +547,7 @@ namespace VividOfFade
                 small.MaxHp = s.Hp;
                 small.ContactDamage = s.Damage;
                 small.Tier = s.Tier;
-                small.Sr.sprite = s.Kind == EnemyKind.Slime && zone != null ? PixelArt.SlimeFor(zone, s.Tier) : PixelArt.EnemySprite(s.Kind, s.Tier);
+                small.Sr.sprite = SpriteFor(s.Kind, s.Tier);
                 small.BaseScale = s.Scale * 0.75f;
                 small.Radius = GameConfig.SlimeRadius * small.BaseScale;
                 small.Speed *= 1.3f;

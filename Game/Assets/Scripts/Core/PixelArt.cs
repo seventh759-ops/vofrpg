@@ -2908,6 +2908,221 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>
+        /// 深淵の敵（種類ごとに専用の絵）。体は区画の色を黒く沈めた色、目や裂け目は区画の光の色で光り、まわりに光の縁が付く。
+        /// k 体・K 体の暗い所・z 骨や角・Z 光（区画の色）・M 膜。上級ほど暗く、光の縁が強い。
+        /// </summary>
+        public static Sprite AbyssEnemy(EnemyKind kind, ZoneSpec z, int tier = 0)
+        {
+            tier = Mathf.Clamp(tier, 0, 2);
+            string[] rows;
+            switch (kind)
+            {
+                case EnemyKind.Bat: rows = AbyssWingRows; break;
+                case EnemyKind.Caster: rows = AbyssSeerRows; break;
+                case EnemyKind.Brute: rows = AbyssFiendRows; break;
+                case EnemyKind.Bomber: rows = AbyssHuskRows; break;
+                default: rows = AbyssOozeRows; break;
+            }
+            string key = $"Abyss32_{kind}_{z.Name}_{tier}";
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            float f = tier == 0 ? 0.5f : tier == 1 ? 0.42f : 0.34f;
+            Color32 body = Mix(new Color32(10, 6, 14, 255), z.Slime, f);
+            Color32 dark = Mix(new Color32(6, 3, 8, 255), z.SlimeDark, f);
+            var glow = z.Accent;
+            var aura = Mix(z.Accent, new Color32(255, 255, 255, 255), tier * 0.15f);
+            var over = new Dictionary<char, Color32[]>
+            {
+                { 'k', RampFrom(body) },
+                { 'K', RampFrom(dark) },
+                { 'M', RampFrom(Mix(dark, z.Accent, 0.25f)) },
+                { 'n', RampFrom(Mix(new Color32(14, 10, 20, 255), z.SlimeDark, 0.3f)) },
+                { 'z', Ramp(214, 206, 196, 170, 160, 150, 120, 112, 106, 80, 74, 70) },
+                { 'Z', new[] { glow, glow, glow, glow } },
+            };
+            return Shaded(key, rows, over, aura);
+        }
+
+        static readonly string[] AbyssOozeRows =
+        {
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "........z..............z........",
+            "........zz............zz........",
+            "........zz............zz........",
+            ".........zz..kkkkkk..zz.........",
+            ".........zzzkkkkkkkkzzz.........",
+            ".........zzkkkkkkkkkkzz.........",
+            "........kkkkkkkZZkkkkkkk........",
+            "........kkkkkZZooZZkkkkk........",
+            ".......kkkkkZZoeeoZZkkkkk.......",
+            ".....kkkkkkkZooeeooZkkkkkkk.....",
+            ".....kkkkkkkZZoeeoZZkkkkkkk.....",
+            "....kkkkkkkkkZZooZZkkkkkkkkk....",
+            "....kkkZkkkkkkkZZkkkkkkkkZkk....",
+            "...kkkkkZkkkkkkkkkkkkkkkZkkkk...",
+            "....kkkkZKKKKKKKKKKKKKKkZkkk....",
+            "....kKKKKZKKKKZKKKKKKKKZKKKk....",
+            ".....KKKKKZKKKKZZKKKKKZKKKK.....",
+            ".....KKKKKKKKKKKKZKKKKKKKKK.....",
+            "....KKKKKKKKKKKKKKKKKKKKKKKK....",
+            "....KKKKKKKKKKKKKKKKKKKKKKKK....",
+            ".....KKK.KKKkkKKKkkKKK..KKK.....",
+            "................................",
+        };
+
+        static readonly string[] AbyssWingRows =
+        {
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            ".MZ..........................ZM.",
+            ".MZzz......................zzZM.",
+            "..ZMMzz......zz..zz......zzMMZ..",
+            "..ZMMMMz.....zz..zz.....zMMMMZ..",
+            "..MZMMMMzz...zzzzzz...zzMMMMZM..",
+            "..MZMMMMzMzz.zzZZzz.zzMzMMMMZM..",
+            "..MZMMMMzMMMzzZzzZzzMMMzMMMMZM..",
+            "...ZMMMzMMMMkzzeezzkMMMMzMMMZ...",
+            "...ZMMMzMMMMkzzzzzzkMMMMzMMMZ...",
+            "...ZMMMzMMMMkkkkkkkkMMMMzMMMZ...",
+            "...ZMMMzMM..kkkkkkkk..MMzMMMZ...",
+            "...MZMMz..MMkkkkkkkkMM..zMMZM...",
+            "....ZMMzMMMMkkkkkkkkMMMMzMMZ....",
+            "....ZMzMMMMM.kkkkkk.MMMMMzMZ....",
+            "....ZMzMMMM..kkkkkk..MMMMzMZ....",
+            ".....ZZMMM....k..k....MMMZZ.....",
+            ".......ZZ.....k..k.....ZZ.......",
+            ".........Z....k...k...Z.........",
+            ".............k....k.............",
+            ".............k....k.............",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+        };
+
+        static readonly string[] AbyssSeerRows =
+        {
+            "................................",
+            "...............ZZ...............",
+            "..............ZZZZ..............",
+            "..............ZZZZ..............",
+            "...............ZZ...............",
+            "................................",
+            ".............nnnnnn.............",
+            "............nnnnnnnn............",
+            "...........nnnneennnn...........",
+            "...........nneeeeeenn...........",
+            "...........nneeeeeenn...........",
+            "...........nneeeeeenn...........",
+            "...........nneZZeZZnn...........",
+            "...ZZZ.....nneeoeoenn.....ZZZ...",
+            "...ZZZ......neeeeeen......ZZZ...",
+            "...ZoZ......nnneennn......ZoZ...",
+            "...ZZZ.....nnnnnnnnnn.....ZZZ...",
+            ".....k.....nnnnnknnnn......k....",
+            "......k...kkkkkkkkkkkkk...k.....",
+            ".......k..nnnnnnknnnnn...k......",
+            ".......k..nnnnnnknnnnn...k......",
+            "........knnnnnnnknnnnnn.k.......",
+            ".........knnnnnnknnnnnnk........",
+            "........nnnnnnnnknnnnnnn........",
+            "........nnnnnnnnknnnnnnn........",
+            "........nnnnnnnnknnnnnnn........",
+            ".......nnnnnnnnnknnnnnnnn.......",
+            "................................",
+            ".........n..n..n..n..n..n.......",
+            "................................",
+            "................................",
+            "................................",
+        };
+
+        static readonly string[] AbyssFiendRows =
+        {
+            "........z..............z........",
+            ".........z............z.........",
+            ".........zz..........zz.........",
+            "..........zz........zz..........",
+            "..........zzz......zzz..........",
+            "...........zzz....zzz...........",
+            "...........zzzKKKKzzz...........",
+            "............zKKKKKKz............",
+            "............KKKKKKKK............",
+            "...........KKZZKKKZZK...........",
+            "............KKKKKKKK............",
+            "............KKzKKKzK............",
+            "...KKK.....kkKeeeeekk.....KKK...",
+            "..KKKKK...kkkkkkkkkkkk...KKKKK..",
+            "..KKKKK..kkkkkkkZkkkkkk..KKKKK..",
+            "..KKKKK..kkkkkkkZkkkkkk..KKKKK..",
+            "..KKKKK.kkkkkkkZkkkkkkkk.KKKKK..",
+            "..KKKKK.kkkkkkkZokkkkkkk.KKKKK..",
+            "..kkkkk.kkkkkkkkZkkkkkkk.Kkkkkk.",
+            "..kkkkk.kkkkkkkkZkkkkkkk..kkkkk.",
+            "..kkkkk.kkkkkkkkoZkkkkkk..kkkkk.",
+            "..kkkkk..kkkkkkkZkkkkkk...kkkkk.",
+            "..kkkkk..kkkkkkkZkkkkkk...kkkkk.",
+            "..kkkkk...kkkkkZkkkkkk....kkkkk.",
+            "..kkkkk....kkkkkkkkkk.....kkkkk.",
+            "..z.z.z...KKKKKkkkKKKKK...z.z.z.",
+            "..........KKKKK...KKKKK.........",
+            "..........KKKKK...KKKKK.........",
+            "..........KKKKK...KKKKK.........",
+            "..........KKKKK...KKKKK.........",
+            "..........KKKKK...KKKKK.........",
+            "................................",
+        };
+
+        static readonly string[] AbyssHuskRows =
+        {
+            "................................",
+            "................................",
+            "................................",
+            ".................Z..............",
+            "................ZZZ.............",
+            "................ZZZ.............",
+            "................ZoZ.............",
+            "................ZZZ.............",
+            ".................Z..............",
+            "...........z.....z...z..........",
+            "...........z....z....z..........",
+            "....z.......z...z...z.......z...",
+            ".....z......zKKKzKK.z......z....",
+            "......z...KKkkkkZkkkKK....z.....",
+            ".......z.KkkkkkkZkkkkkK..z......",
+            "........KkkkkkkkZkkkkkkK........",
+            ".......KkkkeekkkZkkeekkkK.......",
+            ".......KkkkeekkkZkkeekkkK.......",
+            "......KKkkkkkkkkZkkkkkkkKK......",
+            "......KKkkkkkkkkZkkkkkkkKK......",
+            "......KKZZZZZZZZoZZZZZZZZK......",
+            "......KKkkkkkkkkZkkkkkkkKK......",
+            "..zzzzzKkkkkkkkkZkkkkkkkKKzzzzz.",
+            "......KKkkkkkkkkZkkkkkkkKK......",
+            ".......KKkkkkkkkZkkkkkkKK.......",
+            ".......KKKkkkkkkZkkkkkKKK.......",
+            "........KKKKkkkkZkkkKKKK........",
+            ".........KzKKKKKZKKKKKz.........",
+            ".........zKKKKKKZKKKKK.z........",
+            ".........KKKKKKKKKK.KKKK........",
+            "........zKKKK.......KKKKz.......",
+            "................................",
+        };
+
         /// <summary>区画の色のスライム（段階つき。上級ほど暗い）。</summary>
         public static Sprite SlimeFor(ZoneSpec z, int tier = 0)
         {
