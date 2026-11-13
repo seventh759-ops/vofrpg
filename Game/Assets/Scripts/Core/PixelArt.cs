@@ -4364,12 +4364,12 @@ namespace VividOfFade
                             else if (TileNoise(x / 9f, sy / 5f, salt + 41) > 0.7f) c = Mix(c, accent, 0.12f);
                             break;
                         // ---- 深淵 ----
-                        case FloorPattern.Rift: // 黒い岩を走る、赤く光る裂け目（芯は白く熱い）
+                        case FloorPattern.Rift: // 黒い岩を走る、赤く光る裂け目（細く少なく、つながった線。芯だけ明るい）
                         {
-                            float k = Mathf.Abs(TileNoise(x / 8f, sy / 4f, salt + 51) - 0.5f);
-                            if (k < 0.01f) c = Mix(accent, new Color32(255, 220, 200, 255), 0.45f);
-                            else if (k < 0.024f) c = accent;
-                            else if (k < 0.045f) c = Mix(c, accent, 0.3f);
+                            float k = Mathf.Abs(TileNoise(x / 13f, sy / 6.5f, salt + 51) - 0.5f);
+                            if (k < 0.006f) c = Mix(accent, new Color32(255, 200, 180, 255), 0.25f);
+                            else if (k < 0.014f) c = Mix(c, accent, 0.65f);
+                            else if (k < 0.026f) c = Mix(c, accent, 0.15f);
                             break;
                         }
                         case FloorPattern.Starless: // 青い燐光の筋と、ときどき強く光る粒
