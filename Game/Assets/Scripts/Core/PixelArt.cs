@@ -595,7 +595,7 @@ namespace VividOfFade
         /// 部品で描いた絵に、濃淡と影と輪郭を付ける。光は左上から：
         /// 左か上が別の部品なら明るい縁、右か下が別の部品なら影、右下の角はさらに暗く、大きな面の右下寄りも暗くする。
         /// </summary>
-        static Sprite Shaded(string key, string[] rows, Dictionary<char, Color32[]> overrides = null, Color32? auraColor = null, int ppu = 0)
+        static Sprite Shaded(string key, string[] rows, Dictionary<char, Color32[]> overrides = null, Color32? auraColor = null, int ppu = 0, bool strongAura = false)
         {
             if (cache.TryGetValue(key, out var cached)) return cached;
             int h = rows.Length, w = rows[0].Length;
@@ -643,23 +643,28 @@ namespace VividOfFade
                     px[(h - 1 - y) * w + x] = c; // テクスチャは下から上へ並ぶ
                 }
             }
-            // 3次職：暗い輪郭のさらに外側に、半透明の光の縁を1ドット
+            // 3次職：暗い輪郭のさらに外側に、半透明の光の縁を1ドット。
+            // strongAura（深淵の敵・ボス）は、透けない縁と、その外にもう1ドットの半透明の縁（同じ色の床でも浮き出すように）
             if (auraColor.HasValue)
             {
-                var ac = auraColor.Value;
-                ac.a = 160;
-                var halo = (Color32[])px.Clone();
-                for (int y = 0; y < h; y++)
+                int rings = strongAura ? 2 : 1;
+                for (int ring = 0; ring < rings; ring++)
                 {
-                    for (int x = 0; x < w; x++)
+                    var ac = auraColor.Value;
+                    ac.a = strongAura ? (byte)(ring == 0 ? 255 : 120) : (byte)160;
+                    var halo = (Color32[])px.Clone();
+                    for (int y = 0; y < h; y++)
                     {
-                        int i = y * w + x;
-                        if (px[i].a > 0) continue;
-                        bool near = (x > 0 && px[i - 1].a > 0) || (x < w - 1 && px[i + 1].a > 0) || (y > 0 && px[i - w].a > 0) || (y < h - 1 && px[i + w].a > 0);
-                        if (near) halo[i] = ac;
+                        for (int x = 0; x < w; x++)
+                        {
+                            int i = y * w + x;
+                            if (px[i].a > 0) continue;
+                            bool near = (x > 0 && px[i - 1].a > 0) || (x < w - 1 && px[i + 1].a > 0) || (y > 0 && px[i - w].a > 0) || (y < h - 1 && px[i + w].a > 0);
+                            if (near) halo[i] = ac;
+                        }
                     }
+                    px = halo;
                 }
-                px = halo;
             }
             // ppu を指定しなければ、絵の幅をちょうど1マスに収める（キャラ・敵は 32 ドットで 1 マス）
             return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), ppu > 0 ? ppu : w);
@@ -2207,7 +2212,7 @@ namespace VividOfFade
                 { 'z', Ramp(214, 206, 196, 170, 160, 150, 120, 112, 106, 80, 74, 70) },
                 { 'Z', new[] { glow, glow, glow, glow } },
             };
-            return Shaded("AbyssBoss32_" + i, AbyssBossRows[i], over, z.Accent);
+            return Shaded("AbyssBoss32_" + i, AbyssBossRows[i], over, Mix(z.Accent, new Color32(255, 255, 255, 255), 0.4f), 0, true);
         }
 
         static string[][] AbyssBossRows => new[] { BossRiftWardenRows, BossStarEaterRows, BossMoonPriestRows };
@@ -3070,7 +3075,7 @@ namespace VividOfFade
                 { 'z', Ramp(214, 206, 196, 170, 160, 150, 120, 112, 106, 80, 74, 70) },
                 { 'Z', new[] { glow, glow, glow, glow } },
             };
-            return Shaded(key, rows, over, aura);
+            return Shaded(key, rows, over, aura, 0, true);
         }
 
         static readonly string[] AbyssOozeRows =
