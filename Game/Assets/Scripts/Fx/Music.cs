@@ -13,7 +13,9 @@ namespace VividOfFade
     public sealed class Music : MonoBehaviour
     {
         const int Rate = 22050;
-        const float Volume = 0.4f;
+        /// <summary>音量の段階（0 はなし、1〜5）。4 が前の版と同じ大きさ。</summary>
+        static readonly float[] Volumes = { 0f, 0.1f, 0.2f, 0.3f, 0.4f, 0.55f };
+        static float Volume => Volumes[Profile.MusicVolumeSetting];
 
         AudioSource normal;
         AudioSource boss;
@@ -148,16 +150,35 @@ namespace VividOfFade
             goldenMode = on;
         }
 
-        public bool Muted => muted;
+        public bool Muted => muted || Profile.MusicVolumeSetting == 0;
 
+        /// <summary>M キー：一時的に消す／戻す。</summary>
         public void ToggleMute()
         {
             muted = !muted;
         }
 
+        /// <summary>BGM の音量を次の段階へ（なし → 1 → 2 → 3 → 4 → 5 → なし）。保存する。</summary>
+        public void NextVolume()
+        {
+            Profile.MusicVolumeSetting = (Profile.MusicVolumeSetting + 1) % Volumes.Length;
+            muted = false;
+        }
+
+        /// <summary>設定の画面に出す、今の音量（「オフ」か「■■■□□」）。</summary>
+        public string VolumeLabel
+        {
+            get
+            {
+                int v = Profile.MusicVolumeSetting;
+                if (v == 0) return Loc.T("OFF", "オフ");
+                return new string('■', v) + new string('□', Volumes.Length - 1 - v);
+            }
+        }
+
         void Update()
         {
-            float step = Time.unscaledDeltaTime * Volume / 0.8f;
+            float step = Time.unscaledDeltaTime * Mathf.Max(Volume, 0.4f) / 0.8f; // 音量 0 でも、ちゃんと下げきれるように
             bool bonusOn = goldenMode && !bossMode;
             float normalTarget = muted || bossMode || bonusOn || nextNormal != null ? 0f : Volume;
             float bossTarget = muted || !bossMode || nextBoss != null ? 0f : Volume;

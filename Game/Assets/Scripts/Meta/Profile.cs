@@ -121,6 +121,9 @@ namespace VividOfFade
         public int Version = 1;
         public int Bgm;                                       // 0 = 区画ごと（前の版の MusicTheme は番号の意味が違うので使わない）
         public int Language;                                  // 0 = English（デフォルト）, 1 = 日本語
+        public bool ManualAttack;                             // 攻撃：押す間（false なら自動）
+        public bool ShowFps;                                  // FPS を出す
+        public int MusicVolume = -1;                          // BGM の音量 0（なし）〜5。-1 は前の版（4 にする）
         public List<string> TipsSeen = new List<string>(); // 案内役が説明し終えた場面
         public List<CharacterData> Characters = new List<CharacterData>();
         public List<Item> Storage = new List<Item>();      // 町の倉庫（全職業で共有）
@@ -267,6 +270,27 @@ namespace VividOfFade
                 EnsureLoaded();
                 data.Bgm = value;
             }
+        }
+
+        /// <summary>攻撃を自動にするか（設定。保存する）。</summary>
+        public static bool AutoAttackSetting
+        {
+            get { EnsureLoaded(); return !data.ManualAttack; }
+            set { EnsureLoaded(); data.ManualAttack = !value; Save(); }
+        }
+
+        /// <summary>FPS を出すか（設定。保存する）。</summary>
+        public static bool ShowFpsSetting
+        {
+            get { EnsureLoaded(); return data.ShowFps; }
+            set { EnsureLoaded(); data.ShowFps = value; Save(); }
+        }
+
+        /// <summary>BGM の音量（0 はなし、1〜5）。保存する。</summary>
+        public static int MusicVolumeSetting
+        {
+            get { EnsureLoaded(); if (data.MusicVolume < 0 || data.MusicVolume > 5) data.MusicVolume = 4; return data.MusicVolume; }
+            set { EnsureLoaded(); data.MusicVolume = UnityEngine.Mathf.Clamp(value, 0, 5); Save(); }
         }
 
         /// <summary>表示の言語（Loc で使う）。</summary>

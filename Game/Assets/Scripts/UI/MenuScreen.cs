@@ -94,7 +94,7 @@ namespace VividOfFade
             hud.Button(new Rect(pad, y, bw, sh), world.AutoAttack ? Loc.T("Attack: AUTO", "攻撃：自動") : Loc.T("Attack: HOLD", "攻撃：押す間"), sub, centered,
                 () => world.AutoAttack = !world.AutoAttack);
             y += sh + gap;
-            hud.Button(new Rect(pad, y, bw, sh), world.Music.Muted ? Loc.T("Music: OFF", "音楽：オフ") : Loc.T("Music: ON", "音楽：オン"), sub, centered, () => world.Music.ToggleMute());
+            hud.Button(new Rect(pad, y, bw, sh), Loc.T("Music volume: ", "音楽の音量：") + world.Music.VolumeLabel, sub, centered, () => world.Music.NextVolume()); // 押すたびに、なし → 1 〜 5
             y += sh + gap;
             hud.Button(new Rect(pad, y, bw, sh), $"BGM: {world.Music.ThemeName}", sub, centered, () => world.NextMusic());
             y += sh + gap;

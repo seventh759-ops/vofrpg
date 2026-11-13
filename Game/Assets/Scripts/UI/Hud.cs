@@ -1038,7 +1038,12 @@ namespace VividOfFade
         public bool ShowHelp;
 
         /// <summary>FPS を表示する（メニューの設定）。</summary>
-        public bool ShowFps;
+        /// <summary>FPS を出すか（設定。保存する）。</summary>
+        public bool ShowFps
+        {
+            get => Profile.ShowFpsSetting;
+            set => Profile.ShowFpsSetting = value;
+        }
 
         static readonly string[] helpLines =
         {

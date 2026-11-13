@@ -323,7 +323,11 @@ namespace VividOfFade
         public bool AutoAttack
         {
             get => Player.AutoAttack;
-            set => Player.AutoAttack = value;
+            set
+            {
+                Player.AutoAttack = value;
+                Profile.AutoAttackSetting = value; // 設定は保存する
+            }
         }
 
         void Awake()
@@ -425,6 +429,7 @@ namespace VividOfFade
             Player = AddChild<Player>("Player");
             Player.Sr = Player.gameObject.AddComponent<SpriteRenderer>();
             Player.Sr.sprite = PixelArt.Player;
+            Player.AutoAttack = Profile.AutoAttackSetting; // 保存した設定を読み込む
             Player.Dodged += OnPlayerDodged;
             Enemies.PastBossSummoned += OnPastBossSummoned;
             Player.Hurt += OnPlayerHurt;
