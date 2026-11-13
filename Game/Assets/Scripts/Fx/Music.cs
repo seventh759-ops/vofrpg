@@ -217,7 +217,9 @@ namespace VividOfFade
         static readonly int[] Em2 = { 64, 67, 71 }, F2 = { 65, 69, 72 }, Bm = { 59, 62, 66 }, A2 = { 57, 61, 64 }, Fs = { 54, 58, 61 };
         static readonly int[] E2 = { 64, 68, 71 }, Fsm = { 66, 69, 73 }, D2 = { 62, 66, 69 };
 
-        /// <summary>区画ごとの曲（FloorPattern の順：灰の回廊・苔むす底・残り火の炉・凍てる墓所・沈んだ書庫・虚ろの淵）。</summary>
+        static readonly int[] Fm2 = { 65, 68, 72 }, Db2 = { 61, 65, 68 }, Ab2 = { 68, 72, 75 }, Eb2 = { 63, 67, 70 }, Bbm = { 58, 61, 65 }, C3 = { 60, 64, 67 };
+
+        /// <summary>区画ごとの曲（FloorPattern の順：灰の回廊・苔むす底・残り火の炉・凍てる墓所・沈んだ書庫・虚ろの淵・深淵の4区画）。</summary>
         static readonly Song[] ZoneSongs =
         {
             // 灰の回廊：冷たい石の広間。ゆっくりした鐘の旋律と、遠くで鳴る太鼓
@@ -346,9 +348,93 @@ namespace VividOfFade
                 Kick = "x...x...x...x...", Clap = "....x.......x...", Hat = "..x...x...x...x.",
                 KickVol = 0.36f, Echo = 0.3f,
             },
+            // ---- 深淵 ----
+            // 深淵の門：重い刻みと、鋸波の不穏な旋律。赤い裂け目の前に立つ緊張
+            new Song
+            {
+                Name = "abyss_gate", Bpm = 124f,
+                Chords = new[] { Cm, Ab, Fm, G3, Cm, Ab, Bb2, G3 },
+                Lead = new[]
+                {
+                    72, -2, -2, 71, 72, -2, 75, -2,
+                    74, -2, 72, -2, 68, -2, -2, -2,
+                    72, -2, -2, 71, 72, -2, 77, -2,
+                    75, -2, 74, -2, 71, -2, -2, -2,
+                    79, -2, -2, 77, 75, -2, 77, -2,
+                    80, -2, 79, -2, 75, -2, -2, -2,
+                    77, -2, 75, -2, 74, -2, 75, 77,
+                    74, -2, -2, -2, 71, -2, -1, -1,
+                },
+                Lead1 = LeadKind.Saw, LeadVol = 0.075f,
+                Bass = BassKind.Pump, BassVol = 0.23f, PadVol = 0.05f, ArpVol = 0.03f,
+                Kick = "x..x..x.x..x..x.", Snare = "....x.......x...", Hat = "x.x.x.x.x.x.x.x.",
+                KickVol = 0.4f, HatVol = 0.022f, Duck = 0.2f, Echo = 0.22f,
+            },
+            // 星喰いの淵：星のない空。高い鐘の分散和音と、遠くで鳴る四つ打ち
+            new Song
+            {
+                Name = "abyss_starless", Bpm = 116f,
+                Chords = new[] { Em2, C, Am, Bm, Em2, C, Am, B },
+                Lead = new[]
+                {
+                    83, -2, -2, -2, 79, -2, 76, -2,
+                    84, -2, -2, -2, 79, -2, -2, -2,
+                    81, -2, -2, 83, 84, -2, 88, -2,
+                    86, -2, -2, -2, -1, -1, -1, -1,
+                    83, -2, -2, -2, 88, -2, 86, -2,
+                    84, -2, 83, -2, 79, -2, -2, -2,
+                    81, -2, 83, -2, 84, -2, 86, -2,
+                    87, -2, -2, -2, -1, -1, 83, -2,
+                },
+                Lead1 = LeadKind.Bell, LeadVol = 0.1f,
+                Bass = BassKind.Octaves, BassVol = 0.19f, PadVol = 0.07f, ArpVol = 0.06f, ArpSaw = true,
+                Kick = "x...x...x...x...", Clap = "....x.......x...", Hat = "..x...x...x...x.",
+                KickVol = 0.32f, HatVol = 0.02f, Echo = 0.45f,
+            },
+            // 逆さ月の祭壇：儀式。笛の旋律と、低く響く太鼓
+            new Song
+            {
+                Name = "abyss_moon", Bpm = 100f,
+                Chords = new[] { Dm, Bb, Gm, A, Dm, Bb, Gm, A },
+                Lead = new[]
+                {
+                    74, -2, -2, -2, 73, -2, 74, -2,
+                    77, -2, -2, -2, 74, -2, -2, -2,
+                    70, -2, -2, 69, 70, -2, 74, -2,
+                    73, -2, -2, -2, -1, -1, 69, -2,
+                    74, -2, 76, -2, 77, -2, 79, -2,
+                    81, -2, -2, 79, 77, -2, -2, -2,
+                    79, -2, 77, -2, 74, -2, 70, -2,
+                    73, -2, -2, -2, -1, -1, -1, -1,
+                },
+                Lead1 = LeadKind.Flute, LeadVol = 0.11f,
+                Bass = BassKind.Sustain, BassVol = 0.2f, PadVol = 0.08f, ArpVol = 0.035f,
+                Kick = "x.....x.x.......", Snare = "........x.......", Hat = "....x.......x...",
+                KickVol = 0.38f, HatVol = 0.02f, Echo = 0.4f,
+            },
+            // 深淵の玉座：最奥。速い四つ打ちに、鋸波の堂々とした旋律
+            new Song
+            {
+                Name = "abyss_throne", Bpm = 132f,
+                Chords = new[] { Fm2, Db2, Eb2, C3, Fm2, Db2, Bbm, C3 },
+                Lead = new[]
+                {
+                    77, -2, -2, -2, 80, -2, 84, -2,
+                    85, -2, -2, 84, 80, -2, -2, -2,
+                    82, -2, -2, -2, 79, -2, 82, -2,
+                    84, -2, -2, -2, 79, -2, -2, -2,
+                    77, -2, 80, -2, 84, -2, 89, -2,
+                    88, -2, -2, 85, 84, -2, -2, -2,
+                    82, -2, 80, -2, 79, -2, 80, 82,
+                    84, -2, -2, -2, -1, -1, -1, -1,
+                },
+                Lead1 = LeadKind.Saw, LeadVol = 0.08f,
+                Bass = BassKind.Pump, BassVol = 0.24f, PadVol = 0.06f, ArpVol = 0.05f, ArpSaw = true,
+                Kick = "x...x...x...x...", Snare = "....x.......x...", Hat = "x.xxx.xxx.xxx.xx",
+                KickVol = 0.42f, HatVol = 0.025f, Duck = 0.25f, Echo = 0.2f,
+            },
         };
 
-        static readonly int[] Fm2 = { 65, 68, 72 }, Db2 = { 61, 65, 68 }, Ab2 = { 68, 72, 75 }, Eb2 = { 63, 67, 70 }, Bbm = { 58, 61, 65 }, C3 = { 60, 64, 67 };
 
         /// <summary>タイトル画面の曲：ゆっくりした笛の旋律と、広がる和音。灯りの消えゆく塔を見上げるイメージ。</summary>
         static readonly Song TitleSong = new Song

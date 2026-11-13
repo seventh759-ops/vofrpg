@@ -692,6 +692,15 @@ namespace VividOfFade
             {
                 currentZone = zone.Key;
                 Hud.ShowBanner($"{GameConfig.FloorName(floor)}  -  {zone.Title}", zone.DisplaySubtitle, zone.Accent);
+                if (GameConfig.IsAbyss(floor))
+                {
+                    // 深淵の区画に入った：区画の色の衝撃の輪と、大きな揺れ
+                    Fx.Ring(Room.StartPos, 3f, zone.Accent, 0.6f);
+                    Fx.Ring(Room.StartPos, 6f, new Color(zone.Accent.r / 255f, zone.Accent.g / 255f, zone.Accent.b / 255f, 0.6f), 1f);
+                    Fx.Sparks(Room.StartPos, 24, zone.Accent, 4f, 1.2f, 2.5f, true);
+                    cameraRig.Shake(0.3f, 0.6f);
+                    Sfx.Landed(Rarity.Mythic);
+                }
             }
         }
 
@@ -1025,6 +1034,13 @@ namespace VividOfFade
         void OnEnemyKilled(Vector2 pos)
         {
             lastKillPos = pos;
+            // 深淵の敵は、区画の色の光の粒になって散る
+            if (GameConfig.IsAbyss(Floors.Floor))
+            {
+                var accent = (Color)Zones.For(Floors.Floor).Accent;
+                Fx.Sparks(pos, 6, accent, 3f, 0.5f, 2f);
+                Fx.Sparks(pos, 3, accent, 1f, 0.8f, 1.5f, true);
+            }
             GainExp(Mathf.Max(1, Mathf.RoundToInt(Progression.KillExp(Floors.Tier) * Enemies.LastKillExpMult)));
             var stats = Player.Stats;
 
