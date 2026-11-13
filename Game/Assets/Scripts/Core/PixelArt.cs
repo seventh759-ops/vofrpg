@@ -3056,11 +3056,11 @@ namespace VividOfFade
             }
             string key = $"Abyss32_{kind}_{z.Name}_{tier}";
             if (cache.TryGetValue(key, out var cached)) return cached;
-            float f = tier == 0 ? 0.5f : tier == 1 ? 0.42f : 0.34f;
+            float f = tier == 0 ? 0.62f : tier == 1 ? 0.54f : 0.46f; // 床より少し明るく（同じ色の床に埋もれないように）
             Color32 body = Mix(new Color32(10, 6, 14, 255), z.Slime, f);
             Color32 dark = Mix(new Color32(6, 3, 8, 255), z.SlimeDark, f);
             var glow = z.Accent;
-            var aura = Mix(z.Accent, new Color32(255, 255, 255, 255), tier * 0.15f);
+            var aura = Mix(z.Accent, new Color32(255, 255, 255, 255), 0.5f + tier * 0.1f); // 白寄りの明るい縁で、同じ色の床からも浮き出す
             var over = new Dictionary<char, Color32[]>
             {
                 { 'k', RampFrom(body) },
@@ -4367,9 +4367,9 @@ namespace VividOfFade
                         case FloorPattern.Rift: // 黒い岩を走る、赤く光る裂け目（細く少なく、つながった線。芯だけ明るい）
                         {
                             float k = Mathf.Abs(TileNoise(x / 13f, sy / 6.5f, salt + 51) - 0.5f);
-                            if (k < 0.006f) c = Mix(accent, new Color32(255, 200, 180, 255), 0.25f);
-                            else if (k < 0.014f) c = Mix(c, accent, 0.65f);
-                            else if (k < 0.026f) c = Mix(c, accent, 0.15f);
+                            if (k < 0.004f) c = Mix(accent, new Color32(255, 200, 180, 255), 0.2f);
+                            else if (k < 0.009f) c = Mix(c, accent, 0.55f);
+                            else if (k < 0.016f) c = Mix(c, accent, 0.12f);
                             break;
                         }
                         case FloorPattern.Starless: // 青い燐光の筋と、ときどき強く光る粒
