@@ -790,6 +790,59 @@ namespace VividOfFade
             return FromArt("SkillBadge_" + i, SkillArtRows[i], pal);
         }
 
+        /// <summary>回復薬・魔力の薬のアイコン（スキルと同じバッジ、平塗り）。赤い瓶に赤い縁／青い瓶に青い縁。</summary>
+        public static Sprite PotionIcon(bool hp)
+        {
+            var pal = new Dictionary<char, Color32>(SkillBadgePalette)
+            {
+                { 'B', hp ? new Color32(52, 16, 20, 255) : new Color32(16, 24, 56, 255) },
+                { 'E', hp ? new Color32(220, 64, 64, 255) : new Color32(80, 130, 240, 255) },
+            };
+            return FromArt(hp ? "PotionHp" : "PotionMp", PotionRows[hp ? 0 : 1], pal);
+        }
+
+        static readonly string[][] PotionRows =
+        {
+            new[]
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBddBBBBBBE",
+                "EBBBBBwwwwBBBBBE",
+                "EBBBBBwwwwBBBBBE",
+                "EBBBBwwwwwBBBBBE",
+                "EBBBwwwrwwwBBBBE",
+                "EBBwwwrrrrwwBBBE",
+                "EBBwrwrrrrrwBBBE",
+                "EBBwrrrrrrrwBBBE",
+                "EBBwrrrrrrrwBBBE",
+                "EBBBwrrrrrwBBBBE",
+                "EBBBBwrrrwBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[]
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBddBBBBBBE",
+                "EBBBBBwwwwBBBBBE",
+                "EBBBBBwwwwBBBBBE",
+                "EBBBBwwwwwBBBBBE",
+                "EBBBwwwbwwwBBBBE",
+                "EBBwwwbbbbwwBBBE",
+                "EBBwbwbbbbbwBBBE",
+                "EBBwbbbbbbbwBBBE",
+                "EBBwbbbbbbbwBBBE",
+                "EBBBwbbbbbwBBBBE",
+                "EBBBBwbbbwBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+        };
+
         static readonly string[] SkillArtNames = { "Flame Ring", "Fire Barrage", "Flare", "Meteor", "Ember Shield", "Inferno", "Starfall", "Beacon", "Cataclysm", "Constellation", "Whirlwind", "Shadow Dash", "Frenzy", "Crescent Wave", "Second Wind", "Thousand Cuts", "Eclipse Rush", "Crimson Spiral", "Umbral Storm", "Sanguine Tide", "Holy Pulse", "Mend", "Lantern Ward", "Kindle", "Flame Pillar", "Judgment", "Sunburst", "Iron Vigil", "Daybreak", "Unbreakable" };
 
         /// <summary>そのスキルの職業（0 灯術師・1 影刃・2 灯番）。背景と縁の色を決める。</summary>

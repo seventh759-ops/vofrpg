@@ -74,13 +74,16 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>スキルのボタン（画面左下に3つ）。画面座標（左下原点）。</summary>
+        /// <summary>
+        /// 下の段のボタン（左からスキル3つ、少しあけて薬2つ）。0〜2 がスキル、3・4 が回復薬・魔力の薬。画面座標（左下原点）。
+        /// </summary>
         Rect SkillRect(int slot)
         {
-            float s = Mathf.Min(Screen.width, Screen.height) * 0.17f;
+            float s = Mathf.Min(Screen.width, Screen.height) * 0.14f;
             float m = Screen.height * 0.015f;
             float gap = s * 0.15f;
-            return new Rect(m + slot * (s + gap), m + Screen.height * 0.04f, s, s);
+            float extra = slot >= SkillInfo.Slots ? s * 0.35f : 0f; // スキルと薬の間を少しあける
+            return new Rect(m + slot * (s + gap) + extra, m + Screen.height * 0.04f, s, s);
         }
 
         /// <summary>スキルのボタンの上の細い帯（タップでオート／手動を切り替え。緑ならオート）。</summary>
@@ -143,30 +146,32 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>薬のボタン（右下、攻撃ボタンの上に2つ）。画面座標（左下原点）。</summary>
-        Rect PotionRect(int i)
-        {
-            float s = Mathf.Min(Screen.width, Screen.height) * 0.13f;
-            float m = Screen.height * 0.015f;
-            var atk = AttackRect;
-            return new Rect(Screen.width - m - s - i * (s + s * 0.15f), atk.yMax + m, s, s);
-        }
+        /// <summary>薬のボタン（スキルの右に並ぶ。0 回復薬・1 魔力の薬）。画面座標（左下原点）。</summary>
+        Rect PotionRect(int i) => SkillRect(SkillInfo.Slots + i);
 
+        /// <summary>薬のボタン。スキルと同じ形で、瓶のアイコン・右下に残りの数・PC は左上にキー。</summary>
         void DrawPotions(CharacterData ch)
         {
             if (ch == null) return;
-            var style = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
+            var count = new GUIStyle(small) { alignment = TextAnchor.LowerRight, fontStyle = FontStyle.Bold };
+            var key = new GUIStyle(small) { alignment = TextAnchor.UpperLeft, fontStyle = FontStyle.Bold };
+            key.normal.textColor = new Color(1f, 1f, 1f, 0.8f);
             for (int i = 0; i < 2; i++)
             {
                 bool hp = i == 0;
-                int count = hp ? ch.HpPotions : ch.MpPotions;
+                int n = hp ? ch.HpPotions : ch.MpPotions;
                 var r = ToGui(PotionRect(i));
-                var c = hp ? new Color(0.75f, 0.2f, 0.25f, 0.7f) : new Color(0.2f, 0.35f, 0.8f, 0.7f);
-                if (count <= 0) c = new Color(0f, 0f, 0f, 0.3f);
-                string key = Application.isMobilePlatform ? "" : (hp ? "Q " : "E ");
-                Button(r, $"{key}{(hp ? "HP" : "MP")}\n{count}", c, style, () => World.UsePotion(hp));
+                Button(r, null, new Color(0f, 0f, 0f, 0.55f), centered, () => World.UsePotion(hp));
+                float inset = r.width * 0.12f;
+                var old = GUI.color;
+                GUI.color = n > 0 ? Color.white : new Color(1f, 1f, 1f, 0.35f);
+                DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.PotionIcon(hp));
+                GUI.color = old;
                 float cd = World.PotionCooldownRatio;
-                if (cd > 0f) Fill(new Rect(r.x, r.y, r.width, r.height * cd), new Color(0f, 0f, 0f, 0.5f));
+                if (cd > 0f) Fill(new Rect(r.x, r.y, r.width, r.height * cd), new Color(0f, 0f, 0f, 0.6f));
+                count.normal.textColor = n > 0 ? Color.white : new Color(1f, 0.5f, 0.5f);
+                GUI.Label(new Rect(r.x, r.y, r.width - r.width * 0.06f, r.height - r.height * 0.02f), n.ToString(), count);
+                if (!Application.isMobilePlatform) GUI.Label(new Rect(r.x + r.width * 0.06f, r.y + r.height * 0.02f, r.width, r.height), hp ? "Q" : "E", key);
             }
         }
 
@@ -174,9 +179,11 @@ namespace VividOfFade
         {
             get
             {
+                // 手動攻撃のボタン（右下。下の段のスキルと薬のボタンの上に置く）
                 float s = Mathf.Min(Screen.width, Screen.height) * 0.24f;
                 float m = Screen.height * 0.03f;
-                return new Rect(Screen.width - s - m, m + Screen.height * 0.04f, s, s);
+                var row = SkillAutoRect(0);
+                return new Rect(Screen.width - s - m, row.yMax + m, s, s);
             }
         }
 
