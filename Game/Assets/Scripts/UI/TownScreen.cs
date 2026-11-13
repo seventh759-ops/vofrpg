@@ -322,11 +322,13 @@ namespace VividOfFade
 
             Offer(new Rect(pad, y, W - pad * 2f, bh), Loc.T($"HP Potion   ({ch.HpPotions}/{Town.MaxPotions})", $"回復薬   （{ch.HpPotions}/{Town.MaxPotions}）"),
                 Loc.T($"Restores {Town.HpPotionHeal * 100f:0}% HP. Q key or the HP button.", $"体力を{Town.HpPotionHeal * 100f:0}%回復。Q キーか HP ボタン。"),
-                potion, ch.HpPotions < Town.MaxPotions && ch.Embers >= potion, () => Town.BuyPotion(ch, true));
+                potion, ch.HpPotions < Town.MaxPotions && ch.Embers >= potion, () => Town.BuyPotion(ch, true),
+                10, () => Town.BuyPotions(ch, true, 10));
             y += bh + gap;
             Offer(new Rect(pad, y, W - pad * 2f, bh), Loc.T($"MP Potion   ({ch.MpPotions}/{Town.MaxPotions})", $"魔力の薬   （{ch.MpPotions}/{Town.MaxPotions}）"),
                 Loc.T($"Restores {Town.MpPotionRestore * 100f:0}% MP. E key or the MP button.", $"MPを{Town.MpPotionRestore * 100f:0}%回復。E キーか MP ボタン。"),
-                potion, ch.MpPotions < Town.MaxPotions && ch.Embers >= potion, () => Town.BuyPotion(ch, false));
+                potion, ch.MpPotions < Town.MaxPotions && ch.Embers >= potion, () => Town.BuyPotion(ch, false),
+                10, () => Town.BuyPotions(ch, false, 10));
             y += bh + gap;
             int gear = Town.GearPrice(ch);
             Offer(new Rect(pad, y, W - pad * 2f, bh), Loc.T("Gear Crate", "装備の箱"),
@@ -355,7 +357,10 @@ namespace VividOfFade
             }
         }
 
-        void Offer(Rect r, string name, string desc, int price, bool can, System.Action buy)
+        /// <summary>
+        /// 売り物の行。bulk が 1 より大きければ、右のボタンを上下に分け、下を「まとめて買う」（買えるだけ）にする。
+        /// </summary>
+        void Offer(Rect r, string name, string desc, int price, bool can, System.Action buy, int bulk = 0, System.Action bulkBuy = null)
         {
             Hud.Fill(r, row);
             float inner = r.height * 0.1f;
@@ -365,6 +370,27 @@ namespace VividOfFade
             descStyle.normal.textColor = new Color(0.8f, 0.8f, 0.85f);
             GUI.Label(new Rect(r.x + inner, r.y + r.height * 0.45f, r.width * 0.68f, r.height * 0.55f), desc, descStyle);
             var btn = new Rect(r.xMax - r.width * 0.28f, r.y + inner, r.width * 0.28f - inner, r.height - inner * 2f);
+            if (bulk > 1 && bulkBuy != null)
+            {
+                float half = (btn.height - inner) * 0.5f;
+                var one = new Rect(btn.x, btn.y, btn.width, half);
+                var many = new Rect(btn.x, btn.y + half + inner, btn.width, half);
+                if (can)
+                {
+                    hud.Button(one, Loc.T($"BUY  {price}", $"1個  {price}"), gold, hud.CenteredStyle, buy);
+                    hud.Button(many, Loc.T($"BUY x{bulk}  {price * bulk}", $"{bulk}個  {price * bulk}"), gold, hud.CenteredStyle, bulkBuy);
+                }
+                else
+                {
+                    var s0 = new GUIStyle(hud.CenteredStyle);
+                    s0.normal.textColor = new Color(0.55f, 0.55f, 0.55f);
+                    Hud.Fill(one, dim);
+                    Hud.Fill(many, dim);
+                    GUI.Label(one, $"{price}", s0);
+                    GUI.Label(many, $"x{bulk}", s0);
+                }
+                return;
+            }
             if (can) hud.Button(btn, Loc.T($"BUY\n{price}", $"買う\n{price}"), gold, hud.CenteredStyle, buy);
             else
             {

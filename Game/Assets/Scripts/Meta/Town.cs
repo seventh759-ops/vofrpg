@@ -13,7 +13,7 @@ namespace VividOfFade
     {
         public const int StorageCapacity = 60;
         public const int MaxCarrySlots = 8;
-        public const int MaxPotions = 5;
+        public const int MaxPotions = 99; // ボスの攻撃が厳しくなったので、たくさん持てる
         public const float HpPotionHeal = 0.4f;  // 最大体力に対する割合
         public const float MpPotionRestore = 0.5f;
         public const float PotionCooldown = 1f;
@@ -32,6 +32,22 @@ namespace VividOfFade
             if (ch.Embers < price) return false;
             ch.Embers -= price;
             return true;
+        }
+
+        /// <summary>まとめて買う（買えるだけ。上限と火種で止まる）。買えた数を返す。</summary>
+        public static int BuyPotions(CharacterData ch, bool hp, int count)
+        {
+            int n = 0;
+            for (int i = 0; i < count; i++)
+            {
+                int have = hp ? ch.HpPotions : ch.MpPotions;
+                if (have >= MaxPotions || !Pay(ch, PotionPrice(ch))) break;
+                if (hp) ch.HpPotions++;
+                else ch.MpPotions++;
+                n++;
+            }
+            if (n > 0) Profile.Save();
+            return n;
         }
 
         public static bool BuyPotion(CharacterData ch, bool hp)
