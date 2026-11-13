@@ -81,7 +81,7 @@ namespace VividOfFade
         // 上の帯：1段目 ゲームのロゴ・転生の印・MENU／2段目 HP・MP／3段目 レベルと経験値／3.5段目 層・回避
         static float BandMargin => Screen.height * 0.008f;
         static float TitleRowH => Screen.height * 0.024f;
-        static float TopRowH => Screen.height * 0.028f;
+        static float TopRowH => Screen.height * 0.021f; // HP・MP のバー（細め）
         static float ExpRowH => Screen.height * 0.019f;
         static float FloorRowH => Screen.height * 0.021f;
 
@@ -643,6 +643,7 @@ namespace VividOfFade
             float rowY = titleRow.yMax + mm * 0.8f, rowH = TopRowH;
             float barW = (W - mm * 3f) * 0.5f;
             var barText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            barText.fontSize = Mathf.Min(barText.fontSize, Mathf.RoundToInt(rowH * 0.72f)); // 細いバーに収まる大きさ
             var hpBack = new Rect(mm, rowY, barW, rowH);
             float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
             OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold);
