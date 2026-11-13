@@ -776,141 +776,26 @@ namespace VividOfFade
         /// <summary>スキルのアイコン（効果の種類ごとの形を、スキルの色で塗る）。</summary>
         public static Sprite SkillIcon(SkillEffect effect, Color color)
         {
-            string[] rows;
+            int i;
             switch (effect)
             {
-                case SkillEffect.Barrage: rows = IconBarrageRows; break;
-                case SkillEffect.Dash: rows = IconDashRows; break;
-                case SkillEffect.Strike: rows = IconStrikeRows; break;
-                case SkillEffect.Buff: rows = IconBuffRows; break;
-                case SkillEffect.Heal: rows = IconHealRows; break;
-                default: rows = IconNovaRows; break;
+                case SkillEffect.Barrage: i = 1; break;
+                case SkillEffect.Dash: i = 2; break;
+                case SkillEffect.Strike: i = 3; break;
+                case SkillEffect.Buff: i = 4; break;
+                case SkillEffect.Heal: i = 5; break;
+                default: i = 0; break;
             }
-            Color32 w = new Color(Mathf.Min(1f, color.r * 1.1f + 0.1f), Mathf.Min(1f, color.g * 1.1f + 0.1f), Mathf.Min(1f, color.b * 1.1f + 0.1f), 1f);
-            Color32 k = new Color(color.r * 0.55f, color.g * 0.55f, color.b * 0.55f, 1f);
-            string key = $"Skill_{effect}_{w.r}_{w.g}_{w.b}";
-            return FromArt(key, rows, new Dictionary<char, Color32> { { 'w', w }, { 'k', k } });
+            Color32 c = new Color(color.r, color.g, color.b, 1f);
+            string key = $"Skill16_{effect}_{c.r}_{c.g}_{c.b}";
+            return Shaded(key, SkillIconRows[i], new Dictionary<char, Color32[]> { { 'K', RampFrom(c) } });
         }
 
-        static readonly string[] IconNovaRows =
-        {
-            "................",
-            ".....kkkkkk.....",
-            "...kkwwwwwwkk...",
-            "..kww......wwk..",
-            "..kw..k..k..wk..",
-            ".kw....kk....wk.",
-            ".kw..k.ww.k..wk.",
-            ".kw...wwww...wk.",
-            ".kw...wwww...wk.",
-            ".kw..k.ww.k..wk.",
-            ".kw....kk....wk.",
-            "..kw..k..k..wk..",
-            "..kww......wwk..",
-            "...kkwwwwwwkk...",
-            ".....kkkkkk.....",
-            "................",
-        };
 
-        static readonly string[] IconBarrageRows =
-        {
-            "................",
-            ".......ww.......",
-            "..w....ww....w..",
-            "...w...ww...w...",
-            "....w..ww..w....",
-            ".....w.ww.w.....",
-            "......wwww......",
-            ".wwwwwwwwwwwwww.",
-            ".wwwwwwwwwwwwww.",
-            "......wwww......",
-            ".....w.ww.w.....",
-            "....w..ww..w....",
-            "...w...ww...w...",
-            "..w....ww....w..",
-            ".......ww.......",
-            "................",
-        };
 
-        static readonly string[] IconDashRows =
-        {
-            "................",
-            "................",
-            "................",
-            "..........w.....",
-            "..........ww....",
-            "...kkwwwwwwww...",
-            "..........wwww..",
-            "wwwwwwwwwwwwwww.",
-            "wwwwwwwwwwwwwww.",
-            "..........wwww..",
-            "...kkwwwwwwww...",
-            "..........ww....",
-            "..........w.....",
-            "................",
-            "................",
-            "................",
-        };
 
-        static readonly string[] IconStrikeRows =
-        {
-            "..............w.",
-            ".............w..",
-            "...........kw...",
-            "..........w.....",
-            "........kw......",
-            ".......w........",
-            ".....wwww.......",
-            "....wwwwww......",
-            "...wwwwwwww.....",
-            "...wwwwwwww.....",
-            "...wwwwwwww.....",
-            "....wwwwww......",
-            ".....wwww.......",
-            "................",
-            "..k..........k..",
-            "kkkkkkkkkkkkkkkk",
-        };
 
-        static readonly string[] IconBuffRows =
-        {
-            ".......ww.......",
-            "......wwww......",
-            ".....wwwwww.....",
-            "....wwwwwwww....",
-            "...wwwwwwwwww...",
-            "..wwww.ww.wwww..",
-            "......wwww......",
-            "......wwww......",
-            "......wwww......",
-            "......wwww......",
-            "......wwww......",
-            "................",
-            "..k..........k..",
-            ".kwk........kwk.",
-            "..k..........k..",
-            "................",
-        };
 
-        static readonly string[] IconHealRows =
-        {
-            "................",
-            "................",
-            "......wwww......",
-            "......wwww......",
-            "......wwww......",
-            "......wwww......",
-            "..wwwwwwwwwwww..",
-            "..wwwwwwwwwwww..",
-            "..wwwwwwwwwwww..",
-            "..wwwwwwwwwwww..",
-            "......wwww......",
-            "......wwww......",
-            "......wwww......",
-            "......wwww......",
-            "................",
-            "................",
-        };
 
         /// <summary>斬撃の扇（120 度、半径 1 ユニット、右向き）。白で作り、色は SpriteRenderer で付ける。</summary>
         public static Sprite SlashArc
@@ -1453,6 +1338,458 @@ namespace VividOfFade
             "kggggggggggggk",
             ".kkkkkkkkkkkk.",
         };
+
+        // ---- アイコン（16 ドット、縁取りと陰影つき）----
+        // スキルは K の素材をスキルの色で塗る。並びは Nova, Barrage, Dash, Strike, Buff, Heal。
+        static readonly string[][] SkillIconRows =
+        {
+            new[]
+            {
+                "................",
+                "....KKKKKKKK....",
+                "...KKKKKKKKKK...",
+                "..KKK......KKK..",
+                ".KKK........KKK.",
+                ".KK..K.....K.KK.",
+                ".KK...Koo.K..KK.",
+                ".KK...oooo...KK.",
+                ".KK...oooo...KK.",
+                ".KK....ooK...KK.",
+                ".KK...K...K..KK.",
+                ".KKK.K.....KKKK.",
+                "..KKK......KKK..",
+                "...KKKKKKKKKK...",
+                "....KKKKKKKK....",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                "...........KK...",
+                "..........KKKK..",
+                "..KKKKKKKKKKoK..",
+                "...........KK...",
+                "................",
+                ".........KK.....",
+                "........KKKK....",
+                "KKKKKKKKKKoK....",
+                ".........KK.....",
+                "................",
+                "............KK..",
+                "...........KKKK.",
+                "...KKKKKKKKKKoK.",
+                "............KK..",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                "................",
+                ".........K......",
+                ".........KK.....",
+                ".........KKK....",
+                "...KKKKKKKKKK...",
+                "KK.KKKKKKKKKKK..",
+                "KK.KKKKKKKKKKKK.",
+                "KK.KKKKKKKKoKKK.",
+                "KK.KKKKKKKKKKK..",
+                ".........KKKK...",
+                ".........KKK....",
+                ".........KK.....",
+                ".........K......",
+                "................",
+                "................",
+            },
+            new[]
+            {
+                ".KK.K...........",
+                "..KK.K..........",
+                "...KK.K.........",
+                "....KK.K........",
+                ".....KK.K.......",
+                "......KK.KK.....",
+                ".......KKKKKK...",
+                ".......KKKKKK...",
+                "......KKKooKKK..",
+                "......KKKKKKKK..",
+                ".......KKKKKK...",
+                ".......KKKKKK...",
+                ".........KK.....",
+                "................",
+                "...nnnnnnnnnnnnn",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                ".......KK.......",
+                "......KKKK......",
+                ".....KKKKKK.....",
+                "....KKKKoKKK....",
+                "...KKKKKoKKKK...",
+                "..KKKKKKKKKKKK..",
+                ".KKKKKKKKKKKKKK.",
+                ".....KKKKK......",
+                ".....KKKKK......",
+                ".....KKKKK......",
+                ".....KKKKK......",
+                ".....KKKKK......",
+                ".....KKKKK......",
+                ".....KKKKK......",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                ".....KKKKKK.....",
+                ".....KoKKKK.....",
+                ".....KoKKKK.....",
+                ".....KKKKKK.....",
+                ".KKKKKKKKKKKKKK.",
+                ".KKKKKKKKKKKKKK.",
+                ".KKKKKKKKKKKKKK.",
+                ".KKKKKKKKKKKKKK.",
+                ".KKKKKKKKKKKKKK.",
+                ".KKKKKKKKKKKKKK.",
+                ".....KKKKKK.....",
+                ".....KKKKKK.....",
+                ".....KKKKKK.....",
+                ".....KKKKKK.....",
+                "................",
+            },
+        };
+
+        static readonly string[][] TownIconRows =
+        {
+            new[]
+            {
+                "................",
+                "................",
+                "....wwwwwwww....",
+                "..wwwwwwwwwwww..",
+                "..wwwwwwwwwwww..",
+                ".wwwwwwwwwwwwww.",
+                ".wwwwwwwwwwwwww.",
+                ".wwwwwggggwwwww.",
+                ".nnnnnggggnnnnn.",
+                ".ggggggnngggggg.",
+                ".wwwwwggggwwwww.",
+                ".wwwwwwwwwwwwww.",
+                ".wwwwwwwwwwwwww.",
+                ".wwwwwwwwwwwwww.",
+                ".wwwwwwwwwwwwww.",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                "................",
+                ".....b.....b....",
+                "......bbbbb.....",
+                "......bbbbb.....",
+                ".....nnnnnnn....",
+                "....bbbbbbbb....",
+                "...bbbbggbbbb...",
+                "..bbbbggggbbbb..",
+                "..bbbggglggbbb..",
+                "..bbbggglggbbb..",
+                "..bbbbggggbbbb..",
+                "...bbbbggbbbb...",
+                "....bbbbbbbb....",
+                ".....bbbbbb.....",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                "................",
+                "..nnaaaaaaaaaa..",
+                "..nnaaaaaaaaaa..",
+                "..nnaaaagaaaaa..",
+                "..nnaaaagaaaaa..",
+                "..nnaaagggaaaa..",
+                "..nnaagggggaaa..",
+                "..nnaagglggaaa..",
+                "..nnaaagggaaaa..",
+                "..nnaaaagaaaaa..",
+                "..nnaaaagaaaaa..",
+                "..nnaaaaaaaaaa..",
+                "..nnxxxxxxxxxx..",
+                "..nnxxxxxxxxxx..",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                ".....bbbbbb.....",
+                "....jjjjjjj.....",
+                "...jjjjjjjjj....",
+                "...jjjjjjjjjj...",
+                "...jjjjjjjjjj...",
+                "...jjjjjjjjjj...",
+                "...jjjjjjjjjj...",
+                "...nnnnnnnnnn...",
+                "...jjbbggbbjj...",
+                "...jjjjggjjjj...",
+                "...jjjjggjjjj...",
+                "...jjjjjjjjjj...",
+                "...jjjjjjjjjj...",
+                "...jjjjjjjjjj...",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                ".........ww.....",
+                ".......mmmmw....",
+                ".......mmmmww...",
+                ".......mmmm.ww..",
+                ".............ww.",
+                "................",
+                "................",
+                ".mmmmmmmmmmmmm..",
+                "..mmmmmmmmmmmm..",
+                "......mmmm......",
+                "......mmmm......",
+                "......mmmm......",
+                "....mmmmmmmm....",
+                "....mmmmmmmm....",
+                "................",
+            },
+        };
+
+        static readonly string[][] BoonIconRows =
+        {
+            new[]
+            {
+                "................",
+                "........r.......",
+                "........r.......",
+                ".......rrr......",
+                ".......rrrr.....",
+                ".....r.rrrr.....",
+                "....rr.LLrrr....",
+                "...rrrrLLLrrr...",
+                "...rrrLLLLrrr...",
+                "...rrrLLLLrrr...",
+                "...rrrLllLrrr...",
+                "...rrrLllLrrr...",
+                "....rrLllLrr....",
+                "....rrrLLrrr....",
+                "................",
+                "................",
+            },
+            new[]
+            {
+                "..........g.....",
+                ".........gg.....",
+                "........gl......",
+                "........lg......",
+                ".......gl.......",
+                "......glg.......",
+                ".....gglggggg...",
+                "....gglggggg....",
+                "...gggggggg.....",
+                ".......ggg......",
+                ".......gg.......",
+                ".......g........",
+                "......gg........",
+                "......g.........",
+                ".....g..........",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                ".......L........",
+                "......LLL.......",
+                "......LlL.......",
+                ".......l........",
+                ".......n........",
+                "......xxxx......",
+                "......xxxx......",
+                "......xxxx......",
+                "......xxxx......",
+                "......xxxx......",
+                "......xxxx......",
+                "......xxxx......",
+                "....gggggggg....",
+                "....gggggggg....",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                "................",
+                "................",
+                "................",
+                "....xxxxxxxx....",
+                "...xxxccccxxx...",
+                "..xxxccocccxxx..",
+                ".xxxxccnnccxxxx.",
+                ".xxxxccnnccxxxx.",
+                "..xxxccccccxxx..",
+                "...xxxccccxxx...",
+                "....xxxxxxxx....",
+                "................",
+                "................",
+                "................",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                "......xxxx......",
+                "....xxxxxxxn....",
+                "...xxxxxxxxxn...",
+                "...xxxxxxxxxx...",
+                "..xxxxxxxxxxxx..",
+                "..xxnnnxxxnnnx..",
+                "..xxnnnxxxnnnx..",
+                "..xxnnnxxxnnnx..",
+                "...xxxxxnxxxx...",
+                "...xxxxnxxxxx...",
+                "....xxxxxxxx....",
+                ".....xxxxxxx....",
+                ".....xnxnxnx....",
+                ".....xnxnxnx....",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                "................",
+                "....rr....rr....",
+                "..rrrrrrrrrrrr..",
+                "..rrrorrrrrrrr..",
+                ".rrrorrrrrrrrrr.",
+                ".rrrrrrrrrrrrrr.",
+                "..rrrrrrrrrrrr..",
+                "..rrrrrrrrrrrr..",
+                "....rrrrrrrr....",
+                ".....rrrrrr.....",
+                ".....rrrrrr.....",
+                "......rrrr......",
+                ".......rr.......",
+                "................",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                ".......cc.......",
+                ".......cc.......",
+                "......cccc......",
+                "......cccc......",
+                ".....cccccc.....",
+                "....cccccccc....",
+                "....cccccccc....",
+                "...ccccBccccc...",
+                "...cccBcccccc...",
+                "...cccBcccccc...",
+                "...cccccccccc...",
+                "....cccccccc....",
+                "....cccccccc....",
+                "......cccc......",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                "................",
+                "................",
+                ".............xx.",
+                "......bbbbbxxxx.",
+                "......bbbbxxxx..",
+                "......bbbbxxxx..",
+                "......bbbbxxxx..",
+                "......bbbbxxx...",
+                "......bbbbb.....",
+                "......bbbbb.....",
+                "...bbbbbbbbbb...",
+                "...bbbbbbbbbb...",
+                "...bbbbbbbbbb...",
+                "...nnnnnnnnnn...",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                "..gggggggggggg..",
+                "..gggggggggggg..",
+                "..gmmmmmmmmmgg..",
+                "..gmmmmggmmmgg..",
+                "..gmmmmggmmmgg..",
+                "..gmmggggggmgg..",
+                "..ggmggggggmgg..",
+                "...ggmmggmmgg...",
+                "....gmmggmmg....",
+                ".....gmggmg.....",
+                ".....gggggg.....",
+                "......gggg......",
+                ".......gg.......",
+                "................",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                ".ffffffffffffff.",
+                ".ffffffffffffff.",
+                "..xxxxx..xxxxx..",
+                "...xxx....xxx...",
+                "...xxx....xxx...",
+                "...xxx....xxx...",
+                "....x......x....",
+                "....x......x....",
+                "....x......x....",
+                "....x...f..x....",
+                "......ffff......",
+                "......foff......",
+                "......ffff......",
+                "......ffff......",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                "....aaaaaaaa....",
+                "...aaa....aaa...",
+                "..aa........aa..",
+                ".aa..aaaaaa..aa.",
+                ".aa.aa....aa.aa.",
+                ".a..a..pp..a..a.",
+                ".a..a.pppp.a..a.",
+                ".a..a.pppp.a..a.",
+                ".a..a..pp..a..a.",
+                ".aa.aa....aa.aa.",
+                ".aa..aaaaaa..aa.",
+                "..aa........aa..",
+                "...aaa....aaa...",
+                "....aaaaaaaa....",
+                "................",
+            },
+            new[]
+            {
+                "................",
+                ".......rr.......",
+                ".......rr.......",
+                ".......rr.......",
+                "....rrLLLLrr....",
+                "....rLLLLLLr....",
+                "....LLLllLLL....",
+                ".rrrLLllllLLrrr.",
+                ".rrrLLllllLLrrr.",
+                "....LLLllLLL....",
+                "....rLLLLLLr....",
+                "....rrLLLLrr....",
+                ".......rr.......",
+                ".......rr.......",
+                ".......rr.......",
+                "................",
+            },
+        };
+
 
         // ---- 敵（32 ドット、キャラと同じ陰影つきの描き方）----
         // 段階 0 下級・1 中級・2 上級。上級ほど角・牙・とげ・光る赤い目が付き、体の色が暗く厳つくなる。
@@ -2098,315 +2435,23 @@ namespace VividOfFade
             },
         };
 
-        /// <summary>町の施設のアイコン（12ドット）。0 倉庫番・1 商人・2 師匠・3 荷運び・4 鍛冶屋。</summary>
+        /// <summary>町の施設のアイコン（16ドット、陰影つき）。0 倉庫番・1 商人・2 師匠・3 荷運び・4 鍛冶屋。</summary>
         public static Sprite TownIcon(int index)
         {
             index = Mathf.Clamp(index, 0, TownIconRows.Length - 1);
-            return FromArt("Town" + index, TownIconRows[index], TownIconPalette);
+            return Shaded("Town16_" + index, TownIconRows[index]);
         }
 
-        static readonly Dictionary<char, Color32> TownIconPalette = new Dictionary<char, Color32>
-        {
-            { 'a', new Color32(255, 210, 90, 255) },
-            { 'b', new Color32(150, 95, 50, 255) },
-            { 'w', new Color32(255, 250, 235, 255) },
-            { 's', new Color32(190, 200, 215, 255) },
-            { 'p', new Color32(140, 90, 200, 255) },
-            { 'g', new Color32(90, 160, 90, 255) },
-            { 'k', new Color32(70, 70, 84, 255) },
-        };
 
-        static readonly string[][] TownIconRows =
-        {
-            new[] // Storage
-            {
-                "............",
-                "..aaaaaaaa..",
-                ".abbbbbbbba.",
-                ".abbbbbbbba.",
-                ".aaaaawaaaa.",
-                ".abbbbwbbba.",
-                ".abbbbbbbba.",
-                ".abbbbbbbba.",
-                ".aaaaaaaaaa.",
-                "............",
-                "............",
-                "............",
-            },
-            new[] // Merchant
-            {
-                "............",
-                ".....aa.....",
-                "....a..a....",
-                ".....bb.....",
-                "....bbbb....",
-                "...bbbbbb...",
-                "..bbbwabbb..",
-                "..bbbaabbb..",
-                "..bbbbbbbb..",
-                "...bbbbbb...",
-                "............",
-                "............",
-            },
-            new[] // Master
-            {
-                "............",
-                "..pppppppp..",
-                "..pppppppp..",
-                "..ppppappp..",
-                "..pppaaapp..",
-                "..ppaaaaap..",
-                "..pppaaapp..",
-                "..ppapppap..",
-                "..pppppppp..",
-                "..wwwwwwww..",
-                "............",
-                "............",
-            },
-            new[] // Porter
-            {
-                "............",
-                ".....bb.....",
-                "....b..b....",
-                "...gggggg...",
-                "..gggggggg..",
-                "..gggaaggg..",
-                "..gggggggg..",
-                "..ggkkkkgg..",
-                "..gggggggg..",
-                "...gggggg...",
-                "............",
-                "............",
-            },
-            new[] // Smith
-            {
-                "............",
-                ".......ss...",
-                "......ss....",
-                ".....bs.....",
-                "....b.......",
-                "...b........",
-                "..ssssssss..",
-                "...ssssss...",
-                "....ssss....",
-                "...kkkkkk...",
-                "..kkkkkkkk..",
-                "............",
-            },
-        };
 
-        /// <summary>加護のアイコン（12ドット。Boons の表と同じ順）。a=主の色 b=影 w=光。</summary>
+        /// <summary>加護のアイコン（16ドット、陰影つき。Boons の表と同じ順）。</summary>
         public static Sprite BoonIcon(int index)
         {
             index = Mathf.Clamp(index, 0, BoonIconRows.Length - 1);
-            var c = BoonIconColors[index];
-            return FromArt("Boon" + index, BoonIconRows[index], new Dictionary<char, Color32>
-            {
-                { 'a', c },
-                { 'b', new Color32((byte)(c.r * 0.55f), (byte)(c.g * 0.55f), (byte)(c.b * 0.55f), 255) },
-                { 'w', new Color32(255, 250, 235, 255) },
-            });
+            return Shaded("Boon16_" + index, BoonIconRows[index]);
         }
 
-        static readonly Color32[] BoonIconColors =
-        {
-            new Color32(255, 140, 60, 255), // SharpFlame
-            new Color32(255, 230, 90, 255), // Quickening
-            new Color32(255, 210, 120, 255), // KindledWick
-            new Color32(120, 220, 255, 255), // KeenEye
-            new Color32(230, 90, 110, 255), // Ruin
-            new Color32(240, 80, 90, 255), // Vigor
-            new Color32(90, 140, 255, 255), // DeepWell
-            new Color32(140, 230, 150, 255), // SwiftStep
-            new Color32(170, 180, 210, 255), // Bulwark
-            new Color32(200, 60, 80, 255), // Leech
-            new Color32(190, 140, 255, 255), // Echo
-            new Color32(255, 120, 40, 255), // EmberBurst
-        };
 
-        static readonly string[][] BoonIconRows =
-        {
-            new[] // SharpFlame
-            {
-                "............",
-                "......w.....",
-                ".....aw.....",
-                ".....aa.....",
-                "....aaab....",
-                "...aawab....",
-                "...awwaab...",
-                "..aawwwab...",
-                "..aawwwab...",
-                "...aawab....",
-                "....aab.....",
-                "............",
-            },
-            new[] // Quickening
-            {
-                "............",
-                ".......aa...",
-                "......aab...",
-                ".....aab....",
-                "....aab.....",
-                "...aaaaaa...",
-                "....baab....",
-                "....aab.....",
-                "...aab......",
-                "..aab.......",
-                "..ab........",
-                "............",
-            },
-            new[] // KindledWick
-            {
-                "............",
-                ".....w......",
-                "....waw.....",
-                "....aaa.....",
-                "...aawaa....",
-                "...awwwa....",
-                "....aaa.....",
-                ".....b......",
-                "....bbb.....",
-                "...bbbbb....",
-                "...bbbbb....",
-                "............",
-            },
-            new[] // KeenEye
-            {
-                "............",
-                "............",
-                "....aaaa....",
-                "..aa....aa..",
-                ".a...bb...a.",
-                "a...bwwb...a",
-                "a...bwwb...a",
-                ".a...bb...a.",
-                "..aa....aa..",
-                "....aaaa....",
-                "............",
-                "............",
-            },
-            new[] // Ruin
-            {
-                "............",
-                "....aaaa....",
-                "...aaaaaa...",
-                "..aaaaaaaa..",
-                "..abbaabba..",
-                "..abbaabba..",
-                "..aaaaaaaa..",
-                "...aaabaa...",
-                "....aaaa....",
-                "....a.a.a...",
-                "............",
-                "............",
-            },
-            new[] // Vigor
-            {
-                "............",
-                "............",
-                "..aa...aa...",
-                ".awwa.aaab..",
-                ".awaaaaaab..",
-                ".aaaaaaaab..",
-                "..aaaaaab...",
-                "...aaaab....",
-                "....aab.....",
-                ".....b......",
-                "............",
-                "............",
-            },
-            new[] // DeepWell
-            {
-                "............",
-                ".....a......",
-                ".....a......",
-                "....aaa.....",
-                "....awa.....",
-                "...awaaa....",
-                "..aawaaab...",
-                "..awaaaab...",
-                "..aaaaaab...",
-                "...aaaab....",
-                "....bbb.....",
-                "............",
-            },
-            new[] // SwiftStep
-            {
-                "............",
-                "....aaa.....",
-                "....aaa.....",
-                "....aaa.....",
-                "....aaa.....",
-                "....aaab....",
-                "....aaaab...",
-                "w...aaaaaaa.",
-                ".w..aaaaaaab",
-                "w...bbbbbbbb",
-                "............",
-                "............",
-            },
-            new[] // Bulwark
-            {
-                "............",
-                "..aaaaaaaa..",
-                "..awwwwwwa..",
-                "..awaaaaab..",
-                "..awaawaab..",
-                "..awawwwab..",
-                "...aaawaab..",
-                "...aaawab...",
-                "....aaab....",
-                ".....ab.....",
-                "............",
-                "............",
-            },
-            new[] // Leech
-            {
-                "............",
-                "...a....a...",
-                "...a....a...",
-                "...aa..aa...",
-                "....a..a....",
-                "............",
-                ".....aa.....",
-                "....awab....",
-                "....aaab....",
-                ".....bb.....",
-                "............",
-                "............",
-            },
-            new[] // Echo
-            {
-                "............",
-                "............",
-                "..aaa..aaa..",
-                ".a...aa...a.",
-                "a...a..a...a",
-                "a..a.ww.a..a",
-                "a..a.ww.a..a",
-                "a...a..a...a",
-                ".a...aa...a.",
-                "..aaa..aaa..",
-                "............",
-                "............",
-            },
-            new[] // EmberBurst
-            {
-                "............",
-                ".....a......",
-                ".a...a...a..",
-                "..a..a..a...",
-                "...awwwa....",
-                "aaaawwwaaaa.",
-                "...awwwa....",
-                "..a..a..a...",
-                ".a...a...a..",
-                ".....a......",
-                "............",
-                "............",
-            },
-        };
 
         /// <summary>レベルアップの天使の羽（左の羽。右は反転して使う）。細長い形で、付け根は右端の上寄り。</summary>
         public static Sprite Wing => FromArt("Wing", WingRows, new Dictionary<char, Color32>
