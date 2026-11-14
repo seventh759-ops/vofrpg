@@ -1974,7 +1974,7 @@ namespace VividOfFade
             GUI.color = old;
         }
 
-        /// <summary>強化した品なら、アイコンの右下に強化の紋章を重ねる。</summary>
+
         /// <summary>深淵の装備の枠：赤紫の二重の枠が、ゆっくり明滅する。</summary>
         public static void DrawAbyssFrame(Rect cell, Item item)
         {
@@ -2003,7 +2003,11 @@ namespace VividOfFade
             // 枠の内側の右下に収める（はみ出さない）
             float s = Mathf.Min(cell.width, cell.height) * 0.42f;
             float m = cell.width * 0.03f;
-            DrawSprite(new Rect(cell.xMax - s - m, cell.yMax - s - m, s, s), PixelArt.EnhanceEmblem(item.Enhance));
+            var er = new Rect(cell.xMax - s - m, cell.yMax - s - m, s, s);
+            DrawSprite(er, PixelArt.EnhanceEmblem(item.Enhance)); // 火種の炎
+            // 強化の段：炎の左に「+N」を小さく
+            float nh = s * 0.45f;
+            NumberFont.DrawIn(new Rect(er.x - s * 0.9f, er.yMax - nh, s * 1.05f, nh), "+" + item.Enhance, item.Enhance >= 15 ? new Color(0.75f, 0.9f, 1f) : new Color(1f, 0.85f, 0.5f), TextAnchor.MiddleRight, 1f);
         }
 
         public static void DrawSprite(Rect guiRect, Sprite sprite)

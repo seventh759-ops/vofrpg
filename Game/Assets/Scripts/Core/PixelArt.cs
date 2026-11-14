@@ -2038,87 +2038,76 @@ namespace VividOfFade
 
 
         /// <summary>
-        /// 強化の紋章（24ドット）。+1〜+4 で黄色のひし形が上・下・右・左に1つずつ、+5 で中央の橙の四角、
-        /// +6〜+9 で先のとがった花びらが左上・右上・右下・左下に1枚ずつ、+10 で中央の光。+11〜+15 は花びらの色が
-        /// 赤・深紅・紫・青・白金と変わる。
+        /// 強化の印：火種の炎（24ドット）。段が上がるほど炎が大きく、明るくなる。
+        /// +1〜4：小さな種火（赤橙）／+5〜9：炎（橙と黄）／+10〜14：大きな炎に白い芯と左右の小さな炎／+15：青白い聖なる炎。
+        /// 数字（+N）は描くときに別に添える（Hud.DrawEnhance）。
         /// </summary>
         public static Sprite EnhanceEmblem(int level)
         {
             level = Mathf.Clamp(level, 1, Item.MaxEnhance);
-            string key = "Emblem" + level;
+            string key = "EmberEmblem" + level;
             if (cache.TryGetValue(key, out var cached)) return cached;
             const int n = 24;
-            const float c = n / 2f;
-            var yellow = new Color32(255, 236, 40, 255);
-            var orange = new Color32(236, 128, 50, 255);
-            var outline = new Color32(40, 44, 70, 255);
-            Color32 petal;
-            switch (level)
+            int tier = level >= 15 ? 3 : level >= 10 ? 2 : level >= 5 ? 1 : 0;
+            // 炎の高さ（段の中でも少しずつ伸びる）と幅
+            float hgt = (tier == 0 ? 9f : tier == 1 ? 13f : tier == 2 ? 17f : 20f) + (tier < 3 ? (level - (tier == 0 ? 1 : tier == 1 ? 5 : 10)) * 0.6f : 0f);
+            float wid = tier == 0 ? 4.2f : tier == 1 ? 5.2f : 6.2f;
+            Color32 outer, mid, inner, core;
+            if (tier == 3) { outer = new Color32(60, 110, 230, 255); mid = new Color32(120, 190, 255, 255); inner = new Color32(200, 235, 255, 255); core = new Color32(255, 255, 255, 255); }
+            else { outer = new Color32(200, 50, 30, 255); mid = new Color32(250, 130, 40, 255); inner = new Color32(255, 210, 80, 255); core = tier >= 2 ? new Color32(255, 250, 225, 255) : new Color32(255, 235, 140, 255); }
+            var outline = new Color32(40, 22, 30, 255);
+            float baseY = n - 3f, cx = n / 2f;
+            // 0 外・1 中・2 内・3 芯 の層（しずく形の炎。上ほど細く、先が少し揺れる）
+            int Layer(float x, float y)
             {
-                case 11: petal = new Color32(235, 80, 70, 255); break;
-                case 12: petal = new Color32(205, 45, 95, 255); break;
-                case 13: petal = new Color32(170, 95, 235, 255); break;
-                case 14: petal = new Color32(90, 150, 255, 255); break;
-                case 15: petal = new Color32(255, 250, 225, 255); break;
-                default: petal = new Color32(244, 178, 130, 255); break;
-            }
-            var light = level >= 15 ? new Color32(255, 255, 255, 255) : new Color32(255, 220, 110, 255);
-            int k = Mathf.Min(level, 10);
-
-            var layer = new int[n * n];
-            var col = new Color32[n * n];
-            for (int y = 0; y < n; y++)
-            {
-                for (int x = 0; x < n; x++)
+                int best = -1;
+                // しずく形の炎が中にあるか（根元は丸く、上ほど細く、先が少し揺れる）
+                bool In(float fx, float fh, float fw)
                 {
-                    float px = x + 0.5f, py = y + 0.5f;
-                    int id = -1;
-                    Color32 cc = default;
-                    for (int i = 0; i < Mathf.Min(k, 4); i++)
-                    {
-                        bool hit;
-                        switch (i)
-                        {
-                            case 0: hit = Mathf.Abs(px - c) / 2.3f + Mathf.Abs(py - 6f) / 6f <= 1f; break;       // 上
-                            case 1: hit = Mathf.Abs(px - c) / 2.3f + Mathf.Abs(py - (n - 6f)) / 6f <= 1f; break; // 下
-                            case 2: hit = Mathf.Abs(py - c) / 2.3f + Mathf.Abs(px - (n - 6f)) / 6f <= 1f; break; // 右
-                            default: hit = Mathf.Abs(py - c) / 2.3f + Mathf.Abs(px - 6f) / 6f <= 1f; break;     // 左
-                        }
-                        if (hit) { id = i; cc = yellow; }
-                    }
-                    if (k >= 5 && Mathf.Abs(px - c) + Mathf.Abs(py - c) <= 5.6f) { id = 4; cc = orange; }
-                    for (int i = 0; i < Mathf.Clamp(k - 5, 0, 4); i++)
-                    {
-                        float sx = i == 0 || i == 3 ? -1f : 1f; // 左上・右上・右下・左下
-                        float sy = i < 2 ? -1f : 1f;
-                        float dx = (px - c) * sx, dy = (py - c) * sy;
-                        float u = (dx + dy) * 0.7071f, v = (dx - dy) * 0.7071f;
-                        // 大きな花びら。外へ向かって鋭くとがる（少しだけ片側に傾ける）
-                        float w = v - 0.12f * u;
-                        if (u < 2f || u > 10.6f) continue;
-                        float half = u < 4.6f ? 1.6f + (u - 2f) / 2.6f * 1.6f : 3.2f * (10.6f - u) / 6f;
-                        if (Mathf.Abs(w) < half) { id = 5 + i; cc = petal; }
-                    }
-                    if (k >= 10 && Mathf.Abs(px - c) + Mathf.Abs(py - c) <= 2.2f) { id = 9; cc = light; }
-                    layer[y * n + x] = id;
-                    col[y * n + x] = cc;
+                    float t = (baseY - y) / fh;
+                    if (t < -0.15f || t > 1f) return false;
+                    float half = t < 0.3f ? fw * Mathf.Sqrt(Mathf.Max(0f, 1f - Mathf.Pow((0.3f - t) / 0.45f, 2f))) : fw * Mathf.Pow(1f - (t - 0.3f) / 0.7f, 0.9f);
+                    float sway = Mathf.Sin(t * 3.2f) * fw * 0.3f * t;
+                    return Mathf.Abs(x - fx - sway) <= half;
                 }
+                // 入れ子の炎：外（赤）→ 中（橙）→ 内（黄）→ 芯（白）
+                if (In(cx, hgt, wid)) best = 0;
+                if (In(cx, hgt * 0.78f, wid * 0.68f)) best = 1;
+                if (In(cx, hgt * 0.55f, wid * 0.42f)) best = 2;
+                if (tier >= 1 && In(cx, hgt * 0.32f, wid * 0.2f)) best = 3;
+                if (tier >= 2)
+                {
+                    foreach (float side in new[] { -1f, 1f })
+                    {
+                        float sx = cx + side * wid * 0.95f, sh = hgt * (side < 0 ? 0.5f : 0.56f);
+                        if (best < 0 && In(sx, sh, wid * 0.5f)) best = 0;
+                        if (best < 1 && In(sx, sh * 0.7f, wid * 0.3f)) best = 1;
+                    }
+                }
+                return best;
             }
+            var layer = new int[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                    layer[y * n + x] = Layer(x + 0.5f, y + 0.5f);
             var px32 = new Color32[n * n];
             for (int y = 0; y < n; y++)
             {
                 for (int x = 0; x < n; x++)
                 {
-                    int i = y * n + x, id = layer[i];
-                    bool edgeEmpty = false, edgeLower = false;
-                    for (int d = 0; d < 4; d++)
+                    int id = layer[y * n + x];
+                    Color32 o = new Color32(0, 0, 0, 0);
+                    if (id >= 0) o = id == 0 ? outer : id == 1 ? mid : id == 2 ? inner : core;
+                    else
                     {
-                        int ax = x + (d == 0 ? 1 : d == 1 ? -1 : 0), ay = y + (d == 2 ? 1 : d == 3 ? -1 : 0);
-                        int nid = ax >= 0 && ay >= 0 && ax < n && ay < n ? layer[ay * n + ax] : -1;
-                        if (nid >= 0 && id < 0) edgeEmpty = true;
-                        if (id >= 4 && nid >= 0 && nid < id) edgeLower = true;
+                        bool edge = false;
+                        for (int d = 0; d < 4 && !edge; d++)
+                        {
+                            int ax = x + (d == 0 ? 1 : d == 1 ? -1 : 0), ay = y + (d == 2 ? 1 : d == 3 ? -1 : 0);
+                            if (ax >= 0 && ay >= 0 && ax < n && ay < n && layer[ay * n + ax] >= 0) edge = true;
+                        }
+                        if (edge) o = outline;
                     }
-                    Color32 o = id < 0 ? (edgeEmpty ? outline : new Color32(0, 0, 0, 0)) : (edgeLower ? outline : col[i]);
                     px32[(n - 1 - y) * n + x] = o; // テクスチャは下から上へ並ぶ
                 }
             }
