@@ -1696,7 +1696,13 @@ namespace VividOfFade
                     {
                         var ask = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, fontStyle = FontStyle.Bold };
                         ask.normal.textColor = new Color(1f, 0.5f, 0.5f);
-                        GUI.Label(new Rect(del.x - r.width * 0.3f - inner * 0.3f, del.y, r.width * 0.3f, ds), Loc.T("Delete?", "消す？"), ask);
+                        // 名前に重ならないよう、暗い板の上に出す（確かめている間だけ名前の端を隠す）
+                        string askText = Loc.T("Delete?", "消す？");
+                        float aw = ask.CalcSize(new GUIContent(askText)).x + inner;
+                        var ar = new Rect(del.x - aw - inner * 0.3f, del.y, aw, ds);
+                        Fill(ar, new Color(0.08f, 0.02f, 0.03f, 0.95f));
+                        ask.alignment = TextAnchor.MiddleCenter;
+                        GUI.Label(ar, askText, ask);
                     }
                     Button(del, null, armed ? new Color(0.75f, 0.15f, 0.15f, 0.9f) : new Color(1f, 1f, 1f, 0.08f), centered, () =>
                     {
