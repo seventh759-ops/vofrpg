@@ -447,53 +447,19 @@ namespace VividOfFade
         }
 
         /// <summary>頭の上の羽の間に「LV UP」を出す（羽と一緒に上がりながら消える）。</summary>
-        // レベルアップの札（画面の上の方に大きく）。羽の演出より長く出す
+        // レベルアップ：札（テロップ）は出さず、LV の欄を光らせる時間だけ数える（知らせは羽と光の演出）
         float plateTime = -1f;
-        int plateLevel, platePoints;
         const float PlateLife = 2.6f;
 
-        /// <summary>レベルアップを大きく知らせる（新しいレベルと、もらえたポイント）。</summary>
+        /// <summary>レベルアップした（頭の上の「LV UP」と、LV の欄の光）。</summary>
         public void ShowLevelUp(int level, int points)
         {
             levelUpTime = 0f;
             plateTime = 0f;
-            plateLevel = level;
-            platePoints = points;
         }
 
-        /// <summary>レベルアップの札が出ている間の光り具合（0〜1）。HUD の LV の欄も光らせる。</summary>
+        /// <summary>レベルアップのあとの光り具合（0〜1）。HUD の LV の欄も光らせる。</summary>
         float LevelGlow => plateTime < 0f ? 0f : Mathf.Clamp01(1f - plateTime / PlateLife) * (0.6f + 0.4f * Mathf.Sin(plateTime * 10f));
-
-        void DrawLevelPlate()
-        {
-            if (plateTime < 0f) return;
-            float W = Screen.width, H = Screen.height;
-            float t = plateTime;
-            float alpha = Mathf.Clamp01(t / 0.12f) * Mathf.Clamp01((PlateLife - t) / 0.5f);
-            float pop = 1f + 0.25f * Mathf.Clamp01(1f - t / 0.18f) * Mathf.Clamp01(t / 0.06f); // 出た瞬間にふくらんで戻る
-            float pw = W * 0.74f * pop, ph = H * 0.085f * pop;
-            var r = new Rect((W - pw) * 0.5f, TopBandBottom + H * 0.06f - (ph - H * 0.085f) * 0.5f, pw, ph);
-            var old = GUI.color;
-            // 後ろの金色の光（脈打つ）
-            GUI.color = new Color(1f, 0.8f, 0.3f, 0.55f * alpha * (0.8f + 0.2f * Mathf.Sin(t * 8f)));
-            GUI.DrawTexture(new Rect(r.x - pw * 0.2f, r.y - ph * 0.9f, pw * 1.4f, ph * 2.8f), TitleArt.SoftGlow);
-            GUI.color = old;
-            Fill(r, new Color(0.06f, 0.04f, 0.02f, 0.9f * alpha));
-            Fill(new Rect(r.x, r.y, r.width, r.height * 0.45f), new Color(1f, 0.85f, 0.4f, 0.12f * alpha)); // 上の照り
-            // 走る光（左から右へ1回）
-            float sweep = Mathf.Clamp01((t - 0.1f) / 0.6f);
-            if (sweep > 0f && sweep < 1f) Fill(new Rect(r.x + r.width * sweep - r.width * 0.06f, r.y, r.width * 0.06f, r.height), new Color(1f, 1f, 0.85f, 0.35f * alpha));
-            var gold = FrameGold;
-            gold.a = alpha;
-            OrnateFrame(r, gold, Mathf.Max(2f, FrameT * 1.5f));
-            var big = new GUIStyle(centered) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(r.height * 0.42f) };
-            big.normal.textColor = new Color(1f, 0.9f, 0.4f, alpha);
-            OutlinedLabel(new Rect(r.x, r.y + r.height * 0.06f, r.width, r.height * 0.56f), "LEVEL UP!", big, new Color(0.3f, 0.12f, 0f, 0.9f * alpha));
-            var sub = new GUIStyle(centered) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(r.height * 0.22f) };
-            sub.normal.textColor = new Color(1f, 0.97f, 0.85f, alpha);
-            OutlinedLabel(new Rect(r.x, r.y + r.height * 0.6f, r.width, r.height * 0.32f),
-                Loc.T($"Lv {plateLevel}    +{platePoints} points", $"Lv {plateLevel}    ポイント +{platePoints}"), sub, new Color(0f, 0f, 0f, 0.8f * alpha));
-        }
 
         void DrawLevelUp()
         {
@@ -616,7 +582,6 @@ namespace VividOfFade
             {
                 DrawNumbers();
                 DrawLevelUp();
-                DrawLevelPlate();
                 DrawBoonGet();
                 DrawEliteLabels();
                 DrawHud();
@@ -655,11 +620,14 @@ namespace VividOfFade
         float flashTime = -1f, flashLife = 1f;
 
         /// <summary>画面全体を白く光らせて、ゆっくり戻す（アビスが崩れきったとき）。</summary>
-        public void Flash(float duration)
+        public void Flash(float duration, Color? color = null)
         {
             flashTime = 0f;
             flashLife = Mathf.Max(0.1f, duration);
+            flashColor = color ?? Color.white;
         }
+
+        Color flashColor = Color.white;
 
         void DrawFlash()
         {
@@ -667,7 +635,7 @@ namespace VividOfFade
             if (Event.current.type == EventType.Repaint) flashTime += Time.unscaledDeltaTime;
             float a = 1f - flashTime / flashLife;
             if (a <= 0f) { flashTime = -1f; return; }
-            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(1f, 1f, 1f, a * a));
+            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(flashColor.r, flashColor.g, flashColor.b, flashColor.a * a * a));
         }
 
         // ---------------- エンディング（1回だけ。見たあとは設定の「クレジット」から見返せる） ----------------

@@ -40,8 +40,10 @@ namespace VividOfFade
         const int MaxParticles = 400;
 
         // レベルアップの羽（頭の上で開いて、上がりながら消える）
-        public const float LevelUpDuration = 1.5f;
-        const float WingOpacity = 0.7f; // 羽は半透明（後ろのキャラクターや文字が透けて見える）
+        public const float LevelUpDuration = 2.3f;
+        const float WingOpacity = 0.9f;
+        readonly SpriteRenderer[] wingGlows = new SpriteRenderer[2]; // 羽の後ろの、大きな金色の光
+        float featherTimer;
         /// <summary>羽を付ける位置（プレイヤーの論理座標）。GameWorld が毎フレーム入れる。</summary>
         public Vector2 Anchor;
         Transform wingRoot;
@@ -65,12 +67,20 @@ namespace VividOfFade
                     wings[i] = go.AddComponent<SpriteRenderer>();
                     wings[i].sprite = PixelArt.Wing;
                     Lighting.MakeGlow(wings[i]);
+                    var glow = new GameObject("WingGlow");
+                    glow.transform.SetParent(hinges[i], false);
+                    glow.transform.localPosition = new Vector3(-0.6875f * 1.3f, -0.09f * 1.3f, 0f);
+                    glow.transform.localScale = new Vector3(1.3f, 1.3f, 1f);
+                    wingGlows[i] = glow.AddComponent<SpriteRenderer>();
+                    wingGlows[i].sprite = PixelArt.Wing;
+                    Lighting.MakeGlow(wingGlows[i]);
                 }
                 hinges[0].localPosition = new Vector3(-0.22f, 0f, 0f);
                 hinges[1].localPosition = new Vector3(0.22f, 0f, 0f);
             }
             wingRoot.gameObject.SetActive(true);
             wingT = 0f;
+            featherTimer = 0f;
             UpdateWings(0f);
         }
 
@@ -84,12 +94,12 @@ namespace VividOfFade
                 wingRoot.gameObject.SetActive(false);
                 return;
             }
-            const float openTime = 0.35f, fadeFrom = 1f;
+            const float openTime = 0.3f, fadeFrom = 1.5f;
             float open = Mathf.Clamp01(wingT / openTime);
             open = 1f - (1f - open) * (1f - open) * (1f - open); // 勢いよく開いて、ゆっくり止まる
-            float flap = wingT > openTime ? Mathf.Sin((wingT - openTime) * 14f) * 8f * Mathf.Clamp01(1f - (wingT - openTime) * 1.2f) : 0f;
+            float flap = wingT > openTime ? Mathf.Sin((wingT - openTime) * 12f) * 12f * Mathf.Clamp01(1f - (wingT - openTime) * 0.8f) : 0f;
             float angle = Mathf.Lerp(75f, -18f, open) + flap; // 下に畳んだ形から、少し上向きに広げる
-            float scale = Mathf.Lerp(0.5f, 0.95f, open);
+            float scale = Mathf.Lerp(0.5f, 1.5f, open); // 大きく広げる
             float rise = wingT > fadeFrom ? (wingT - fadeFrom) * 0.8f : 0f;
             float alpha = wingT > fadeFrom ? 1f - (wingT - fadeFrom) / (LevelUpDuration - fadeFrom) : 1f;
 
@@ -99,10 +109,21 @@ namespace VividOfFade
             hinges[1].localRotation = Quaternion.Euler(0f, 0f, -angle);
             hinges[1].localScale = new Vector3(-scale, scale, 1f);
             int order = SortOrder.For(Anchor) - 1; // キャラクターの後ろ
+            float pulse = 0.5f + 0.5f * Mathf.Sin(wingT * 9f);
             for (int i = 0; i < 2; i++)
             {
                 wings[i].color = new Color(1f, 1f, 1f, alpha * WingOpacity);
                 wings[i].sortingOrder = order;
+                wingGlows[i].color = new Color(1f, 0.82f, 0.35f, alpha * (0.35f + 0.25f * pulse));
+                wingGlows[i].sortingOrder = order - 1;
+            }
+            // はばたくたびに、光の羽根が舞い散る
+            featherTimer -= dt;
+            if (wingT > openTime * 0.5f && wingT < fadeFrom + 0.3f && featherTimer <= 0f)
+            {
+                featherTimer = 0.06f;
+                var c = UnityEngine.Random.value < 0.5f ? new Color(1f, 0.95f, 0.75f) : new Color(1f, 0.8f, 0.3f);
+                Sparks(Anchor + UnityEngine.Random.insideUnitCircle * 1.2f, 2, c, 1.2f, 1.1f, 1.8f, true);
             }
         }
 

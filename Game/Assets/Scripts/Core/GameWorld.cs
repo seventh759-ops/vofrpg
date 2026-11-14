@@ -1245,7 +1245,15 @@ namespace VividOfFade
 
             RefreshStats();
             Player.Refill();
-            Fx.Ring(Player.Pos, 2f, new Color(1f, 0.95f, 0.6f, 0.9f), 0.5f);
+            // 金色の光の柱・何重もの輪・はじける光の粒と、大きな光の羽
+            var gold = new Color(1f, 0.85f, 0.35f, 0.95f);
+            Fx.Pillar(Player.Pos, gold, 1.5f, 10f, 0.9f);
+            Fx.Pillar(Player.Pos, new Color(1f, 1f, 0.9f, 0.9f), 0.6f, 12f, 0.6f);
+            Fx.Ring(Player.Pos, 1.2f, new Color(1f, 1f, 0.9f, 0.95f), 0.3f);
+            Fx.Ring(Player.Pos, 2.5f, gold, 0.55f);
+            Fx.Ring(Player.Pos, 4f, new Color(1f, 0.95f, 0.6f, 0.7f), 0.85f);
+            Fx.Sparks(Player.Pos, 28, gold, 4f, 0.9f, 3.5f);
+            Fx.Sparks(Player.Pos, 16, new Color(1f, 0.97f, 0.85f), 1.5f, 1.4f, 2.5f, true);
             Fx.Anchor = Player.Pos;
             Fx.LevelUp();
             Hud.ShowLevelUp(ch.Level, gained * Progression.PointsPerLevel);
@@ -1357,11 +1365,16 @@ namespace VividOfFade
                 Fx.Ring(pos, 1.6f, new Color(red.r, red.g, red.b, 0.95f), 0.35f);
                 Fx.Ring(pos, 3f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.6f);
                 Fx.Ring(pos, 4.5f, new Color(red.r, red.g, red.b, 0.8f), 0.9f);
+                // 天まで届く赤い光の柱、はじける赤と金の粒、画面がうっすら赤く光る（文字の知らせは出さない）
+                Fx.Pillar(pos, new Color(red.r, red.g, red.b, 0.95f), 2.4f, 18f, 1.6f);
+                Fx.Pillar(pos, new Color(1f, 0.9f, 0.6f, 0.9f), 0.8f, 20f, 1.1f);
+                Fx.Sparks(pos, 40, red, 5f, 1f, 4f);
+                Fx.Sparks(pos, 24, new Color(1f, 0.85f, 0.4f), 2f, 1.6f, 3f, true);
+                Hud.Flash(0.45f, new Color(1f, 0.25f, 0.2f, 0.45f));
                 Sfx.Fountain();
                 cameraRig.Shake(0.35f, 0.7f);
                 slowMoTimer = 0.9f;
                 Time.timeScale = 0.25f;
-                Hud.ShowBanner(Loc.T("MYTHIC DROP!", "神話の装備！"), item.Name, red);
             }
             else if (item.Rarity >= Rarity.Relic)
             {
