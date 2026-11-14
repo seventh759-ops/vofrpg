@@ -4,7 +4,7 @@ namespace VividOfFade
 {
     /// <summary>
     /// レベルアップのときに頭の上に出す「LV UP」の文字の絵（ドット絵）。
-    /// タイトルの「VIVID」と同じ色合い：1文字ずつ水色・紫・桃・橙の細い文字に、暗いふちと、文字の色の淡い光。
+    /// タイトルの「VIVID」と同じ色合い：左から水色・紫・桃・橙へ変わるグラデーションの細い文字に、暗いふちと、文字の色の淡い光。
     /// </summary>
     public static class LevelUpArt
     {
@@ -29,7 +29,7 @@ namespace VividOfFade
             }
         }
 
-        // タイトルの「VIVID」と同じ色：1文字ずつ水色・紫・桃・橙（上ほど白っぽく、下ほど深く）
+        // タイトルの「VIVID」と同じ色：左から水色・紫・桃・橙のグラデーション（上ほど白っぽく、下ほど深く）
         static readonly Color32[] LetterColors =
         {
             new Color32(80, 220, 255, 255),
@@ -37,6 +37,14 @@ namespace VividOfFade
             new Color32(255, 90, 215, 255),
             new Color32(255, 170, 60, 255),
         };
+
+        /// <summary>左から右へ、水色 → 紫 → 桃 → 橙 となめらかに変わる色。</summary>
+        static Color32 Grad(int x, int W)
+        {
+            float u = Mathf.Clamp01((x - Border) / (float)Mathf.Max(1, W - Border * 2 - 1)) * (LetterColors.Length - 1);
+            int i = Mathf.Min(LetterColors.Length - 2, Mathf.FloorToInt(u));
+            return Color32.Lerp(LetterColors[i], LetterColors[i + 1], u - i);
+        }
 
         static Texture2D Build()
         {
@@ -67,14 +75,14 @@ namespace VividOfFade
                     Color32 c = new Color32(0, 0, 0, 0);
                     if (on[x, y])
                     {
-                        var b = LetterColors[which[x, y] % LetterColors.Length];
+                        var b = Grad(x, W);
                         float k = (y - Border) / (float)(GlyphH - 1);
                         c = k < 0.5f ? Color32.Lerp(b, white, 0.6f * (1f - k * 2f)) : Color32.Lerp(b, new Color32(0, 0, 0, 255), 0.25f * (k - 0.5f) * 2f);
                     }
                     else if (Side(on, x, y, W, H)) c = dark;
                     else if (Near(on, x, y, W, H, 2, out int lx, out int ly))
                     {
-                        var g = LetterColors[which[lx, ly] % LetterColors.Length]; // 外側は、近い文字の色でうっすら光る
+                        var g = Grad(lx, W); // 外側は、近い文字の色でうっすら光る
                         c = new Color32(g.r, g.g, g.b, 120);
                     }
                     px[(H - 1 - y) * W + x] = c; // テクスチャは下から
