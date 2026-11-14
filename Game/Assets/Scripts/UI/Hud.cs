@@ -992,11 +992,11 @@ namespace VividOfFade
             var hpBack = new Rect(mm, rowY, barW, rowH);
             float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
             OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold);
-            OutlinedLabel(hpBack, $"HP  {player.Hp}/{player.MaxHp}", barText, new Color(0f, 0f, 0f, 0.85f));
+            NumberFont.DrawIn(hpBack, $"HP {player.Hp}/{player.MaxHp}", Color.white); // HUD の数字は、ダメージの数字と同じドット文字
             var mpBack = new Rect(hpBack.xMax + mm, rowY, barW, rowH);
             float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
             OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), FrameGold);
-            OutlinedLabel(mpBack, $"MP  {player.Mp}/{player.MaxMp}", barText, new Color(0f, 0f, 0f, 0.85f));
+            NumberFont.DrawIn(mpBack, $"MP {player.Mp}/{player.MaxMp}", Color.white);
 
             // 3段目：レベル（左。「LV120★」まで入る幅）と経験値のバー
             float expY = rowY + rowH + mm * 0.8f;
@@ -1008,7 +1008,7 @@ namespace VividOfFade
             int level = ch != null ? ch.Level : 1;
             var lvStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
             string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
-            FitLabel(new Rect(lvBox.x + lvBox.width * 0.06f, lvBox.y, lvBox.width * 0.88f, lvBox.height), lvText, lvStyle);
+            NumberFont.DrawIn(new Rect(lvBox.x + lvBox.width * 0.06f, lvBox.y, lvBox.width * 0.88f, lvBox.height), lvText, Color.white);
             var expBack = new Rect(lvBox.xMax + mm, expY, W - mm * 2f - lvBox.width - mm, ExpRowH);
             Fill(expBack, new Color(0.03f, 0.1f, 0.09f, 1f));
             if (ch != null)
@@ -1019,7 +1019,7 @@ namespace VividOfFade
                 for (int k = 1; k < 10; k++) Fill(new Rect(expBack.x + expBack.width * k / 10f, expBack.y + expBack.height * 0.6f, 1f, expBack.height * 0.4f), new Color(0f, 0f, 0f, 0.3f)); // 10% ごとの目盛り
                 var expText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(ExpRowH * 0.7f)) };
                 expText.normal.textColor = new Color(1f, 0.97f, 0.9f);
-                OutlinedLabel(expBack, $"EXP {Mathf.FloorToInt(expRatio * 100f)}%", expText, new Color(0.1f, 0.07f, 0.04f, 0.9f));
+                NumberFont.DrawIn(expBack, $"EXP {Mathf.FloorToInt(expRatio * 100f)}%", expText.normal.textColor);
             }
             OrnateFrame(expBack, FrameGold, FrameT, true, false);
 
@@ -1031,7 +1031,7 @@ namespace VividOfFade
             string floorText = GameConfig.FloorNameEn(World.Floors.Floor) + (World.Floors.IsBossFloor ? "   BOSS" : ""); // HUD では「71F」と短く（MENU・HP・EXP とそろえる）
             var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
             float floorX = floorRow.x + mm;
-            FitLabel(new Rect(floorX, floorRow.y, floorRow.width * 0.7f - (floorX - floorRow.x), floorRow.height), floorText, floorStyle);
+            NumberFont.DrawIn(new Rect(floorX, floorRow.y, floorRow.width * 0.7f - (floorX - floorRow.x), floorRow.height), floorText, Color.white, TextAnchor.MiddleLeft);
             var dodge = new Rect(floorRow.xMax - W * 0.22f - mm, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
             Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.75f, 0.85f, 1f, 0.9f));
@@ -1042,7 +1042,7 @@ namespace VividOfFade
             if (ShowFps)
             {
                 var fpsStyle = new GUIStyle(small) { alignment = TextAnchor.UpperRight };
-                GUI.Label(new Rect(0, y, W - mm * 2f, lineH), $"FPS:{fps:0}", fpsStyle);
+                NumberFont.DrawIn(new Rect(0, y, W - mm * 2f, lineH), $"FPS:{fps:0}", new Color(1f, 1f, 1f, 0.8f), TextAnchor.MiddleRight);
             }
 
             // 下の帯の2つの区画：メッセージウィンドウ（上）とショートカット（下）。それぞれ背景と枠で仕切る
