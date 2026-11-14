@@ -7,7 +7,7 @@ namespace VividOfFade
 {
     /// <summary>
     /// 起動の画面。ブランドロゴ「TOMOSHIBI WORKS」（ランタンに火がともる）を見せている間に、裏で重い準備を進める：
-    /// 曲（別のスレッドでまとめて作る）→ タイトル・町の背景の絵 → ゲーム本体（GameWorld）。終わったら、ふっと消える。
+    /// 曲（1曲ずつ順番に）→ タイトル・町の背景の絵 → ゲーム本体（GameWorld）。終わったら、ふっと消える。
     /// </summary>
     public sealed class Loader : MonoBehaviour
     {
@@ -39,21 +39,15 @@ namespace VividOfFade
             progress = 0.05f;
             yield return null;
 
-            // 曲：計算だけ別のスレッドでまとめて動かし、終わったものから曲にする
+            // 曲：1曲ずつ順番に作る（計算は裏で動かして、その間もロゴの火はゆらめき続ける）
             var songs = Music.StartupSongs();
-            var tasks = new List<Task<float[]>>();
-            foreach (var s in songs) tasks.Add(Task.Run(s.work));
-            int done = 0;
-            while (done < tasks.Count)
+            for (int k = 0; k < songs.Count; k++)
             {
-                done = 0;
-                foreach (var t in tasks) if (t.IsCompleted) done++;
-                progress = 0.05f + 0.55f * done / Mathf.Max(1, tasks.Count);
+                var task = Task.Run(songs[k].work);
+                while (!task.IsCompleted) yield return null;
+                if (task.Status == TaskStatus.RanToCompletion) Music.StoreRendered(songs[k].name, task.Result);
+                progress = 0.05f + 0.6f * (k + 1) / songs.Count;
                 yield return null;
-            }
-            for (int i = 0; i < songs.Count; i++)
-            {
-                if (tasks[i].Status == TaskStatus.RanToCompletion) Music.StoreRendered(songs[i].name, tasks[i].Result);
             }
             progress = 0.65f;
             yield return null;
