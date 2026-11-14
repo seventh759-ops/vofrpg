@@ -756,7 +756,7 @@ namespace VividOfFade
                 float t = Time.time;
                 float flick = 0.75f + 0.25f * Mathf.Sin(t * 3.1f) * Mathf.Sin(t * 7.3f + 1f);
                 altarBeam.transform.position = Iso.ToScreen(Room.AltarPos) + new Vector2(0f, 0.1f);
-                altarBeam.transform.localScale = new Vector3(1f, 1.1f * (0.9f + 0.1f * flick), 1f); // 高さ約2マス（祭壇の少し上まで）
+                altarBeam.transform.localScale = new Vector3(0.8f, 0.65f * (0.9f + 0.1f * flick), 1f); // 炎に合わせて低く（祭壇の炎のすぐ上まで）
                 altarBeam.color = new Color(1f, 0.6f, 0.25f, 0.4f * flick);
                 altarBeam.sortingOrder = SortOrder.For(Room.AltarPos) - 1;
                 altarFlameTimer -= Time.deltaTime;
@@ -764,7 +764,7 @@ namespace VividOfFade
                 {
                     altarFlameTimer = 0.09f;
                     Vector2 p = Room.AltarPos + Random.insideUnitCircle * 0.12f;
-                    Fx.Emit(p, 0.45f, PixelArt.Flame, Color.white, 0.5f, Vector2.zero, 1.2f, 0f, 1.3f, 0.4f);
+                    Fx.Emit(p, 0.45f, PixelArt.Flame, Color.white, 0.5f, Vector2.zero, 1f, 0f, 1.7f, 0.5f);
                     if (Random.value < 0.35f) Fx.Sparks(Room.AltarPos, 1, new Color(1f, 0.7f, 0.3f), 0.3f, 1f, 1.6f, true);
                 }
             }
