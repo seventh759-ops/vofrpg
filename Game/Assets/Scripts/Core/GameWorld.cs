@@ -303,7 +303,7 @@ namespace VividOfFade
         bool roomRewardPending;
         bool stairsLatch;
         float stairFlameTimer;     // 階段の画面を閉じたら、一度離れるまで出さない
-        SpriteRenderer stairs;
+        SpriteRenderer stairs, stairsSeal;
         SpriteRenderer altar, altarBeam;
         float altarFlameTimer;
         SpriteRenderer guideNpc; // 1層目のはじめの部屋に立つ案内役
@@ -354,6 +354,11 @@ namespace VividOfFade
             stairs = stairsGo.AddComponent<SpriteRenderer>();
             stairs.sprite = PixelArt.Stairs;
             Lighting.MakeGlow(stairs);
+            var sealGo = new GameObject("StairsSeal");
+            sealGo.transform.SetParent(transform, false);
+            stairsSeal = sealGo.AddComponent<SpriteRenderer>();
+            stairsSeal.sprite = PixelArt.StairsSeal;
+            Lighting.MakeGlow(stairsSeal);
             var altarGo = new GameObject("Altar");
             altarGo.transform.SetParent(transform, false);
             altar = altarGo.AddComponent<SpriteRenderer>();
@@ -722,13 +727,25 @@ namespace VividOfFade
             if (Floors.TryUnsealStairs(Enemies))
             {
                 Fx.Ring(Room.StairsPos, 2f, new Color(0.4f, 0.7f, 1f, 0.9f), 0.5f);
+                // 封印の格子と錠前が砕けて飛び散る
+                Fx.Sparks(Room.StairsPos, 18, new Color(0.7f, 0.72f, 0.8f), 3f, 0.6f, 3f);
+                Fx.Sparks(Room.StairsPos, 8, new Color(1f, 0.8f, 0.35f), 2f, 0.6f, 3.5f);
+                Fx.Sparks(Room.StairsPos, 8, new Color(0.9f, 0.2f, 0.3f), 2.5f, 0.5f, 2f);
                 Fx.Disc(Room.StairsPos, 1.6f, new Color(0.4f, 0.7f, 1f, 0.5f), 0.5f);
                 Hud.Toast(Loc.T("The stairs are unsealed", "階段の封印が解けた"), new Color(0.6f, 0.85f, 1f));
                 Sfx.Landed(Rarity.Rare); // 封印が解けた音は、もとの効果音（専用の音は Sfx.Unseal に残してある）
             }
             // 普通の層では、封印中も階段は見える（暗く）。ボスの層は倒すまで隠す
             stairs.enabled = Floors.StairsOpen || !Floors.IsBossFloor;
-            stairs.color = Floors.StairsOpen ? Color.white : new Color(0.4f, 0.4f, 0.48f);
+            stairs.color = Floors.StairsOpen ? Color.white : new Color(0.75f, 0.75f, 0.8f);
+            // 封印中は、鉄の格子と紅い縁、金の錠前を重ねる（ゆっくり脈打つ）
+            stairsSeal.enabled = stairs.enabled && !Floors.StairsOpen;
+            if (stairsSeal.enabled)
+            {
+                stairsSeal.transform.position = stairs.transform.position;
+                stairsSeal.sortingOrder = stairs.sortingOrder + 1;
+                stairsSeal.color = new Color(1f, 1f, 1f, 0.8f + 0.2f * Mathf.Sin(Time.time * 2.5f));
+            }
             float d = (Player.Pos - Room.StairsPos).magnitude;
             if (!Floors.StairsOpen)
             {
