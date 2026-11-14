@@ -239,8 +239,9 @@ namespace VividOfFade
             switch (e.Attack)
             {
                 case BossAttack.Charge:
+                    // 予告した向き（予告を出した時点のプレイヤーの方向）へまっすぐ突進する。予告のあとに避ければ当たらない
                     e.Charging = BossInfo.ChargeTime;
-                    e.ChargeDir = aim;
+                    e.ChargeDir = e.AttackDir;
                     break;
                 case BossAttack.BulletRing:
                     int ring = BossInfo.IsAbyss(e.BossKind) ? 24 : 16; // 深淵のボスは弾が多い
