@@ -411,8 +411,8 @@ namespace VividOfFade
         }
 
         readonly List<DamageStack> damageStacks = new List<DamageStack>();
-        const int MaxDamageLines = 4;      // 1つの敵に出す行の数
-        const float DamageLineLife = 1.1f; // 1行が消えるまで
+        const int MaxDamageLines = 6;      // 1つの敵に出す行の数
+        const float DamageLineLife = 1.3f; // 1行が消えるまで
         const float DamageJoinDist = 0.7f; // この近さなら同じ敵の行として積む
         const float DamageJoinTime = 0.9f;
         const int MaxDamageStacks = 40;
@@ -490,14 +490,21 @@ namespace VividOfFade
                 Vector3 sp = cam.WorldToScreenPoint(new Vector3(st.World.x, st.World.y, 0f));
                 float y = Screen.height - sp.y;
                 // 下（新しい）から上へ。Slot の高さに描く（上へ流れていき、上にあふれた行は薄れて消える）
+                // 一番下（新しい）ほど大きく、上へ流れるほど小さくなる（滝のように、上が細く積み上がる）
+                const float bottomScale = 1.35f, topScale = 0.55f;
+                float m = MaxDamageLines - 1;
                 foreach (var ln in st.Lines)
                 {
-                    float lp = px * (ln.Big ? 1.4f : 1f);
-                    lp *= 1f + (ln.Big ? 0.35f : 0.12f) * Mathf.Exp(-ln.T * 14f); // 出た瞬間、少しふくらむ
+                    float x = Mathf.Max(-1f, ln.Slot);
+                    float scale = Mathf.Clamp(bottomScale - (bottomScale - topScale) * x / m, 0.45f, 1.8f);
+                    // 高さは、下の行の大きさを積み上げた分（大きさの積分）
+                    float rise = (bottomScale * x - (bottomScale - topScale) * 0.5f * x * x / m) * lineH;
+                    float lp = px * scale * (ln.Big ? 1.25f : 1f);
+                    lp *= 1f + (ln.Big ? 0.35f : 0.15f) * Mathf.Exp(-ln.T * 14f); // 出た瞬間、少しふくらむ
                     var c = ln.Color;
                     c.a = Mathf.Clamp01((DamageLineLife - ln.T) / 0.3f) * (ln.Leave >= 0f ? 1f - ln.Leave / 0.3f : 1f) * Mathf.Clamp01(ln.Slot + 1.2f);
                     float h = NumberFont.Height * lp;
-                    NumberFont.Draw(new Vector2(sp.x, y - h * 0.5f - ln.Slot * lineH), ln.Text, lp, c);
+                    NumberFont.Draw(new Vector2(sp.x, y - h * 0.5f - rise), ln.Text, lp, c);
                 }
             }
         }
