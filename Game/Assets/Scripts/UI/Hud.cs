@@ -89,6 +89,8 @@ namespace VividOfFade
         static float TitleRowH => Screen.height * 0.024f;
         static float TopRowH => Screen.height * 0.021f; // HP・MP のバー（細め）
         static float ExpRowH => Screen.height * 0.019f;
+        /// <summary>上の帯の文字（HP・MP・LV・EXP・層・MENU）の1ドットの大きさ。いちばん低い段に合わせて、全部そろえる。</summary>
+        static float HudPx => Mathf.Max(1f, Mathf.Round(ExpRowH * 0.9f / NumberFont.Height));
         static float FloorRowH => Screen.height * 0.021f;
 
         /// <summary>上の帯の下端（GUI 座標、上が 0）。</summary>
@@ -988,11 +990,11 @@ namespace VividOfFade
             var hpBack = new Rect(mm, rowY, barW, rowH);
             float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
             OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold);
-            NumberFont.DrawIn(hpBack, $"HP {player.Hp}/{player.MaxHp}", Color.white); // HUD の数字は、ダメージの数字と同じドット文字
+            NumberFont.DrawIn(hpBack, $"HP {player.Hp}/{player.MaxHp}", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx); // HUD の文字は、どの段も同じ大きさのドット文字
             var mpBack = new Rect(hpBack.xMax + mm, rowY, barW, rowH);
             float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
             OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), FrameGold);
-            NumberFont.DrawIn(mpBack, $"MP {player.Mp}/{player.MaxMp}", Color.white);
+            NumberFont.DrawIn(mpBack, $"MP {player.Mp}/{player.MaxMp}", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx);
 
             // 3段目：レベル（左。「LV120★」まで入る幅）と経験値のバー
             float expY = rowY + rowH + mm * 0.8f;
@@ -1004,7 +1006,7 @@ namespace VividOfFade
             int level = ch != null ? ch.Level : 1;
             var lvStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
             string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
-            NumberFont.DrawIn(new Rect(lvBox.x + lvBox.width * 0.06f, lvBox.y, lvBox.width * 0.88f, lvBox.height), lvText, Color.white);
+            NumberFont.DrawIn(new Rect(lvBox.x + lvBox.width * 0.06f, lvBox.y, lvBox.width * 0.88f, lvBox.height), lvText, Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx);
             var expBack = new Rect(lvBox.xMax + mm, expY, W - mm * 2f - lvBox.width - mm, ExpRowH);
             Fill(expBack, new Color(0.03f, 0.1f, 0.09f, 1f));
             if (ch != null)
@@ -1015,7 +1017,7 @@ namespace VividOfFade
                 for (int k = 1; k < 10; k++) Fill(new Rect(expBack.x + expBack.width * k / 10f, expBack.y + expBack.height * 0.6f, 1f, expBack.height * 0.4f), new Color(0f, 0f, 0f, 0.3f)); // 10% ごとの目盛り
                 var expText = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(ExpRowH * 0.7f)) };
                 expText.normal.textColor = new Color(1f, 0.97f, 0.9f);
-                NumberFont.DrawIn(expBack, $"EXP {Mathf.FloorToInt(expRatio * 100f)}%", expText.normal.textColor);
+                NumberFont.DrawIn(expBack, $"EXP {Mathf.FloorToInt(expRatio * 100f)}%", expText.normal.textColor, TextAnchor.MiddleCenter, 0.9f, HudPx);
             }
             OrnateFrame(expBack, FrameGold, FrameT, true, false);
 
@@ -1027,7 +1029,7 @@ namespace VividOfFade
             string floorText = GameConfig.FloorNameEn(World.Floors.Floor) + (World.Floors.IsBossFloor ? "   BOSS" : ""); // HUD では「71F」と短く（MENU・HP・EXP とそろえる）
             var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
             float floorX = floorRow.x + mm;
-            NumberFont.DrawIn(new Rect(floorX, floorRow.y, floorRow.width * 0.7f - (floorX - floorRow.x), floorRow.height), floorText, Color.white, TextAnchor.MiddleLeft);
+            NumberFont.DrawIn(new Rect(floorX, floorRow.y, floorRow.width * 0.7f - (floorX - floorRow.x), floorRow.height), floorText, Color.white, TextAnchor.MiddleLeft, 0.9f, HudPx);
             var dodge = new Rect(floorRow.xMax - W * 0.22f - mm, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
             Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.75f, 0.85f, 1f, 0.9f));
@@ -1083,7 +1085,7 @@ namespace VividOfFade
             Fill(menuR, new Color(0.05f, 0.05f, 0.08f, 1f));
             Button(menuR, null, new Color(0f, 0f, 0f, 0.3f), centered, () => World.OpenMenu());
             var menuStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
-            NumberFont.DrawIn(new Rect(menuR.x + menuR.width * 0.08f, menuR.y, menuR.width * 0.84f, menuR.height), "MENU", Color.white);
+            NumberFont.DrawIn(new Rect(menuR.x + menuR.width * 0.08f, menuR.y, menuR.width * 0.84f, menuR.height), "MENU", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx);
             OrnateFrame(menuR, FrameGold, FrameT);
             if (notice)
             {

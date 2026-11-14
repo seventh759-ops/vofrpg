@@ -124,10 +124,10 @@ namespace VividOfFade
         /// <summary>
         /// 枠の中に描く（GUI の座標）。枠の高さに合う整数倍で、幅に収まらなければ小さくする。align は MiddleLeft・MiddleCenter・MiddleRight。
         /// </summary>
-        public static void DrawIn(Rect r, string s, Color color, TextAnchor align = TextAnchor.MiddleCenter, float heightShare = 0.9f)
+        public static void DrawIn(Rect r, string s, Color color, TextAnchor align = TextAnchor.MiddleCenter, float heightShare = 0.9f, float fixedPx = 0f)
         {
-            // 四捨五入（切り捨てだと、低い欄で1ドット＝1ピクセルまで小さくなってしまう）
-            float px = Mathf.Max(1f, Mathf.Round(r.height * heightShare / Height));
+            // 四捨五入（切り捨てだと、低い欄で1ドット＝1ピクセルまで小さくなってしまう）。fixedPx を渡せば、その大きさにそろえる
+            float px = fixedPx > 0f ? fixedPx : Mathf.Max(1f, Mathf.Round(r.height * heightShare / Height));
             while (px > 1f && Width(s, px) > r.width * 0.96f) px--;
             float w = Width(s, px);
             float cx = align == TextAnchor.MiddleLeft ? r.x + w * 0.5f
