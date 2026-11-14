@@ -51,6 +51,42 @@ namespace VividOfFade
         /// <summary>鍛冶屋で強化したとき：金床を叩く「カン、カン」。</summary>
         public void Anvil() => source.PlayOneShot(anvil, 0.8f);
 
+        AudioClip unseal;
+
+        /// <summary>階段の封印が解けた：低く響く「ぶぅーん」。</summary>
+        public void Unseal()
+        {
+            if (unseal == null) unseal = MakeUnseal();
+            source.PlayOneShot(unseal, 0.9f);
+        }
+
+        /// <summary>
+        /// 低い唸り：60Hz あたりから少し上がって落ち着く低音に、2倍・3倍の音（スマホのスピーカーでも聞こえるように）。
+        /// 少しずれた2つの音でうなりを付け、ゆっくりふくらんで消える。
+        /// </summary>
+        static AudioClip MakeUnseal()
+        {
+            int len = (int)(Rate * 1.5f);
+            var data = new float[len];
+            float ph = 0f, ph2 = 0f;
+            for (int i = 0; i < len; i++)
+            {
+                float t = (float)i / Rate;
+                float f = 58f + 14f * (1f - Mathf.Exp(-t * 6f));           // ぶっ → ぅーん と少し上がる
+                f *= 1f + 0.006f * Mathf.Sin(2f * Mathf.PI * 5f * t);       // 小さなゆれ
+                ph += f / Rate;
+                ph2 += f * 1.007f / Rate;                                    // わずかにずらして、うなり
+                float w = 2f * Mathf.PI;
+                float v = Mathf.Sin(w * ph) + 0.55f * Mathf.Sin(w * ph * 2f) + 0.3f * Mathf.Sin(w * ph * 3f) + 0.12f * Mathf.Sin(w * ph * 4f)
+                        + 0.5f * Mathf.Sin(w * ph2 * 2f);
+                float env = Mathf.Min(1f, t / 0.06f) * Mathf.Exp(-t * 1.6f) * (1f + 0.3f * Mathf.Exp(-t * 4f));
+                data[i] = v * env * 0.22f;
+            }
+            var clip = AudioClip.Create("unseal", len, 1, Rate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
         AudioClip tick, stop;
         float lastTick;
 
