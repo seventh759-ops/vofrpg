@@ -1035,12 +1035,9 @@ namespace VividOfFade
             OrnateFrame(dodge, FrameGold, Mathf.Max(1f, FrameT * 0.5f), true, false);
             float y = topBottom + mm;
 
-            // FPS（ダンジョンの右上）
+            // FPS（ダンジョンの左下。右上はミニマップ、右下は攻撃ボタンがあるので）
             if (ShowFps)
-            {
-                var fpsStyle = new GUIStyle(small) { alignment = TextAnchor.UpperRight };
-                NumberFont.DrawIn(new Rect(0, y, W - mm * 2f, lineH), $"FPS:{fps:0}", new Color(1f, 1f, 1f, 0.8f), TextAnchor.MiddleRight);
-            }
+                NumberFont.DrawIn(new Rect(mm * 2f, BottomBandTop - lineH - mm, W * 0.4f, lineH), $"FPS:{fps:0}", new Color(1f, 1f, 1f, 0.75f), TextAnchor.MiddleLeft);
 
             // 下の帯の2つの区画：メッセージウィンドウ（上）とショートカット（下）。それぞれ背景と枠で仕切る
             var frameColor = FrameGold;
