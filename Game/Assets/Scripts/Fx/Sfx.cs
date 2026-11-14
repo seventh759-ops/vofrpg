@@ -65,7 +65,7 @@ namespace VividOfFade
         /// </summary>
         static AudioClip MakeUnseal()
         {
-            const float length = 1.4f;
+            const float length = 1.9f;
             int len = (int)(Rate * length);
             var data = new float[len];
             uint seed = 4242u;
@@ -76,13 +76,13 @@ namespace VividOfFade
             }
             // 「ガッ」：短い雑音（こもらせる）と、金属っぽく響く数本の音がすぐ消える
             float lp = 0f;
-            float[] gf = { 210f, 470f, 980f, 1530f };
+            float[] gf = { 120f, 260f, 540f, 900f };
             float[] ga = { 1f, 0.7f, 0.45f, 0.25f };
             for (int i = 0; i < (int)(Rate * 0.25f); i++)
             {
                 float t = (float)i / Rate;
-                lp += 0.25f * (Noise() - lp);
-                float v = lp * 2.2f * Mathf.Exp(-t * 60f);
+                lp += 0.12f * (Noise() - lp);
+                float v = lp * 3f * Mathf.Exp(-t * 45f) + Mathf.Sin(2f * Mathf.PI * 48f * t) * Mathf.Exp(-t * 18f) * 0.9f; // 重い衝撃の低音
                 for (int k = 0; k < gf.Length; k++) v += Mathf.Sin(2f * Mathf.PI * gf[k] * t) * ga[k] * Mathf.Exp(-t * (28f + k * 10f)) * 0.5f;
                 data[i] += v * 0.35f;
             }
@@ -92,15 +92,16 @@ namespace VividOfFade
             for (int i = 0; s2 + i < len; i++)
             {
                 float t = (float)i / Rate;
-                float f = 105f * (1f + 0.25f * Mathf.Exp(-t * 25f));
+                float f = 62f * (1f + 0.3f * Mathf.Exp(-t * 20f)); // さらに低く
                 ph += f / Rate;
-                ph2 += f * 2.3f / Rate;
-                lp2 += 0.08f * (Noise() - lp2);
-                float v = Mathf.Sin(2f * Mathf.PI * ph) * Mathf.Exp(-t * 7f)
-                        + 0.5f * Mathf.Sin(2f * Mathf.PI * ph2) * Mathf.Exp(-t * 14f)
-                        + lp2 * 3f * Mathf.Exp(-t * 35f);
+                ph2 += f * 2f / Rate;
+                lp2 += 0.05f * (Noise() - lp2);
+                float v = Mathf.Sin(2f * Mathf.PI * ph) * Mathf.Exp(-t * 5f)
+                        + 0.6f * Mathf.Sin(2f * Mathf.PI * ph2) * Mathf.Exp(-t * 9f)        // スマホでも聞こえる2倍の音
+                        + 0.3f * Mathf.Sin(2f * Mathf.PI * ph * 3f) * Mathf.Exp(-t * 14f)
+                        + lp2 * 4f * Mathf.Exp(-t * 25f);
                 // 低い余韻（石が落ち着く）
-                v += 0.35f * Mathf.Sin(2f * Mathf.PI * 52f * t) * Mathf.Exp(-t * 3f) * Mathf.Min(1f, t / 0.03f);
+                v += 0.5f * Mathf.Sin(2f * Mathf.PI * 36f * t) * Mathf.Exp(-t * 2.2f) * Mathf.Min(1f, t / 0.03f); // 地響きのような余韻
                 data[s2 + i] += v * 0.32f * Mathf.Clamp01((length - (s2 + i) / (float)Rate) / 0.2f);
             }
             var clip = AudioClip.Create("unseal", len, 1, Rate, false);
