@@ -1470,7 +1470,10 @@ namespace VividOfFade
         {
             float W = Screen.width;
             float H = Screen.height;
-            Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.8f));
+            // 後ろは町の絵（ダンジョンやキャラクターが透けて見えないように）を、文字が読めるよう暗くして敷く
+            Fill(new Rect(0, 0, W, H), Color.black);
+            TownScreen.DrawBackdrop(W, H);
+            Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.02f, 0.78f));
             var ch = Profile.Get(type);
             var spec = ClassInfo.Get(type);
 

@@ -64,7 +64,7 @@ namespace VividOfFade
         /// 町の絵（夜の町並み）を、ドットの大きさがそろうように整数倍で拡大して画面いっぱいに敷く。
         /// 窓と街灯と塔の門の灯りはゆらめく。上の文字の所は暗くして読みやすくする。
         /// </summary>
-        static void DrawBackdrop(float W, float H)
+        public static void DrawBackdrop(float W, float H)
         {
             bool abyss = Profile.AbyssUnlocked; // 深淵へ行けるようになったら、町も深淵版の絵
             var tex = abyss ? TownScene.AbyssTexture : TownScene.Texture;
