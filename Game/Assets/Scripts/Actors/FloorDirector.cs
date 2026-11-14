@@ -5,7 +5,7 @@ namespace VividOfFade
 {
     /// <summary>
     /// 塔の層の進行。部屋に入ると、その部屋に敵が出る（はじめの部屋は安全）。
-    /// 普通の層は最初から階段が使える。5層ごとのボスの層は、ボスを倒すと階段が現れる。
+    /// 普通の層は、その層の敵をすべて倒すと階段の封印が解けて通れる（黄金のスライムは数えない）。5層ごとのボスの層は、ボスを倒すと階段が現れる。
     /// </summary>
     public sealed class FloorDirector
     {
@@ -29,7 +29,7 @@ namespace VividOfFade
             Floor = floor;
             CurrentArea = null;
             room.Generate(floor, IsBossFloor, Random.Range(int.MinValue, int.MaxValue));
-            StairsOpen = !IsBossFloor;
+            StairsOpen = false; // 普通の層も、敵を全部倒すまでは通れない
         }
 
         /// <summary>層に入った時点で、はじめの部屋と宝の間以外のすべての部屋に、眠った敵を置く。</summary>
@@ -75,6 +75,14 @@ namespace VividOfFade
         public void OpenStairs()
         {
             StairsOpen = true;
+        }
+
+        /// <summary>普通の層で、敵が残っていなければ階段の封印を解く。解いたら true。</summary>
+        public bool TryUnsealStairs(EnemySystem enemies)
+        {
+            if (StairsOpen || IsBossFloor || enemies.RemainingForStairs > 0) return false;
+            StairsOpen = true;
+            return true;
         }
 
         public void Tick(float dt, EnemySystem enemies, Player player, Room room)

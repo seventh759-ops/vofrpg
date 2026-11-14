@@ -301,7 +301,8 @@ namespace VividOfFade
         CameraRig cameraRig;
         Vector2 lastKillPos;
         bool roomRewardPending;
-        bool stairsLatch;     // 階段の画面を閉じたら、一度離れるまで出さない
+        bool stairsLatch;
+        float stairFlameTimer;     // 階段の画面を閉じたら、一度離れるまで出さない
         SpriteRenderer stairs;
         SpriteRenderer altar, altarBeam;
         float altarFlameTimer;
@@ -717,9 +718,37 @@ namespace VividOfFade
         /// <summary>階段に乗ったら「帰還する／下りる」を聞く。</summary>
         void CheckStairs()
         {
-            stairs.enabled = Floors.StairsOpen;
-            if (!Floors.StairsOpen) return;
+            // 普通の層：敵を全部倒すと封印が解ける（青い炎がともる）
+            if (Floors.TryUnsealStairs(Enemies))
+            {
+                Fx.Ring(Room.StairsPos, 2f, new Color(0.4f, 0.7f, 1f, 0.9f), 0.5f);
+                Fx.Disc(Room.StairsPos, 1.6f, new Color(0.4f, 0.7f, 1f, 0.5f), 0.5f);
+                Hud.Toast(Loc.T("The stairs are unsealed", "階段の封印が解けた"), new Color(0.6f, 0.85f, 1f));
+                Sfx.Landed(Rarity.Rare);
+            }
+            // 普通の層では、封印中も階段は見える（暗く）。ボスの層は倒すまで隠す
+            stairs.enabled = Floors.StairsOpen || !Floors.IsBossFloor;
+            stairs.color = Floors.StairsOpen ? Color.white : new Color(0.4f, 0.4f, 0.48f);
             float d = (Player.Pos - Room.StairsPos).magnitude;
+            if (!Floors.StairsOpen)
+            {
+                // 封印中に乗ったら、残りの数を知らせる
+                if (!Floors.IsBossFloor && d <= GameConfig.StairsRadius && !stairsLatch)
+                {
+                    stairsLatch = true;
+                    Hud.Toast(Loc.T($"Sealed. Defeat every enemy on this floor ({Enemies.RemainingForStairs} left)", $"封印されている。この層の敵を全部倒すと通れる（残り {Enemies.RemainingForStairs} 体）"), new Color(0.7f, 0.75f, 0.85f));
+                }
+                if (d > 1.5f) stairsLatch = false;
+                return;
+            }
+            // 通れる間：階段のまわりに青い炎がゆらめく
+            stairFlameTimer -= Time.deltaTime;
+            if (stairFlameTimer <= 0f)
+            {
+                stairFlameTimer = 0.07f;
+                Vector2 p = Room.StairsPos + new Vector2(Random.Range(-0.9f, 0.9f), Random.Range(-0.9f, 0.9f));
+                Fx.Emit(p, 0.05f, PixelArt.BlueFlame, Color.white, 0.6f, Vector2.zero, 0.9f, 0f, 1.4f, 0.4f);
+            }
             if (d < 5f) Guide("stairs", Loc.T("The stairs. Step on them to descend or return home.", "階段だ。乗ると、下りるか、帰還するかを選べる。"),
                 Loc.T("Returning keeps your gear and embers. Going deeper finds better loot... but die, and it is all gone.", "帰還すれば装備と火種を持ち帰れる。下りれば、もっといい物が出るけど……死んだら全部なくすよ。"));
             if (d > 1.5f) stairsLatch = false;

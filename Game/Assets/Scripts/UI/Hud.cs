@@ -1138,7 +1138,8 @@ namespace VividOfFade
                 if (fx < 0f || fx > 1f || fy < 0f || fy > 1f) return; // 切り出した範囲の外
                 Fill(new Rect(r.x + fx * r.width - size * 0.5f, r.yMax - fy * r.height - size * 0.5f, size, size), c);
             }
-            if (World.Floors.StairsOpen) Dot(room.StairsPos, dot * 1.3f, new Color(1f, 0.8f, 0.3f));
+            if (World.Floors.StairsOpen) Dot(room.StairsPos, dot * 1.3f, new Color(0.45f, 0.75f, 1f)); // 通れる階段は青
+            else if (!World.Floors.IsBossFloor) Dot(room.StairsPos, dot, new Color(0.45f, 0.45f, 0.55f)); // 封印中は灰色
             if (room.HasAltar && !World.AltarUsed) Dot(room.AltarPos, dot, new Color(1f, 0.5f, 0.2f));
             Dot(World.Player.Pos, dot, Color.white);
         }

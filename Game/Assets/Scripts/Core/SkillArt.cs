@@ -32,6 +32,27 @@ namespace VividOfFade
             "..ooo..",
         }, FlamePal);
 
+        /// <summary>青い炎（7×10。階段の封印が解けたしるし）。</summary>
+        public static Sprite BlueFlame => FromArt("FxBlueFlame", new[]
+        {
+            "...r...",
+            "...r...",
+            "..rr...",
+            "..roro.",
+            ".rooor.",
+            ".roygor",
+            "roywyor",
+            "roywwor",
+            ".oywyo.",
+            "..ooo..",
+        }, new Dictionary<char, Color32>
+        {
+            { 'w', new Color32(240, 250, 255, 255) },
+            { 'y', new Color32(170, 225, 255, 255) },
+            { 'o', new Color32(80, 150, 255, 255) },
+            { 'r', new Color32(50, 70, 210, 220) },
+        });
+
         static readonly Dictionary<char, Color32> WhitePal = new Dictionary<char, Color32>
         {
             { 'w', new Color32(255, 255, 255, 255) },
