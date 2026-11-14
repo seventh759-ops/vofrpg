@@ -53,7 +53,7 @@ namespace VividOfFade
 
         AudioClip unseal;
 
-        /// <summary>階段の封印が解けた：鍵を開けた「カチャ、カチ、ガチャン」。</summary>
+        /// <summary>階段の封印が解けた：仕掛けが外れる「ガッコン」。</summary>
         public void Unseal()
         {
             if (unseal == null) unseal = MakeUnseal();
@@ -61,52 +61,48 @@ namespace VividOfFade
         }
 
         /// <summary>
-        /// 鍵を開けた音：鍵を差し込む小さな「カチャ」、回す「カチ、カチ」、かんぬきが外れる重い「ガチャン」と、低い余韻。
+        /// 仕掛けが外れる「ガッコン」：金具がかみ合う硬い「ガッ」と、少し遅れて重い石の「コン」、最後に低い余韻。
         /// </summary>
         static AudioClip MakeUnseal()
         {
-            const float length = 1.5f;
+            const float length = 1.9f;
             int len = (int)(Rate * length);
             var data = new float[len];
-            uint seed = 777u;
+            uint seed = 4242u;
             float Noise()
             {
                 seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5;
                 return (seed & 0xffff) / 32768f - 1f;
             }
-            // 金属を叩いた短い音（at 秒から、partials の高さで、decay の速さで消える）
-            void Metal(float at, float[] partials, float decay, float vol, float noise)
-            {
-                int start = (int)(Rate * at);
-                float lp = 0f;
-                for (int i = 0; start + i < len && i < Rate * 0.6f; i++)
-                {
-                    float t = (float)i / Rate;
-                    float v = 0f;
-                    for (int k = 0; k < partials.Length; k++) v += Mathf.Sin(2f * Mathf.PI * partials[k] * t) * Mathf.Exp(-t * decay * (1f + k * 0.4f)) / (1f + k * 0.5f);
-                    lp += 0.4f * (Noise() - lp);
-                    v += lp * noise * Mathf.Exp(-t * 120f);
-                    data[start + i] += v * vol;
-                }
-            }
-            // 差し込む「カチャ」（小さく高い音を3つ）
-            Metal(0.00f, new[] { 2900f, 4100f, 5300f }, 90f, 0.10f, 0.6f);
-            Metal(0.05f, new[] { 3300f, 4600f }, 100f, 0.08f, 0.5f);
-            Metal(0.11f, new[] { 2600f, 3900f, 5100f }, 90f, 0.09f, 0.6f);
-            // 回す「カチ、カチ」
-            Metal(0.32f, new[] { 1900f, 2700f, 3600f }, 60f, 0.16f, 0.8f);
-            Metal(0.44f, new[] { 2100f, 3000f, 3800f }, 60f, 0.16f, 0.8f);
-            // かんぬきが外れる「ガチャン」：重い金属の響き＋低い「ドン」
-            Metal(0.64f, new[] { 380f, 830f, 1460f, 2300f }, 14f, 0.32f, 1.2f);
-            Metal(0.71f, new[] { 1700f, 2500f }, 70f, 0.10f, 0.5f); // ガチャン の後の小さなカタつき
-            int s3 = (int)(Rate * 0.64f);
-            for (int i = 0; s3 + i < len; i++)
+            // 「ガッ」：短い雑音（こもらせる）と、金属っぽく響く数本の音がすぐ消える
+            float lp = 0f;
+            float[] gf = { 120f, 260f, 540f, 900f };
+            float[] ga = { 1f, 0.7f, 0.45f, 0.25f };
+            for (int i = 0; i < (int)(Rate * 0.25f); i++)
             {
                 float t = (float)i / Rate;
-                float v = Mathf.Sin(2f * Mathf.PI * 70f * (1f + 0.3f * Mathf.Exp(-t * 30f)) * t) * Mathf.Exp(-t * 9f)
-                        + 0.5f * Mathf.Sin(2f * Mathf.PI * 140f * t) * Mathf.Exp(-t * 14f)
-                        + 0.35f * Mathf.Sin(2f * Mathf.PI * 42f * t) * Mathf.Exp(-t * 3.5f);
-                data[s3 + i] += v * 0.3f * Mathf.Clamp01((length - (s3 + i) / (float)Rate) / 0.15f);
+                lp += 0.12f * (Noise() - lp);
+                float v = lp * 3f * Mathf.Exp(-t * 45f) + Mathf.Sin(2f * Mathf.PI * 48f * t) * Mathf.Exp(-t * 18f) * 0.9f; // 重い衝撃の低音
+                for (int k = 0; k < gf.Length; k++) v += Mathf.Sin(2f * Mathf.PI * gf[k] * t) * ga[k] * Mathf.Exp(-t * (28f + k * 10f)) * 0.5f;
+                data[i] += v * 0.35f;
+            }
+            // 「コン」：0.17秒後、重く低い音（少し音が下がる）と、ぶつかった瞬間の鈍い雑音
+            int s2 = (int)(Rate * 0.17f);
+            float ph = 0f, ph2 = 0f, lp2 = 0f;
+            for (int i = 0; s2 + i < len; i++)
+            {
+                float t = (float)i / Rate;
+                float f = 62f * (1f + 0.3f * Mathf.Exp(-t * 20f)); // さらに低く
+                ph += f / Rate;
+                ph2 += f * 2f / Rate;
+                lp2 += 0.05f * (Noise() - lp2);
+                float v = Mathf.Sin(2f * Mathf.PI * ph) * Mathf.Exp(-t * 5f)
+                        + 0.6f * Mathf.Sin(2f * Mathf.PI * ph2) * Mathf.Exp(-t * 9f)        // スマホでも聞こえる2倍の音
+                        + 0.3f * Mathf.Sin(2f * Mathf.PI * ph * 3f) * Mathf.Exp(-t * 14f)
+                        + lp2 * 4f * Mathf.Exp(-t * 25f);
+                // 低い余韻（石が落ち着く）
+                v += 0.5f * Mathf.Sin(2f * Mathf.PI * 36f * t) * Mathf.Exp(-t * 2.2f) * Mathf.Min(1f, t / 0.03f); // 地響きのような余韻
+                data[s2 + i] += v * 0.32f * Mathf.Clamp01((length - (s2 + i) / (float)Rate) / 0.2f);
             }
             var clip = AudioClip.Create("unseal", len, 1, Rate, false);
             clip.SetData(data, 0);
