@@ -4,7 +4,8 @@ namespace VividOfFade
 {
     /// <summary>
     /// レベルアップのときに頭の上に出す「LV UP」の文字の絵（ドット絵）。
-    /// 太い2ドットの線の文字に、上が明るい金・下が橙のグラデーション、こげ茶のふち取りと下の影。
+    /// 羽（白い羽に金のふち、薄紫の影）と同じ色合い：太い2ドットの線の白い文字に、下へ向かって薄紫がかる影、
+    /// 金のふちと、読みやすいよう外側に細い茶色のふち、下に淡い影。
     /// </summary>
     public static class LevelUpArt
     {
@@ -16,7 +17,7 @@ namespace VividOfFade
             new[] { "11..11", "11..11", "11..11", "11..11", "11..11", "11..11", "11..11", "111111", ".1111." }, // U
             new[] { "11111.", "111111", "11..11", "11..11", "111111", "11111.", "11....", "11....", "11...." }, // P
         };
-        const int GlyphH = 9, Gap = 1, Space = 3, Border = 2; // ふちと影の分の余白
+        const int GlyphH = 9, Gap = 1, Space = 3, Border = 3; // ふちと影の分の余白
 
         static Texture2D tex;
 
@@ -46,11 +47,12 @@ namespace VividOfFade
                 x0 += g[0].Length + Gap;
             }
 
-            var top = new Color32(255, 248, 190, 255);
-            var mid = new Color32(255, 214, 80, 255);
-            var bottom = new Color32(232, 130, 30, 255);
-            var outline = new Color32(58, 28, 6, 255);
-            var shadow = new Color32(20, 8, 0, 170);
+            var top = new Color32(255, 255, 250, 255);    // 羽の白
+            var mid = new Color32(250, 248, 240, 255);
+            var bottom = new Color32(212, 218, 242, 255); // 羽の影の薄紫
+            var outline = new Color32(255, 206, 110, 255); // 羽のふちの金
+            var outer = new Color32(110, 64, 18, 220);     // 外側の細いふち（明るい床の上でも読めるように）
+            var shadow = new Color32(20, 8, 0, 110);
             var px = new Color32[W * H];
             for (int y = 0; y < H; y++)
             {
@@ -61,10 +63,10 @@ namespace VividOfFade
                     {
                         float k = (y - Border) / (float)(GlyphH - 1);
                         c = k < 0.45f ? Color32.Lerp(top, mid, k / 0.45f) : Color32.Lerp(mid, bottom, (k - 0.45f) / 0.55f);
-                        if (y > 0 && !on[x, y - 1]) c = new Color32(255, 255, 235, 255); // 線の上のふちは白く光る
                     }
-                    else if (Near(on, x, y, W, H)) c = outline;
-                    else if (y > 1 && Near(on, x, y - 1, W, H)) c = shadow; // ふちの1ドット下に影
+                    else if (Near(on, x, y, W, H, 1)) c = outline;
+                    else if (Near(on, x, y, W, H, 2)) c = outer;
+                    else if (y > 2 && Near(on, x, y - 1, W, H, 2)) c = shadow; // 外のふちの1ドット下に影
                     px[(H - 1 - y) * W + x] = c; // テクスチャは下から
                 }
             }
@@ -74,11 +76,12 @@ namespace VividOfFade
             return t;
         }
 
-        static bool Near(bool[,] on, int x, int y, int W, int H)
+        static bool Near(bool[,] on, int x, int y, int W, int H, int reach)
         {
-            for (int dy = -1; dy <= 1; dy++)
-                for (int dx = -1; dx <= 1; dx++)
+            for (int dy = -reach; dy <= reach; dy++)
+                for (int dx = -reach; dx <= reach; dx++)
                 {
+                    if (reach > 1 && Mathf.Abs(dx) == reach && Mathf.Abs(dy) == reach) continue; // 角は丸く
                     int nx = x + dx, ny = y + dy;
                     if (nx >= 0 && ny >= 0 && nx < W && ny < H && on[nx, ny]) return true;
                 }

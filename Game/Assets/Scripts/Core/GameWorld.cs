@@ -1246,14 +1246,14 @@ namespace VividOfFade
             RefreshStats();
             Player.Refill();
             // 金色の光の柱・何重もの輪・はじける光の粒と、大きな光の羽
-            var gold = new Color(1f, 0.85f, 0.35f, 0.95f);
+            var gold = new Color(1f, 0.9f, 0.55f, 0.95f); // 羽に合わせて、白に近い金
             Fx.Pillar(Player.Pos, gold, 1.5f, 10f, 0.9f);
             Fx.Pillar(Player.Pos, new Color(1f, 1f, 0.9f, 0.9f), 0.6f, 12f, 0.6f);
             Fx.Ring(Player.Pos, 1.2f, new Color(1f, 1f, 0.9f, 0.95f), 0.3f);
             Fx.Ring(Player.Pos, 2.5f, gold, 0.55f);
             Fx.Ring(Player.Pos, 4f, new Color(1f, 0.95f, 0.6f, 0.7f), 0.85f);
             Fx.Sparks(Player.Pos, 28, gold, 4f, 0.9f, 3.5f);
-            Fx.Sparks(Player.Pos, 16, new Color(1f, 0.97f, 0.85f), 1.5f, 1.4f, 2.5f, true);
+            Fx.Sparks(Player.Pos, 16, new Color(1f, 1f, 0.97f), 1.5f, 1.4f, 2.5f, true);
             Fx.Anchor = Player.Pos;
             Fx.LevelUp();
             Hud.ShowLevelUp(ch.Level, gained * Progression.PointsPerLevel);

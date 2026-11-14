@@ -114,7 +114,7 @@ namespace VividOfFade
             {
                 wings[i].color = new Color(1f, 1f, 1f, alpha * WingOpacity);
                 wings[i].sortingOrder = order;
-                wingGlows[i].color = new Color(1f, 0.82f, 0.35f, alpha * (0.35f + 0.25f * pulse));
+                wingGlows[i].color = new Color(1f, 0.92f, 0.65f, alpha * (0.3f + 0.2f * pulse)); // 白に近い淡い金
                 wingGlows[i].sortingOrder = order - 1;
             }
             // はばたくたびに、光の羽根が舞い散る
@@ -122,7 +122,7 @@ namespace VividOfFade
             if (wingT > openTime * 0.5f && wingT < fadeFrom + 0.3f && featherTimer <= 0f)
             {
                 featherTimer = 0.06f;
-                var c = UnityEngine.Random.value < 0.5f ? new Color(1f, 0.95f, 0.75f) : new Color(1f, 0.8f, 0.3f);
+                var c = UnityEngine.Random.value < 0.6f ? new Color(1f, 1f, 0.97f) : new Color(1f, 0.86f, 0.5f);
                 Sparks(Anchor + UnityEngine.Random.insideUnitCircle * 1.2f, 2, c, 1.2f, 1.1f, 1.8f, true);
             }
         }
