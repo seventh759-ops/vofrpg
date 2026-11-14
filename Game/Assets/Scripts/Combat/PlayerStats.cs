@@ -58,6 +58,18 @@ namespace VividOfFade
         public int VoidRift;             // 裂け目（重ねるほど間隔が短い）
         public float StarfallChance;     // 会心で星が落ちる確率
         public float RetributionMult;    // 受けたときの反撃の倍率
+        // 深淵のセット（AbyssSets）。そろえた数
+        public int SetBlast, SetRift, SetStar, SetRetribution;
+        public float BlastRadiusMult = 1f;  // 大爆発の範囲
+        public bool BlastChain;             // 大爆発で倒した敵も、もう1回大爆発する
+        public float RiftIntervalMult = 1f; // 裂け目の間隔
+        public float RiftPullMult = 1f;     // 裂け目の吸い込み（強さと広さ）
+        public float RiftPowerMult = 1f;    // 裂け目の切り裂く力
+        public float RiftLife = 2f;         // 裂け目の開いている時間
+        public int StarCount = 1;           // 落ちる星の数
+        public bool StarScatter;            // 星が落ちた所に小さな星が散る
+        public float RetributionRadiusMult = 1f;
+        public float RetributionHeal;       // 反撃のたびの回復（最大HPに対する割合）
         public int HealOnKill;
         public float DodgeNovaMult;       // 回避したときの炎（攻撃力に対する倍率）
         public float DoubleStrikeChance;
@@ -157,6 +169,27 @@ namespace VividOfFade
                 s.PulseRadius += 0.3f * e;
             }
             return s;
+        }
+
+        /// <summary>深淵のセットの効果（同じ深淵の固有効果の品を 2・3・5 つそろえる）。</summary>
+        static void ApplyAbyssSets(PlayerStats s, Item[] equipped)
+        {
+            s.SetBlast = AbyssSets.Count(equipped, UniqueType.AbyssBlast);
+            s.SetRift = AbyssSets.Count(equipped, UniqueType.VoidRift);
+            s.SetStar = AbyssSets.Count(equipped, UniqueType.Starfall);
+            s.SetRetribution = AbyssSets.Count(equipped, UniqueType.Retribution);
+            if (s.SetBlast >= 2) s.AbyssBlastChance += 0.15f;
+            if (s.SetBlast >= 3) s.BlastRadiusMult = 1.4f;
+            if (s.SetBlast >= 5) s.BlastChain = true;
+            if (s.SetRift >= 2) s.RiftIntervalMult = 0.7f;
+            if (s.SetRift >= 3) s.RiftPullMult = 1.5f;
+            if (s.SetRift >= 5) { s.RiftPowerMult = 2f; s.RiftLife = 3f; }
+            if (s.SetStar >= 2) s.CritChance = Mathf.Min(s.CritChance + 0.1f, GameConfig.MaxCritChance);
+            if (s.SetStar >= 3) s.StarCount = 2;
+            if (s.SetStar >= 5) s.StarScatter = true;
+            if (s.SetRetribution >= 2) s.DamageTaken *= 0.9f;
+            if (s.SetRetribution >= 3) s.RetributionRadiusMult = 1.5f;
+            if (s.SetRetribution >= 5) s.RetributionHeal = 0.08f;
         }
 
         public static PlayerStats From(Item[] equipped) => From(equipped, ClassInfo.Current);
@@ -300,6 +333,7 @@ namespace VividOfFade
             float Throughput(WeaponSpec x) => x.Mult * Mathf.Max(1, x.Attack == AttackKind.Orbit ? x.Orbs : x.Shots) / Mathf.Max(0.05f, x.Interval);
             s.SkillBase = s.Damage / w.Mult * starter.Mult * Mathf.Clamp(Throughput(w) / Throughput(starter), 0.5f, 2f);
             s.DamageTaken = cls.DamageTaken * (1f - Mathf.Min(0.6f, reduction)); // 被ダメージの軽減は 60% まで
+            ApplyAbyssSets(s, equipped);
             s.DodgeCooldown = GameConfig.DodgeCooldown * cls.DodgeCooldownMult * (1f - Mathf.Min(0.5f, dodgeCdr));
             s.CooldownMult = 1f - Mathf.Min(0.5f, cdr); // 待ち時間の短縮は 50% まで
             s.FireInterval = w.Interval / (1f + atkSpd);

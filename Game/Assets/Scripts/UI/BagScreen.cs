@@ -327,6 +327,31 @@ namespace VividOfFade
                 GUI.Label(new Rect(area.x, y, area.width, h), line, text);
                 y += h;
             }
+
+            // 深淵のセット：そろえた数（今の装備）と、2・3・5つの効果（効いているものは明るく）
+            var set = AbyssSets.SetOf(item);
+            if (set == UniqueType.None || world == null) return;
+            int have = AbyssSets.Count(world.Inventory.Equipped, set);
+            var sc = AbyssSets.ColorOf(set);
+            var head = new GUIStyle(text) { fontStyle = FontStyle.Bold };
+            head.normal.textColor = sc;
+            string title = Loc.T($"{AbyssSets.Name(set)} set  {have}/5 equipped", $"{AbyssSets.Name(set)}のセット　装備中 {have}/5");
+            float th = head.CalcHeight(new GUIContent(title), area.width);
+            if (y + th > area.yMax) return;
+            y += lineH * 0.3f;
+            GUI.Label(new Rect(area.x, y, area.width, th), title, head);
+            y += th;
+            foreach (int tier in AbyssSets.Tiers)
+            {
+                bool on = have >= tier;
+                var ts = new GUIStyle(text);
+                ts.normal.textColor = on ? Color.Lerp(sc, Color.white, 0.5f) : new Color(0.55f, 0.55f, 0.6f);
+                string l = Loc.T($"({tier}) ", $"（{tier}つ）") + AbyssSets.BonusText(set, tier);
+                float h = ts.CalcHeight(new GUIContent(l), area.width);
+                if (y + h > area.yMax) break;
+                GUI.Label(new Rect(area.x, y, area.width, h), l, ts);
+                y += h;
+            }
         }
 
         static readonly string[] slotNames = { "Weapon", "Lantern", "Armor", "R1", "R2" };

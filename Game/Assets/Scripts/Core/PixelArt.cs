@@ -1636,12 +1636,13 @@ namespace VividOfFade
                     break;
             }
             Color32 c = RarityInfo.ColorOf(item.Rarity);
-            string key = $"ItemIcon16_{kind}_{item.Rarity}" + (item.Abyss ? "_Abyss" : "");
+            var abyssSet = AbyssSets.SetOf(item);
+            string key = $"ItemIcon16_{kind}_{item.Rarity}" + (item.Abyss ? "_Abyss" + abyssSet : "");
             // m 金属・w 木・g 金・L と l 光・e 内側の線・A 珍しさの色（縁取りと陰影は Shaded が付ける）
             // 深淵の装備は、金属が黒ずみ、まわりに赤紫のもやがかかる
             var over = new Dictionary<char, Color32[]> { { 'A', RampFrom(c) } };
-            if (item.Abyss) over['m'] = RampFrom(new Color32(70, 40, 80, 255));
-            return Shaded(key, rows, over, item.Abyss ? (Color32?)new Color32(230, 40, 140, 255) : null, 32);
+            if (item.Abyss) over['m'] = RampFrom((Color32)Color.Lerp(new Color32(70, 40, 80, 255), Color.Lerp(Color.black, AbyssSets.ColorOf(abyssSet), 0.6f), 0.45f)); // 黒ずんだ金属を、セットの色に少し寄せる
+            return Shaded(key, rows, over, item.Abyss ? (Color32?)(Color32)AbyssSets.ColorOf(abyssSet) : null, 32); // もやはセットの色
         }
 
         static readonly string[] LanternIcon16 =

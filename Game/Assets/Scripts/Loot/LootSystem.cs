@@ -208,7 +208,7 @@ namespace VividOfFade
                 if (g.Beam.enabled && g.Item != null && g.Item.Abyss && g.Item.Rarity != Rarity.Mythic)
                 {
                     float wave = 0.5f + 0.5f * Mathf.Sin(g.Age * 4f);
-                    var c = Color.Lerp(RarityInfo.ColorOf(g.Item.Rarity), RarityInfo.AbyssColor, wave);
+                    var c = Color.Lerp(RarityInfo.ColorOf(g.Item.Rarity), AbyssSets.ColorOf(AbyssSets.SetOf(g.Item)), wave); // セットの色と行き来する
                     c.a = 0.5f + 0.3f * wave;
                     g.Beam.color = c;
                 }

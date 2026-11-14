@@ -1981,9 +1981,10 @@ namespace VividOfFade
             if (item == null || !item.Abyss) return;
             float t = Mathf.Max(2f, cell.width * 0.05f);
             float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3f);
-            var outer = RarityInfo.AbyssColor;
+            var set = AbyssSets.SetOf(item); // セットごとの色（業火は紅蓮、裂け目は紫、星落としは水色、報いは赤紫）
+            var outer = AbyssSets.ColorOf(set);
             outer.a = 0.6f + 0.4f * pulse;
-            var inner = RarityInfo.AbyssColorDark;
+            var inner = AbyssSets.DarkOf(set);
             inner.a = 0.9f;
             void Frame(Rect r, Color c, float w)
             {
