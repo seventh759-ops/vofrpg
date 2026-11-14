@@ -1188,6 +1188,8 @@ namespace VividOfFade
         {
             lastKillPos = pos;
             if (Profile.Current != null) Profile.Current.Kills++;
+            // ふつうの倒れ方：小さな白いけむり（爆発の加護とは見分けがつくように、控えめに）
+            Fx.Sparks(pos, 4, new Color(0.85f, 0.85f, 0.9f, 0.7f), 0.8f, 0.35f, 1.2f, true);
             // 深淵の敵は、区画の色の光の粒になって散る
             if (GameConfig.IsAbyss(Floors.Floor))
             {
@@ -1223,7 +1225,15 @@ namespace VividOfFade
             if (stats.ExplodeMult > 0f && !exploding)
             {
                 const float radius = 1.4f;
+                // 撃破時の爆発：橙の閃光と、外へはじける炎（ふつうの倒れ方と見分けがつくように）
+                Fx.Disc(pos, radius, new Color(1f, 0.55f, 0.2f, 0.55f), 0.22f);
                 Fx.Ring(pos, radius, new Color(1f, 0.5f, 0.15f, 0.9f));
+                for (int k = 0; k < 8; k++)
+                {
+                    float a = (k * 45f + Random.Range(-10f, 10f)) * Mathf.Deg2Rad;
+                    var d = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                    Fx.Emit(pos + d * 0.2f, 0.05f, PixelArt.Flame, Color.white, 0.32f, d * radius * 6f, 0.8f, 0f, 1.1f, 0.4f, 0f, 6f);
+                }
                 Sfx.Boom();
                 exploding = true;
                 Enemies.DamageArea(pos, radius, stats.Damage * stats.ExplodeMult);

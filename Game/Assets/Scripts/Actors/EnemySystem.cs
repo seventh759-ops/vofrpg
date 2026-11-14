@@ -651,9 +651,10 @@ namespace VividOfFade
                         if (e.DyingTimer <= 0f) ReleaseAt(i);
                         continue;
                     }
-                    // 倒れたら少し膨らんで消える
+                    // 倒れたら、横につぶれて縮みながら消える（大きく膨らむのは「撃破時の爆発」の加護と紛らわしいので、やめた）。ボスは今までどおり膨らむ
                     float t = 1f - Mathf.Clamp01(e.DyingTimer / (e.IsBoss ? DeathTime * 4f : DeathTime));
-                    e.transform.localScale = Vector3.one * (e.BaseScale * (1f + t * 0.6f));
+                    e.transform.localScale = e.IsBoss ? Vector3.one * (e.BaseScale * (1f + t * 0.6f))
+                        : new Vector3(e.BaseScale * (1f + t * 0.25f), e.BaseScale * (1f - t * 0.7f), 1f);
                     var c = e.Sr.color;
                     c.a = 1f - t;
                     e.Sr.color = c;
