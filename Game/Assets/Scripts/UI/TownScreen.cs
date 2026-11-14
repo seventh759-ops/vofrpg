@@ -648,8 +648,8 @@ namespace VividOfFade
             {
                 selected = null;
                 var wrap = new GUIStyle(small) { wordWrap = true };
-                string help = Loc.T($"Only Mythic (red) gear can be worked on. Tap an item. Enhancing raises its base value and effects by {Item.EnhanceStep * 100f:0}% per level (up to +{Item.MaxEnhance}). Rerolling draws new effects at the item's level.",
-                    $"扱えるのは神話（赤）の装備だけ。品をタップ。強化すると、1段ごとに基本の数値と効果の値が{Item.EnhanceStep * 100f:0}%上がる（+{Item.MaxEnhance}まで）。再抽選すると、その品のレベルで効果を引き直す。");
+                string help = Loc.T($"Tap an item. Enhancing (Relic/orange up to +10, Mythic/red and Abyssal up to +{Item.MaxEnhance}) raises its base value and effects by {Item.EnhanceStep * 100f:0}% per level. Abyssal gear also needs Abyss Shards (1 per level, 15 for +15). Rerolling (Mythic only) draws new effects at the item's level.   Abyss Shards: {ch.AbyssShards}",
+                    $"品をタップ。強化（灯宝＝橙は+10、神話＝赤と深淵の品は+{Item.MaxEnhance}まで）すると、1段ごとに基本の数値と効果の値が{Item.EnhanceStep * 100f:0}%上がる。深淵の品は深淵の欠片も要る（1段ごとに1個、+15だけ15個）。再抽選（神話だけ）すると、その品のレベルで効果を引き直す。　深淵の欠片：{ch.AbyssShards}個");
                 GUI.Label(new Rect(pad, y, W - pad * 2f, wrap.CalcHeight(new GUIContent(help), W - pad * 2f)), help, wrap);
                 return;
             }
@@ -671,7 +671,8 @@ namespace VividOfFade
             var info = new GUIStyle(small);
             info.normal.textColor = new Color(1f, 0.85f, 0.5f);
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH),
-                Loc.T($"Enhance +{item.Enhance}/{Item.MaxEnhance}   (values x{item.EnhanceMult:0.00})", $"強化 +{item.Enhance}/{Item.MaxEnhance}   （値 x{item.EnhanceMult:0.00}）"), info);
+                Loc.T($"Enhance +{item.Enhance}/{item.EnhanceCap}   (values x{item.EnhanceMult:0.00})" + (item.Abyss ? $"   Shards {ch.AbyssShards}" : ""),
+                      $"強化 +{item.Enhance}/{item.EnhanceCap}   （値 x{item.EnhanceMult:0.00}）" + (item.Abyss ? $"   欠片 {ch.AbyssShards}個" : "")), info);
             y += lineH;
 
             // 説明。効果の行には、再抽選のときに残す「ロック」の切り替えを付ける（最大3つ、全部はロックできない）
@@ -723,11 +724,12 @@ namespace VividOfFade
 
             DrawSmithFx(nameRect);
 
-            if (!smithable)
+            bool enhanceable = Town.Enhanceable(item);
+            if (!enhanceable)
             {
                 var r = new Rect(pad, by, W - pad * 2f, btnH);
                 Hud.Fill(r, dim);
-                Hud.FitLabel(r, Loc.T("Only Mythic (red) gear can be worked on", "神話（赤）の装備だけ扱える"), hud.CenteredStyle);
+                Hud.FitLabel(r, Loc.T("Only Relic (orange) or better can be enhanced", "強化できるのは灯宝（橙）以上"), hud.CenteredStyle);
                 return;
             }
 
@@ -741,7 +743,7 @@ namespace VividOfFade
                 return;
             }
             var enhanceRect = new Rect(pad, by - btnH - gap * 0.5f, W - pad * 2f, btnH);
-            if (item.Enhance >= Item.MaxEnhance)
+            if (item.Enhance >= item.EnhanceCap)
             {
                 Hud.Fill(enhanceRect, dim);
                 GUI.Label(enhanceRect, Loc.T("MAX ENHANCED", "強化は最大"), hud.CenteredStyle);
@@ -749,8 +751,10 @@ namespace VividOfFade
             else
             {
                 int price = Town.EnhancePrice(item);
-                bool can = ch.Embers >= price;
-                string label = Loc.T($"ENHANCE  +{item.Enhance} → +{item.Enhance + 1}   ({price} embers)", $"強化  +{item.Enhance} → +{item.Enhance + 1}   （火種 {price}）");
+                int shards = Town.ShardPrice(item);
+                bool can = ch.Embers >= price && ch.AbyssShards >= shards;
+                string shardNote = shards > 0 ? Loc.T($", {shards} shard" + (shards > 1 ? "s" : ""), $"・欠片 {shards}") : "";
+                string label = Loc.T($"ENHANCE  +{item.Enhance} → +{item.Enhance + 1}   ({price} embers{shardNote})", $"強化  +{item.Enhance} → +{item.Enhance + 1}   （火種 {price}{shardNote}）");
                 if (can) hud.Button(enhanceRect, label, gold, hud.CenteredStyle, () =>
                 {
                     if (!Town.EnhanceItem(ch, item)) return;
@@ -764,7 +768,13 @@ namespace VividOfFade
                     Hud.FitLabel(enhanceRect, label, hud.CenteredStyle);
                 }
             }
-            if (item.Affixes.Count > 0)
+            if (!smithable)
+            {
+                var rr = new Rect(pad, by, W - pad * 2f, btnH);
+                Hud.Fill(rr, dim);
+                Hud.FitLabel(rr, Loc.T("Rerolling is for Mythic (red) only", "再抽選は神話（赤）だけ"), hud.CenteredStyle);
+            }
+            else if (item.Affixes.Count > 0)
             {
                 int rp = Town.RerollPrice(item, locked.Count);
                 string lockNote = locked.Count > 0 ? Loc.T($", {locked.Count} locked", $"・固定 {locked.Count}") : "";

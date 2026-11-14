@@ -664,6 +664,19 @@ namespace VividOfFade
             cameraRig.Tick(Player.Pos, Room, dt);
         }
 
+        /// <summary>深淵の欠片を手に入れた（すぐにキャラクターのものになる。死んでもなくならない）。</summary>
+        void GainShards(Vector2 pos, int n)
+        {
+            var ch = Profile.Current;
+            if (ch == null || n <= 0) return;
+            ch.AbyssShards += n;
+            Profile.Save();
+            var c = RarityInfo.AbyssColor;
+            Fx.Ring(pos, 1.2f, new Color(c.r, c.g, c.b, 0.9f), 0.45f);
+            Fx.Sparks(pos, 10, c, 2.5f, 0.7f, 2f, true);
+            Hud.Toast(Loc.T($"Abyss Shard +{n}  (have {ch.AbyssShards})", $"深淵の欠片 +{n}（{ch.AbyssShards}個）"), new Color(1f, 0.45f, 0.75f));
+        }
+
         /// <summary>精鋭を倒した：小さなドロップの噴水。</summary>
         void OnEliteKilled(Vector2 pos)
         {
@@ -671,6 +684,7 @@ namespace VividOfFade
                 GameConfig.EliteEmberOrbs, GameConfig.EmberAmount(Floors.Tier));
             // まれに神話（赤）の装備（ボスより低い確率）
             if (Random.value < GameConfig.EliteMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
+            if (GameConfig.IsAbyss(Floors.Floor) && Random.value < GameConfig.ShardChanceElite) GainShards(pos, 1);
             Fx.Ring(pos, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.35f);
             Sfx.Fountain();
             GainExp(Progression.KillExp(Floors.Tier) * 5);
@@ -1010,6 +1024,8 @@ namespace VividOfFade
             Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropLevel, GameConfig.BossRarityBonus,
                 GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * GameConfig.BossEmberMult);
             if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
+            if (GameConfig.IsAbyss(Floors.Floor))
+                GainShards(pos, Floors.Floor == GameConfig.AbyssLastFloor ? GameConfig.ShardsPerFinalBoss : GameConfig.ShardsPerAbyssBoss);
             Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
             cameraRig.Shake(0.3f, 0.5f);
             Hud.Toast(Loc.T("BOSS DEFEATED!", "ボスを倒した！"), new Color(1f, 0.5f, 0.4f));

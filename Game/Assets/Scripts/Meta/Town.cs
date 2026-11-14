@@ -233,13 +233,22 @@ namespace VividOfFade
 
         public const int MaxRerollLocks = 3;
 
-        /// <summary>鍛冶屋で扱えるのは神話（赤）の装備だけ。</summary>
+        /// <summary>効果の再抽選ができるのは神話（赤）の装備だけ。</summary>
         public static bool Smithable(Item it) => it != null && it.Rarity == Rarity.Mythic;
+
+        /// <summary>強化できるのは灯宝（橙）以上（橙は+10、赤と深淵の品は+15まで）。</summary>
+        public static bool Enhanceable(Item it) => it != null && it.EnhanceCap > 0;
+
+        /// <summary>深淵の品の強化に要る深淵の欠片：1段ごとに1個、最後の +14→+15 だけ15個。</summary>
+        public static int ShardPrice(Item it) => !it.Abyss ? 0 : it.Enhance == Item.MaxEnhance - 1 ? 15 : 1;
 
         public static bool EnhanceItem(CharacterData ch, Item it)
         {
-            if (!Smithable(it)) return false;
-            if (it.Enhance >= Item.MaxEnhance || !Pay(ch, EnhancePrice(it))) return false;
+            if (!Enhanceable(it) || it.Enhance >= it.EnhanceCap) return false;
+            int shards = ShardPrice(it);
+            if (ch.AbyssShards < shards || ch.Embers < EnhancePrice(it)) return false;
+            if (!Pay(ch, EnhancePrice(it))) return false;
+            ch.AbyssShards -= shards;
             it.Enhance++;
             Profile.Save();
             return true;

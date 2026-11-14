@@ -218,6 +218,11 @@ namespace VividOfFade
         public const float BossRarityBonus = 1.5f;
 
         // ドロップ
+        // 深淵の欠片（深淵の装備の強化に使う。深淵の精鋭とボスからだけ手に入る）
+        public const int ShardsPerAbyssBoss = 2;          // 深淵のボス
+        public const int ShardsPerFinalBoss = 5;          // アビス
+        public const float ShardChanceElite = 0.1f;       // 深淵の精鋭
+
         public const float ItemDropMult = 0.6f;      // 装備の落ちる量の全体の倍率（多すぎたので減らし、その分火種を増やした）
         public const float ItemDropChance = 0.04f * ItemDropMult;   // 雑魚1体あたり
         public const float EmberDropChance = 0.3f;

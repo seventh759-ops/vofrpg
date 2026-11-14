@@ -38,6 +38,7 @@ namespace VividOfFade
         public float PlaySeconds;                     // 遊んだ時間（町・塔。タイトルとエンディングは数えない）
         public int Kills;                             // 倒した敵の数
         public int Deaths;                            // 力尽きた回数
+        public int AbyssShards;                       // 深淵の欠片（深淵の装備の強化に使う。深淵でまれに手に入る）
         public RunSave Run = new RunSave();           // 中断した挑戦
         public int Advanced = -1;                     // 上位職（-1 はまだ。0 か 1）
         public bool Third;                            // 転生して3次職になった（Rebirths が1以上）

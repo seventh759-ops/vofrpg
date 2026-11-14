@@ -45,6 +45,8 @@ namespace VividOfFade
         /// <summary>町の鍛冶屋での強化（+0〜+15）。1段ごとに基本の数値と効果の値が +6%（弾・貫通の数は変わらない）。</summary>
         public int Enhance;
         public const int MaxEnhance = 15;
+        /// <summary>この品の強化の上限：灯宝（橙）は+10、神話（赤）と深淵の品は+15。それより下は強化できない。</summary>
+        public int EnhanceCap => Rarity < Rarity.Relic ? 0 : Abyss || Rarity == Rarity.Mythic ? MaxEnhance : 10;
         public const float EnhanceStep = 0.06f;
         public float EnhanceMult => 1f + EnhanceStep * Enhance;
 
