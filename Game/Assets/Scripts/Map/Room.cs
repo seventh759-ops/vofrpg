@@ -50,6 +50,8 @@ namespace VividOfFade
         public readonly List<RoomArea> Areas = new List<RoomArea>();
         public Vector2 StartPos { get; private set; }
         public Vector2 StairsPos { get; private set; }
+        /// <summary>階段のある部屋（普通の層。その部屋の敵を全部倒すと階段の封印が解ける）。</summary>
+        public RoomArea StairsArea { get; private set; }
         /// <summary>祭壇の位置（ボスの層にはない）。</summary>
         public bool HasAltar { get; private set; }
         public Vector2 AltarPos { get; private set; }
@@ -190,6 +192,7 @@ namespace VividOfFade
                 far = a;
             }
             StairsPos = far.Center;
+            StairsArea = far;
 
             // 祭壇：はじめの部屋と階段の部屋以外の、どこかの部屋の隅寄り
             var candidates = new List<RoomArea>();
@@ -235,6 +238,7 @@ namespace VividOfFade
             Corridor(start.Center, boss.Center, rng);
             StartPos = start.Center;
             StairsPos = boss.Center; // ボスを倒すと現れる
+            StairsArea = boss;
             BossArea = boss;
             HasAltar = false;
         }

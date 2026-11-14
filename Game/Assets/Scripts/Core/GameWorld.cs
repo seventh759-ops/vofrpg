@@ -726,7 +726,7 @@ namespace VividOfFade
         void CheckStairs()
         {
             // 普通の層：敵を全部倒すと封印が解ける（青い炎がともる）
-            if (Floors.TryUnsealStairs(Enemies))
+            if (Floors.TryUnsealStairs(Enemies, Room))
             {
                 Fx.Ring(Room.StairsPos, 2f, new Color(0.4f, 0.7f, 1f, 0.9f), 0.5f);
                 // 紅い封印の縁がはじけて消える
@@ -753,7 +753,8 @@ namespace VividOfFade
                 if (!Floors.IsBossFloor && d <= GameConfig.StairsRadius && !stairsLatch)
                 {
                     stairsLatch = true;
-                    Hud.Toast(Loc.T($"Sealed. Defeat every enemy on this floor ({Enemies.RemainingForStairs} left)", $"封印されている。この層の敵を全部倒すと通れる（残り {Enemies.RemainingForStairs} 体）"), new Color(0.7f, 0.75f, 0.85f));
+                    int left = Enemies.RemainingIn(Room.StairsArea);
+                    Hud.Toast(Loc.T($"Sealed. Defeat every enemy in this room ({left} left)", $"封印されている。この部屋の敵を全部倒すと通れる（残り {left} 体）"), new Color(0.7f, 0.75f, 0.85f));
                 }
                 if (d > 1.5f) stairsLatch = false;
                 return;

@@ -145,18 +145,20 @@ namespace VividOfFade
         readonly List<Bullet> bullets = new List<Bullet>();
         readonly Stack<Bullet> freeBullets = new Stack<Bullet>();
 
-        /// <summary>階段の封印に数える、残りの敵（黄金のスライムと、呼び出されたボスは数えない）。</summary>
-        public int RemainingForStairs
+        /// <summary>
+        /// 階段の封印に数える、その部屋の残りの敵（眠っている敵も数える。黄金のスライムと、呼び出されたボスは数えない）。
+        /// area が null なら層全体。
+        /// </summary>
+        public int RemainingIn(RoomArea area)
         {
-            get
+            int n = 0;
+            foreach (var sp in pendingSplits) if (area == null || sp.Home == area) n++;
+            foreach (var e in Active)
             {
-                int n = pendingSplits.Count;
-                foreach (var e in Active)
-                {
-                    if (!e.Dying && e.Kind != EnemyKind.Golden && !e.Summoned) n++;
-                }
-                return n;
+                if (e.Dying || e.Kind == EnemyKind.Golden || e.Summoned) continue;
+                if (area == null || e.Home == area) n++;
             }
+            return n;
         }
 
         public int AliveCount
