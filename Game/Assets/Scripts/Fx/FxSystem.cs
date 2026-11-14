@@ -15,6 +15,7 @@ namespace VividOfFade
             public float Radius;
             public Color Color;
             public bool Steady;      // 広がらずに脈打つ（ボスの攻撃の予告）
+            public bool Soft;        // やわらかい光の柱（SoftPillar）
         }
 
         readonly List<Burst> active = new List<Burst>();
@@ -392,6 +393,19 @@ namespace VividOfFade
         }
 
         /// <summary>立ちのぼる光の柱（落ちてくる技の着弾、強化など）。height はユニット。</summary>
+        /// <summary>
+        /// やわらかい光の柱（レベルアップの柱と同じ絵：中心ほど明るく、上へ行くほど消える）。width は幅（マス）。
+        /// </summary>
+        public void SoftPillar(Vector2 pos, Color color, float width, float height, float duration = 0.6f)
+        {
+            Pillar(pos, color, width, height, duration);
+            var b = pillars[pillars.Count - 1];
+            b.Sr.sprite = PixelArt.SoftPillar;
+            b.Soft = true;
+            b.Sr.transform.position = Iso.ToScreen(pos) + new Vector2(0f, -0.2f);
+            b.Sr.transform.localScale = new Vector3(width, height / 2f, 1f);
+        }
+
         public void Pillar(Vector2 pos, Color color, float width, float height, float duration = 0.4f)
         {
             Burst b;
@@ -406,6 +420,8 @@ namespace VividOfFade
                 b = new Burst { Sr = sr };
             }
             b.Sr.gameObject.SetActive(true);
+            b.Sr.sprite = PixelArt.Beam;
+            b.Soft = false;
             b.Sr.transform.position = Iso.ToScreen(pos);
             b.T = 0f;
             b.Duration = duration;
@@ -510,7 +526,7 @@ namespace VividOfFade
                 c.a = b.Color.a * (1f - t);
                 b.Sr.color = c;
                 var sc = b.Sr.transform.localScale;
-                b.Sr.transform.localScale = new Vector3(b.Radius * 16f * (1f - 0.6f * t), sc.y, 1f); // 細くなりながら消える
+                b.Sr.transform.localScale = new Vector3(b.Radius * (b.Soft ? 1f : 16f) * (1f - 0.6f * t), sc.y, 1f); // 細くなりながら消える
             }
             for (int i = particles.Count - 1; i >= 0; i--)
             {
