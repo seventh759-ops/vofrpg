@@ -707,6 +707,13 @@ namespace VividOfFade
             return l;
         }
 
+        /// <summary>遊んだ時間を「12時間34分」の形に。</summary>
+        static string PlayTime(float seconds)
+        {
+            int m = Mathf.FloorToInt(seconds / 60f);
+            return Loc.T($"{m / 60}h {m % 60:00}m", $"{m / 60}時間{m % 60:00}分");
+        }
+
         void DrawEnding()
         {
             if (endingTime < 0f) endingTime = 0f;
@@ -800,10 +807,11 @@ namespace VividOfFade
             if (ch != null && t > end + 3f)
             {
                 string record = $"{AdvancedClasses.NameFor(ch)}   Lv {ch.Level}" + (ch.Rebirths > 0 ? Loc.T($"   Reborn x{ch.Rebirths}", $"   転生 {ch.Rebirths}回") : "")
-                    + "\n" + Loc.T("Deepest: ", "最深：") + GameConfig.FloorName(ch.BestFloor);
+                    + "\n" + Loc.T($"Play time {PlayTime(ch.PlaySeconds)}   Defeated {ch.Kills:N0}", $"プレイ時間 {PlayTime(ch.PlaySeconds)}   倒した敵 {ch.Kills:N0}体")
+                    + "\n" + Loc.T($"Fell {ch.Deaths} times", $"力尽きた回数 {ch.Deaths}回");
                 var rs = new GUIStyle(centered) { wordWrap = true };
                 rs.normal.textColor = new Color(0.9f, 0.9f, 0.95f, Mathf.Clamp01((t - end - 3f) / 1.2f));
-                GUI.Label(new Rect(W * 0.06f, H * 0.58f, W * 0.88f, H * 0.08f), record, rs);
+                GUI.Label(new Rect(W * 0.06f, H * 0.58f, W * 0.88f, H * 0.1f), record, rs);
             }
 
             if (t >= EndingTapReady)

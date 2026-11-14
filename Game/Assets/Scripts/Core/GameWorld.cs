@@ -88,13 +88,25 @@ namespace VividOfFade
         {
             OpenPanel(false, false, false);
             EndingOpen = true;
+            endingFromCredits = creditsOnly;
             Hud.StartEnding(creditsOnly);
         }
 
-        /// <summary>エンディングを閉じて、元の画面に戻る（深淵20層なら、そのまま階段から帰還できる）。</summary>
+        bool endingFromCredits;
+
+        /// <summary>
+        /// エンディングを閉じる。アビスを倒したあとのエンディングなら、そのまま町へ帰る
+        /// （持ち帰る品は、帰還の画面の初めの選び方と同じ：珍しい順・レベルの高い順に、持ち帰れる数まで）。
+        /// 設定の「クレジット」からなら、元の画面に戻るだけ。
+        /// </summary>
         public void CloseEnding()
         {
             EndingOpen = false;
+            var ch = Profile.Current;
+            if (endingFromCredits || ch == null || InTown || ChoosingClass || Player.IsDead) return;
+            var best = new List<Item>(Inventory.NewThisRun());
+            best.Sort((a, b) => a.Rarity != b.Rarity ? b.Rarity.CompareTo(a.Rarity) : b.Level.CompareTo(a.Level));
+            ReturnHome(best.Count > ch.CarrySlots ? best.GetRange(0, ch.CarrySlots) : best);
         }
 
         /// <summary>職業を選ぶ画面（挑戦の開始前）。</summary>
@@ -488,6 +500,7 @@ namespace VividOfFade
             float dt = Mathf.Min(Time.deltaTime, 1f / 20f);
             Input.Poll();
             if (Input.MusicPressed) Music.ToggleMute();
+            if (!OnTitle && !EndingOpen && Profile.Current != null) Profile.Current.PlaySeconds += Time.unscaledDeltaTime; // 保存は、ほかの保存のついでに
             // 案内役の会話中は、決定キーで次へ。ほかの操作には使わない
             bool talking = Hud.Guide.Active;
             if (talking && Input.ConfirmPressed)
@@ -1126,6 +1139,7 @@ namespace VividOfFade
         void OnEnemyKilled(Vector2 pos)
         {
             lastKillPos = pos;
+            if (Profile.Current != null) Profile.Current.Kills++;
             // 深淵の敵は、区画の色の光の粒になって散る
             if (GameConfig.IsAbyss(Floors.Floor))
             {
@@ -1527,6 +1541,7 @@ namespace VividOfFade
         /// <summary>死んだ：中断した挑戦を消して、職業選択へ。</summary>
         void EndRunByDeath()
         {
+            if (Profile.Current != null) Profile.Current.Deaths++;
             ClearRun(Profile.Current);
             Profile.Save();
             ShowTown();
