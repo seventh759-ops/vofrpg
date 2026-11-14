@@ -135,11 +135,13 @@ namespace VividOfFade
         public const float BossWindup = 0.8f;
         public const float BossSlamRadius = 2.6f;
         // 深淵の最奥のボス「アビス」：ほかのボスより強い。歴代のボスを呼び出す
-        public const float FinalBossHpMult = 2.5f;          // ふつうのボスの何倍か
-        public const float FinalBossDamageMult = 1.3f;
-        public const float SummonedBossHpShare = 0.06f;     // 呼び出したボスの体力（アビスの最大体力に対して）
+        public const float FinalBossHpMult = 4.5f;          // ふつうのボスの何倍か
+        public const float FinalBossDamageMult = 1.6f;
+        public const float SummonedBossHpShare = 0.04f;     // 呼び出したボスの体力（アビスの最大体力に対して）
         public const float SummonedBossDamageShare = 0.7f;  // 呼び出したボスの攻撃（アビスに対して）
         public const int MaxSummonedBosses = 2;             // 同時に出せる数
+        public const int MaxSummonedBossesEnraged = 3;      // 体力が半分を切ったあと
+        public const float FinalBossIntervalMult = 0.65f;   // 技の間隔（ふつうのボスに対して）
         public const float FinalCollapseTime = 3.5f;        // アビスが崩れていく演出の長さ（そのあとエンディング）
         public static readonly Color BossTint = new Color(1f, 0.45f, 0.45f, 1f);
         // ---- 回復と MP の消費（後半ほどシビアに） ----

@@ -181,7 +181,7 @@ namespace VividOfFade
                 {
                     e.Sr.color = e.Tint;
                     Resolve(e, target, room);
-                    e.SlamTimer = (e.Enraged ? BossInfo.EnragedInterval : BossInfo.Interval) * (BossInfo.IsAbyss(e.BossKind) ? 0.8f : 1f); // 深淵のボスは手数が多い
+                    e.SlamTimer = (e.Enraged ? BossInfo.EnragedInterval : BossInfo.Interval) * (e.BossKind == BossKind.AbyssKing ? GameConfig.FinalBossIntervalMult : BossInfo.IsAbyss(e.BossKind) ? 0.8f : 1f); // 深淵のボスは手数が多い。アビスはさらに多い
                 }
                 return true;
             }
@@ -272,8 +272,8 @@ namespace VividOfFade
                     e.Pos = BlinkTarget(e, target, room);
                     break;
                 case BossAttack.SummonBoss:
-                    // 同時に出せるのは2体まで。多ければ、代わりに全方向の弾
-                    if (SummonedAlive < GameConfig.MaxSummonedBosses)
+                    // 同時に出せるのは2体まで（怒ると3体）。多ければ、代わりに全方向の弾
+                    if (SummonedAlive < (e.Enraged ? GameConfig.MaxSummonedBossesEnraged : GameConfig.MaxSummonedBosses))
                     {
                         var kind = SummonPastBoss(e, room);
                         if (kind.HasValue) PastBossSummoned?.Invoke(e, kind.Value);
