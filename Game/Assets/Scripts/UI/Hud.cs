@@ -585,9 +585,8 @@ namespace VividOfFade
             // ドット絵の「LV UP」。画面の大きさに合わせて整数倍で拡大（にじまないように）
             var tex = LevelUpArt.Texture;
             float pop = 1f + 0.35f * Mathf.Clamp01(1f - t / 0.18f); // 出た瞬間だけ大きく
-            // 1ドットの大きさは、キャラクターの絵の1ドットの約1.5倍（キャラクターは 32 ドットで 1 マス。同じだと埋もれるので少し大きく）
-            float unitPx = Mathf.Abs(cam.WorldToScreenPoint(new Vector3(head.x + 1f, head.y, 0f)).x - sp.x);
-            float px = Mathf.Max(2f, Mathf.Round(unitPx * GameConfig.PlayerScale * 1.3f / 32f)) * pop; // 字が太くなった分、少しだけ小さめ
+            // 1ドットの大きさは、ダメージの数字（一番下の大きい行）と同じにそろえる（字形も同じなので、太さがそろう）
+            float px = Mathf.Max(2f, Mathf.Round(number.fontSize / 8.5f)) * 1.4f * pop; // 字が太くなった分、少しだけ小さめ
             float w = tex.width * px, h = tex.height * px;
             var r = new Rect(Mathf.Round(sp.x - w * 0.5f), Mathf.Round(Screen.height - sp.y - h * 0.5f), w, h);
             var old = GUI.color;
