@@ -1008,12 +1008,13 @@ namespace VividOfFade
 
             // 経験値：HP・MP の下に細いバーだけ
             var expBack = new Rect(barX, rowY + rowH + expGap, W - mm - barX, ExpRowH);
-            Fill(expBack, new Color(0.03f, 0.1f, 0.09f, 1f));
+            Fill(expBack, new Color(0.02f, 0.05f, 0.05f, 1f)); // 背景は暗く（たまった分が浮き出るように）
             if (ch != null)
             {
                 float expRatio = ch.Level >= Progression.LevelCap(ch) ? 1f : Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch.Level));
-                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.1f, 0.6f, 0.52f, 1f)); // 碧
-                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.4f), new Color(0.8f, 1f, 0.95f, 0.3f)); // 光沢
+                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.2f, 0.9f, 0.72f, 1f)); // 明るい碧
+                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.4f), new Color(0.85f, 1f, 0.95f, 0.45f)); // 光沢
+                if (expRatio > 0f && expRatio < 1f) Fill(new Rect(expBack.x + expBack.width * expRatio - 2f, expBack.y, 2f, expBack.height), new Color(1f, 1f, 1f, 0.6f + 0.3f * Mathf.Sin(Time.unscaledTime * 4f))); // 先端が白く光る
                 for (int k = 1; k < 10; k++) Fill(new Rect(expBack.x + expBack.width * k / 10f, expBack.y, 1f, expBack.height), new Color(0f, 0f, 0f, 0.35f)); // 10% ごとの目盛り
             }
             OrnateFrame(expBack, FrameGold, Mathf.Max(1f, FrameT * 0.5f), true, false);
