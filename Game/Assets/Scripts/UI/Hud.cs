@@ -713,6 +713,7 @@ namespace VividOfFade
 
             if (World.OnTitle) DrawTitle();
             else if (World.ChoosingClass && World.PendingClass.HasValue) DrawFloorSelect(World.PendingClass.Value);
+            else if (World.ChoosingClass && World.InTown && (World.BagOpen || World.StatsOpen || World.SkillsOpen || World.MenuOpen) && DrawTownPanelBackdrop()) { } // 町から開く画面は、後ろに町の絵（ダンジョンやキャラクターが透けないように）
             else if (World.ChoosingClass && World.InTown && World.BagOpen) bag.Draw(World);
             else if (World.ChoosingClass && World.InTown && World.StatsOpen) stats.Draw(World);
             else if (World.ChoosingClass && World.InTown && World.SkillsOpen) skills.Draw(World);
@@ -1464,6 +1465,16 @@ namespace VividOfFade
             var list = new List<int>();
             foreach (int f in GameWorld.Checkpoints(ch)) if (GameConfig.IsAbyss(f) == floorTabAbyss) list.Add(f);
             return list;
+        }
+
+        /// <summary>町から開く画面の背景（町の絵を暗くして敷く）。描いたあと false を返し、続けて画面そのものを描かせる。</summary>
+        bool DrawTownPanelBackdrop()
+        {
+            float W = Screen.width, H = Screen.height;
+            Fill(new Rect(0, 0, W, H), Color.black);
+            TownScreen.DrawBackdrop(W, H);
+            Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.02f, 0.7f));
+            return false;
         }
 
         void DrawFloorSelect(ClassType type)
