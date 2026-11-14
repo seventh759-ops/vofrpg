@@ -1370,8 +1370,8 @@ namespace VividOfFade
                 c.a = 1f - t * t;
                 if (NumberFont.CanDraw(n.Text))
                 {
-                    // ダメージの数字はドット文字で（会心は大きく、出た瞬間に少しふくらむ）
-                    float px = Mathf.Max(2f, Mathf.Round(number.fontSize / 6.5f)) * (n.Big ? 1.5f : 1f);
+                    // 「MISS」などもドット文字で（ダメージの数字と同じ大きさ。出た瞬間に少しふくらむ）
+                    float px = Mathf.Max(2f, Mathf.Round(number.fontSize / 8.5f)) * (n.Big ? 1.4f : 1f);
                     if (n.Big) px *= 1f + 0.35f * Mathf.Clamp01(1f - t * 6f);
                     NumberFont.Draw(new Vector2(sp.x, Screen.height - sp.y), n.Text, px, c);
                     continue;
