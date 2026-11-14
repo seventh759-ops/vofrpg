@@ -43,6 +43,7 @@ namespace VividOfFade
         public const float LevelUpDuration = 1.9f;
         const float WingOpacity = 0.9f;
         readonly SpriteRenderer[] wingGlows = new SpriteRenderer[2]; // 羽の後ろの、大きな金色の光
+        SpriteRenderer wingPillar; // 足元から羽まで伸びる光の柱（羽と一緒に伸び、開いたら消える）
         float featherTimer;
         /// <summary>羽を付ける位置（プレイヤーの論理座標）。GameWorld が毎フレーム入れる。</summary>
         public Vector2 Anchor;
@@ -75,10 +76,16 @@ namespace VividOfFade
                     wingGlows[i].sprite = PixelArt.Wing;
                     Lighting.MakeGlow(wingGlows[i]);
                 }
+                var pg = new GameObject("LevelUpPillar");
+                pg.transform.SetParent(transform, false);
+                wingPillar = pg.AddComponent<SpriteRenderer>();
+                wingPillar.sprite = PixelArt.Beam; // 足元が原点、高さ2ユニット
+                Lighting.MakeGlow(wingPillar);
                 hinges[0].localPosition = new Vector3(-0.22f, 0f, 0f);
                 hinges[1].localPosition = new Vector3(0.22f, 0f, 0f);
             }
             wingRoot.gameObject.SetActive(true);
+            wingPillar.gameObject.SetActive(true);
             wingT = 0f;
             featherTimer = 0f;
             wingBurst = false;
@@ -108,6 +115,7 @@ namespace VividOfFade
             {
                 wingT = -1f;
                 wingRoot.gameObject.SetActive(false);
+                wingPillar.gameObject.SetActive(false);
                 return;
             }
             float r = Mathf.Clamp01(wingT / WingRiseTime);
@@ -132,6 +140,12 @@ namespace VividOfFade
             hinges[1].localRotation = Quaternion.Euler(0f, 0f, -angle);
             hinges[1].localScale = new Vector3(-scale, scale, 1f);
             int order = SortOrder.For(Anchor) - 1; // キャラクターの後ろ
+            // 光の柱：羽の付け根まで伸び、開いたら細くなって消える
+            float pk = wingT < WingOpenAt ? 1f : Mathf.Clamp01(1f - (wingT - WingOpenAt) / 0.35f);
+            wingPillar.transform.position = Iso.ToScreen(Anchor);
+            wingPillar.transform.localScale = new Vector3(1.1f * 16f * (0.4f + 0.6f * pk), Mathf.Max(0.05f, WingHeight + 0.15f) / 2f, 1f);
+            wingPillar.color = new Color(1f, 0.93f, 0.7f, 0.7f * pk * Mathf.Clamp01(wingT / 0.08f));
+            wingPillar.sortingOrder = order - 2;
             float pulse = 0.5f + 0.5f * Mathf.Sin(wingT * 9f);
             for (int i = 0; i < 2; i++)
             {
@@ -148,7 +162,7 @@ namespace VividOfFade
             {
                 wingBurst = true;
                 WingsOpened?.Invoke();
-                Ring(Anchor, 2.2f, new Color(1f, 0.95f, 0.8f, 0.8f), 0.3f);
+                Ring(Anchor, 1.6f, new Color(1f, 0.95f, 0.8f, 0.3f), 0.3f); // ごく弱い波紋
                 Sparks(Anchor, 22, white, 3.2f, 0.7f, 1.2f, false, WingHeight);
                 Sparks(Anchor, 12, gold, 2.2f, 0.9f, 1.5f, true, WingHeight - 0.2f);
             }
@@ -469,6 +483,7 @@ namespace VividOfFade
             pillars.Clear();
             foreach (var p in particles) { p.Sr.gameObject.SetActive(false); freeParticles.Push(p); }
             particles.Clear();
+            if (wingPillar != null) wingPillar.gameObject.SetActive(false);
             if (wingRoot != null) wingRoot.gameObject.SetActive(false);
             wingT = -1f;
             foreach (var b in slashes)
