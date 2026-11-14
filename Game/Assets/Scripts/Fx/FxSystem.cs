@@ -236,11 +236,15 @@ namespace VividOfFade
             // 後ろ：太く濃いめ／前：細く淡く（キャラクターが光に包まれて見える。足元から伸びるので浮いて見えない）
             wingPillar.transform.position = Iso.ToScreen(Anchor) + new Vector2(0f, -0.35f); // 足元より下から（足先まで光に包む）
             wingPillar.transform.localScale = new Vector3(1.3f * (0.5f + 0.5f * pk), pillarH, 1f);
-            wingPillar.color = new Color(1f, 0.93f, 0.7f, 0.55f * pk * fadeIn);
+            // 光の柱はタイトルの「VIVID」の色を順にめぐる（水色 → 紫 → 桃 → 橙 → 黄 → …）
+            float hueT = Mathf.Repeat(wingT * 3f, VividColors.Length);
+            int hi = Mathf.FloorToInt(hueT);
+            var vc = Color.Lerp(VividColors[hi], VividColors[(hi + 1) % VividColors.Length], hueT - hi);
+            wingPillar.color = new Color(vc.r, vc.g, vc.b, 0.6f * pk * fadeIn);
             wingPillar.sortingOrder = order - 2;
             wingPillarFront.transform.position = Iso.ToScreen(Anchor) + new Vector2(0f, -0.35f); // 足元より下から（足先まで光に包む）
             wingPillarFront.transform.localScale = new Vector3(0.95f * (0.5f + 0.5f * pk), pillarH, 1f);
-            wingPillarFront.color = new Color(1f, 0.97f, 0.85f, 0.3f * pk * fadeIn);
+            wingPillarFront.color = new Color(Mathf.Lerp(vc.r, 1f, 0.6f), Mathf.Lerp(vc.g, 1f, 0.6f), Mathf.Lerp(vc.b, 1f, 0.6f), 0.3f * pk * fadeIn); // 前は白っぽく
             wingPillarFront.sortingOrder = order + 3;
             float pulse = 0.5f + 0.5f * Mathf.Sin(wingT * 9f);
             for (int i = 0; i < 2; i++)
