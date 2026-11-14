@@ -66,7 +66,7 @@ namespace VividOfFade
         /// </summary>
         static AudioClip MakeUnseal()
         {
-            int len = (int)(Rate * 1.5f);
+            int len = (int)(Rate * 2.6f);
             var data = new float[len];
             float ph = 0f, ph2 = 0f;
             for (int i = 0; i < len; i++)
@@ -79,7 +79,7 @@ namespace VividOfFade
                 float w = 2f * Mathf.PI;
                 float v = Mathf.Sin(w * ph) + 0.55f * Mathf.Sin(w * ph * 2f) + 0.3f * Mathf.Sin(w * ph * 3f) + 0.12f * Mathf.Sin(w * ph * 4f)
                         + 0.5f * Mathf.Sin(w * ph2 * 2f);
-                float env = Mathf.Min(1f, t / 0.06f) * Mathf.Exp(-t * 1.6f) * (1f + 0.3f * Mathf.Exp(-t * 4f));
+                float env = Mathf.Min(1f, t / 0.06f) * Mathf.Exp(-t * 0.9f) * (1f + 0.3f * Mathf.Exp(-t * 4f)) * Mathf.Clamp01((2.6f - t) / 0.4f); // 長めに響いて消える
                 data[i] = v * env * 0.22f;
             }
             var clip = AudioClip.Create("unseal", len, 1, Rate, false);
