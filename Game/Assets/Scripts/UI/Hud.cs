@@ -97,7 +97,8 @@ namespace VividOfFade
         public static float TopBandBottom => BandMargin * 2.6f + TitleRowH + StatusPanelH; // ロゴの段と、まとめた1枚の枠
         static float PanelPad => BandMargin * 0.6f;
         /// <summary>LV・HP・MP・経験値・層をまとめた枠の高さ。</summary>
-        static float StatusPanelH => PanelPad * 2.8f + TopRowH + BandMargin * 0.35f + ExpRowH + FloorRowH + Mathf.Max(2f, Mathf.Round(FrameT * 0.6f)) * 1.5f;
+        static float DividerT => Mathf.Max(3f, FrameT); // 枠と同じ太さ（はっきり見えるように）
+        static float StatusPanelH => PanelPad * 2.8f + TopRowH + BandMargin * 0.35f + ExpRowH + FloorRowH + DividerT * 1.5f;
 
         /// <summary>メッセージウィンドウの行数と、1行の高さ。</summary>
         const int LogLines = 4;
@@ -992,9 +993,24 @@ namespace VividOfFade
             Fill(panel, new Color(0.08f, 0.075f, 0.11f, 1f)); // 下のショートカットの欄と同じ色
             float pp = PanelPad;
             // 仕切り：金の線と、その下（右）に暗い影の線（枠と同じ凹凸）
-            float dt = Mathf.Max(2f, Mathf.Round(FrameT * 0.6f));
-            void HDivider(float x, float y, float w) { Fill(new Rect(x, y, w, dt), FrameGold); Fill(new Rect(x, y + dt, w, Mathf.Max(1f, dt * 0.5f)), new Color(0f, 0f, 0f, 0.6f)); }
-            void VDivider(float x, float y, float h) { Fill(new Rect(x, y, dt, h), FrameGold); Fill(new Rect(x + dt, y, Mathf.Max(1f, dt * 0.5f), h), new Color(0f, 0f, 0f, 0.6f)); }
+            float dt = DividerT;
+            float sh = Mathf.Max(1f, Mathf.Round(dt * 0.5f));
+            var hi = new Color(1f, 0.95f, 0.75f, 0.9f); // 照り返し
+            var lo = new Color(0f, 0f, 0f, 0.75f);      // 影
+            void HDivider(float x, float y, float w)
+            {
+                Fill(new Rect(x, y - sh, w, sh), lo);
+                Fill(new Rect(x, y, w, dt), FrameGold);
+                Fill(new Rect(x, y, w, Mathf.Max(1f, dt * 0.3f)), hi);
+                Fill(new Rect(x, y + dt, w, sh), lo);
+            }
+            void VDivider(float x, float y, float h)
+            {
+                Fill(new Rect(x - sh, y, sh, h), lo);
+                Fill(new Rect(x, y, dt, h), FrameGold);
+                Fill(new Rect(x, y, Mathf.Max(1f, dt * 0.3f), h), hi);
+                Fill(new Rect(x + dt, y, sh, h), lo);
+            }
             float rowY = panel.y + pp, rowH = TopRowH;
             float expGap = mm * 0.35f;
             float lvW = W * 0.17f;
