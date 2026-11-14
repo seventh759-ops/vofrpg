@@ -97,7 +97,7 @@ namespace VividOfFade
         public static float TopBandBottom => BandMargin * 2.6f + TitleRowH + StatusPanelH; // ロゴの段と、まとめた1枚の枠
         static float PanelPad => BandMargin * 0.6f;
         /// <summary>LV・HP・MP・経験値・層をまとめた枠の高さ。</summary>
-        static float DividerT => Mathf.Max(3f, FrameT); // 枠と同じ太さ（はっきり見えるように）
+        static float DividerT => Mathf.Max(4f, FrameT * 2f); // 枠の2倍の太さ（縮小表示でも見えるように）
         static float StatusPanelH => PanelPad * 2.8f + TopRowH + BandMargin * 0.35f + ExpRowH + FloorRowH + DividerT * 1.5f;
 
         /// <summary>メッセージウィンドウの行数と、1行の高さ。</summary>
