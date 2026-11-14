@@ -134,7 +134,7 @@ namespace VividOfFade
             float u = Mathf.Max(0f, wingT - WingOpenAt);
             float open = u <= 0f ? 0f : 1f - Mathf.Exp(-u * 7f) * Mathf.Cos(u * 12f);
             float angle = Mathf.LerpUnclamped(80f, -18f, open) + squeeze * 8f; // 畳んだ形から、少し上向きに広げる
-            float scale = Mathf.LerpUnclamped(0.55f, 1.5f, open) - squeeze * 0.1f;
+            float scale = Mathf.LerpUnclamped(0.5f, 1.15f, open) - squeeze * 0.08f;
             float dip = squeeze * 0.1f;
             float drift = (wingT > WingFadeFrom ? (wingT - WingFadeFrom) * 0.5f : 0f) - dip;
             open = Mathf.Clamp01(open);

@@ -476,7 +476,7 @@ namespace VividOfFade
             // ドット絵の「LV UP」。画面の大きさに合わせて整数倍で拡大（にじまないように）
             var tex = LevelUpArt.Texture;
             float pop = 1f + 0.35f * Mathf.Clamp01(1f - t / 0.18f); // 出た瞬間だけ大きく
-            float px = Mathf.Max(2f, Mathf.Round(Screen.height / 340f)) * pop; // 線が細いので、少し大きめの倍率
+            float px = Mathf.Max(2f, Mathf.Round(Screen.height / 560f)) * pop; // 1080×2340 で4倍
             float w = tex.width * px, h = tex.height * px;
             var r = new Rect(Mathf.Round(sp.x - w * 0.5f), Mathf.Round(Screen.height - sp.y - h * 0.5f), w, h);
             var old = GUI.color;
