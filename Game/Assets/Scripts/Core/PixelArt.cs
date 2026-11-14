@@ -69,9 +69,13 @@ namespace VividOfFade
             for (int y = h - 1; y >= 0 && bottom < 0; y--) for (int x = 0; x < w; x++) if (At(x, y) != '.') { bottom = y; break; }
             if (bottom < 4) return src;
             int feetTop = bottom - 3;
+            // 足は靴（b）のある列だけ。武器や杖が足元まで伸びていても、足と一緒に切り離さない（武器は体と一緒に動く）
+            int bootMin = w, bootMax = -1;
+            for (int y = feetTop - 1; y <= bottom; y++) for (int x = 0; x < w; x++) if (At(x, y) == 'b') { bootMin = Mathf.Min(bootMin, x); bootMax = Mathf.Max(bootMax, x); }
+            if (bootMax < 0) { bootMin = 0; bootMax = w - 1; }
             // 足元の真ん中（左右の足の境目）
             float sum = 0f; int cnt = 0;
-            for (int y = feetTop; y <= bottom; y++) for (int x = 0; x < w; x++) if (At(x, y) != '.') { sum += x; cnt++; }
+            for (int y = feetTop; y <= bottom; y++) for (int x = bootMin; x <= bootMax; x++) if (At(x, y) != '.') { sum += x; cnt++; }
             float mid = cnt > 0 ? sum / cnt : w / 2f;
             var g = new char[h][];
             for (int y = 0; y < h; y++) g[y] = new string('.', w).ToCharArray();
@@ -82,8 +86,8 @@ namespace VividOfFade
                     char c = At(x, y);
                     if (c == '.') continue;
                     int ny = y;
-                    bool feet = y >= feetTop;
-                    if (frame == 4) ny = feet ? y : Mathf.Min(feetTop - 1, y + 1);     // 呼吸：上半身が1ドット沈む
+                    bool feet = y >= feetTop && x >= bootMin - 1 && x <= bootMax + 1;
+                    if (frame == 4) ny = feet || y >= feetTop ? y : Mathf.Min(feetTop - 1, y + 1); // 呼吸：上半身が1ドット沈む（足元の高さの武器は動かさない）
                     else
                     {
                         bool left = x < mid;
