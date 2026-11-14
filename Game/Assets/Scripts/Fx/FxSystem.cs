@@ -40,7 +40,7 @@ namespace VividOfFade
         const int MaxParticles = 400;
 
         // レベルアップの羽（頭の上で開いて、上がりながら消える）
-        public const float LevelUpDuration = 2.3f;
+        public const float LevelUpDuration = 1.6f;
         const float WingOpacity = 0.9f;
         readonly SpriteRenderer[] wingGlows = new SpriteRenderer[2]; // 羽の後ろの、大きな金色の光
         float featherTimer;
@@ -94,7 +94,7 @@ namespace VividOfFade
                 wingRoot.gameObject.SetActive(false);
                 return;
             }
-            const float openTime = 0.3f, fadeFrom = 1.5f;
+            const float openTime = 0.3f, fadeFrom = 1f;
             float open = Mathf.Clamp01(wingT / openTime);
             open = 1f - (1f - open) * (1f - open) * (1f - open); // 勢いよく開いて、ゆっくり止まる
             float flap = wingT > openTime ? Mathf.Sin((wingT - openTime) * 12f) * 12f * Mathf.Clamp01(1f - (wingT - openTime) * 0.8f) : 0f;

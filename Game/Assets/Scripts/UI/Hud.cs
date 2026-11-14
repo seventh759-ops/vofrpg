@@ -446,7 +446,6 @@ namespace VividOfFade
             FitLabel(new Rect(tx, box.y + box.height * 0.5f, tw, box.height * 0.42f), spec.DisplayDesc, desc);
         }
 
-        /// <summary>頭の上の羽の間に「LV UP」を出す（羽と一緒に上がりながら消える）。</summary>
         // レベルアップ：札（テロップ）は出さず、LV の欄を光らせる時間だけ数える（知らせは羽と光の演出）
         float plateTime = -1f;
         const float PlateLife = 2.6f;
@@ -471,15 +470,16 @@ namespace VividOfFade
             float alpha = t > 1f ? 1f - (t - 1f) / (FxSystem.LevelUpDuration - 1f) : Mathf.Clamp01(t / 0.15f);
             var head = Iso.ToScreen(World.Player.Pos) + new Vector2(0f, 0.8f + rise); // 羽の付け根と同じ高さ
             Vector3 sp = cam.WorldToScreenPoint(new Vector3(head.x, head.y, 0f));
-            var style = new GUIStyle(number) { fontSize = Mathf.Max(9, Mathf.RoundToInt(number.fontSize * 0.7f)) }; // 羽の間に収まる小ささ
-            float pop = 1f + 0.15f * Mathf.Clamp01(1f - t / 0.2f); // 出た瞬間だけ少し大きく
-            style.fontSize = Mathf.RoundToInt(style.fontSize * pop);
-            float w = style.fontSize * 8f, h = style.fontSize * 1.6f;
-            var r = new Rect(sp.x - w * 0.5f, Screen.height - sp.y - h * 0.5f, w, h);
-            style.normal.textColor = new Color(0.25f, 0.15f, 0f, alpha * 0.8f); // 影
-            GUI.Label(new Rect(r.x + 1f, r.y + 1f, r.width, r.height), "LV UP", style);
-            style.normal.textColor = new Color(1f, 0.88f, 0.35f, alpha);
-            GUI.Label(r, "LV UP", style);
+            // ドット絵の「LV UP」。画面の大きさに合わせて整数倍で拡大（にじまないように）
+            var tex = LevelUpArt.Texture;
+            float pop = 1f + 0.3f * Mathf.Clamp01(1f - t / 0.2f); // 出た瞬間だけ大きく
+            float px = Mathf.Max(2f, Mathf.Round(Screen.height / 420f)) * pop;
+            float w = tex.width * px, h = tex.height * px;
+            var r = new Rect(Mathf.Round(sp.x - w * 0.5f), Mathf.Round(Screen.height - sp.y - h * 0.5f), w, h);
+            var old = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+            GUI.DrawTexture(r, tex);
+            GUI.color = old;
         }
 
         string bannerTitle;
