@@ -7,7 +7,7 @@ namespace VividOfFade
 {
     /// <summary>
     /// 起動の画面。ブランドロゴ「TOMOSHIBI WORKS」（ランタンに火がともる）を見せている間に、裏で重い準備を進める：
-    /// 曲（1曲ずつ順番に）→ タイトル・町の背景の絵 → ゲーム本体（GameWorld）。終わったら、ふっと消える。
+    /// 全部の曲（1曲ずつ順番に）→ 全部の背景の絵 → ゲーム本体（GameWorld）。遊んでいる途中で待たされないように、最初に全部作る。終わったら、ふっと消える。
     /// </summary>
     public sealed class Loader : MonoBehaviour
     {
@@ -46,19 +46,21 @@ namespace VividOfFade
                 var task = Task.Run(songs[k].work);
                 while (!task.IsCompleted) yield return null;
                 if (task.Status == TaskStatus.RanToCompletion) Music.StoreRendered(songs[k].name, task.Result);
-                progress = 0.05f + 0.6f * (k + 1) / songs.Count;
+                progress = 0.05f + 0.75f * (k + 1) / songs.Count;
                 yield return null;
             }
-            progress = 0.65f;
+            progress = 0.82f;
             yield return null;
 
             // 背景の絵（タイトル・町）
-            var t1 = Profile.AbyssUnlocked ? TitleScene.AbyssTexture : TitleScene.Texture;
-            progress = 0.75f;
-            yield return null;
-            var t2 = Profile.AbyssUnlocked ? TownScene.AbyssTexture : TownScene.Texture;
-            progress = 0.85f;
-            yield return null;
+            // 背景の絵も全部（タイトル・深淵のタイトル・夜明け・町・深淵の町）
+            System.Func<Texture2D>[] arts = { () => TitleScene.Texture, () => TitleScene.AbyssTexture, () => TitleScene.DawnTexture, () => TownScene.Texture, () => TownScene.AbyssTexture };
+            for (int k = 0; k < arts.Length; k++)
+            {
+                arts[k]();
+                progress = 0.82f + 0.1f * (k + 1) / arts.Length;
+                yield return null;
+            }
 
             // ゲーム本体
             new GameObject("GameWorld").AddComponent<GameWorld>();

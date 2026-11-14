@@ -39,7 +39,7 @@ namespace VividOfFade
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetCache() => clips.Clear();
 
-        /// <summary>起動のときに先に作っておく曲（タイトル・町・最初に流れる区画の曲とそのボス戦）。名前と、作る処理（別のスレッドで動かせる）。</summary>
+        /// <summary>起動のときに作っておく曲（すぐ使う曲から順に、全部）。名前と、作る処理（別のスレッドで動かせる）。</summary>
         public static List<(string name, System.Func<float[]> work)> StartupSongs()
         {
             var list = new List<(string, System.Func<float[]>)>();
@@ -49,6 +49,14 @@ namespace VividOfFade
             int t = ((Profile.MusicTheme % ThemeCount) + ThemeCount) % ThemeCount;
             if (t == ZoneMode) { Add(ZoneSongs[0]); Add(BossOf(ZoneSongs[0])); }
             else { Add(Themes[t - 1].Normal); Add(Themes[t - 1].Boss); }
+            // 残りの曲も全部、起動のときに作っておく（遊んでいる途中で、曲の切り替えに待たされないように）
+            Add(Profile.AbyssUnlocked ? TownSong : AbyssTownSong);
+            foreach (var z in ZoneSongs) { Add(z); Add(BossOf(z)); }
+            foreach (var th in Themes) { Add(th.Normal); Add(th.Boss); }
+            Add(GoldenSong);
+            Add(AbyssBossSong);
+            var seen = new HashSet<string>();
+            list.RemoveAll(x => !seen.Add(x.Item1)); // 同じ曲は1回だけ
             return list;
         }
 
