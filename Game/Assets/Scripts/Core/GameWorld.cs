@@ -1024,8 +1024,7 @@ namespace VividOfFade
             Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropLevel, GameConfig.BossRarityBonus,
                 GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * GameConfig.BossEmberMult);
             if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
-            if (GameConfig.IsAbyss(Floors.Floor))
-                GainShards(pos, Floors.Floor == GameConfig.AbyssLastFloor ? GameConfig.ShardsPerFinalBoss : GameConfig.ShardsPerAbyssBoss);
+            if (GameConfig.IsAbyss(Floors.Floor) && Random.value < GameConfig.ShardChanceBoss) GainShards(pos, 1);
             Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
             cameraRig.Shake(0.3f, 0.5f);
             Hud.Toast(Loc.T("BOSS DEFEATED!", "ボスを倒した！"), new Color(1f, 0.5f, 0.4f));
