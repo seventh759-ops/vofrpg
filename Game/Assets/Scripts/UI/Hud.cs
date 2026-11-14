@@ -1254,6 +1254,14 @@ namespace VividOfFade
                 var style = n.Big ? big : number;
                 var c = n.Color;
                 c.a = 1f - t * t;
+                if (NumberFont.CanDraw(n.Text))
+                {
+                    // ダメージの数字はドット文字で（会心は大きく、出た瞬間に少しふくらむ）
+                    float px = Mathf.Max(2f, Mathf.Round(number.fontSize / 6.5f)) * (n.Big ? 1.5f : 1f);
+                    if (n.Big) px *= 1f + 0.35f * Mathf.Clamp01(1f - t * 6f);
+                    NumberFont.Draw(new Vector2(sp.x, Screen.height - sp.y), n.Text, px, c);
+                    continue;
+                }
                 style.normal.textColor = c;
                 float w = style.fontSize * (n.Wide ? 12f : 4f);
                 float h = style.fontSize * 1.5f;

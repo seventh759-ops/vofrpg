@@ -1,0 +1,108 @@
+using UnityEngine;
+
+namespace VividOfFade
+{
+    /// <summary>
+    /// ダメージの数字のドット文字（0〜9・＋・－）。太い線の白い文字に暗いふち。色は描くときに付ける（会心は金など）。
+    /// このゲーム用のオリジナルの字形。
+    /// </summary>
+    public static class NumberFont
+    {
+        const string Chars = "0123456789+-";
+        const int GW = 5, GH = 7, Cell = GW + 2, CellH = GH + 2; // 1ドットのふちの分
+        public const int Advance = GW + 1;                          // 次の文字までの幅（ドット）
+        public const int Height = CellH;
+
+        static readonly string[][] Glyphs =
+        {
+            new[] { ".###.", "##.##", "##.##", "##.##", "##.##", "##.##", ".###." }, // 0
+            new[] { "..##.", ".###.", "..##.", "..##.", "..##.", "..##.", ".####" }, // 1
+            new[] { ".###.", "##.##", "...##", "..##.", ".##..", "##...", "#####" }, // 2
+            new[] { "####.", "...##", "...##", ".###.", "...##", "...##", "####." }, // 3
+            new[] { "...##", "..###", ".#.##", "##.##", "#####", "...##", "...##" }, // 4
+            new[] { "#####", "##...", "####.", "...##", "...##", "##.##", ".###." }, // 5
+            new[] { ".###.", "##...", "##...", "####.", "##.##", "##.##", ".###." }, // 6
+            new[] { "#####", "...##", "..##.", "..##.", ".##..", ".##..", ".##.." }, // 7
+            new[] { ".###.", "##.##", "##.##", ".###.", "##.##", "##.##", ".###." }, // 8
+            new[] { ".###.", "##.##", "##.##", ".####", "...##", "...##", ".###." }, // 9
+            new[] { ".....", "..#..", "..#..", "#####", "..#..", "..#..", "....." }, // +
+            new[] { ".....", ".....", ".....", "#####", ".....", ".....", "....." }, // -
+        };
+
+        static Texture2D tex;
+
+        static Texture2D Texture
+        {
+            get
+            {
+                if (tex != null) return tex;
+                int W = Cell * Chars.Length, H = CellH;
+                var on = new bool[W, H]; // y は上から
+                for (int g = 0; g < Glyphs.Length; g++)
+                    for (int y = 0; y < GH; y++)
+                        for (int x = 0; x < GW; x++)
+                            if (Glyphs[g][y][x] == '#') on[g * Cell + 1 + x, 1 + y] = true;
+                var px = new Color32[W * H];
+                var dark = new Color32(20, 14, 30, 255);
+                for (int y = 0; y < H; y++)
+                {
+                    for (int x = 0; x < W; x++)
+                    {
+                        Color32 c = new Color32(0, 0, 0, 0);
+                        if (on[x, y])
+                        {
+                            // 下ほど少し暗く（立体感）
+                            byte v = (byte)(255 - 50 * Mathf.Clamp01((y - 1) / (float)(GH - 1)));
+                            c = new Color32(v, v, v, 255);
+                        }
+                        else
+                        {
+                            bool near = false;
+                            for (int dy = -1; dy <= 1 && !near; dy++)
+                                for (int dx = -1; dx <= 1 && !near; dx++)
+                                {
+                                    int nx = x + dx, ny = y + dy;
+                                    if (nx >= 0 && ny >= 0 && nx < W && ny < H && on[nx, ny] && (nx / Cell) == (x / Cell)) near = true;
+                                }
+                            if (near) c = dark;
+                        }
+                        px[(H - 1 - y) * W + x] = c;
+                    }
+                }
+                tex = new Texture2D(W, H, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
+                tex.SetPixels32(px);
+                tex.Apply();
+                return tex;
+            }
+        }
+
+        /// <summary>この文字だけでできていれば、ドット文字で描ける。</summary>
+        public static bool CanDraw(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return false;
+            foreach (char ch in s) if (Chars.IndexOf(ch) < 0) return false;
+            return true;
+        }
+
+        /// <summary>1ドットを px ピクセルとしたときの幅。</summary>
+        public static float Width(string s, float px) => (s.Length * Advance + 1) * px;
+
+        /// <summary>center を中心に描く（GUI の座標）。color で染める。</summary>
+        public static void Draw(Vector2 center, string s, float px, Color color)
+        {
+            var t = Texture;
+            float w = Width(s, px), h = Height * px;
+            float x = Mathf.Round(center.x - w * 0.5f), y = Mathf.Round(center.y - h * 0.5f);
+            var old = GUI.color;
+            GUI.color = color;
+            float cw = 1f / Chars.Length;
+            for (int i = 0; i < s.Length; i++)
+            {
+                int g = Chars.IndexOf(s[i]);
+                if (g < 0) continue;
+                GUI.DrawTextureWithTexCoords(new Rect(x + i * Advance * px, y, Cell * px, h), t, new Rect(g * cw, 0f, cw, 1f));
+            }
+            GUI.color = old;
+        }
+    }
+}
