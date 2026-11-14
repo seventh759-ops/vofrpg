@@ -470,12 +470,14 @@ namespace VividOfFade
                 {
                     var ln = st.Lines[j];
                     float lp = px * (ln.Big ? 1.4f : 1f);
-                    if (ln.Big) lp *= 1f + 0.35f * Mathf.Clamp01(1f - ln.T * 6f); // 会心は出た瞬間ふくらむ
-                    float slide = Mathf.Clamp01(ln.T / 0.08f);                 // 出た瞬間は少し下から
+                    // 出た瞬間：ぽんと跳ねて、小さく2回弾んで止まる（会心はより大きく跳ねて、ふくらむ）
+                    float hop = Mathf.Abs(Mathf.Sin(ln.T * Mathf.PI / 0.16f)) * Mathf.Exp(-ln.T * 9f) * lineH * (ln.Big ? 1.1f : 0.8f);
+                    if (ln.T > 0.5f) hop = 0f;
+                    lp *= 1f + (ln.Big ? 0.35f : 0.15f) * Mathf.Exp(-ln.T * 14f);
                     var c = ln.Color;
                     c.a = Mathf.Clamp01((DamageLineLife - ln.T) / 0.3f);
                     float h = NumberFont.Height * lp;
-                    NumberFont.Draw(new Vector2(sp.x, y - h * 0.5f + (1f - slide) * lineH * 0.4f), ln.Text, lp, c);
+                    NumberFont.Draw(new Vector2(sp.x, y - h * 0.5f - hop), ln.Text, lp, c);
                     y -= Mathf.Max(lineH, h * 0.95f);
                 }
             }
