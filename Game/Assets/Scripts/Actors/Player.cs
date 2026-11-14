@@ -344,6 +344,7 @@ namespace VividOfFade
             Pos = room.Move(Pos, Iso.ToLogical(screenVelocity) * dt, GameConfig.PlayerRadius);
 
             if (Mathf.Abs(screenVelocity.x) > 0.01f) Sr.flipX = screenVelocity.x < 0f;
+            Animate(dt, dashing ? 0f : screenVelocity.magnitude);
             Sr.sortingOrder = SortOrder.For(Pos);
             if (dashing)
             {
@@ -361,8 +362,31 @@ namespace VividOfFade
         }
 
         /// <summary>職業の見た目に切り替える。転生していれば、足元にその回数の色のオーラを付ける。</summary>
+        ClassType animClass;
+        float walkTime, idleTime;
+
+        /// <summary>歩き・呼吸のコマを選ぶ（動いた距離でコマを進める）。</summary>
+        void Animate(float dt, float speed)
+        {
+            int frame;
+            if (speed > 0.05f)
+            {
+                walkTime += dt * Mathf.Clamp(speed, 1f, 8f) * 1.6f;
+                idleTime = 0f;
+                frame = Mathf.FloorToInt(walkTime) % 4; // 0 立ち → 1 左足 → 2 立ち → 3 右足
+            }
+            else
+            {
+                walkTime = 0f;
+                idleTime += dt;
+                frame = Mathf.Repeat(idleTime, 1.6f) > 0.8f ? 4 : 0; // ゆっくり呼吸
+            }
+            Sr.sprite = PixelArt.PlayerFrame(animClass, Profile.Get(animClass), frame);
+        }
+
         public void SetClass(ClassType type)
         {
+            animClass = type;
             Sr.sprite = PixelArt.PlayerFor(type);
             var ch = Profile.Get(type);
             Rebirths = ch != null ? ch.Rebirths : 0;

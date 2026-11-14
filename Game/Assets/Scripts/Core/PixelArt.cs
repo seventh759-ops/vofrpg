@@ -28,16 +28,74 @@ namespace VividOfFade
         /// <summary>そのキャラクターの見た目（キャラクター選択の画面で、枠ごとに使う）。</summary>
         public static Sprite PlayerFor(CharacterData c) => PlayerFor((ClassType)c.ClassId, c);
 
-        static Sprite PlayerFor(ClassType type, CharacterData ch)
+        static Sprite PlayerFor(ClassType type, CharacterData ch) => PlayerFrame(type, ch, 0);
+
+        /// <summary>歩きなどのコマの数（0 立ち／1 左足を上げる／2 立ち／3 右足を上げる／4 息を吸う）。</summary>
+        public const int PlayerFrameCount = 5;
+
+        /// <summary>
+        /// プレイヤーの絵の1コマ。どの職業の絵からも、足元（いちばん下の数段）を左右に分けて持ち上げ、
+        /// 体を1ドット弾ませて歩きのコマを作る。4 は立っているときの呼吸（上半身が1ドット沈む）。
+        /// </summary>
+        public static Sprite PlayerFrame(ClassType type, CharacterData ch, int frame)
         {
+            frame = Mathf.Clamp(frame, 0, PlayerFrameCount - 1);
+            string suffix = frame == 0 ? "" : "_f" + frame;
             // 上位職なら、その見た目（色を変えて、目印の小物を足す）
-            if (ch != null && ch.Advanced >= 0) return AdvancedLook(type, ch.Advanced, ch.Third);
+            if (ch != null && ch.Advanced >= 0)
+            {
+                int index = Mathf.Clamp(ch.Advanced, 0, 1);
+                int k = (int)type * 2 + index;
+                string key = $"PlayerHd_{type}_Adv{index}" + (ch.Third ? "_3rd" : "") + suffix;
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                if (ch.Third) return Shaded(key, AnimRows(ThirdRows[k], frame), ThirdOver[k], ThirdOutline[k]);
+                return Shaded(key, AnimRows(AdvRows[k], frame), AdvOver[k]);
+            }
             switch (type)
             {
-                case ClassType.Shadeblade: return Shaded("PlayerHd_Shadeblade", ShadebladeHdRows);
-                case ClassType.Warden: return Shaded("PlayerHd_Warden", WardenHdRows);
-                default: return Shaded("PlayerHd_Lampwright", LampwrightHdRows);
+                case ClassType.Shadeblade: return Shaded("PlayerHd_Shadeblade" + suffix, AnimRows(ShadebladeHdRows, frame));
+                case ClassType.Warden: return Shaded("PlayerHd_Warden" + suffix, AnimRows(WardenHdRows, frame));
+                default: return Shaded("PlayerHd_Lampwright" + suffix, AnimRows(LampwrightHdRows, frame));
             }
+        }
+
+        /// <summary>絵の行から、歩き・呼吸のコマを作る（足元の4段を左右に分けて扱う）。</summary>
+        static string[] AnimRows(string[] src, int frame)
+        {
+            if (frame == 0 || frame == 2) return src;
+            int h = src.Length, w = src[0].Length;
+            char At(int x, int y) => x >= 0 && y >= 0 && y < h && x < src[y].Length ? src[y][x] : '.';
+            int bottom = -1;
+            for (int y = h - 1; y >= 0 && bottom < 0; y--) for (int x = 0; x < w; x++) if (At(x, y) != '.') { bottom = y; break; }
+            if (bottom < 4) return src;
+            int feetTop = bottom - 3;
+            // 足元の真ん中（左右の足の境目）
+            float sum = 0f; int cnt = 0;
+            for (int y = feetTop; y <= bottom; y++) for (int x = 0; x < w; x++) if (At(x, y) != '.') { sum += x; cnt++; }
+            float mid = cnt > 0 ? sum / cnt : w / 2f;
+            var g = new char[h][];
+            for (int y = 0; y < h; y++) g[y] = new string('.', w).ToCharArray();
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    char c = At(x, y);
+                    if (c == '.') continue;
+                    int ny = y;
+                    bool feet = y >= feetTop;
+                    if (frame == 4) ny = feet ? y : Mathf.Min(feetTop - 1, y + 1);     // 呼吸：上半身が1ドット沈む
+                    else
+                    {
+                        bool left = x < mid;
+                        if (!feet) ny = y - 1;                                          // 足を上げたコマは、体が1ドット弾む
+                        else if ((frame == 1 && left) || (frame == 3 && !left)) ny = y - 2; // 上げた足
+                    }
+                    if (ny >= 0 && ny < h && g[ny][x] == '.') g[ny][x] = c;
+                }
+            }
+            var outRows = new string[h];
+            for (int y = 0; y < h; y++) outRows[y] = new string(g[y]);
+            return outRows;
         }
 
         /// <summary>素材ごとの4段階の色（明るい縁、ふつう、影、深い影）。</summary>
