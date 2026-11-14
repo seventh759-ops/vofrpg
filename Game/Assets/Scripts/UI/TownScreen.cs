@@ -117,7 +117,8 @@ namespace VividOfFade
             var info = new GUIStyle(centered) { fontSize = small.fontSize };
             info.normal.textColor = new Color(1f, 0.85f, 0.5f);
             GUI.Label(new Rect(0, H * 0.145f, W, H * 0.03f),
-                Loc.T($"Embers {ch.Embers}   HP potions {ch.HpPotions}   MP potions {ch.MpPotions}", $"火種 {ch.Embers}   回復薬 {ch.HpPotions}   魔力の薬 {ch.MpPotions}"), info);
+                Loc.T($"Embers {ch.Embers}   HP potions {ch.HpPotions}   MP potions {ch.MpPotions}", $"火種 {ch.Embers}   回復薬 {ch.HpPotions}   魔力の薬 {ch.MpPotions}")
+                    + (ch.AbyssShards > 0 || GameConfig.CanEnterAbyss(ch) ? Loc.T($"   Shards {ch.AbyssShards}", $"   欠片 {ch.AbyssShards}") : ""), info);
 
             float y = H * 0.19f;
             float bh = H * 0.075f;
@@ -233,7 +234,11 @@ namespace VividOfFade
             var ember = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };
             ember.normal.textColor = new Color(1f, 0.85f, 0.5f);
             float lineH = hud.SmallStyle.fontSize * 1.5f;
-            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T($"Embers {embers}", $"火種 {embers}"), ember);
+            var chH = Profile.Current;
+            int shards = chH != null ? chH.AbyssShards : 0;
+            // 深淵の欠片は、1つでも持っていれば並べて出す（深淵へ行けるようになってから）
+            string shardText = shards > 0 || (chH != null && GameConfig.CanEnterAbyss(chH)) ? Loc.T($"   Abyss Shards {shards}", $"　深淵の欠片 {shards}") : "";
+            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T($"Embers {embers}", $"火種 {embers}") + shardText, ember);
             y += lineH + Screen.height * 0.008f;
         }
 
