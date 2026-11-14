@@ -677,7 +677,13 @@ namespace VividOfFade
         const float EndingTapReady = RollStart + RollLength + 6f;
 
         /// <summary>エンディングを始める。creditsOnly なら、夜明けの塔のエンドロールから（設定の「クレジット」）。</summary>
-        public void StartEnding(bool creditsOnly = false) => endingTime = creditsOnly ? RollStart - 1f : 0f;
+        public void StartEnding(bool creditsOnly = false)
+        {
+            endingCreditsOnly = creditsOnly;
+            endingTime = creditsOnly ? RollStart - 1.5f : 0f;
+        }
+
+        bool endingCreditsOnly; // 設定の「クレジット」から：3行の言葉は出さず、暗転から夜明けの塔とエンドロールへ
 
         List<(string text, int size)> creditLines;
 
@@ -743,7 +749,9 @@ namespace VividOfFade
                 GUI.color = old;
             }
             // 最初は、崩壊の白い閃光が引いていく
-            if (t < 1.5f) Fill(new Rect(0, 0, W, H), new Color(1f, 1f, 1f, 1f - t / 1.5f));
+            if (!endingCreditsOnly && t < 1.5f) Fill(new Rect(0, 0, W, H), new Color(1f, 1f, 1f, 1f - t / 1.5f));
+            // クレジットから見るときは、黒から明けていく
+            if (endingCreditsOnly) Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 1f - Mathf.Clamp01((t - (RollStart - 1.5f)) / 1.5f)));
             // 言葉とエンドロールが読めるよう、うっすら暗く
             Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.03f, 0.35f + 0.15f * Mathf.Clamp01((t - RollStart + 1f) / 2f)));
 
@@ -758,9 +766,12 @@ namespace VividOfFade
             }
             var soft = new Color(0.95f, 0.92f, 1f);
             // 世界が晴れていく間の言葉（エンドロールが始まる前に消える）
-            Line(1.5f, RollStart, H * 0.2f, Loc.T("The light reached deeper than the bottom of the tower.", "灯りは、塔のいちばん底よりも、さらに深くへ届いた。"), soft);
-            Line(4.5f, RollStart, H * 0.26f, Loc.T("The white shadow waiting in the dark quietly came undone.", "闇の底で待っていた白い影は、静かにほどけていった。"), soft);
-            Line(7.5f, RollStart, H * 0.32f, Loc.T("Colors that were fading glow vivid once more.", "消えかけた色が、もう一度あざやかに灯る。"), new Color(1f, 0.9f, 0.6f));
+            if (!endingCreditsOnly)
+            {
+                Line(1.5f, RollStart, H * 0.2f, Loc.T("The light reached deeper than the bottom of the tower.", "灯りは、塔のいちばん底よりも、さらに深くへ届いた。"), soft);
+                Line(4.5f, RollStart, H * 0.26f, Loc.T("The white shadow waiting in the dark quietly came undone.", "闇の底で待っていた白い影は、静かにほどけていった。"), soft);
+                Line(7.5f, RollStart, H * 0.32f, Loc.T("Colors that were fading glow vivid once more.", "消えかけた色が、もう一度あざやかに灯る。"), new Color(1f, 0.9f, 0.6f));
+            }
 
             // エンドロール：下から上へ流れる
             if (t > RollStart && t < RollStart + RollLength + 1f)
