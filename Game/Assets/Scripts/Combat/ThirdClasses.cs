@@ -95,8 +95,8 @@ namespace VividOfFade
                     Name = "Aegis", NameJa = "神盾", ExtraAttr = Attr.Str,
                     Desc = "Armor +80, max HP +40%, damage +10%. STR also raises damage.", DescJa = "防御+80、最大HP+40%、ダメージ+10%。STRでも攻撃力が伸びる。",
                     Passive = new BoonSpec { Armor = 80f, HpPct = 0.4f, Damage = 0.1f },
-                    Skill = new SkillSpec { Name = "Unbreakable", NameJa = "不壊", Desc = "Armor +250, damage taken -65% for 10s.", DescJa = "10秒、防御+250・被ダメージ-65%。",
-                        ReqLevel = 1, Mp = 40, Cooldown = 24f, Effect = SkillEffect.Buff, Duration = 10f, BuffArmor = 250f, BuffTaken = 0.35f, Color = new Color(0.8f, 0.9f, 1f, 0.9f) },
+                    Skill = new SkillSpec { Name = "Unbreakable", NameJa = "不壊", Desc = "Armor +250, damage taken -65% for 20s.", DescJa = "20秒、防御+250・被ダメージ-65%。",
+                        ReqLevel = 1, Mp = 40, Cooldown = 24f, Effect = SkillEffect.Buff, Duration = 20f, BuffArmor = 250f, BuffTaken = 0.35f, Color = new Color(0.8f, 0.9f, 1f, 0.9f) },
                 },
             },
         };
