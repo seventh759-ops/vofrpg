@@ -1106,8 +1106,8 @@ namespace VividOfFade
             bool notice = points > 0 || inv.BagFull;
             // MENU：いつも同じ暗いボタン。お知らせ（ポイントが余っている・鞄が満杯）があるときは、右上に脈打つ赤い丸の「!」
             var menuR = ToGui(MenuRect);
-            Fill(menuR, new Color(0.05f, 0.05f, 0.08f, 1f));
-            Button(menuR, null, new Color(0f, 0f, 0f, 0.3f), centered, () => World.OpenMenu());
+            Fill(menuR, new Color(0.08f, 0.075f, 0.11f, 1f)); // まとめた枠・ショートカットの欄と同じ色
+            Button(menuR, null, new Color(0f, 0f, 0f, 0f), centered, () => World.OpenMenu());
             var menuStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
             NumberFont.DrawIn(new Rect(menuR.x + menuR.width * 0.08f, menuR.y, menuR.width * 0.84f, menuR.height), "MENU", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx);
             OrnateFrame(menuR, FrameGold, FrameT);
