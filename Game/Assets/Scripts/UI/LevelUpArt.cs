@@ -4,8 +4,7 @@ namespace VividOfFade
 {
     /// <summary>
     /// レベルアップのときに頭の上に出す「LV UP」の文字の絵（ドット絵）。
-    /// 羽（白い羽に金のふち、薄紫の影）と同じ色合い：1ドットの細い線の白い文字に、下へ向かって薄紫がかる影、
-    /// 金のふちと、読みやすいよう外側に細い茶色のふち、下に淡い影。
+    /// タイトルの「VIVID」と同じ色合い：1文字ずつ水色・紫・桃・橙の細い文字に、暗いふちと、文字の色の淡い光。
     /// </summary>
     public static class LevelUpArt
     {
@@ -30,29 +29,36 @@ namespace VividOfFade
             }
         }
 
+        // タイトルの「VIVID」と同じ色：1文字ずつ水色・紫・桃・橙（上ほど白っぽく、下ほど深く）
+        static readonly Color32[] LetterColors =
+        {
+            new Color32(80, 220, 255, 255),
+            new Color32(150, 120, 255, 255),
+            new Color32(255, 90, 215, 255),
+            new Color32(255, 170, 60, 255),
+        };
+
         static Texture2D Build()
         {
             int w = 0;
             foreach (var g in Glyphs) w += (g == null ? Space : g[0].Length) + Gap;
             w -= Gap;
-            int W = w + Border * 2, H = GlyphH + Border * 2 + 1; // 下に影の1ドット
-            var on = new bool[W, H]; // 文字のドット（y は上から）
-            int x0 = Border;
+            int W = w + Border * 2, H = GlyphH + Border * 2;
+            var on = new bool[W, H];  // 文字のドット（y は上から）
+            var which = new int[W, H]; // 何文字目か
+            int x0 = Border, letter = 0;
             foreach (var g in Glyphs)
             {
                 if (g == null) { x0 += Space + Gap; continue; }
                 for (int y = 0; y < GlyphH; y++)
                     for (int x = 0; x < g[y].Length; x++)
-                        if (g[y][x] == '1') on[x0 + x, Border + y] = true;
+                        if (g[y][x] == '1') { on[x0 + x, Border + y] = true; which[x0 + x, Border + y] = letter; }
                 x0 += g[0].Length + Gap;
+                letter++;
             }
 
-            var top = new Color32(255, 255, 250, 255);    // 羽の白
-            var mid = new Color32(250, 248, 240, 255);
-            var bottom = new Color32(212, 218, 242, 255); // 羽の影の薄紫
-            var outline = new Color32(255, 206, 110, 255); // 羽のふちの金
-            var outer = new Color32(110, 64, 18, 220);     // 外側の細いふち（明るい床の上でも読めるように）
-            var shadow = new Color32(20, 8, 0, 110);
+            var white = new Color32(255, 255, 255, 255);
+            var dark = new Color32(20, 14, 30, 255); // タイトルのロゴと同じ暗いふち
             var px = new Color32[W * H];
             for (int y = 0; y < H; y++)
             {
@@ -61,12 +67,16 @@ namespace VividOfFade
                     Color32 c = new Color32(0, 0, 0, 0);
                     if (on[x, y])
                     {
+                        var b = LetterColors[which[x, y] % LetterColors.Length];
                         float k = (y - Border) / (float)(GlyphH - 1);
-                        c = k < 0.45f ? Color32.Lerp(top, mid, k / 0.45f) : Color32.Lerp(mid, bottom, (k - 0.45f) / 0.55f);
+                        c = k < 0.5f ? Color32.Lerp(b, white, 0.6f * (1f - k * 2f)) : Color32.Lerp(b, new Color32(0, 0, 0, 255), 0.25f * (k - 0.5f) * 2f);
                     }
-                    else if (Side(on, x, y, W, H)) c = outline;          // 上下左右だけ金（細い線がつぶれないように）
-                    else if (Near(on, x, y, W, H, 2)) c = outer;
-                    else if (y > 2 && Near(on, x, y - 1, W, H, 2)) c = shadow; // 外のふちの1ドット下に影
+                    else if (Side(on, x, y, W, H)) c = dark;
+                    else if (Near(on, x, y, W, H, 2, out int lx, out int ly))
+                    {
+                        var g = LetterColors[which[lx, ly] % LetterColors.Length]; // 外側は、近い文字の色でうっすら光る
+                        c = new Color32(g.r, g.g, g.b, 120);
+                    }
                     px[(H - 1 - y) * W + x] = c; // テクスチャは下から
                 }
             }
@@ -79,14 +89,15 @@ namespace VividOfFade
         static bool Side(bool[,] on, int x, int y, int W, int H) =>
             (x > 0 && on[x - 1, y]) || (x < W - 1 && on[x + 1, y]) || (y > 0 && on[x, y - 1]) || (y < H - 1 && on[x, y + 1]);
 
-        static bool Near(bool[,] on, int x, int y, int W, int H, int reach)
+        static bool Near(bool[,] on, int x, int y, int W, int H, int reach, out int lx, out int ly)
         {
+            lx = ly = 0;
             for (int dy = -reach; dy <= reach; dy++)
                 for (int dx = -reach; dx <= reach; dx++)
                 {
                     if (reach > 1 && Mathf.Abs(dx) == reach && Mathf.Abs(dy) == reach) continue; // 角は丸く
                     int nx = x + dx, ny = y + dy;
-                    if (nx >= 0 && ny >= 0 && nx < W && ny < H && on[nx, ny]) return true;
+                    if (nx >= 0 && ny >= 0 && nx < W && ny < H && on[nx, ny]) { lx = nx; ly = ny; return true; }
                 }
             return false;
         }

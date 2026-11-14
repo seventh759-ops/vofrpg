@@ -186,6 +186,12 @@ namespace VividOfFade
         const float WingTopHeight = 1.05f + (GameConfig.PlayerScale - 1f);        // 上がりきった高さ（頭の少し上）
         bool wingBurst;
 
+        /// <summary>タイトルの「VIVID」の色（水色・紫・桃・橙・黄）。レベルアップのきらめきに使う。</summary>
+        static readonly Color[] VividColors =
+        {
+            new Color(0.45f, 0.9f, 1f), new Color(0.7f, 0.6f, 1f), new Color(1f, 0.45f, 0.9f), new Color(1f, 0.7f, 0.3f), new Color(1f, 0.88f, 0.4f),
+        };
+
         /// <summary>羽の付け根の、今の高さ（「LV UP」の文字を合わせる）。</summary>
         public float WingHeight { get; private set; }
 
@@ -246,15 +252,15 @@ namespace VividOfFade
             }
 
             var white = new Color(1f, 1f, 0.97f);
-            var gold = new Color(1f, 0.86f, 0.5f);
             // 開いた瞬間：光の粒がぶわっと広がる
             if (!wingBurst && wingT >= WingOpenAt)
             {
                 wingBurst = true;
                 WingsOpened?.Invoke();
                 Ring(Anchor, 1.6f, new Color(1f, 0.95f, 0.8f, 0.3f), 0.3f); // ごく弱い波紋
-                Sparks(Anchor, 16, white, 2.2f, 0.6f, 1.1f, false, WingHeight);
-                Sparks(Anchor, 12, gold, 2.2f, 0.9f, 1.5f, true, WingHeight - 0.2f);
+                // タイトルの「VIVID」と同じ虹の色で、光の粒がはじける
+                foreach (var vc in VividColors) Sparks(Anchor, 4, vc, 2.2f, 0.6f, 1.1f, false, WingHeight);
+                Sparks(Anchor, 6, white, 2.2f, 0.9f, 1.5f, true, WingHeight - 0.2f);
             }
             featherTimer -= dt;
             if (featherTimer > 0f) return;
@@ -268,7 +274,7 @@ namespace VividOfFade
             {
                 // 開いたあと：羽のまわりがきらきらしながら消えていく
                 featherTimer = 0.035f;
-                var c = UnityEngine.Random.value < 0.65f ? white : gold;
+                var c = UnityEngine.Random.value < 0.4f ? white : VividColors[UnityEngine.Random.Range(0, VividColors.Length)];
                 Sparks(Anchor + new Vector2(UnityEngine.Random.Range(-0.9f, 0.9f), UnityEngine.Random.Range(-0.3f, 0.3f)), 1, c, 0.4f, 0.7f, 0.6f, true,
                     WingHeight + UnityEngine.Random.Range(-0.2f, 0.5f));
             }
