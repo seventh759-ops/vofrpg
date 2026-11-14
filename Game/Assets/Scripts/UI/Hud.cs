@@ -2016,38 +2016,52 @@ namespace VividOfFade
                        : tier == 2 ? Color.Lerp(new Color(1f, 0.5f, 0.15f), new Color(1f, 0.85f, 0.4f), 0.5f + 0.5f * Mathf.Sin(t * 5f) * Mathf.Sin(t * 2.3f))
                        : FrameGold;
             var dark = new Color(0.1f, 0.06f, 0.04f, 0.9f);
-            // 光る段は、角のまわりがにじむ
+            // 光る段は、角のまわりがにじむ（枠の内側だけ。外へはみ出さない）
             if (tier >= 2)
             {
-                var gc = main; gc.a = 0.35f;
-                float gs = len * 1.4f;
-                foreach (var p in new[] { new Vector2(cell.x, cell.y), new Vector2(cell.xMax, cell.y), new Vector2(cell.x, cell.yMax), new Vector2(cell.xMax, cell.yMax) })
+                GUI.BeginGroup(cell);
+                var gc = main; gc.a = 0.3f;
+                float gs = len * 1.2f;
+                foreach (var p in new[] { new Vector2(0f, 0f), new Vector2(cell.width, 0f), new Vector2(0f, cell.height), new Vector2(cell.width, cell.height) })
                     Glow(p.x, p.y, gs, gc);
+                GUI.EndGroup();
             }
-            void Corner(float x, float y, float sx, float sy)
+            // ひし形の留め具（角の飾り）
+            void Diamond(float cx, float cy, float r, Color c)
             {
-                // L 字の角金具（暗い縁取り → 色）
-                Fill(new Rect(sx > 0 ? x - 1f : x - len - 1f + 1f, sy > 0 ? y - 1f : y - u - 1f + 1f, len + 2f, u + 2f), dark);
-                Fill(new Rect(sx > 0 ? x - 1f : x - u - 1f + 1f, sy > 0 ? y - 1f : y - len - 1f + 1f, u + 2f, len + 2f), dark);
-                Fill(new Rect(sx > 0 ? x : x - len, sy > 0 ? y : y - u, len, u), main);
-                Fill(new Rect(sx > 0 ? x : x - u, sy > 0 ? y : y - len, u, len), main);
-                if (tier >= 1)
+                for (int dy = -(int)r; dy <= (int)r; dy++)
                 {
-                    // 鋲：角の内側に小さな四角
-                    float st = u * 1.6f;
-                    var sr = new Rect(sx > 0 ? x + u * 1.6f : x - u * 1.6f - st, sy > 0 ? y + u * 1.6f : y - u * 1.6f - st, st, st);
-                    Fill(new Rect(sr.x - 1f, sr.y - 1f, sr.width + 2f, sr.height + 2f), dark);
-                    Fill(sr, Color.Lerp(main, Color.white, 0.35f));
+                    float w = r - Mathf.Abs(dy);
+                    Fill(new Rect(Mathf.Round(cx - w), Mathf.Round(cy + dy), w * 2f + 1f, 1f), c);
                 }
             }
-            Corner(cell.x, cell.y, 1, 1);
-            Corner(cell.xMax, cell.y, -1, 1);
-            Corner(cell.x, cell.yMax, 1, -1);
-            Corner(cell.xMax, cell.yMax, -1, -1);
-            // 左上の角に「+N」（ドット文字）
-            float nh = cell.height * 0.24f;
+            void Corner(float x, float y, float sx, float sy, bool shortArms)
+            {
+                float l = shortArms ? len * 0.45f : len;
+                // L 字の角金具（暗い縁取り → 色）
+                var h = new Rect(sx > 0 ? x : x - l, sy > 0 ? y : y - u, l, u);
+                var v = new Rect(sx > 0 ? x : x - u, sy > 0 ? y : y - l, u, l);
+                Fill(new Rect(h.x - 1f, h.y - 1f, h.width + 2f, h.height + 2f), dark);
+                Fill(new Rect(v.x - 1f, v.y - 1f, v.width + 2f, v.height + 2f), dark);
+                Fill(h, main);
+                Fill(v, main);
+                // 角にひし形の留め具（+5 から。段が上がると大きく）
+                if (tier >= 1)
+                {
+                    float r = u * (tier >= 2 ? 1.8f : 1.4f);
+                    float cx = x + sx * u * 0.5f, cy = y + sy * u * 0.5f;
+                    Diamond(cx, cy, r + 1f, dark);
+                    Diamond(cx, cy, r, Color.Lerp(main, Color.white, 0.4f));
+                }
+            }
+            Corner(cell.x, cell.y, 1, 1, true); // 左上は数字があるので、腕を短く
+            Corner(cell.xMax, cell.y, -1, 1, false);
+            Corner(cell.x, cell.yMax, 1, -1, false);
+            Corner(cell.xMax, cell.yMax, -1, -1, false);
+            // 左上の「+N」（ドット文字）：角金具の内側に
+            float nh = cell.height * 0.22f;
             var nc = tier == 3 ? new Color(0.8f, 0.92f, 1f) : tier == 2 ? new Color(1f, 0.75f, 0.4f) : new Color(1f, 0.9f, 0.6f);
-            NumberFont.DrawIn(new Rect(cell.x + u * 1.2f, cell.y + u * 1.2f, cell.width * 0.6f, nh), "+" + lv, nc, TextAnchor.MiddleLeft, 1f);
+            NumberFont.DrawIn(new Rect(cell.x + u * 3f, cell.y + u * 2.2f, cell.width * 0.6f, nh), "+" + lv, nc, TextAnchor.MiddleLeft, 1f);
         }
 
         public static void DrawSprite(Rect guiRect, Sprite sprite)
