@@ -43,7 +43,11 @@ namespace VividOfFade
             {
                 if (area.IsStart || area.IsTreasure) continue;
                 int count = Mathf.Min(GameConfig.RoomEnemies(Floor, area.W * area.H), perRoom);
-                if (area.IsBoss && bossDefeated) continue; // 倒したあとに中断・再開したとき：ボスとお供は出さない
+                if (area.IsBoss && bossDefeated)
+                {
+                    area.Activated = true; // 倒したあとに中断・再開したとき：ボスとお供は出さず、入っても「部屋を片付けた」ご褒美は出ない
+                    continue;
+                }
                 if (area.IsBoss)
                 {
                     bool final = Floor == GameConfig.AbyssLastFloor; // 深淵の最奥（アビス）は、ほかのボスより強い
