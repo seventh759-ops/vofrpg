@@ -1581,17 +1581,58 @@ namespace VividOfFade
             Fill(langRect, new Color(0.03f, 0.03f, 0.06f, 0.85f));
             Button(langRect, $"Language: {Loc.LanguageName}", new Color(1f, 1f, 1f, 0.1f), centered, () => Loc.Next());
             OrnateFrame(langRect, FrameGold, FrameT, false, false);
+
+            if (confirmDeleteSlot >= 0 && newSlot < 0) DrawDeleteConfirm(); // いちばん上に重ねる
         }
 
         // ---- キャラクター選択（3つの枠） ----
 
         int newSlot = -1;          // 新しく作る枠（-1 は枠の一覧）
-        string armedDelete;        // 消す確認（2回押し）
-        float armedDeleteUntil;
+        int confirmDeleteSlot = -1; // 消す確認の窓を出している枠（-1 は出していない）
+
+        /// <summary>
+        /// キャラクターを消す確認の窓。画面全体を覆う当たり判定を先に置き、下の枠やボタンが押されないようにする。
+        /// </summary>
+        void DrawDeleteConfirm()
+        {
+            var ch = Profile.InSlot(confirmDeleteSlot);
+            if (ch == null) { confirmDeleteSlot = -1; return; }
+            float W = Screen.width, H = Screen.height;
+            var all = new Rect(0, 0, W, H);
+            Fill(all, new Color(0f, 0f, 0f, 0.6f));
+            Button(all, null, new Color(0f, 0f, 0f, 0f), centered, () => { }); // 外を押しても何もしない
+            float pw = W * 0.84f, ph = H * 0.24f;
+            var panel = new Rect((W - pw) * 0.5f, (H - ph) * 0.5f, pw, ph);
+            Fill(panel, new Color(0.05f, 0.04f, 0.08f, 0.97f));
+            OrnateFrame(panel, FrameGold, FrameT);
+            float inner = ph * 0.08f;
+            float icon = ph * 0.38f;
+            DrawSprite(new Rect(panel.x + inner, panel.y + inner, icon, icon), PixelArt.PlayerFor(ch));
+            var title = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft, wordWrap = true };
+            title.normal.textColor = new Color(1f, 0.6f, 0.6f);
+            float tx = panel.x + inner * 2f + icon;
+            GUI.Label(new Rect(tx, panel.y + inner, panel.xMax - inner - tx, icon * 0.55f),
+                Loc.T($"Delete {AdvancedClasses.NameFor(ch)} (Lv {ch.Level})?", $"{AdvancedClasses.NameFor(ch)}（Lv {ch.Level}）を\n消しますか？"), title);
+            var note = new GUIStyle(small) { alignment = TextAnchor.UpperLeft, wordWrap = true };
+            note.normal.textColor = new Color(0.8f, 0.8f, 0.85f);
+            GUI.Label(new Rect(tx, panel.y + inner + icon * 0.55f, panel.xMax - inner - tx, icon * 0.6f),
+                Loc.T("This cannot be undone. The shared storage stays.", "元には戻せません。倉庫（全職業で共有）は残ります。"), note);
+            float bh = ph * 0.26f, gap = W * 0.03f;
+            float bw = (pw - inner * 2f - gap) * 0.5f;
+            float by = panel.yMax - inner - bh;
+            int slot = confirmDeleteSlot;
+            void Yes() { confirmDeleteSlot = -1; Profile.DeleteSlot(slot); }
+            void No() => confirmDeleteSlot = -1;
+            var red = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
+            red.normal.textColor = new Color(1f, 0.85f, 0.85f);
+            Button(new Rect(panel.x + inner, by, bw, bh), Loc.T("Yes", "はい"), new Color(0.6f, 0.1f, 0.12f, 0.95f), red, Yes);
+            Button(new Rect(panel.x + inner + bw + gap, by, bw, bh), Loc.T("No", "いいえ"), new Color(1f, 1f, 1f, 0.1f), centered, No);
+        }
 
         /// <summary>数字キー：枠の一覧なら枠を、職業の選択なら職業を選ぶ。</summary>
         public void PressSlotKey(int n)
         {
+            if (confirmDeleteSlot >= 0) return; // 消す確認の窓が出ている間は選ばない
             if (newSlot >= 0)
             {
                 if (n < ClassInfo.Count)
@@ -1609,6 +1650,7 @@ namespace VividOfFade
         /// <summary>職業の選択を閉じる（Esc）。閉じたら true。</summary>
         public bool CancelNewCharacter()
         {
+            if (confirmDeleteSlot >= 0) { confirmDeleteSlot = -1; return true; } // 消す確認の窓を閉じる
             if (newSlot < 0) return false;
             newSlot = -1;
             return true;
@@ -1657,41 +1699,10 @@ namespace VividOfFade
                     GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh),
                         spec.DisplayName + (ch.Run.Active ? Loc.T("   (suspended: ", "   （中断中：") + GameConfig.FloorName(ch.Run.Floor) + Loc.T(")", "）") : ""), sub);
 
-                    // 消す（2回押し）。消しても倉庫は残る
-                    string id = "del" + slot;
-                    bool armed = armedDelete == id && Time.unscaledTime < armedDeleteUntil;
-                    // 右上の小さなごみ箱。1回押すと赤くなり「消す？」と出るので、もう一度押すと消える
+                    // 消す：右上の小さなごみ箱。押すと確認の窓が出る（消しても倉庫は残る）
                     float ds = r.height * 0.26f;
                     var del = new Rect(r.xMax - ds - inner * 0.5f, r.y + inner * 0.5f, ds, ds);
-                    if (armed)
-                    {
-                        var ask = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, fontStyle = FontStyle.Bold };
-                        ask.normal.textColor = new Color(1f, 0.5f, 0.5f);
-                        // 名前に重ならないよう、板の上に出す。「消す？」も押せる（押したくなるので、ごみ箱と同じく消す）
-                        string askText = Loc.T("Delete?", "消す？");
-                        float aw = ask.CalcSize(new GUIContent(askText)).x + inner * 1.5f;
-                        var ar = new Rect(del.x - aw - inner * 0.3f, del.y, aw, ds);
-                        ask.alignment = TextAnchor.MiddleCenter;
-                        ask.normal.textColor = new Color(1f, 0.85f, 0.85f);
-                        Button(ar, askText, new Color(0.55f, 0.1f, 0.12f, 0.95f), ask, () =>
-                        {
-                            armedDelete = null;
-                            Profile.DeleteSlot(slot);
-                        });
-                    }
-                    Button(del, null, armed ? new Color(0.75f, 0.15f, 0.15f, 0.9f) : new Color(1f, 1f, 1f, 0.08f), centered, () =>
-                    {
-                        if (armedDelete == id && Time.unscaledTime < armedDeleteUntil)
-                        {
-                            armedDelete = null;
-                            Profile.DeleteSlot(slot);
-                        }
-                        else
-                        {
-                            armedDelete = id;
-                            armedDeleteUntil = Time.unscaledTime + 3f;
-                        }
-                    });
+                    Button(del, null, new Color(1f, 1f, 1f, 0.08f), centered, () => confirmDeleteSlot = slot);
                     float ip = ds * 0.12f;
                     DrawSprite(new Rect(del.x + ip, del.y + ip, ds - ip * 2f, ds - ip * 2f), PixelArt.TrashIcon);
                 }
