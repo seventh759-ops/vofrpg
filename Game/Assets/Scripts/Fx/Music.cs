@@ -33,11 +33,17 @@ namespace VividOfFade
         const int ZoneMode = 0;
         static readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>(); // 作った曲（起動の読み込み画面で先に作っておける）
 
+        /// <summary>
+        /// 遊ぶたびに作った曲を捨てる。エディタで「ドメインの再読み込みなし」で Play し直すと、前回の曲（もう壊れた物）が残って音が出なくなるため。
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetCache() => clips.Clear();
+
         /// <summary>起動のときに先に作っておく曲（タイトル・町・最初に流れる区画の曲とそのボス戦）。名前と、作る処理（別のスレッドで動かせる）。</summary>
         public static List<(string name, System.Func<float[]> work)> StartupSongs()
         {
             var list = new List<(string, System.Func<float[]>)>();
-            void Add(Song s) { if (!clips.ContainsKey(s.Name)) list.Add((s.Name, () => RenderData(s))); }
+            void Add(Song s) { if (!clips.TryGetValue(s.Name, out var c) || c == null) list.Add((s.Name, () => RenderData(s))); }
             Add(TitleSong);
             Add(Profile.AbyssUnlocked ? AbyssTownSong : TownSong);
             int t = ((Profile.MusicTheme % ThemeCount) + ThemeCount) % ThemeCount;
@@ -49,7 +55,7 @@ namespace VividOfFade
         /// <summary>別のスレッドで作った曲のデータから、曲を作って取っておく（メインのスレッドで呼ぶ）。</summary>
         public static void StoreRendered(string name, float[] data)
         {
-            if (clips.ContainsKey(name) || data == null) return;
+            if ((clips.TryGetValue(name, out var c) && c != null) || data == null) return;
             clips[name] = MakeClip(name, data);
         }
 
@@ -169,7 +175,7 @@ namespace VividOfFade
 
         AudioClip Get(Song song)
         {
-            if (clips.TryGetValue(song.Name, out var clip)) return clip;
+            if (clips.TryGetValue(song.Name, out var clip) && clip != null) return clip; // 壊れた曲（前の Play の残り）なら作り直す
             clip = Render(song);
             clips[song.Name] = clip;
             return clip;
