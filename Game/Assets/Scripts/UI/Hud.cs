@@ -989,7 +989,7 @@ namespace VividOfFade
             // 2段目から：LV・HP・MP・経験値・層を、1枚の枠の中にまとめる（間は細い仕切りだけ。すき間を作らない）
             float lineH = small.fontSize * 1.35f;
             var panel = new Rect(mm, titleRow.yMax + mm * 0.6f, W - mm * 2f, StatusPanelH);
-            Fill(panel, new Color(0.04f, 0.04f, 0.07f, 1f));
+            Fill(panel, new Color(0.08f, 0.075f, 0.11f, 1f)); // 下のショートカットの欄と同じ色
             float pp = PanelPad;
             // 仕切り：金の線と、その下（右）に暗い影の線（枠と同じ凹凸）
             float dt = Mathf.Max(2f, Mathf.Round(FrameT * 0.6f));
