@@ -197,7 +197,7 @@ namespace VividOfFade
             {
                 if (a != start && a != far) candidates.Add(a);
             }
-            HasAltar = candidates.Count > 0;
+            HasAltar = candidates.Count > 0 && GameConfig.AltarOnFloor(floor); // ボスの層の1つ前に1つ
             RoomArea altarRoom = null;
             if (HasAltar)
             {

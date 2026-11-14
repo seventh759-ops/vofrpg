@@ -4302,6 +4302,23 @@ namespace VividOfFade
         /// <summary>祭壇（石の台の上に火が灯る）。足元が原点。</summary>
         public static Sprite Altar => Shaded("Altar32", AltarRows, null, null, 32);
 
+        /// <summary>火の消えた祭壇（使ったあと）。炎を消し、器に燃えさしだけ残す。</summary>
+        public static Sprite AltarUnlit
+        {
+            get
+            {
+                var rows = new string[AltarRows.Length];
+                for (int y = 0; y < rows.Length; y++)
+                {
+                    var r = AltarRows[y].ToCharArray();
+                    for (int x = 0; x < r.Length; x++)
+                        if (r[x] == 'L' || r[x] == 'l' || r[x] == 'o') r[x] = y >= 11 ? 'n' : '.'; // 器の口は燃えさし（黒）
+                    rows[y] = new string(r);
+                }
+                return Shaded("Altar32Unlit", rows, null, null, 32);
+            }
+        }
+
 
         /// <summary>下り階段（64×32 のひし形。奥の暗がりへ段が下りていき、縁は金色）。</summary>
         public static Sprite Stairs

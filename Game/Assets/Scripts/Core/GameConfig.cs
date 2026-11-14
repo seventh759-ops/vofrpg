@@ -8,6 +8,10 @@ namespace VividOfFade
         // 部屋（マス）。1マス = 16ドット = 1ユニット
         // 塔：5層ごとにボスの層。敵の強さ・経験値・ドロップは「段階」（層×2）で決める（試作の波の数と同じ尺度）
         public const int BossFloorEvery = 5;
+        // 祭壇：ボスの層の1つ前には必ず1つ。ほかの層に出る確率（0 なら出ない）
+        public const float AltarChanceOther = 0f;
+        public static bool AltarOnFloor(int floor) =>
+            !IsBossFloor(floor) && (IsBossFloor(floor + 1) || (AltarChanceOther > 0f && ((floor * 7919 + 13) % 1000) < AltarChanceOther * 1000f));
         public const int MaxFloor = 100; // 塔の最後の層（ボス）
 
         // 深淵（アビス）：塔の底のさらに先。101〜120層として扱い、画面には「深淵1〜20層」と出す。

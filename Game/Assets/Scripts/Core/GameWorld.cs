@@ -303,7 +303,8 @@ namespace VividOfFade
         bool roomRewardPending;
         bool stairsLatch;     // 階段の画面を閉じたら、一度離れるまで出さない
         SpriteRenderer stairs;
-        SpriteRenderer altar;
+        SpriteRenderer altar, altarBeam;
+        float altarFlameTimer;
         SpriteRenderer guideNpc; // 1層目のはじめの部屋に立つ案内役
         readonly List<SpriteRenderer> chests = new List<SpriteRenderer>(); // 宝の間の宝箱
         readonly List<bool> chestOpened = new List<bool>();
@@ -357,6 +358,12 @@ namespace VividOfFade
             altar = altarGo.AddComponent<SpriteRenderer>();
             altar.sprite = PixelArt.Altar;
             Lighting.MakeGlow(altar);
+            // 祭壇の場所を知らせる、ゆらめく光の筋（遠くからでも見える）
+            var beamGo = new GameObject("AltarBeam");
+            beamGo.transform.SetParent(transform, false);
+            altarBeam = beamGo.AddComponent<SpriteRenderer>();
+            altarBeam.sprite = PixelArt.SoftPillar;
+            Lighting.MakeGlow(altarBeam);
             var guideGo = new GameObject("Guide");
             guideGo.transform.SetParent(transform, false);
             guideNpc = guideGo.AddComponent<SpriteRenderer>();
@@ -738,8 +745,28 @@ namespace VividOfFade
         void CheckAltar()
         {
             altar.enabled = Room.HasAltar;
+            altarBeam.enabled = Room.HasAltar && !AltarUsed;
             if (!Room.HasAltar) return;
-            altar.color = AltarUsed ? new Color(0.45f, 0.45f, 0.5f) : Color.white;
+            altar.sprite = AltarUsed ? PixelArt.AltarUnlit : PixelArt.Altar;
+            altar.color = AltarUsed ? new Color(0.55f, 0.55f, 0.6f) : Color.white;
+            if (!AltarUsed)
+            {
+                // 燃えている間：上へ伸びる光の筋がゆらめき、炎と火の粉が立ちのぼる
+                float t = Time.time;
+                float flick = 0.75f + 0.25f * Mathf.Sin(t * 3.1f) * Mathf.Sin(t * 7.3f + 1f);
+                altarBeam.transform.position = Iso.ToScreen(Room.AltarPos) + new Vector2(0f, 0.1f);
+                altarBeam.transform.localScale = new Vector3(1.1f, 3.2f * (0.9f + 0.1f * flick), 1f);
+                altarBeam.color = new Color(1f, 0.6f, 0.25f, 0.45f * flick);
+                altarBeam.sortingOrder = SortOrder.For(Room.AltarPos) - 1;
+                altarFlameTimer -= Time.deltaTime;
+                if (altarFlameTimer <= 0f)
+                {
+                    altarFlameTimer = 0.09f;
+                    Vector2 p = Room.AltarPos + Random.insideUnitCircle * 0.12f;
+                    Fx.Emit(p, 0.45f, PixelArt.Flame, Color.white, 0.5f, Vector2.zero, 1.2f, 0f, 1.3f, 0.4f);
+                    if (Random.value < 0.35f) Fx.Sparks(Room.AltarPos, 1, new Color(1f, 0.7f, 0.3f), 0.3f, 1f, 1.6f, true);
+                }
+            }
             float d = (Player.Pos - Room.AltarPos).magnitude;
             if (d < 5f) Guide("altar", Loc.T("An altar. Offer embers for a boon that lasts the whole run.", "祭壇だよ。火種を払うと、この挑戦のあいだずっと効く加護をくれる。"),
                 Loc.T("Once per floor. Your pick changes how you fight.", "1つの層で1回だけ。どれを選ぶかで、戦い方が変わるよ。"));
@@ -759,6 +786,10 @@ namespace VividOfFade
             Player.AddBoon(boon);
             AltarUsed = true;
             AltarOpen = false;
+            // 祭壇の火が消える：煙がのぼり、光がしぼむ
+            Fx.Sparks(Room.AltarPos, 14, new Color(0.55f, 0.55f, 0.6f), 0.5f, 1.4f, 1.4f, true);
+            Fx.Disc(Room.AltarPos, 1.2f, new Color(1f, 0.6f, 0.25f, 0.5f), 0.5f);
+            Fx.Ring(Room.AltarPos, 1f, new Color(0.6f, 0.6f, 0.65f, 0.7f), 0.5f);
             Fx.Ring(Player.Pos, 2f, new Color(1f, 0.8f, 0.4f, 0.9f), 0.5f);
             Sfx.Landed(Rarity.Legendary);
             int stacks = 0;
