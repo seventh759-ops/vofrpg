@@ -85,6 +85,34 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>ブランドロゴ「TOMOSHIBI WORKS」の印：吊り手のついた小さなランタン（中の火は別に描いて、ゆらめかせる）。</summary>
+        public static Sprite BrandLantern => FromArt("BrandLantern", new[]
+        {
+            ".....kkkk.....",
+            "....k....k....",
+            ".....kkkk.....",
+            "......kk......",
+            "...gggggggg...",
+            "..gGGGGGGGGg..",
+            "..gk......kg..",
+            "..gk......kg..",
+            "..gk......kg..",
+            "..gk......kg..",
+            "..gk......kg..",
+            "..gk......kg..",
+            "..gk......kg..",
+            "..gk......kg..",
+            "..gk......kg..",
+            "..gGGGGGGGGg..",
+            "...gggggggg...",
+            ".....kkkk.....",
+        }, new Dictionary<char, Color32>
+        {
+            { 'k', new Color32(70, 60, 75, 255) },
+            { 'g', new Color32(200, 160, 80, 255) },
+            { 'G', new Color32(250, 215, 120, 255) },
+        });
+
         static readonly Dictionary<char, Color32> WhitePal = new Dictionary<char, Color32>
         {
             { 'w', new Color32(255, 255, 255, 255) },

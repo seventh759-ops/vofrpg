@@ -6,7 +6,7 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>
-    /// 起動の読み込み画面。ロゴと「NOW LOADING」と進み具合のバーを出しながら、重い準備を少しずつ進める：
+    /// 起動の画面。ブランドロゴ「TOMOSHIBI WORKS」（ランタンに火がともる）を見せている間に、裏で重い準備を進める：
     /// 曲（別のスレッドでまとめて作る）→ タイトル・町の背景の絵 → ゲーム本体（GameWorld）。終わったら、ふっと消える。
     /// </summary>
     public sealed class Loader : MonoBehaviour
@@ -16,6 +16,9 @@ namespace VividOfFade
         float fadeOut = -1f; // 消えていく途中（経過時間）
         const float FadeTime = 0.35f;
         Texture2D logo;
+        float brandT;         // ブランドロゴを出してからの時間
+        bool loaded;          // 準備が終わった
+        const float BrandMin = 2.6f; // ブランドロゴを最低これだけ見せる（準備が早く終わっても）
 
         void Start()
         {
@@ -60,8 +63,9 @@ namespace VividOfFade
             // ゲーム本体
             new GameObject("GameWorld").AddComponent<GameWorld>();
             progress = 1f;
+            loaded = true;
             yield return null;
-            while (shown < 0.99f) yield return null;
+            while (shown < 0.99f || brandT < BrandMin) yield return null; // ロゴを見せきるまで（タップで飛ばせる）
             fadeOut = 0f;
             while (fadeOut < FadeTime)
             {
@@ -74,30 +78,53 @@ namespace VividOfFade
         void OnGUI()
         {
             GUI.depth = -1000; // ゲームの画面より手前
-            if (Event.current.type == EventType.Repaint) shown = Mathf.MoveTowards(shown, progress, Time.unscaledDeltaTime * 2.5f);
+            if (Event.current.type == EventType.Repaint)
+            {
+                shown = Mathf.MoveTowards(shown, progress, Time.unscaledDeltaTime * 2.5f);
+                brandT += Time.unscaledDeltaTime;
+            }
+            if (loaded && Event.current.type == EventType.MouseDown) brandT = BrandMin; // 準備が終わっていれば、タップで飛ばせる
             float a = fadeOut < 0f ? 1f : 1f - Mathf.Clamp01(fadeOut / FadeTime);
             float W = Screen.width, H = Screen.height;
             var old = GUI.color;
             Hud.Fill(new Rect(0, 0, W, H), new Color(0.02f, 0.02f, 0.04f, a));
-            if (logo != null)
+            // ブランドロゴ：ランタンがふわっと現れ、少しして中に火がともり、ゆらめく。下に「TOMOSHIBI WORKS」
+            float appear = Mathf.Clamp01(brandT / 0.6f) * a;
+            var lantern = PixelArt.BrandLantern.texture;
+            float sc = Mathf.Max(2f, Mathf.Floor(Mathf.Min(W, H) * 0.16f / lantern.height));
+            var lr = new Rect(Mathf.Round((W - lantern.width * sc) * 0.5f), Mathf.Round(H * 0.42f - lantern.height * sc), lantern.width * sc, lantern.height * sc);
+            float lit = Mathf.Clamp01((brandT - 0.7f) / 0.4f);                                   // 火がともる
+            float flick = 0.85f + 0.15f * Mathf.Sin(Time.unscaledTime * 9f) * Mathf.Sin(Time.unscaledTime * 3.7f + 1f);
+            if (lit > 0f)
             {
-                float sc = Mathf.Max(1f, Mathf.Floor(W * 0.7f / logo.width));
-                var lr = new Rect((W - logo.width * sc) * 0.5f, H * 0.4f - logo.height * sc, logo.width * sc, logo.height * sc);
-                GUI.color = new Color(1f, 1f, 1f, a * (0.6f + 0.25f * Mathf.Sin(Time.unscaledTime * 2f)));
-                GUI.DrawTexture(new Rect(lr.x - sc * 2f, lr.y - sc * 2f, lr.width + sc * 4f, lr.height + sc * 4f), TitleArt.Glow);
-                GUI.color = new Color(1f, 1f, 1f, a);
-                GUI.DrawTexture(lr, logo);
-                GUI.color = old;
+                GUI.color = new Color(1f, 0.7f, 0.3f, 0.55f * lit * flick * a);
+                float g = lr.width * 2.6f;
+                GUI.DrawTexture(new Rect(lr.center.x - g * 0.5f, lr.center.y - g * 0.5f, g, g), TitleArt.SoftGlow); // 灯りのにじみ
             }
-            float bw = W * 0.6f, bh = Mathf.Max(6f, H * 0.008f);
-            var bar = new Rect((W - bw) * 0.5f, H * 0.5f, bw, bh);
-            Hud.Fill(bar, new Color(0.08f, 0.075f, 0.11f, a));
-            Hud.Fill(new Rect(bar.x, bar.y, bar.width * shown, bar.height), new Color(0.2f, 0.9f, 0.72f, a));
-            Hud.Fill(new Rect(bar.x, bar.y, bar.width * shown, bar.height * 0.4f), new Color(0.85f, 1f, 0.95f, 0.4f * a));
-            var fc = Hud.FrameGold; fc.a = a;
-            Hud.OrnateFrame(bar, fc, Mathf.Max(2f, Mathf.Round(H * 0.0012f)), true, false);
-            float blink = 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 2.5f));
-            NumberFont.DrawIn(new Rect(0, bar.yMax + H * 0.012f, W, H * 0.025f), "NOW LOADING", new Color(1f, 1f, 1f, a * blink));
+            GUI.color = new Color(1f, 1f, 1f, appear);
+            GUI.DrawTexture(lr, lantern);
+            if (lit > 0f)
+            {
+                var flame = PixelArt.Flame.texture;
+                float fs = sc * (0.75f + 0.1f * flick); // ガラスの中に収まる大きさ
+                var fr = new Rect(lr.center.x - flame.width * fs * 0.5f, lr.y + lr.height * 0.6f - flame.height * fs * 0.5f, flame.width * fs, flame.height * fs);
+                GUI.color = new Color(1f, 1f, 1f, lit * a);
+                GUI.DrawTexture(fr, flame);
+            }
+            GUI.color = old;
+            float textA = Mathf.Clamp01((brandT - 0.9f) / 0.5f) * a;
+            NumberFont.DrawIn(new Rect(0, lr.yMax + H * 0.025f, W, H * 0.032f), "TOMOSHIBI WORKS", new Color(1f, 0.93f, 0.8f, textA));
+
+            // 準備がまだ終わっていなければ、下に小さく進み具合
+            if (!loaded || shown < 0.99f)
+            {
+                float bw = W * 0.4f, bh = Mathf.Max(4f, H * 0.004f);
+                var bar = new Rect((W - bw) * 0.5f, H * 0.85f, bw, bh);
+                Hud.Fill(bar, new Color(0.08f, 0.075f, 0.11f, a));
+                Hud.Fill(new Rect(bar.x, bar.y, bar.width * shown, bar.height), new Color(1f, 0.75f, 0.35f, 0.8f * a));
+                float blink = 0.4f + 0.4f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 2.5f));
+                NumberFont.DrawIn(new Rect(0, bar.yMax + H * 0.008f, W, H * 0.016f), "NOW LOADING", new Color(1f, 1f, 1f, a * blink));
+            }
         }
     }
 }

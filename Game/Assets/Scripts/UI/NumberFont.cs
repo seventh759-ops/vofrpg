@@ -8,7 +8,7 @@ namespace VividOfFade
     /// </summary>
     public static class NumberFont
     {
-        const string Chars = "0123456789+-ABEFHLMOPSVXYKI/%★: NUQR!WGD";
+        const string Chars = "0123456789+-ABEFHLMOPSVXYKI/%★: NUQR!WGDT";
         const int GW = 5, GH = 7, Cell = GW + 2, CellH = GH + 2; // 1ドットのふちの分
         public const int Advance = GW + 1;                          // 次の文字までの幅（ドット）
         public const int Height = CellH;
@@ -55,6 +55,7 @@ namespace VividOfFade
             new[] { "##.##", "##.##", "##.##", "#####", "#####", "##.##", "#...#" }, // W
             new[] { ".####", "##...", "##...", "##.##", "##.##", "##.##", ".####" }, // G
             new[] { "####.", "##.##", "##.##", "##.##", "##.##", "##.##", "####." }, // D
+            new[] { "#####", "#####", ".##..", ".##..", ".##..", ".##..", ".##.." }, // T
         };
 
         const int SpaceAdvance = 3; // 空白は狭く
