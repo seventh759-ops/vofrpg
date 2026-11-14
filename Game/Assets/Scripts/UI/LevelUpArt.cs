@@ -10,11 +10,11 @@ namespace VividOfFade
     {
         static readonly string[][] Glyphs =
         {
-            new[] { "1...", "1...", "1...", "1...", "1...", "1...", "1111" }, // L
-            new[] { "1...1", "1...1", "1...1", "1...1", ".1.1.", ".1.1.", "..1.." }, // V
+            new[] { "##...", "##...", "##...", "##...", "##...", "##...", "#####" }, // L
+            new[] { "##.##", "##.##", "##.##", "##.##", "##.##", ".###.", "..#.." }, // V
             null, // 空き
-            new[] { "1...1", "1...1", "1...1", "1...1", "1...1", "1...1", ".111." }, // U
-            new[] { "1111.", "1...1", "1...1", "1111.", "1....", "1....", "1...." }, // P
+            new[] { "##.##", "##.##", "##.##", "##.##", "##.##", "##.##", ".###." }, // U
+            new[] { "####.", "##.##", "##.##", "####.", "##...", "##...", "##..." }, // P
         };
         const int GlyphH = 7, Gap = 1, Space = 3, Border = 3; // ふちと影の分の余白
 
@@ -60,7 +60,7 @@ namespace VividOfFade
                 if (g == null) { x0 += Space + Gap; continue; }
                 for (int y = 0; y < GlyphH; y++)
                     for (int x = 0; x < g[y].Length; x++)
-                        if (g[y][x] == '1') { on[x0 + x, Border + y] = true; which[x0 + x, Border + y] = letter; }
+                        if (g[y][x] == '#') { on[x0 + x, Border + y] = true; which[x0 + x, Border + y] = letter; }
                 x0 += g[0].Length + Gap;
                 letter++;
             }
@@ -79,7 +79,7 @@ namespace VividOfFade
                         float k = (y - Border) / (float)(GlyphH - 1);
                         c = k < 0.5f ? Color32.Lerp(b, white, 0.6f * (1f - k * 2f)) : Color32.Lerp(b, new Color32(0, 0, 0, 255), 0.25f * (k - 0.5f) * 2f);
                     }
-                    else if (Side(on, x, y, W, H)) c = dark;
+                    else if (Near(on, x, y, W, H, 1, out _, out _)) c = dark; // ダメージの数字と同じ、まわり1ドットの暗いふち
                     else if (Near(on, x, y, W, H, 2, out int lx, out int ly))
                     {
                         var g = Grad(lx, W); // 外側は、近い文字の色でうっすら光る

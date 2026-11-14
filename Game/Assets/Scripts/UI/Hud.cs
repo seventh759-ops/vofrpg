@@ -590,7 +590,7 @@ namespace VividOfFade
             float pop = 1f + 0.35f * Mathf.Clamp01(1f - t / 0.18f); // 出た瞬間だけ大きく
             // 1ドットの大きさは、キャラクターの絵の1ドットの約1.5倍（キャラクターは 32 ドットで 1 マス。同じだと埋もれるので少し大きく）
             float unitPx = Mathf.Abs(cam.WorldToScreenPoint(new Vector3(head.x + 1f, head.y, 0f)).x - sp.x);
-            float px = Mathf.Max(2f, Mathf.Round(unitPx * GameConfig.PlayerScale * 1.5f / 32f)) * pop;
+            float px = Mathf.Max(2f, Mathf.Round(unitPx * GameConfig.PlayerScale * 1.3f / 32f)) * pop; // 字が太くなった分、少しだけ小さめ
             float w = tex.width * px, h = tex.height * px;
             var r = new Rect(Mathf.Round(sp.x - w * 0.5f), Mathf.Round(Screen.height - sp.y - h * 0.5f), w, h);
             var old = GUI.color;
