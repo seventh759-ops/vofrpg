@@ -40,7 +40,7 @@ namespace VividOfFade
         const int MaxParticles = 400;
 
         // レベルアップの羽（頭の上で開いて、上がりながら消える）
-        public const float LevelUpDuration = 1.6f;
+        public const float LevelUpDuration = 1.7f;
         const float WingOpacity = 0.9f;
         readonly SpriteRenderer[] wingGlows = new SpriteRenderer[2]; // 羽の後ろの、大きな金色の光
         float featherTimer;
@@ -81,8 +81,19 @@ namespace VividOfFade
             wingRoot.gameObject.SetActive(true);
             wingT = 0f;
             featherTimer = 0f;
+            wingBurst = false;
             UpdateWings(0f);
         }
+
+        // 羽の動き：畳んだまま足元から頭の上へ上がり → ぶわっと開いて → きらめきながら消える
+        public const float WingRiseTime = 0.45f;  // 上がりきるまで
+        const float WingOpenTime = 0.18f;         // 開ききるまで
+        const float WingFadeFrom = 0.95f;         // 消え始める
+        const float WingTopHeight = 1.05f;        // 上がりきった高さ（頭の少し上）
+        bool wingBurst;
+
+        /// <summary>羽の付け根の、今の高さ（「LV UP」の文字を合わせる）。</summary>
+        public float WingHeight { get; private set; }
 
         void UpdateWings(float dt)
         {
@@ -94,16 +105,18 @@ namespace VividOfFade
                 wingRoot.gameObject.SetActive(false);
                 return;
             }
-            const float openTime = 0.3f, fadeFrom = 1f;
-            float open = Mathf.Clamp01(wingT / openTime);
-            open = 1f - (1f - open) * (1f - open) * (1f - open); // 勢いよく開いて、ゆっくり止まる
-            float flap = wingT > openTime ? Mathf.Sin((wingT - openTime) * 12f) * 12f * Mathf.Clamp01(1f - (wingT - openTime) * 0.8f) : 0f;
-            float angle = Mathf.Lerp(75f, -18f, open) + flap; // 下に畳んだ形から、少し上向きに広げる
-            float scale = Mathf.Lerp(0.5f, 1.5f, open); // 大きく広げる
-            float rise = wingT > fadeFrom ? (wingT - fadeFrom) * 0.8f : 0f;
-            float alpha = wingT > fadeFrom ? 1f - (wingT - fadeFrom) / (LevelUpDuration - fadeFrom) : 1f;
+            float r = Mathf.Clamp01(wingT / WingRiseTime);
+            r = 1f - (1f - r) * (1f - r); // すっと上がって、頭の上で止まる
+            float open = Mathf.Clamp01((wingT - WingRiseTime) / WingOpenTime);
+            open = 1f - (1f - open) * (1f - open) * (1f - open);
+            float overshoot = Mathf.Sin(open * Mathf.PI) * 0.18f; // 開いた瞬間だけ大きくふくらむ
+            float angle = Mathf.Lerp(80f, -18f, open);             // 畳んだ形から、少し上向きに広げる
+            float scale = Mathf.Lerp(0.55f, 1.5f, open) + overshoot;
+            float drift = wingT > WingFadeFrom ? (wingT - WingFadeFrom) * 0.5f : 0f;
+            float alpha = Mathf.Clamp01(wingT / 0.1f) * (wingT > WingFadeFrom ? 1f - (wingT - WingFadeFrom) / (LevelUpDuration - WingFadeFrom) : 1f);
+            WingHeight = Mathf.Lerp(0.1f, WingTopHeight, r) + drift;
 
-            wingRoot.position = (Vector3)(Iso.ToScreen(Anchor) + new Vector2(0f, 0.75f + rise));
+            wingRoot.position = (Vector3)(Iso.ToScreen(Anchor) + new Vector2(0f, WingHeight));
             hinges[0].localRotation = Quaternion.Euler(0f, 0f, angle);
             hinges[0].localScale = new Vector3(scale, scale, 1f);
             hinges[1].localRotation = Quaternion.Euler(0f, 0f, -angle);
@@ -114,16 +127,34 @@ namespace VividOfFade
             {
                 wings[i].color = new Color(1f, 1f, 1f, alpha * WingOpacity);
                 wings[i].sortingOrder = order;
-                wingGlows[i].color = new Color(1f, 0.92f, 0.65f, alpha * (0.3f + 0.2f * pulse)); // 白に近い淡い金
+                wingGlows[i].color = new Color(1f, 0.92f, 0.65f, alpha * open * (0.3f + 0.25f * pulse)); // 開いてから光る
                 wingGlows[i].sortingOrder = order - 1;
             }
-            // はばたくたびに、光の羽根が舞い散る
-            featherTimer -= dt;
-            if (wingT > openTime * 0.5f && wingT < fadeFrom + 0.3f && featherTimer <= 0f)
+
+            var white = new Color(1f, 1f, 0.97f);
+            var gold = new Color(1f, 0.86f, 0.5f);
+            // 開いた瞬間：光の粒がぶわっと広がる
+            if (!wingBurst && wingT >= WingRiseTime)
             {
-                featherTimer = 0.06f;
-                var c = UnityEngine.Random.value < 0.6f ? new Color(1f, 1f, 0.97f) : new Color(1f, 0.86f, 0.5f);
-                Sparks(Anchor + UnityEngine.Random.insideUnitCircle * 1.2f, 2, c, 1.2f, 1.1f, 1.8f, true);
+                wingBurst = true;
+                Sparks(Anchor, 22, white, 3.2f, 0.7f, 1.2f, false, WingHeight);
+                Sparks(Anchor, 12, gold, 2.2f, 0.9f, 1.5f, true, WingHeight - 0.2f);
+            }
+            featherTimer -= dt;
+            if (featherTimer > 0f) return;
+            if (wingT < WingRiseTime)
+            {
+                // 上がる間：細い光の尾
+                featherTimer = 0.05f;
+                Sparks(Anchor + UnityEngine.Random.insideUnitCircle * 0.2f, 1, white, 0.2f, 0.4f, 0.3f, true, WingHeight - 0.1f);
+            }
+            else
+            {
+                // 開いたあと：羽のまわりがきらきらしながら消えていく
+                featherTimer = 0.035f;
+                var c = UnityEngine.Random.value < 0.65f ? white : gold;
+                Sparks(Anchor + new Vector2(UnityEngine.Random.Range(-1.4f, 1.4f), UnityEngine.Random.Range(-0.4f, 0.4f)), 1, c, 0.4f, 0.7f, 0.6f, true,
+                    WingHeight + UnityEngine.Random.Range(-0.2f, 0.5f));
             }
         }
 
@@ -263,7 +294,7 @@ namespace VividOfFade
         /// 火花をまき散らす。speed は床の上を広がる速さ、pop は上へ跳ねる強さ。
         /// rising なら重さなしでふわっと立ちのぼる（強化・回復）。
         /// </summary>
-        public void Sparks(Vector2 pos, int count, Color color, float speed, float life, float pop = 2f, bool rising = false)
+        public void Sparks(Vector2 pos, int count, Color color, float speed, float life, float pop = 2f, bool rising = false, float startHeight = -1f)
         {
             for (int i = 0; i < count && particles.Count < MaxParticles; i++)
             {
@@ -283,7 +314,7 @@ namespace VividOfFade
                 float sp = speed * (0.4f + 0.6f * UnityEngine.Random.value);
                 p.Pos = pos + (rising ? new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 0.5f * UnityEngine.Random.value : Vector2.zero);
                 p.Vel = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * (rising ? sp * 0.15f : sp);
-                p.H = rising ? UnityEngine.Random.value * 0.3f : 0.2f;
+                p.H = startHeight >= 0f ? startHeight + UnityEngine.Random.value * 0.15f : rising ? UnityEngine.Random.value * 0.3f : 0.2f; // 高さを決めて出せる（羽のまわり）
                 p.Vh = rising ? pop * (0.6f + 0.4f * UnityEngine.Random.value) : pop * (0.5f + UnityEngine.Random.value);
                 p.Gravity = rising ? 0f : 9f;
                 p.T = 0f;

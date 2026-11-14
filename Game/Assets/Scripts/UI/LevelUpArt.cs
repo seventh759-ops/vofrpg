@@ -4,20 +4,20 @@ namespace VividOfFade
 {
     /// <summary>
     /// レベルアップのときに頭の上に出す「LV UP」の文字の絵（ドット絵）。
-    /// 羽（白い羽に金のふち、薄紫の影）と同じ色合い：縦の線は2ドット・横の線は1ドットの白い文字に、下へ向かって薄紫がかる影、
+    /// 羽（白い羽に金のふち、薄紫の影）と同じ色合い：1ドットの細い線の白い文字に、下へ向かって薄紫がかる影、
     /// 金のふちと、読みやすいよう外側に細い茶色のふち、下に淡い影。
     /// </summary>
     public static class LevelUpArt
     {
         static readonly string[][] Glyphs =
         {
-            new[] { "11....", "11....", "11....", "11....", "11....", "11....", "11....", "11....", "111111" }, // L
-            new[] { "11...11", "11...11", "11...11", "11...11", ".11.11.", ".11.11.", "..111..", "..111..", "...1..." }, // V
+            new[] { "1...", "1...", "1...", "1...", "1...", "1...", "1111" }, // L
+            new[] { "1...1", "1...1", "1...1", "1...1", ".1.1.", ".1.1.", "..1.." }, // V
             null, // 空き
-            new[] { "11..11", "11..11", "11..11", "11..11", "11..11", "11..11", "11..11", "11..11", ".1111." }, // U
-            new[] { "11111.", "11..11", "11..11", "11..11", "11111.", "11....", "11....", "11....", "11...." }, // P
+            new[] { "1...1", "1...1", "1...1", "1...1", "1...1", "1...1", ".111." }, // U
+            new[] { "1111.", "1...1", "1...1", "1111.", "1....", "1....", "1...." }, // P
         };
-        const int GlyphH = 9, Gap = 1, Space = 3, Border = 3; // ふちと影の分の余白
+        const int GlyphH = 7, Gap = 1, Space = 3, Border = 3; // ふちと影の分の余白
 
         static Texture2D tex;
 
@@ -64,7 +64,7 @@ namespace VividOfFade
                         float k = (y - Border) / (float)(GlyphH - 1);
                         c = k < 0.45f ? Color32.Lerp(top, mid, k / 0.45f) : Color32.Lerp(mid, bottom, (k - 0.45f) / 0.55f);
                     }
-                    else if (Near(on, x, y, W, H, 1)) c = outline;
+                    else if (Side(on, x, y, W, H)) c = outline;          // 上下左右だけ金（細い線がつぶれないように）
                     else if (Near(on, x, y, W, H, 2)) c = outer;
                     else if (y > 2 && Near(on, x, y - 1, W, H, 2)) c = shadow; // 外のふちの1ドット下に影
                     px[(H - 1 - y) * W + x] = c; // テクスチャは下から
@@ -75,6 +75,9 @@ namespace VividOfFade
             t.Apply();
             return t;
         }
+
+        static bool Side(bool[,] on, int x, int y, int W, int H) =>
+            (x > 0 && on[x - 1, y]) || (x < W - 1 && on[x + 1, y]) || (y > 0 && on[x, y - 1]) || (y < H - 1 && on[x, y + 1]);
 
         static bool Near(bool[,] on, int x, int y, int W, int H, int reach)
         {

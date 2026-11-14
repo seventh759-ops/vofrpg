@@ -465,15 +465,17 @@ namespace VividOfFade
             if (levelUpTime < 0f) return;
             var cam = Camera.main;
             if (cam == null) return;
-            float t = levelUpTime;
-            float rise = t > 1f ? (t - 1f) * 0.8f : 0f;
-            float alpha = t > 1f ? 1f - (t - 1f) / (FxSystem.LevelUpDuration - 1f) : Mathf.Clamp01(t / 0.15f);
-            var head = Iso.ToScreen(World.Player.Pos) + new Vector2(0f, 0.8f + rise); // 羽の付け根と同じ高さ
+            // 羽が頭の上で開いた瞬間に出て、羽と一緒に上がりながら消える
+            float t = levelUpTime - FxSystem.WingRiseTime;
+            if (t < 0f) return;
+            const float fadeFrom = 0.95f - FxSystem.WingRiseTime;
+            float alpha = Mathf.Clamp01(t / 0.08f) * (t > fadeFrom ? Mathf.Clamp01(1f - (t - fadeFrom) / (FxSystem.LevelUpDuration - FxSystem.WingRiseTime - fadeFrom)) : 1f);
+            var head = Iso.ToScreen(World.Player.Pos) + new Vector2(0f, World.Fx.WingHeight); // 羽の付け根と同じ高さ
             Vector3 sp = cam.WorldToScreenPoint(new Vector3(head.x, head.y, 0f));
             // ドット絵の「LV UP」。画面の大きさに合わせて整数倍で拡大（にじまないように）
             var tex = LevelUpArt.Texture;
-            float pop = 1f + 0.3f * Mathf.Clamp01(1f - t / 0.2f); // 出た瞬間だけ大きく
-            float px = Mathf.Max(2f, Mathf.Round(Screen.height / 420f)) * pop;
+            float pop = 1f + 0.35f * Mathf.Clamp01(1f - t / 0.18f); // 出た瞬間だけ大きく
+            float px = Mathf.Max(2f, Mathf.Round(Screen.height / 340f)) * pop; // 線が細いので、少し大きめの倍率
             float w = tex.width * px, h = tex.height * px;
             var r = new Rect(Mathf.Round(sp.x - w * 0.5f), Mathf.Round(Screen.height - sp.y - h * 0.5f), w, h);
             var old = GUI.color;
