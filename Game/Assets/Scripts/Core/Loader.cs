@@ -18,7 +18,7 @@ namespace VividOfFade
         Texture2D logo;
         float brandT;         // ブランドロゴを出してからの時間
         bool loaded;          // 準備が終わった
-        const float BrandMin = 2.6f; // ブランドロゴを最低これだけ見せる（準備が早く終わっても）
+        const float BrandMin = 3.1f; // ブランドロゴを最低これだけ見せる（準備が早く終わっても）
 
         /// <summary>起動のロゴを出している間（ゲームには入力を渡さない）。</summary>
         public static bool Active { get; private set; }
@@ -114,8 +114,40 @@ namespace VividOfFade
                 GUI.DrawTexture(fr, flame);
             }
             GUI.color = old;
-            float textA = Mathf.Clamp01((brandT - 0.9f) / 0.5f) * a;
-            NumberFont.DrawIn(new Rect(0, lr.yMax + H * 0.025f, W, H * 0.032f), "TOMOSHIBI WORKS", new Color(1f, 0.93f, 0.8f, textA));
+            // 「TOMOSHIBI WORKS」：はじめは消えた暗い文字。ランタンに火がともったあと、左から1文字ずつ灯りがともる
+            const string brand = "TOMOSHIBI WORKS";
+            var tr = new Rect(0, lr.yMax + H * 0.025f, W, H * 0.032f);
+            float px = Mathf.Max(1f, Mathf.Round(tr.height * 0.9f / NumberFont.Height));
+            while (px > 1f && NumberFont.Width(brand, px) > W * 0.9f) px--;
+            float x = Mathf.Round((W - NumberFont.Width(brand, px)) * 0.5f);
+            float dimA = Mathf.Clamp01((brandT - 0.3f) / 0.4f) * a; // 消えた文字がうっすら見えてくる
+            int litIndex = 0;
+            for (int i = 0; i < brand.Length; i++)
+            {
+                char ch = brand[i];
+                if (ch != ' ')
+                {
+                    float at = 1.15f + litIndex * 0.09f; // ともる時刻
+                    float u = Mathf.Clamp01((brandT - at) / 0.25f);
+                    float pop = Mathf.Clamp01(1f - (brandT - at) / 0.4f) * (brandT >= at ? 1f : 0f); // ともった瞬間だけ明るく光る
+                    var dimColor = new Color(0.32f, 0.28f, 0.3f, dimA);
+                    var litColor = new Color(1f, 0.93f, 0.8f, a);
+                    var c = Color.Lerp(dimColor, litColor, u);
+                    if (pop > 0f)
+                    {
+                        // ともった瞬間の、ふわっとした灯りのにじみ
+                        var old2 = GUI.color;
+                        GUI.color = new Color(1f, 0.7f, 0.3f, 0.6f * pop * a);
+                        float gs = NumberFont.Height * px * 2.2f;
+                        GUI.DrawTexture(new Rect(x + NumberFont.AdvanceOf(ch) * px * 0.5f - gs * 0.5f, tr.center.y - gs * 0.5f, gs, gs), TitleArt.SoftGlow);
+                        GUI.color = old2;
+                        c = Color.Lerp(c, new Color(1f, 1f, 0.9f, a), pop * 0.6f);
+                    }
+                    NumberFont.Draw(new Vector2(x + NumberFont.Width(ch.ToString(), px) * 0.5f, tr.center.y), ch.ToString(), px, c);
+                    litIndex++;
+                }
+                x += NumberFont.AdvanceOf(ch) * px;
+            }
 
             // 準備がまだ終わっていなければ、下に小さく進み具合
             if (!loaded || shown < 0.99f)

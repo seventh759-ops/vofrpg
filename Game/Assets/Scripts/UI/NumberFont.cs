@@ -115,7 +115,7 @@ namespace VividOfFade
             return true;
         }
 
-        static int AdvanceOf(char c) => c == ' ' ? SpaceAdvance : Advance;
+        public static int AdvanceOf(char c) => c == ' ' ? SpaceAdvance : Advance;
 
         /// <summary>1ドットを px ピクセルとしたときの幅。</summary>
         public static float Width(string s, float px)
