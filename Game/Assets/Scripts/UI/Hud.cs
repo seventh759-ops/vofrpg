@@ -94,7 +94,10 @@ namespace VividOfFade
         static float FloorRowH => Screen.height * 0.021f;
 
         /// <summary>上の帯の下端（GUI 座標、上が 0）。</summary>
-        public static float TopBandBottom => BandMargin * 4.1f + TitleRowH + TopRowH + ExpRowH + FloorRowH; // 段の間は 0.8 ずつ（枠が重ならないように）
+        public static float TopBandBottom => BandMargin * 2.6f + TitleRowH + StatusPanelH; // ロゴの段と、まとめた1枚の枠
+        static float PanelPad => BandMargin * 0.6f;
+        /// <summary>LV・HP・MP・経験値・層をまとめた枠の高さ。</summary>
+        static float StatusPanelH => PanelPad * 3f + TopRowH + BandMargin * 0.35f + ExpRowH + FloorRowH + 1f;
 
         /// <summary>メッセージウィンドウの行数と、1行の高さ。</summary>
         const int LogLines = 4;
@@ -176,7 +179,7 @@ namespace VividOfFade
         /// <summary>
         /// 飾りの付いたバー（HP・MP）：暗い下地、中身に光沢（上が明るく下が暗い）、25% ごとの目盛り、飾りの枠。
         /// </summary>
-        static void OrnateBar(Rect r, float ratio, Color back, Color fill, Color frame)
+        static void OrnateBar(Rect r, float ratio, Color back, Color fill, Color frame, bool framed = true)
         {
             float t = Mathf.Max(2f, Mathf.Round(Screen.height * 0.0012f));
             Fill(r, back);
@@ -186,7 +189,8 @@ namespace VividOfFade
             Fill(new Rect(f.x, f.yMax - f.height * 0.22f, f.width, f.height * 0.22f), new Color(0f, 0f, 0f, 0.25f)); // 下の陰
             if (ratio > 0f && ratio < 1f) Fill(new Rect(f.xMax - t * 0.5f, f.y, t * 0.5f, f.height), new Color(1f, 1f, 1f, 0.5f)); // 中身の端の光
             for (int k = 1; k < 4; k++) Fill(new Rect(r.x + r.width * k / 4f, r.y + r.height * 0.55f, 1f, r.height * 0.45f), new Color(0f, 0f, 0f, 0.45f)); // 目盛り
-            OrnateFrame(r, frame, t, true, false); // バーはへこみ（段が詰まっているので鋲はなし）
+            if (framed) OrnateFrame(r, frame, t, true, false); // バーはへこみ（段が詰まっているので鋲はなし）
+            else Frame(r, new Color(0f, 0f, 0f, 0.6f), 1f);     // 1枚の枠の中では、暗い細い線だけ
         }
 
         /// <summary>カメラのずれ（CameraRig.CenterShift）。上下の帯の高さの差の半分。</summary>
@@ -982,32 +986,36 @@ namespace VividOfFade
                 }
             }
 
-            // 2段目：左にレベル（HP・MP と経験値の2段ぶんの高さ）、右に HP と MP、その下に細い経験値のバー（文字なし）
-            float rowY = titleRow.yMax + mm * 0.8f, rowH = TopRowH;
-            float expGap = mm * 0.5f;
+            // 2段目から：LV・HP・MP・経験値・層を、1枚の枠の中にまとめる（間は細い仕切りだけ。すき間を作らない）
+            float lineH = small.fontSize * 1.35f;
+            var panel = new Rect(mm, titleRow.yMax + mm * 0.6f, W - mm * 2f, StatusPanelH);
+            Fill(panel, new Color(0.04f, 0.04f, 0.07f, 1f));
+            float pp = PanelPad;
+            var divider = new Color(0.55f, 0.45f, 0.25f, 0.7f); // 金の枠に合わせた、細い仕切り
+            float rowY = panel.y + pp, rowH = TopRowH;
+            float expGap = mm * 0.35f;
             float lvW = W * 0.17f;
-            var lvBox = new Rect(mm, rowY, lvW, rowH + expGap + ExpRowH);
-            Fill(lvBox, new Color(0.04f, 0.04f, 0.07f, 1f));
+            var lvBox = new Rect(panel.x + pp, rowY, lvW, rowH + expGap + ExpRowH);
             float lvGlow = LevelGlow;
             if (lvGlow > 0f) Fill(lvBox, new Color(1f, 0.8f, 0.3f, 0.45f * lvGlow)); // レベルアップの直後は光る
-            OrnateFrame(lvBox, lvGlow > 0f ? Color.Lerp(FrameGold, new Color(1f, 1f, 0.8f, 1f), lvGlow) : FrameGold, FrameT, true, false);
             int level = ch != null ? ch.Level : 1;
             string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
-            NumberFont.DrawIn(new Rect(lvBox.x + lvBox.width * 0.06f, lvBox.y, lvBox.width * 0.88f, lvBox.height), lvText, Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx + 1f); // ほかより一回り大きく
+            NumberFont.DrawIn(lvBox, lvText, lvGlow > 0f ? Color.Lerp(Color.white, new Color(1f, 0.9f, 0.5f), lvGlow) : Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx + 1f); // ほかより一回り大きく
+            Fill(new Rect(lvBox.xMax + pp * 0.5f, panel.y + pp * 0.5f, 1f, lvBox.height + pp), divider); // LV の右の仕切り
 
-            float barX = lvBox.xMax + mm;
-            float barW = (W - mm - barX - mm) * 0.5f;
+            float barX = lvBox.xMax + pp * 1.5f;
+            float barW = (panel.xMax - pp - barX - pp) * 0.5f;
             var hpBack = new Rect(barX, rowY, barW, rowH);
             float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
-            OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold);
+            OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold, false);
             NumberFont.DrawIn(hpBack, $"HP {player.Hp}/{player.MaxHp}", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx); // HUD の文字は、どの段も同じ大きさのドット文字
-            var mpBack = new Rect(hpBack.xMax + mm, rowY, W - mm - (hpBack.xMax + mm), rowH);
+            var mpBack = new Rect(hpBack.xMax + pp, rowY, panel.xMax - pp - (hpBack.xMax + pp), rowH);
             float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
-            OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), FrameGold);
+            OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), FrameGold, false);
             NumberFont.DrawIn(mpBack, $"MP {player.Mp}/{player.MaxMp}", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx);
 
             // 経験値：HP・MP の下に細いバーだけ
-            var expBack = new Rect(barX, rowY + rowH + expGap, W - mm - barX, ExpRowH);
+            var expBack = new Rect(barX, rowY + rowH + expGap, panel.xMax - pp - barX, ExpRowH);
             Fill(expBack, new Color(0.02f, 0.05f, 0.05f, 1f)); // 背景は暗く（たまった分が浮き出るように）
             if (ch != null)
             {
@@ -1017,21 +1025,20 @@ namespace VividOfFade
                 if (expRatio > 0f && expRatio < 1f) Fill(new Rect(expBack.x + expBack.width * expRatio - 2f, expBack.y, 2f, expBack.height), new Color(1f, 1f, 1f, 0.6f + 0.3f * Mathf.Sin(Time.unscaledTime * 4f))); // 先端が白く光る
                 for (int k = 1; k < 10; k++) Fill(new Rect(expBack.x + expBack.width * k / 10f, expBack.y, 1f, expBack.height), new Color(0f, 0f, 0f, 0.35f)); // 10% ごとの目盛り
             }
-            OrnateFrame(expBack, FrameGold, Mathf.Max(1f, FrameT * 0.5f), true, false);
+            Frame(expBack, new Color(0f, 0f, 0f, 0.6f), 1f);
 
-            // 3.5段目：層（ボスのときは添える）と、右に回避の待ち時間
-            float lineH = small.fontSize * 1.35f;
-            var floorRow = new Rect(mm, expBack.yMax + mm * 0.8f, W - mm * 2f, FloorRowH);
-            Fill(floorRow, new Color(0.05f, 0.05f, 0.08f, 1f));
-            OrnateFrame(floorRow, FrameGold, FrameT, true, false);
-            string floorText = GameConfig.FloorNameEn(World.Floors.Floor) + (World.Floors.IsBossFloor ? "   BOSS" : ""); // HUD では「71F」と短く（MENU・HP・EXP とそろえる）
-            var floorStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
-            float floorX = floorRow.x + mm;
-            NumberFont.DrawIn(new Rect(floorX, floorRow.y, floorRow.width * 0.7f - (floorX - floorRow.x), floorRow.height), floorText, Color.white, TextAnchor.MiddleLeft, 0.9f, HudPx);
-            var dodge = new Rect(floorRow.xMax - W * 0.22f - mm, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
+            // 横の仕切り、その下に層（ボスのときは添える）と、右に回避の待ち時間
+            float divY = lvBox.yMax + pp * 0.5f;
+            Fill(new Rect(panel.x + pp * 0.5f, divY, panel.width - pp, 1f), divider);
+            var floorRow = new Rect(panel.x + pp, divY + pp * 0.5f, panel.width - pp * 2f, FloorRowH);
+            string floorText = GameConfig.FloorNameEn(World.Floors.Floor) + (World.Floors.IsBossFloor ? "   BOSS" : ""); // HUD では「71F」と短く
+            NumberFont.DrawIn(new Rect(floorRow.x, floorRow.y, floorRow.width * 0.7f, floorRow.height), floorText, Color.white, TextAnchor.MiddleLeft, 0.9f, HudPx);
+            var dodge = new Rect(floorRow.xMax - W * 0.22f, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
             Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.75f, 0.85f, 1f, 0.9f));
-            OrnateFrame(dodge, FrameGold, Mathf.Max(1f, FrameT * 0.5f), true, false);
+            Frame(dodge, new Color(0f, 0f, 0f, 0.6f), 1f);
+
+            OrnateFrame(panel, FrameGold, FrameT, true, false); // まとめて1枚の枠
             float y = topBottom + mm;
 
             // FPS（ダンジョンの左下。右上はミニマップ、右下は攻撃ボタンがあるので）
