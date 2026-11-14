@@ -134,7 +134,7 @@ namespace VividOfFade
             float u = Mathf.Max(0f, wingT - WingOpenAt);
             float open = u <= 0f ? 0f : 1f - Mathf.Exp(-u * 7f) * Mathf.Cos(u * 12f);
             float angle = Mathf.LerpUnclamped(80f, -18f, open) + squeeze * 8f; // 畳んだ形から、少し上向きに広げる
-            float scale = Mathf.LerpUnclamped(0.5f, 1.15f, open) - squeeze * 0.08f;
+            float scale = Mathf.LerpUnclamped(0.4f, 0.8f, open) - squeeze * 0.06f; // キャラクターの大きさに合わせる
             float dip = squeeze * 0.1f;
             float drift = (wingT > WingFadeFrom ? (wingT - WingFadeFrom) * 0.5f : 0f) - dip;
             open = Mathf.Clamp01(open);
@@ -153,11 +153,11 @@ namespace VividOfFade
             float fadeIn = Mathf.Clamp01(wingT / 0.08f);
             // 後ろ：太く濃いめ／前：細く淡く（キャラクターが光に包まれて見える。足元から伸びるので浮いて見えない）
             wingPillar.transform.position = Iso.ToScreen(Anchor) + new Vector2(0f, -0.35f); // 足元より下から（足先まで光に包む）
-            wingPillar.transform.localScale = new Vector3(1.8f * (0.5f + 0.5f * pk), pillarH, 1f);
+            wingPillar.transform.localScale = new Vector3(1.3f * (0.5f + 0.5f * pk), pillarH, 1f);
             wingPillar.color = new Color(1f, 0.93f, 0.7f, 0.55f * pk * fadeIn);
             wingPillar.sortingOrder = order - 2;
             wingPillarFront.transform.position = Iso.ToScreen(Anchor) + new Vector2(0f, -0.35f); // 足元より下から（足先まで光に包む）
-            wingPillarFront.transform.localScale = new Vector3(1.3f * (0.5f + 0.5f * pk), pillarH, 1f);
+            wingPillarFront.transform.localScale = new Vector3(0.95f * (0.5f + 0.5f * pk), pillarH, 1f);
             wingPillarFront.color = new Color(1f, 0.97f, 0.85f, 0.3f * pk * fadeIn);
             wingPillarFront.sortingOrder = order + 3;
             float pulse = 0.5f + 0.5f * Mathf.Sin(wingT * 9f);
@@ -177,7 +177,7 @@ namespace VividOfFade
                 wingBurst = true;
                 WingsOpened?.Invoke();
                 Ring(Anchor, 1.6f, new Color(1f, 0.95f, 0.8f, 0.3f), 0.3f); // ごく弱い波紋
-                Sparks(Anchor, 22, white, 3.2f, 0.7f, 1.2f, false, WingHeight);
+                Sparks(Anchor, 16, white, 2.2f, 0.6f, 1.1f, false, WingHeight);
                 Sparks(Anchor, 12, gold, 2.2f, 0.9f, 1.5f, true, WingHeight - 0.2f);
             }
             featherTimer -= dt;
@@ -193,7 +193,7 @@ namespace VividOfFade
                 // 開いたあと：羽のまわりがきらきらしながら消えていく
                 featherTimer = 0.035f;
                 var c = UnityEngine.Random.value < 0.65f ? white : gold;
-                Sparks(Anchor + new Vector2(UnityEngine.Random.Range(-1.4f, 1.4f), UnityEngine.Random.Range(-0.4f, 0.4f)), 1, c, 0.4f, 0.7f, 0.6f, true,
+                Sparks(Anchor + new Vector2(UnityEngine.Random.Range(-0.9f, 0.9f), UnityEngine.Random.Range(-0.3f, 0.3f)), 1, c, 0.4f, 0.7f, 0.6f, true,
                     WingHeight + UnityEngine.Random.Range(-0.2f, 0.5f));
             }
         }
