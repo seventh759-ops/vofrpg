@@ -85,7 +85,7 @@ namespace VividOfFade
                             if (fa < 0.12f || fb < 0.12f) c = (fa < 0.06f || fb < 0.06f) ? ironLit : iron; // 鉄の格子
                             if (d > 0.84f) c = d > 0.93f ? rimDark : rim;                                       // 紅い縁
                             // 錠前（真ん中）：上に輪、下に四角い本体
-                            float lx = Mathf.Abs(u) * 32f, ly = v * 16f;
+                            float lx = Mathf.Abs(u) * 32f, ly = -v * 16f; // ly は上が正（sy は上から数えるので反転）
                             if (lx <= 4f && ly >= -4f && ly <= 1.5f) c = (lx >= 3f || ly <= -3f) ? goldDark : gold;
                             if (ly > 1.5f && ly <= 5f && lx <= 3f && lx >= 1.5f) c = goldDark;
                             if (ly > 4f && ly <= 5f && lx < 1.5f) c = goldDark;
