@@ -7,7 +7,7 @@ namespace VividOfFade
     /// M1 用の仮のドット絵。画像ファイルを使わず、文字の並びからスプライトを作る。
     /// 本番の絵ができたら差し替える。
     /// </summary>
-    public static class PixelArt
+    public static partial class PixelArt
     {
         public const int PixelsPerUnit = 16;
 

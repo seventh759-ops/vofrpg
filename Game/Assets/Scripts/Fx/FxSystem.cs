@@ -34,6 +34,82 @@ namespace VividOfFade
             public float Gravity;
             public float T, Life;
             public Color Color;
+            public float Scale0 = 1f, Scale1 = 1f; // 大きさ（はじめ → 終わり）
+            public float Spin, Angle;              // 回る速さ（度/秒）と今の角度
+            public float Drag = 3f;                // 床の上の速さの減り方
+            public bool Custom;                    // 火花以外の絵（スキルの演出）
+        }
+
+        // ---- 時間差の演出（スキルの演出を、少しずつずらして出す） ----
+        readonly List<(float t, System.Action a)> scheduled = new List<(float, System.Action)>();
+
+        /// <summary>delay 秒後に a を実行する（ゲームの時間で。止めている間は進まない）。</summary>
+        public void After(float delay, System.Action a)
+        {
+            if (delay <= 0f) { a(); return; }
+            scheduled.Add((delay, a));
+        }
+
+        /// <summary>
+        /// 絵の粒を1つ出す（スキルの演出）。pos は床の位置、h は高さ。vel は床の上の速さ、vh は上向きの速さ。
+        /// 大きさは scale0 → scale1、spin で回る。flip で左右反転（残像）。
+        /// </summary>
+        public void Emit(Vector2 pos, float h, Sprite sprite, Color color, float life, Vector2 vel, float vh = 0f, float gravity = 0f,
+            float scale0 = 1f, float scale1 = 1f, float spin = 0f, float drag = 3f, bool flip = false, float angle = 0f)
+        {
+            if (particles.Count >= MaxParticles) return;
+            var p = TakeParticle();
+            p.Sr.sprite = sprite;
+            p.Sr.flipX = flip;
+            p.Pos = pos;
+            p.Vel = vel;
+            p.H = h;
+            p.Vh = vh;
+            p.Gravity = gravity;
+            p.T = 0f;
+            p.Life = life;
+            p.Color = color;
+            p.Scale0 = scale0;
+            p.Scale1 = scale1;
+            p.Spin = spin;
+            p.Angle = angle;
+            p.Drag = drag;
+            p.Custom = true;
+            p.Sr.sortingOrder = 21000; // ほかの演出と同じく、いちばん手前（壁に隠れない）
+            ApplyParticle(p);
+            particles.Add(p);
+        }
+
+        Particle TakeParticle()
+        {
+            Particle p;
+            if (freeParticles.Count > 0) p = freeParticles.Pop();
+            else
+            {
+                var go = new GameObject("Spark");
+                go.transform.SetParent(transform, false);
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = PixelArt.Spark;
+                Lighting.MakeGlow(sr);
+                p = new Particle { Sr = sr };
+            }
+            p.Sr.gameObject.SetActive(true);
+            return p;
+        }
+
+        void ApplyParticle(Particle p)
+        {
+            p.Sr.transform.position = (Vector3)(Iso.ToScreen(p.Pos) + new Vector2(0f, p.H));
+            float k = p.Life > 0f ? p.T / p.Life : 1f;
+            var c = p.Color;
+            c.a = p.Color.a * (1f - k);
+            p.Sr.color = c;
+            if (p.Custom)
+            {
+                float sc = Mathf.Lerp(p.Scale0, p.Scale1, k);
+                p.Sr.transform.localScale = new Vector3(sc, sc, 1f);
+                p.Sr.transform.localRotation = Quaternion.Euler(0f, 0f, p.Angle);
+            }
         }
         readonly List<Particle> particles = new List<Particle>();
         readonly Stack<Particle> freeParticles = new Stack<Particle>();
@@ -338,18 +414,14 @@ namespace VividOfFade
         {
             for (int i = 0; i < count && particles.Count < MaxParticles; i++)
             {
-                Particle p;
-                if (freeParticles.Count > 0) p = freeParticles.Pop();
-                else
-                {
-                    var go = new GameObject("Spark");
-                    go.transform.SetParent(transform, false);
-                    var sr = go.AddComponent<SpriteRenderer>();
-                    sr.sprite = PixelArt.Spark;
-                    Lighting.MakeGlow(sr);
-                    p = new Particle { Sr = sr };
-                }
-                p.Sr.gameObject.SetActive(true);
+                var p = TakeParticle();
+                p.Sr.sprite = PixelArt.Spark;
+                p.Sr.flipX = false;
+                p.Sr.transform.localScale = Vector3.one;
+                p.Sr.transform.localRotation = Quaternion.identity;
+                p.Custom = false;
+                p.Drag = 3f;
+                p.Spin = 0f;
                 float a = UnityEngine.Random.value * Mathf.PI * 2f;
                 float sp = speed * (0.4f + 0.6f * UnityEngine.Random.value);
                 p.Pos = pos + (rising ? new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 0.5f * UnityEngine.Random.value : Vector2.zero);
@@ -393,6 +465,15 @@ namespace VividOfFade
         public void Tick(float dt)
         {
             UpdateWings(dt);
+            for (int i = 0; i < scheduled.Count; i++)
+            {
+                var (t, a) = scheduled[i];
+                t -= dt;
+                if (t > 0f) { scheduled[i] = (t, a); continue; }
+                scheduled.RemoveAt(i);
+                i--;
+                a();
+            }
             for (int i = fans.Count - 1; i >= 0; i--)
             {
                 var b = fans[i];
@@ -427,13 +508,11 @@ namespace VividOfFade
                 p.T += dt;
                 if (p.T >= p.Life) { p.Sr.gameObject.SetActive(false); particles.RemoveAt(i); freeParticles.Push(p); continue; }
                 p.Pos += p.Vel * dt;
-                p.Vel *= 1f - Mathf.Min(1f, 3f * dt); // だんだん遅く
+                p.Vel *= 1f - Mathf.Min(1f, p.Drag * dt); // だんだん遅く
                 p.Vh -= p.Gravity * dt;
                 p.H = Mathf.Max(0f, p.H + p.Vh * dt);
-                p.Sr.transform.position = (Vector3)(Iso.ToScreen(p.Pos) + new Vector2(0f, p.H));
-                var c = p.Color;
-                c.a = p.Color.a * (1f - p.T / p.Life);
-                p.Sr.color = c;
+                p.Angle += p.Spin * dt;
+                ApplyParticle(p);
             }
             for (int i = slashes.Count - 1; i >= 0; i--)
             {
@@ -489,6 +568,7 @@ namespace VividOfFade
 
         public void Clear()
         {
+            scheduled.Clear();
             foreach (var b in fans) { b.Root.gameObject.SetActive(false); freeFans.Push(b); }
             fans.Clear();
             foreach (var b in discs) { b.Sr.gameObject.SetActive(false); freeDiscs.Push(b); }

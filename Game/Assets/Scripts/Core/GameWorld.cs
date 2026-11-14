@@ -424,7 +424,7 @@ namespace VividOfFade
                 Hud.Toast($"{name} Lv {lv}", new Color(0.6f, 0.85f, 1f));
                 Profile.Save();
             };
-            Skills.Casted += spec => Hud.AddSkillName(Player.Pos, spec.DisplayName, spec.Color);
+            // スキル名の文字は出さない（スキルごとの演出で分かるように。SkillVfx）
             Skills.Shake = (amount, time) => cameraRig.Shake(amount, time);
             Skills.SkillLearned += name =>
             {
