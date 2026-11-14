@@ -417,7 +417,7 @@ namespace VividOfFade
 
         readonly List<DamageStack> damageStacks = new List<DamageStack>();
         const int MaxDamageLines = 6;      // 1つの敵に出す行の数
-        const float DamageLineLife = 1.3f; // 1行が消えるまで
+        const float DamageLineLife = 0.6f; // 1行が消えるまで（短めにして、画面が数字で埋まらないように）
         const float DamageJoinDist = 0.7f; // この近さなら同じ敵の行として積む
         const float DamageJoinTime = 0.9f;
         const int MaxDamageStacks = 40;
@@ -469,9 +469,9 @@ namespace VividOfFade
             for (int i = damageStacks.Count - 1; i >= 0; i--)
             {
                 var st = damageStacks[i];
-                // 敵が倒れたら、そのログは早めに消える（3倍の速さで時間が進む）
+                // 敵が倒れたら、そのログはさらに少し早く消える
                 bool dead = st.Target is Enemy en && (en.Dying || !en.gameObject.activeSelf);
-                float lineDt = dead ? dt * 3f : dt;
+                float lineDt = dead ? dt * 1.5f : dt;
                 // 行の位置：新しい行が一番下（0）、古いほど上。ばねで動かすので、下から跳ね上がって少し行き過ぎてから落ち着く
                 int rank = 0;
                 for (int j = st.Lines.Count - 1; j >= 0; j--)
@@ -515,7 +515,7 @@ namespace VividOfFade
                     float lp = px * scale * (ln.Big ? 1.25f : 1f);
                     lp *= 1f + (ln.Big ? 0.35f : 0.15f) * Mathf.Exp(-ln.T * 14f); // 出た瞬間、少しふくらむ
                     var c = ln.Color;
-                    c.a = Mathf.Clamp01((DamageLineLife - ln.T) / 0.3f) * (ln.Leave >= 0f ? 1f - ln.Leave / 0.3f : 1f) * Mathf.Clamp01(ln.Slot + 1.2f);
+                    c.a = Mathf.Clamp01((DamageLineLife - ln.T) / 0.2f) * (ln.Leave >= 0f ? 1f - ln.Leave / 0.3f : 1f) * Mathf.Clamp01(ln.Slot + 1.2f);
                     float h = NumberFont.Height * lp;
                     NumberFont.Draw(new Vector2(sp.x, y - h * 0.5f - rise), ln.Text, lp, c);
                 }
