@@ -1617,7 +1617,7 @@ namespace VividOfFade
         public static Sprite Ember => Shaded("Ember10", EmberRows, null, null, 32);
 
         /// <summary>
-        /// 装備のアイコン（16ドット）。武器は種類ごとに形を描き分け、ランタン・防具（外套）・指輪もそろえた絵にする。
+        /// 装備のアイコン（32ドット）。武器は種類ごとに形を描き分け、ランタン・防具（外套）・指輪もそろえた絵にする。
         /// r の部分が珍しさの色になる。
         /// </summary>
         public static Sprite ItemIcon(Item item)
@@ -1627,23 +1627,23 @@ namespace VividOfFade
             string kind;
             switch (item.Slot)
             {
-                case ItemSlot.Lantern: rows = LanternIcon16; kind = "Lantern"; break;
-                case ItemSlot.Armor: rows = ArmorIcon16; kind = "Armor"; break;
-                case ItemSlot.Ring: rows = RingIcon16; kind = "Ring"; break;
+                case ItemSlot.Lantern: rows = Icon32_Lantern; kind = "Lantern"; break;
+                case ItemSlot.Armor: rows = Icon32_Armor; kind = "Armor"; break;
+                case ItemSlot.Ring: rows = Icon32_Ring; kind = "Ring"; break;
                 default:
-                    if (!WeaponIcons.TryGetValue(item.Weapon, out rows)) return ItemIcon(item.Slot, item.Rarity);
+                    if (!WeaponIcons32.TryGetValue(item.Weapon, out rows)) return ItemIcon(item.Slot, item.Rarity);
                     kind = item.Weapon.ToString();
                     break;
             }
             Color32 c = RarityInfo.ColorOf(item.Rarity);
             var abyssSet = AbyssSets.SetOf(item);
-            string key = $"ItemIcon16_{kind}_{item.Rarity}" + (item.Abyss ? "_Abyss" + abyssSet : "");
+            string key = $"ItemIcon32_{kind}_{item.Rarity}" + (item.Abyss ? "_Abyss" + abyssSet : "");
             if (item.Abyss) rows = AbyssMotif(rows, abyssSet); // 深淵の品は、セットごとの意匠を描き足す
             // m 金属・w 木・g 金・L と l 光・e 内側の線・A 珍しさの色（縁取りと陰影は Shaded が付ける）
             // 深淵の装備は、金属が黒ずみ、まわりに赤紫のもやがかかる
             var over = new Dictionary<char, Color32[]> { { 'A', RampFrom(c) } };
             if (item.Abyss) over['m'] = RampFrom((Color32)Color.Lerp(new Color32(70, 40, 80, 255), Color.Lerp(Color.black, AbyssSets.ColorOf(abyssSet), 0.6f), 0.45f)); // 黒ずんだ金属を、セットの色に少し寄せる
-            return Shaded(key, rows, over, item.Abyss ? (Color32?)(Color32)AbyssSets.ColorOf(abyssSet) : null, 32); // もやはセットの色
+            return Shaded(key, rows, over, item.Abyss ? (Color32?)(Color32)AbyssSets.ColorOf(abyssSet) : null, 64); // もやはセットの色（32 ドットで、地面では今までと同じ半マス）
         }
 
         /// <summary>
@@ -1657,6 +1657,7 @@ namespace VividOfFade
             for (int y = 0; y < h; y++) g[y] = src[y].PadRight(w, '.').ToCharArray();
             bool Solid(int x, int y) => x >= 0 && y >= 0 && x < w && y < h && src[y].Length > x && src[y][x] != '.';
             void Put(int x, int y, char c) { if (x >= 0 && y >= 0 && x < w && y < h && g[y][x] == '.') g[y][x] = c; }
+            int k = Mathf.Max(1, w / 16); // 絵の大きさに合わせて意匠も大きく（32 ドットなら2倍）
             switch (set)
             {
                 case UniqueType.AbyssBlast:
@@ -1666,44 +1667,44 @@ namespace VividOfFade
                         int top = -1;
                         for (int y = 0; y < h; y++) if (Solid(x, y)) { top = y; break; }
                         if (top < 1 || (x * 7 + top) % 3 == 0) continue;
-                        Put(x, top - 1, 'L');
-                        if ((x * 5 + top) % 2 == 0) Put(x, top - 2, 'l');
+                        int len = k + (x * 5 + top) % (k + 2);
+                        for (int d = 1; d <= len; d++) Put(x, top - d, d <= (len + 1) / 2 ? 'L' : 'l');
                     }
                     break;
                 case UniqueType.VoidRift:
                 {
-                    // 左上から右下へ、品の上だけを走るぎざぎざの亀裂
-                    for (int t = 0; t < w + h; t++)
+                    // 左上から右下へ、品の上だけを走るぎざぎざの亀裂（紫に、ところどころ白い光）
+                    for (int t = 0; t < (w + h) * 2; t++)
                     {
-                        int x = t / 2 + 2, y = t / 2 + (t % 4 < 2 ? 1 : 2);
-                        if (Solid(x, y)) g[y][x] = t % 3 == 0 ? 'o' : 'p'; // 紫の亀裂に、ところどころ白い光
+                        int x = t / 2 + 2 * k, y = t / 2 + ((t / k) % 4 < 2 ? k : 2 * k);
+                        for (int dx = 0; dx < k; dx++)
+                            if (Solid(x + dx, y)) g[y][x + dx] = t % 5 == 0 ? 'o' : 'p';
                     }
-                    // まわりに浮かぶ欠片
-                    Put(1, 3, 'p'); Put(2, 4, 'p'); Put(w - 3, h - 4, 'p'); Put(w - 4, h - 3, 'p'); Put(w - 2, 2, 'p'); Put(1, h - 3, 'p');
+                    // まわりに浮かぶ欠片（k ドット角）
+                    void Shard(int cx, int cy) { for (int a = 0; a < k; a++) for (int b = 0; b < k; b++) Put(cx + a, cy + b, 'p'); Put(cx + k, cy + k, 'p'); }
+                    Shard(k, 3 * k); Shard(w - 3 * k, h - 4 * k); Shard(w - 2 * k, 2 * k); Shard(k, h - 3 * k);
                     break;
                 }
                 case UniqueType.Starfall:
                 {
-                    // まわりに瞬く小さな星（十字）と、金属に散る星屑
-                    void Star(int cx, int cy) { Put(cx, cy, 'o'); Put(cx - 1, cy, 'B'); Put(cx + 1, cy, 'B'); Put(cx, cy - 1, 'B'); Put(cx, cy + 1, 'B'); }
-                    Star(2, 2); Star(w - 3, h - 4); Put(w - 2, 1, 'o');
+                    // まわりに瞬く星（十字、腕の長さは k）と、金属に散る星屑
+                    void Star(int cx, int cy) { Put(cx, cy, 'o'); for (int a = 1; a <= k; a++) { char c = a == k ? 'B' : 'o'; Put(cx - a, cy, c); Put(cx + a, cy, c); Put(cx, cy - a, c); Put(cx, cy + a, c); } }
+                    Star(2 * k, 2 * k); Star(w - 3 * k, h - 4 * k); Star(w - 2 * k, k); Star(k + 1, h - 3 * k);
                     for (int y = 0; y < h; y++)
                         for (int x = 0; x < w; x++)
                             if ((g[y][x] == 'm' || g[y][x] == 'w') && (x * 3 + y * 5) % 7 == 0) g[y][x] = 'o';
                     break;
                 }
                 case UniqueType.Retribution:
-                    // 縁から外へ突き出す紅いとげ（ところどころ）
-                    // 2ドットの長いとげ（根元は紅、先は白く光る）
+                    // 縁から外へ突き出すとげ（長さは k＋1。根元は紅、先は白く光る）
                     for (int y = 0; y < h; y++)
                         for (int x = 0; x < w; x++)
                         {
-                            if (!Solid(x, y) || (x * 3 + y * 7) % 5 != 0) continue;
+                            if (!Solid(x, y) || (x * 3 + y * 7) % (4 + k) != 0) continue;
                             int dx = !Solid(x - 1, y) ? -1 : !Solid(x + 1, y) ? 1 : 0;
                             int dy = dx == 0 && !Solid(x, y - 1) ? -1 : 0;
                             if (dx == 0 && dy == 0) continue;
-                            Put(x + dx, y + dy, 'R');
-                            Put(x + dx * 2, y + dy * 2, 'o');
+                            for (int d = 1; d <= k + 1; d++) Put(x + dx * d, y + dy * d, d == k + 1 ? 'o' : 'R');
                         }
                     break;
             }
