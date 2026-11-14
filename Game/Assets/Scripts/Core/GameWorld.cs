@@ -762,6 +762,7 @@ namespace VividOfFade
             cameraRig.SetBackground(zone.Background);
             Enemies.SetZone(zone);
             Music.SetZone(zone.Pattern);
+            Music.SetFinalFloor(floor == GameConfig.AbyssLastFloor); // アビス戦はテーマに関係なく専用の曲
             if (zone.Key != currentZone)
             {
                 currentZone = zone.Key;

@@ -90,6 +90,16 @@ namespace VividOfFade
             if (townMode) ApplySongs();
         }
 
+        bool finalFloor; // アビスのいる最奥の層：ボス戦の曲はテーマに関係なく、アビス戦の曲
+
+        /// <summary>アビスのいる最奥の層か（ボス戦の曲がアビス戦の曲になる）。</summary>
+        public void SetFinalFloor(bool on)
+        {
+            if (on == finalFloor) return;
+            finalFloor = on;
+            ApplySongs();
+        }
+
         public void SetTown(bool on)
         {
             if (on == townMode) return;
@@ -107,12 +117,12 @@ namespace VividOfFade
             else if (theme == ZoneMode)
             {
                 var song = ZoneSongs[zoneSong];
-                Queue(Get(song), Get(BossOf(song)));
+                Queue(Get(song), Get(finalFloor ? AbyssBossSong : BossOf(song)));
             }
             else
             {
                 var t = Themes[theme - 1];
-                Queue(Get(t.Normal), Get(t.Boss));
+                Queue(Get(t.Normal), Get(finalFloor ? AbyssBossSong : t.Boss));
             }
         }
 
@@ -206,7 +216,7 @@ namespace VividOfFade
 
         // ================= 曲のデータ =================
 
-        enum LeadKind { None, Square, Saw, Flute, Bell }
+        enum LeadKind { None, Square, Saw, Flute, Bell, Organ }
         enum BassKind { Sustain, Roots, Octaves, Pump }
 
         sealed class Song
@@ -230,6 +240,10 @@ namespace VividOfFade
             public float HatVol = 0.035f;
             public float Duck;               // キックに合わせて、ほかの音を下げる量（0〜1）
             public float Echo = 0.25f;       // 旋律と分散和音の反響の量
+            public bool Church;              // 教会の編成：和音・低音・分散和音をパイプオルガンに、聖歌隊と鐘、大聖堂の残響
+            public float ChoirVol;           // 聖歌隊（和音を1オクターブ上で「あー」と歌う）
+            public float BellVol;            // 4小節ごとに鳴る教会の鐘
+            public float Reverb;             // 大聖堂の残響の量
         }
 
         sealed class Theme
@@ -558,6 +572,42 @@ namespace VividOfFade
             KickVol = 0.38f, HatVol = 0.03f, Duck = 0.3f, Echo = 0.2f,
         };
 
+        static readonly int[] OC = { 60, 64, 67 }, OE = { 64, 68, 71 }, OF = { 65, 69, 72 }, OFm = { 65, 68, 72 }, OAb = { 68, 72, 75 },
+            OBb = { 70, 74, 77 }, OAm = { 69, 72, 76 }, ODm = { 62, 65, 69 }, OG = { 67, 71, 74 };
+
+        /// <summary>
+        /// アビス戦の曲：深淵の最奥なのに、天国のような明るさ。パイプオルガンのトッカータ風の分散和音と、
+        /// 聖歌隊、教会の鐘、大聖堂の残響。長調に、遠い和音（Ⅲ・♭Ⅵ・♭Ⅶ・短いⅣ）を混ぜて、この世ならぬ響きに。
+        /// </summary>
+        static readonly Song AbyssBossSong = new Song
+        {
+            Name = "abyss_final", Bpm = 116f,
+            Chords = new[] { OC, OE, OF, OFm, OC, OAb, OBb, OC, OAm, OF, ODm, OG, OAb, OBb, OFm, OG },
+            Lead = new[]
+            {
+                79, -2, -2, -2, 76, -2, 79, -2,
+                83, -2, -2, -2, 80, -2, 76, -2,
+                81, -2, -2, -2, 84, -2, -2, -2,
+                80, -2, -2, -2, 77, -2, 72, -2,
+                76, -2, 79, -2, 84, -2, -2, -2,
+                84, -2, -2, -2, 80, -2, 75, -2,
+                77, -2, -2, -2, 74, -2, 82, -2,
+                79, -2, -2, -2, -2, -2, -1, -1,
+                81, -2, -2, 83, 84, -2, -2, -2,
+                81, -2, -2, -2, 77, -2, 72, -2,
+                74, -2, 77, -2, 81, -2, 86, -2,
+                83, -2, -2, -2, 79, -2, -2, -2,
+                84, -2, -2, -2, 87, -2, 84, -2,
+                86, -2, -2, -2, 82, -2, 77, -2,
+                80, -2, -2, -2, 84, -2, 89, -2,
+                86, -2, -2, -2, -2, -2, -1, -1,
+            },
+            Lead1 = LeadKind.Organ, LeadVol = 0.09f,
+            Bass = BassKind.Sustain, BassVol = 0.2f, PadVol = 0.05f, ArpVol = 0.05f,
+            Kick = "x.......x.......", KickVol = 0.3f, Hat = "",
+            Echo = 0.15f, Church = true, ChoirVol = 0.05f, BellVol = 0.1f, Reverb = 0.45f,
+        };
+
         /// <summary>区画の曲のボス戦版：同じ和音と旋律を、速く、四つ打ちと刻む低音で。</summary>
         static Song BossOf(Song s) => new Song
         {
@@ -731,8 +781,19 @@ namespace VividOfFade
                 // 和音（重ねた鋸波。ゆっくり立ち上がる）
                 if (s.PadVol > 0f)
                 {
-                    foreach (int n in chord) AddPad(music, barStart, step * 16, Freq(n), s.PadVol);
+                    foreach (int n in chord)
+                    {
+                        if (s.Church) AddOrgan(music, barStart, step * 16, Freq(n), s.PadVol, false);
+                        else AddPad(music, barStart, step * 16, Freq(n), s.PadVol);
+                    }
                 }
+
+                // 聖歌隊（和音の1オクターブ上）と、4小節ごとの鐘
+                if (s.ChoirVol > 0f)
+                {
+                    foreach (int n in chord) AddChoir(music, barStart, step * 16, Freq(n + 12), s.ChoirVol);
+                }
+                if (s.BellVol > 0f && bar % 4 == 0) AddChurchBell(echoBus, barStart, step * 32, Freq(chord[0] + 12), s.BellVol);
 
                 // 低音
                 int root = chord[0] - 12;
@@ -747,7 +808,8 @@ namespace VividOfFade
                         case BassKind.Octaves: if (k % 2 == 0) note = (k / 2) % 2 == 0 ? root : root + 12; break;
                         case BassKind.Pump: if (k % 2 == 0) note = root; break;
                     }
-                    if (note >= 0) AddBass(music, barStart + k * step, length, Freq(note - 12), s.BassVol, s.Bass == BassKind.Pump);
+                    if (note >= 0 && s.Church) AddOrgan(music, barStart + k * step, length, Freq(note - 12), s.BassVol, false, true);
+                    else if (note >= 0) AddBass(music, barStart + k * step, length, Freq(note - 12), s.BassVol, s.Bass == BassKind.Pump);
                 }
 
                 // 分散和音（16分音符で和音の音を上へたどる）
@@ -756,7 +818,8 @@ namespace VividOfFade
                     for (int k = 0; k < 16; k++)
                     {
                         int n = chord[k % chord.Length] + 12 * (1 + (k / chord.Length) % 2);
-                        AddPluck(echoBus, barStart + k * step, step * 2, Freq(n), s.ArpVol, s.ArpSaw);
+                        if (s.Church) AddOrgan(echoBus, barStart + k * step, step, Freq(n), s.ArpVol, true);
+                        else AddPluck(echoBus, barStart + k * step, step * 2, Freq(n), s.ArpVol, s.ArpSaw);
                     }
                 }
 
@@ -801,11 +864,13 @@ namespace VividOfFade
                 }
             }
 
+            float[] hall = s.Reverb > 0f ? Cathedral(music, echoBus, wet) : null;
+
             var mix = new float[len];
             float peak = 0.0001f;
             for (int i = 0; i < len; i++)
             {
-                mix[i] = (music[i] + echoBus[i] + wet[i]) * duck[i] + drums[i];
+                mix[i] = (music[i] + echoBus[i] + wet[i]) * duck[i] + drums[i] + (hall != null ? hall[i] * s.Reverb : 0f);
                 peak = Mathf.Max(peak, Mathf.Abs(mix[i]));
             }
             float norm = 0.9f / peak;
@@ -886,6 +951,11 @@ namespace VividOfFade
                 {
                     case LeadKind.Square: x = Mathf.Repeat(ph, 1f) < 0.3f ? 1f : -1f; break;
                     case LeadKind.Saw: x = (Saw(ph) + Saw(ph * 1.0015f)) * 0.5f; break;
+                    case LeadKind.Organ: // 主旋律のオルガン：明るいストップを重ねて、ゆれ（トレモロ）を少し
+                        x = (Mathf.Sin(2f * Mathf.PI * ph) + 0.55f * Mathf.Sin(4f * Mathf.PI * ph) + 0.3f * Mathf.Sin(6f * Mathf.PI * ph)
+                            + 0.3f * Mathf.Sin(8f * Mathf.PI * ph) + 0.12f * Mathf.Sin(12f * Mathf.PI * ph)) * 0.45f
+                            * (1f + 0.06f * Mathf.Sin(2f * Mathf.PI * 6f * t));
+                        break;
                     case LeadKind.Flute: x = Mathf.Sin(2f * Mathf.PI * ph) + 0.15f * Mathf.Sin(4f * Mathf.PI * ph); break;
                     default: // Bell：澄んだ音に、高い倍音を少し。ゆっくり消える
                         x = Mathf.Sin(2f * Mathf.PI * ph) + 0.35f * Mathf.Sin(2f * Mathf.PI * ph * 2.76f) * Mathf.Exp(-t * 6f);
@@ -895,6 +965,116 @@ namespace VividOfFade
                 y += a * (x - y);
                 Add(buf, start + j, y * env * vol);
             }
+        }
+
+        /// <summary>
+        /// パイプオルガン：何本かの管（16'・8'・4'・2 2/3'・2'）を重ねた音。立ち上がりはすぐ、消えるのもすぐ。
+        /// bright で高い管を強めに（分散和音）、pedal で足鍵盤の太い低音に。
+        /// </summary>
+        static void AddOrgan(float[] buf, int start, int len, float freq, float vol, bool bright, bool pedal = false)
+        {
+            float[] ratio = pedal ? PedalRatio : OrganRatio;
+            float[] amp = pedal ? PedalAmp : bright ? OrganBrightAmp : OrganAmp;
+            float total = 0f;
+            foreach (float v in amp) total += v;
+            int attack = (int)(0.012f * Rate), release = System.Math.Min(len / 3, (int)(0.04f * Rate));
+            for (int j = 0; j < len; j++)
+            {
+                float t = (float)j / Rate;
+                float x = 0f;
+                for (int h = 0; h < ratio.Length; h++)
+                {
+                    float f = freq * ratio[h];
+                    if (f > Rate * 0.45f) break;
+                    x += amp[h] * Mathf.Sin(2f * Mathf.PI * f * t);
+                }
+                float env = Mathf.Min(1f, (float)j / attack) * Mathf.Min(1f, (float)(len - j) / System.Math.Max(1, release));
+                Add(buf, start + j, x / total * env * vol);
+            }
+        }
+
+        static readonly float[] OrganRatio = { 0.5f, 1f, 2f, 3f, 4f, 6f };
+        static readonly float[] OrganAmp = { 0.35f, 1f, 0.6f, 0.25f, 0.3f, 0.08f };
+        static readonly float[] OrganBrightAmp = { 0f, 1f, 0.8f, 0.4f, 0.6f, 0.3f };
+        static readonly float[] PedalRatio = { 1f, 2f, 3f, 4f };
+        static readonly float[] PedalAmp = { 1f, 0.7f, 0.2f, 0.2f };
+
+        /// <summary>聖歌隊：ゆれる2つの鋸波を、「あ」の響き（700Hz と 1100Hz あたり）だけ通す。ゆっくり立ち上がる。</summary>
+        static void AddChoir(float[] buf, int start, int len, float freq, float vol)
+        {
+            float f1 = 2f * Mathf.Sin(Mathf.PI * 730f / Rate), f2 = 2f * Mathf.Sin(Mathf.PI * 1090f / Rate);
+            float l1 = 0f, b1 = 0f, l2 = 0f, b2 = 0f;
+            int attack = (int)(0.4f * Rate), release = (int)(0.35f * Rate);
+            float pa = 0f, pb = 0f;
+            for (int j = 0; j < len; j++)
+            {
+                float t = (float)j / Rate;
+                float vib = 1f + 0.004f * Mathf.Sin(2f * Mathf.PI * 5f * t);
+                pa += freq * vib * 1.003f / Rate;
+                pb += freq * vib * 0.997f / Rate;
+                float x = (Saw(pa) + Saw(pb)) * 0.5f;
+                // 2つの帯域フィルタ（状態変数フィルタ）
+                float h1 = x - l1 - 0.25f * b1; b1 += f1 * h1; l1 += f1 * b1;
+                float h2 = x - l2 - 0.3f * b2; b2 += f2 * h2; l2 += f2 * b2;
+                float y = b1 * 0.6f + b2 * 0.4f;
+                float env = Mathf.Min(1f, (float)j / attack) * Mathf.Min(1f, (float)(len - j) / release);
+                Add(buf, start + j, y * env * vol * 0.5f);
+            }
+        }
+
+        /// <summary>教会の鐘：低いうなり・短三度の響きなど、少しずれた倍音を重ねて、長く残す。</summary>
+        static void AddChurchBell(float[] buf, int start, int len, float freq, float vol)
+        {
+            float[] r = { 0.5f, 1f, 1.19f, 1.5f, 2f, 2.51f, 3.01f };
+            float[] a = { 0.5f, 1f, 0.5f, 0.3f, 0.45f, 0.2f, 0.15f };
+            float[] d = { 0.6f, 0.9f, 1.4f, 1.6f, 1.8f, 2.6f, 3.2f };
+            for (int j = 0; j < len; j++)
+            {
+                float t = (float)j / Rate;
+                float x = 0f;
+                for (int h = 0; h < r.Length; h++) x += a[h] * Mathf.Sin(2f * Mathf.PI * freq * r[h] * t) * Mathf.Exp(-t * d[h]);
+                Add(buf, start + j, x * Mathf.Min(1f, j / 30f) * vol * 0.4f);
+            }
+        }
+
+        /// <summary>大聖堂の残響：4本の遅れの輪（櫛形）と2本の全域通過。ループのつなぎ目で途切れないよう2周回す。</summary>
+        static float[] Cathedral(float[] a, float[] b, float[] c)
+        {
+            int len = a.Length;
+            var input = new float[len];
+            for (int i = 0; i < len; i++) input[i] = (a[i] + b[i] + c[i]) * 0.25f;
+            var output = new float[len];
+            int[] combs = { 1557, 1617, 1491, 1422 };
+            foreach (int dl in combs)
+            {
+                var y = new float[len];
+                float lp = 0f;
+                for (int pass = 0; pass < 2; pass++)
+                {
+                    for (int i = 0; i < len; i++)
+                    {
+                        int j = (i - dl + len) % len;
+                        lp += 0.35f * (y[j] - lp); // 高い音ほど早く消える
+                        y[i] = input[i] + lp * 0.86f;
+                    }
+                }
+                for (int i = 0; i < len; i++) output[i] += y[i];
+            }
+            foreach (int dl in new[] { 225, 556 })
+            {
+                var y = new float[len];
+                var x = (float[])output.Clone();
+                for (int pass = 0; pass < 2; pass++)
+                {
+                    for (int i = 0; i < len; i++)
+                    {
+                        int j = (i - dl + len) % len;
+                        y[i] = -0.5f * x[i] + x[j] + 0.5f * y[j];
+                    }
+                }
+                output = y;
+            }
+            return output;
         }
 
         static void AddKick(float[] buf, int start, float vol)
