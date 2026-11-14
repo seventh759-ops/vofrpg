@@ -97,7 +97,7 @@ namespace VividOfFade
         public static float TopBandBottom => BandMargin * 2.6f + TitleRowH + StatusPanelH; // ロゴの段と、まとめた1枚の枠
         static float PanelPad => BandMargin * 0.6f;
         /// <summary>LV・HP・MP・経験値・層をまとめた枠の高さ。</summary>
-        static float StatusPanelH => PanelPad * 3f + TopRowH + BandMargin * 0.35f + ExpRowH + FloorRowH + 1f;
+        static float StatusPanelH => PanelPad * 2.8f + TopRowH + BandMargin * 0.35f + ExpRowH + FloorRowH + Mathf.Max(2f, Mathf.Round(FrameT * 0.6f)) * 1.5f;
 
         /// <summary>メッセージウィンドウの行数と、1行の高さ。</summary>
         const int LogLines = 4;
@@ -991,7 +991,10 @@ namespace VividOfFade
             var panel = new Rect(mm, titleRow.yMax + mm * 0.6f, W - mm * 2f, StatusPanelH);
             Fill(panel, new Color(0.04f, 0.04f, 0.07f, 1f));
             float pp = PanelPad;
-            var divider = new Color(0.55f, 0.45f, 0.25f, 0.7f); // 金の枠に合わせた、細い仕切り
+            // 仕切り：金の線と、その下（右）に暗い影の線（枠と同じ凹凸）
+            float dt = Mathf.Max(2f, Mathf.Round(FrameT * 0.6f));
+            void HDivider(float x, float y, float w) { Fill(new Rect(x, y, w, dt), FrameGold); Fill(new Rect(x, y + dt, w, Mathf.Max(1f, dt * 0.5f)), new Color(0f, 0f, 0f, 0.6f)); }
+            void VDivider(float x, float y, float h) { Fill(new Rect(x, y, dt, h), FrameGold); Fill(new Rect(x + dt, y, Mathf.Max(1f, dt * 0.5f), h), new Color(0f, 0f, 0f, 0.6f)); }
             float rowY = panel.y + pp, rowH = TopRowH;
             float expGap = mm * 0.35f;
             float lvW = W * 0.17f;
@@ -1001,7 +1004,7 @@ namespace VividOfFade
             int level = ch != null ? ch.Level : 1;
             string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
             NumberFont.DrawIn(lvBox, lvText, lvGlow > 0f ? Color.Lerp(Color.white, new Color(1f, 0.9f, 0.5f), lvGlow) : Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx + 1f); // ほかより一回り大きく
-            Fill(new Rect(lvBox.xMax + pp * 0.5f, panel.y + pp * 0.5f, 1f, lvBox.height + pp), divider); // LV の右の仕切り
+            VDivider(lvBox.xMax + pp * 0.5f, panel.y, lvBox.height + pp * 1.5f); // LV の右の仕切り
 
             float barX = lvBox.xMax + pp * 1.5f;
             float barW = (panel.xMax - pp - barX - pp) * 0.5f;
@@ -1029,8 +1032,8 @@ namespace VividOfFade
 
             // 横の仕切り、その下に層（ボスのときは添える）と、右に回避の待ち時間
             float divY = lvBox.yMax + pp * 0.5f;
-            Fill(new Rect(panel.x + pp * 0.5f, divY, panel.width - pp, 1f), divider);
-            var floorRow = new Rect(panel.x + pp, divY + pp * 0.5f, panel.width - pp * 2f, FloorRowH);
+            HDivider(panel.x, divY, panel.width); // 層の上の仕切り
+            var floorRow = new Rect(panel.x + pp, divY + dt * 1.5f + pp * 0.3f, panel.width - pp * 2f, FloorRowH);
             string floorText = GameConfig.FloorNameEn(World.Floors.Floor) + (World.Floors.IsBossFloor ? "   BOSS" : ""); // HUD では「71F」と短く
             NumberFont.DrawIn(new Rect(floorRow.x, floorRow.y, floorRow.width * 0.7f, floorRow.height), floorText, Color.white, TextAnchor.MiddleLeft, 0.9f, HudPx);
             var dodge = new Rect(floorRow.xMax - W * 0.22f, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
