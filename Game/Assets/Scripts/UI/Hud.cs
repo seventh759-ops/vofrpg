@@ -1263,13 +1263,21 @@ namespace VividOfFade
 
         void DrawGameOver()
         {
-            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0f, 0f, 0f, 0.6f));
+            // キャラクターが崩れ終わるころに、ゆっくり暗くなって文字が出る（文字はタイトルの FADE と同じ石の灰色）
+            float k = Mathf.Clamp01((World.DeathFade - 1f) / 0.6f);
+            if (World.DeathFade < 0f) k = 1f;
+            Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0f, 0f, 0f, 0.6f * k));
+            if (k <= 0f) return;
             float h = Screen.height;
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 3, fontStyle = FontStyle.Bold };
+            title.normal.textColor = new Color(0.67f, 0.65f, 0.71f, k);
             Hud.FitLabel(new Rect(0, h * 0.38f, Screen.width, h * 0.08f), Loc.T("GAME OVER", "力尽きた"), title);
+            var sub = new GUIStyle(centered);
+            sub.normal.textColor = new Color(1f, 1f, 1f, k);
             GUI.Label(new Rect(0, h * 0.47f, Screen.width, h * 0.05f),
-                GameConfig.FloorName(World.Floors.Floor) + Loc.T($"   KILL {World.Enemies.Kills}   EMBERS {World.Inventory.Embers}", $"   撃破 {World.Enemies.Kills}   火種 {World.Inventory.Embers}"), centered);
-            GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), Loc.T("Tap / Enter to continue", "タップか Enter で続ける"), centered);
+                GameConfig.FloorName(World.Floors.Floor) + Loc.T($"   KILL {World.Enemies.Kills}   EMBERS {World.Inventory.Embers}", $"   撃破 {World.Enemies.Kills}   火種 {World.Inventory.Embers}"), sub);
+            if (World.DeathFade < 0f || World.DeathFade >= GameWorld.DeathFadeReady)
+                GUI.Label(new Rect(0, h * 0.53f, Screen.width, h * 0.05f), Loc.T("Tap / Enter to continue", "タップか Enter で続ける"), sub);
         }
 
         static readonly string[] greetingsEn =

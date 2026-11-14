@@ -602,7 +602,8 @@ namespace VividOfFade
             if (Player.IsDead)
             {
                 Guide("death", Loc.T("Oops, you went down.", "あらら、やられちゃったね。"), Loc.T("What you found this run is lost, but your level stays. Return home first and your gear is safe.", "今回拾った物はなくなるけど、レベルは残る。帰還してから死ねば、装備も守れるよ。"));
-                if (!talking && Input.ConfirmPressed) EndRunByDeath();
+                TickDeathFade(Mathf.Min(Time.unscaledDeltaTime, 1f / 20f));
+                if (!talking && Input.ConfirmPressed && DeathFade >= DeathFadeReady) EndRunByDeath();
             }
             else if (!Paused)
             {
@@ -1160,8 +1161,46 @@ namespace VividOfFade
         }
 
         /// <summary>深淵の反撃：受けたら闇の波動（2.5秒に1回まで）。</summary>
+        /// <summary>
+        /// やられた演出（タイトルの「FADE」のように、石の灰色になって崩れ、粒が舞い散って消える）。
+        /// -1 は演出していない。経過時間。DeathFadeReady を過ぎたら、続ける操作を受け付ける。
+        /// </summary>
+        public float DeathFade { get; private set; } = -1f;
+        public const float DeathFadeReady = 1.6f;
+        float crumbTimer;
+
+        void TickDeathFade(float dt)
+        {
+            if (DeathFade < 0f) return;
+            DeathFade += dt;
+            float t = DeathFade;
+            var stone = new Color(0.67f, 0.65f, 0.71f);
+            // 0〜0.35秒：色が抜けて石の灰色に。0.5秒から：崩れながら薄れて消える
+            float grey = Mathf.Clamp01(t / 0.35f);
+            float fade = Mathf.Clamp01((t - 0.5f) / 1.1f);
+            var c = Color.Lerp(Color.white, stone, grey);
+            c.a = 1f - fade;
+            Player.Sr.color = c;
+            if (t > 0.4f && t < 1.7f)
+            {
+                crumbTimer -= dt;
+                while (crumbTimer <= 0f)
+                {
+                    crumbTimer += 0.02f;
+                    // 体のあちこちから、右上へ流れて舞い散る石の粒（上の方から先に崩れる）
+                    float top = (1f - fade * 0.8f) * GameConfig.PlayerScale;
+                    Vector2 p = Player.Pos + new Vector2(Random.Range(-0.25f, 0.25f), Random.Range(-0.25f, 0.25f));
+                    var col = Random.value < 0.3f ? new Color(0.45f, 0.43f, 0.5f) : stone;
+                    Fx.Emit(p, Random.Range(0.1f, top), PixelArt.Spark, col, Random.Range(0.8f, 1.4f),
+                        new Vector2(0.9f, -0.9f) * Random.Range(0.4f, 1f), Random.Range(0.1f, 0.6f), 0f, 1f, 0.6f, 0f, 0.6f);
+                }
+            }
+            Fx.Tick(dt);
+        }
+
         void OnPlayerHurt(int dealt)
         {
+            if (Player.IsDead && DeathFade < 0f) { DeathFade = 0f; crumbTimer = 0f; }
             var st = Player.Stats;
             if (st == null || st.RetributionMult <= 0f || retributionCooldown > 0f) return;
             retributionCooldown = 2.5f;
@@ -1502,7 +1541,7 @@ namespace VividOfFade
             }
             if (Player.IsDead && !ChoosingClass)
             {
-                EndRunByDeath();
+                if (DeathFade >= DeathFadeReady) EndRunByDeath(); // 崩れていく間は待つ
                 return;
             }
             Hud.HandleTap(startPos);
@@ -1605,6 +1644,8 @@ namespace VividOfFade
         /// <summary>死んだ：中断した挑戦を消して、職業選択へ。</summary>
         void EndRunByDeath()
         {
+            DeathFade = -1f;
+            Player.Sr.color = Color.white;
             if (Profile.Current != null) Profile.Current.Deaths++;
             ClearRun(Profile.Current);
             Profile.Save();
