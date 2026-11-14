@@ -398,6 +398,9 @@ namespace VividOfFade
             public Color Color;
             public bool Big;
             public float T;
+            public float Slot = -0.8f; // 下から何行目に見えているか（新しい行は下から跳ね上がってくる）
+            public float Vel = 10f;    // Slot の動く速さ（ばね）。はじめは上向きに勢いよく
+            public float Leave = -1f;  // 上からあふれて消えていく途中（経過時間）。-1 はまだ
         }
 
         sealed class DamageStack
@@ -440,7 +443,15 @@ namespace VividOfFade
                 Color = crit ? new Color(1f, 0.85f, 0.2f) : Color.white,
                 Big = crit,
             });
-            if (stack.Lines.Count > MaxDamageLines) stack.Lines.RemoveAt(0); // 古いものから消える
+            // あふれたら、一番古い行が上へ抜けながら消えていく
+            int live = 0;
+            foreach (var l in stack.Lines) if (l.Leave < 0f) live++;
+            for (int j = 0; j < stack.Lines.Count && live > MaxDamageLines; j++)
+            {
+                if (stack.Lines[j].Leave >= 0f) continue;
+                stack.Lines[j].Leave = 0f;
+                live--;
+            }
         }
 
         void TickDamageStacks(float dt)
@@ -448,10 +459,23 @@ namespace VividOfFade
             for (int i = damageStacks.Count - 1; i >= 0; i--)
             {
                 var st = damageStacks[i];
+                // 行の位置：新しい行が一番下（0）、古いほど上。ばねで動かすので、下から跳ね上がって少し行き過ぎてから落ち着く
+                int rank = 0;
                 for (int j = st.Lines.Count - 1; j >= 0; j--)
                 {
-                    st.Lines[j].T += dt;
-                    if (st.Lines[j].T >= DamageLineLife) st.Lines.RemoveAt(j);
+                    var ln = st.Lines[j];
+                    ln.T += dt;
+                    float target;
+                    if (ln.Leave >= 0f) { ln.Leave += dt; target = MaxDamageLines + ln.Leave * 3f; }
+                    else target = rank++;
+                    ln.Vel += (target - ln.Slot) * 260f * dt;
+                    ln.Vel *= Mathf.Exp(-14f * dt);
+                    ln.Slot += ln.Vel * dt;
+                }
+                for (int j = st.Lines.Count - 1; j >= 0; j--)
+                {
+                    var ln = st.Lines[j];
+                    if (ln.T >= DamageLineLife || ln.Leave >= 0.3f) st.Lines.RemoveAt(j);
                 }
                 if (st.Lines.Count == 0) damageStacks.RemoveAt(i);
             }
@@ -465,20 +489,15 @@ namespace VividOfFade
             {
                 Vector3 sp = cam.WorldToScreenPoint(new Vector3(st.World.x, st.World.y, 0f));
                 float y = Screen.height - sp.y;
-                // 下（新しい）から上へ並べる
-                for (int j = st.Lines.Count - 1; j >= 0; j--)
+                // 下（新しい）から上へ。Slot の高さに描く（上へ流れていき、上にあふれた行は薄れて消える）
+                foreach (var ln in st.Lines)
                 {
-                    var ln = st.Lines[j];
                     float lp = px * (ln.Big ? 1.4f : 1f);
-                    // 出た瞬間：ぽんと跳ねて、小さく2回弾んで止まる（会心はより大きく跳ねて、ふくらむ）
-                    float hop = Mathf.Abs(Mathf.Sin(ln.T * Mathf.PI / 0.16f)) * Mathf.Exp(-ln.T * 9f) * lineH * (ln.Big ? 1.1f : 0.8f);
-                    if (ln.T > 0.5f) hop = 0f;
-                    lp *= 1f + (ln.Big ? 0.35f : 0.15f) * Mathf.Exp(-ln.T * 14f);
+                    lp *= 1f + (ln.Big ? 0.35f : 0.12f) * Mathf.Exp(-ln.T * 14f); // 出た瞬間、少しふくらむ
                     var c = ln.Color;
-                    c.a = Mathf.Clamp01((DamageLineLife - ln.T) / 0.3f);
+                    c.a = Mathf.Clamp01((DamageLineLife - ln.T) / 0.3f) * (ln.Leave >= 0f ? 1f - ln.Leave / 0.3f : 1f) * Mathf.Clamp01(ln.Slot + 1.2f);
                     float h = NumberFont.Height * lp;
-                    NumberFont.Draw(new Vector2(sp.x, y - h * 0.5f - hop), ln.Text, lp, c);
-                    y -= Mathf.Max(lineH, h * 0.95f);
+                    NumberFont.Draw(new Vector2(sp.x, y - h * 0.5f - ln.Slot * lineH), ln.Text, lp, c);
                 }
             }
         }
