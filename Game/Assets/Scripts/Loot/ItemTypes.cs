@@ -44,7 +44,7 @@ namespace VividOfFade
 
         static readonly string[] labels = { "Common", "Magic", "Rare", "Legendary", "Relic", "Mythic" };
         static readonly string[] labelsJa = { "並", "良", "稀", "伝承", "灯宝", "神話" };
-        static readonly int[] salvage = { 1, 3, 8, 20, 50, 100 };
+        static readonly int[] salvage = { 2, 6, 16, 40, 100, 200 }; // 前の2倍。さらにレベルで増える（Town.SalvageValue）
 
         public static Color ColorOf(Rarity r) => colors[(int)r];
 

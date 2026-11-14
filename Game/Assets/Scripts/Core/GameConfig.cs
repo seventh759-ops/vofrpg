@@ -218,7 +218,8 @@ namespace VividOfFade
         public const float BossRarityBonus = 1.5f;
 
         // ドロップ
-        public const float ItemDropChance = 0.04f;   // 雑魚1体あたり
+        public const float ItemDropMult = 0.6f;      // 装備の落ちる量の全体の倍率（多すぎたので減らし、その分火種を増やした）
+        public const float ItemDropChance = 0.04f * ItemDropMult;   // 雑魚1体あたり
         public const float EmberDropChance = 0.3f;
         public const float MagnetRange = 2.2f;
         public const float VacuumDelay = 1.2f;   // 波を全滅させてから、地面のドロップを全部吸い寄せるまで
@@ -227,7 +228,7 @@ namespace VividOfFade
         // 噴水の数は上限を設ける。火種は粒の数を増やしすぎず、1粒の量で増やす
         public static int FountainItems(int wave) => Mathf.Min(3 + wave / 2, 10);
         public static int FountainEmberOrbs(int wave) => Mathf.Min(6 + wave, 16);
-        public const float EmberMult = 1.5f; // 火種の量の倍率（少なかったので 1.5倍にした）
+        public const float EmberMult = 2.1f; // 火種の量の倍率（1.5倍 → 装備の落ちる量を減らした分、2.1倍に）
         // 特別な相手・宝箱の火種（1粒の量の倍率）。強化・再抽選に使う量に見合うように多めにした
         public const int GoldenEmberMult = 6;  // 黄金のスライム（前は2）
         public const int ChestEmberMult = 3;   // 宝箱（前は1）

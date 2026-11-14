@@ -223,9 +223,9 @@ namespace VividOfFade
             return sum;
         }
 
-        /// <summary>分解・売却で得る火種。珍しさの分に、強化に使った火種の半分を足す。</summary>
+        /// <summary>分解・売却で得る火種。珍しさの分（レベルが高いほど多い：Lv1 で1倍、Lv50 で2倍、Lv100 で3倍）に、強化に使った火種の半分を足す。</summary>
         public static int SalvageValue(Item it) =>
-            RarityInfo.SalvageOf(it.Rarity) + (it.Enhance > 0 ? Mathf.RoundToInt(EnhanceSpent(it) * EnhanceRefund) : 0);
+            Mathf.RoundToInt(RarityInfo.SalvageOf(it.Rarity) * (1f + Mathf.Max(0, it.Level - 1) / 49.5f)) + (it.Enhance > 0 ? Mathf.RoundToInt(EnhanceSpent(it) * EnhanceRefund) : 0);
 
         /// <summary>効果の再抽選の値段。</summary>
         /// <summary>再抽選の値段。ロックした効果が1つ増えるごとに倍になる（0:x1 1:x2 2:x4 3:x8）。</summary>
