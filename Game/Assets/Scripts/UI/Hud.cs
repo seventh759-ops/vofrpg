@@ -248,14 +248,14 @@ namespace VividOfFade
 
                 // 消費 MP（右下に小さく）
                 cost.normal.textColor = enoughMp ? new Color(0.65f, 0.8f, 1f) : new Color(1f, 0.5f, 0.5f);
-                GUI.Label(new Rect(r.x, r.y, r.width - r.width * 0.06f, r.height - r.height * 0.02f), mpCost.ToString(), cost);
+                NumberFont.DrawIn(new Rect(r.x, r.yMax - r.height * 0.34f, r.width * 0.94f, r.height * 0.32f), mpCost.ToString(), cost.normal.textColor, TextAnchor.MiddleRight, 1f);
 
                 // キー（PC は左上に 1・2・3。薬の Q・E と同じ）
                 if (!Application.isMobilePlatform)
                 {
                     var keyStyle = new GUIStyle(cost) { alignment = TextAnchor.UpperLeft };
                     keyStyle.normal.textColor = new Color(1f, 1f, 1f, 0.8f);
-                    GUI.Label(new Rect(r.x + r.width * 0.06f, r.y + r.height * 0.02f, r.width, r.height), (i + 1).ToString(), keyStyle);
+                    NumberFont.DrawIn(new Rect(r.x + r.width * 0.06f, r.y + r.height * 0.02f, r.width * 0.5f, r.height * 0.3f), (i + 1).ToString(), keyStyle.normal.textColor, TextAnchor.MiddleLeft, 1f);
                 }
 
                 // オート／手動の帯
@@ -282,8 +282,7 @@ namespace VividOfFade
                 GUI.color = new Color(1f, 1f, 1f, alpha);
                 DrawSprite(br, PixelArt.SkillIcon(player.BuffSpec(b)));
                 GUI.color = old;
-                secStyle.normal.textColor = new Color(1f, 1f, 1f, alpha);
-                GUI.Label(new Rect(br.x, br.y, br.width - 1f, br.height + secStyle.fontSize * 0.5f), $"{Mathf.CeilToInt(left)}", secStyle);
+                NumberFont.DrawIn(new Rect(br.x, br.yMax - bs * 0.2f, br.width, bs * 0.45f), $"{Mathf.CeilToInt(left)}", new Color(1f, 1f, 1f, alpha), TextAnchor.MiddleRight, 1f);
             }
             // 弱体効果：強化のアイコンの右に続けて（赤い縁のアイコン）。残り2秒を切ると点滅
             for (int d = 0; d < player.DebuffCount; d++)
@@ -295,8 +294,7 @@ namespace VividOfFade
                 GUI.color = new Color(1f, 1f, 1f, alpha);
                 DrawSprite(br, PixelArt.DebuffIcon(player.DebuffAt(d)));
                 GUI.color = old;
-                secStyle.normal.textColor = new Color(1f, 0.75f, 0.75f, alpha);
-                GUI.Label(new Rect(br.x, br.y, br.width - 1f, br.height + secStyle.fontSize * 0.5f), $"{Mathf.CeilToInt(left)}", secStyle);
+                NumberFont.DrawIn(new Rect(br.x, br.yMax - bs * 0.2f, br.width, bs * 0.45f), $"{Mathf.CeilToInt(left)}", new Color(1f, 0.75f, 0.75f, alpha), TextAnchor.MiddleRight, 1f);
             }
         }
 
@@ -324,9 +322,8 @@ namespace VividOfFade
                 GUI.color = old;
                 float cd = World.PotionCooldownRatio;
                 if (cd > 0f) Fill(new Rect(r.x, r.y, r.width, r.height * cd), new Color(0f, 0f, 0f, 0.6f));
-                count.normal.textColor = n > 0 ? Color.white : new Color(1f, 0.5f, 0.5f);
-                GUI.Label(new Rect(r.x, r.y, r.width - r.width * 0.06f, r.height - r.height * 0.02f), n.ToString(), count);
-                if (!Application.isMobilePlatform) GUI.Label(new Rect(r.x + r.width * 0.06f, r.y + r.height * 0.02f, r.width, r.height), hp ? "Q" : "E", key);
+                NumberFont.DrawIn(new Rect(r.x, r.yMax - r.height * 0.34f, r.width * 0.94f, r.height * 0.32f), n.ToString(), n > 0 ? Color.white : new Color(1f, 0.5f, 0.5f), TextAnchor.MiddleRight, 1f);
+                if (!Application.isMobilePlatform) NumberFont.DrawIn(new Rect(r.x + r.width * 0.06f, r.y + r.height * 0.02f, r.width * 0.5f, r.height * 0.3f), hp ? "Q" : "E", key.normal.textColor, TextAnchor.MiddleLeft, 1f);
             }
         }
 
@@ -1090,7 +1087,7 @@ namespace VividOfFade
             Fill(menuR, new Color(0.05f, 0.05f, 0.08f, 1f));
             Button(menuR, null, new Color(0f, 0f, 0f, 0.3f), centered, () => World.OpenMenu());
             var menuStyle = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
-            FitLabel(new Rect(menuR.x + menuR.width * 0.08f, menuR.y, menuR.width * 0.84f, menuR.height), "MENU", menuStyle);
+            NumberFont.DrawIn(new Rect(menuR.x + menuR.width * 0.08f, menuR.y, menuR.width * 0.84f, menuR.height), "MENU", Color.white);
             OrnateFrame(menuR, FrameGold, FrameT);
             if (notice)
             {
@@ -1104,7 +1101,7 @@ namespace VividOfFade
                 Fill(new Rect(badge.x + bsz * 0.15f, badge.y + bsz * 0.15f, bsz * 0.7f, bsz * 0.7f), new Color(0.9f, 0.15f, 0.15f, 1f));
                 Frame(new Rect(badge.x + bsz * 0.15f, badge.y + bsz * 0.15f, bsz * 0.7f, bsz * 0.7f), new Color(1f, 0.85f, 0.5f, 1f), Mathf.Max(1f, FrameT * 0.5f));
                 var bang = new GUIStyle(centered) { fontStyle = FontStyle.Bold, fontSize = Mathf.Max(8, Mathf.RoundToInt(bsz * 0.6f)) };
-                GUI.Label(badge, "!", bang);
+                NumberFont.DrawIn(badge, "!", Color.white, TextAnchor.MiddleCenter, 0.6f);
             }
 
             DrawSkillButtons(ch);
