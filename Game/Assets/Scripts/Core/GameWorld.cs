@@ -756,8 +756,8 @@ namespace VividOfFade
                 float t = Time.time;
                 float flick = 0.75f + 0.25f * Mathf.Sin(t * 3.1f) * Mathf.Sin(t * 7.3f + 1f);
                 altarBeam.transform.position = Iso.ToScreen(Room.AltarPos) + new Vector2(0f, 0.1f);
-                altarBeam.transform.localScale = new Vector3(1.1f, 3.2f * (0.9f + 0.1f * flick), 1f);
-                altarBeam.color = new Color(1f, 0.6f, 0.25f, 0.45f * flick);
+                altarBeam.transform.localScale = new Vector3(1f, 1.1f * (0.9f + 0.1f * flick), 1f); // 高さ約2マス（祭壇の少し上まで）
+                altarBeam.color = new Color(1f, 0.6f, 0.25f, 0.4f * flick);
                 altarBeam.sortingOrder = SortOrder.For(Room.AltarPos) - 1;
                 altarFlameTimer -= Time.deltaTime;
                 if (altarFlameTimer <= 0f)
