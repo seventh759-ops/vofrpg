@@ -244,6 +244,7 @@ namespace VividOfFade
             public float ChoirVol;           // 聖歌隊（和音を1オクターブ上で「あー」と歌う）
             public float BellVol;            // 4小節ごとに鳴る教会の鐘
             public float Reverb;             // 大聖堂の残響の量
+            public float Gain = 1f;          // 曲全体の大きさ（静かな曲は下げる）
         }
 
         sealed class Theme
@@ -576,36 +577,36 @@ namespace VividOfFade
             OBb = { 70, 74, 77 }, OAm = { 69, 72, 76 }, ODm = { 62, 65, 69 }, OG = { 67, 71, 74 };
 
         /// <summary>
-        /// アビス戦の曲：深淵の最奥なのに、天国のような明るさ。パイプオルガンのトッカータ風の分散和音と、
+        /// アビス戦の曲：深淵の最奥なのに、天国のような明るさ。音数を絞った静かなパイプオルガンと、
         /// 聖歌隊、教会の鐘、大聖堂の残響。長調に、遠い和音（Ⅲ・♭Ⅵ・♭Ⅶ・短いⅣ）を混ぜて、この世ならぬ響きに。
         /// </summary>
         static readonly Song AbyssBossSong = new Song
         {
-            Name = "abyss_final", Bpm = 116f,
+            Name = "abyss_final", Bpm = 92f,
             Chords = new[] { OC, OE, OF, OFm, OC, OAb, OBb, OC, OAm, OF, ODm, OG, OAb, OBb, OFm, OG },
             Lead = new[]
             {
-                79, -2, -2, -2, 76, -2, 79, -2,
-                83, -2, -2, -2, 80, -2, 76, -2,
+                79, -2, -2, -2, 76, -2, -2, -2,
+                83, -2, -2, -2, 80, -2, -2, -2,
                 81, -2, -2, -2, 84, -2, -2, -2,
-                80, -2, -2, -2, 77, -2, 72, -2,
-                76, -2, 79, -2, 84, -2, -2, -2,
-                84, -2, -2, -2, 80, -2, 75, -2,
-                77, -2, -2, -2, 74, -2, 82, -2,
+                80, -2, -2, -2, -2, -2, -1, -1,
+                76, -2, -2, -2, 79, -2, -2, -2,
+                84, -2, -2, -2, 80, -2, -2, -2,
+                77, -2, -2, -2, 74, -2, -2, -2,
                 79, -2, -2, -2, -2, -2, -1, -1,
-                81, -2, -2, 83, 84, -2, -2, -2,
-                81, -2, -2, -2, 77, -2, 72, -2,
-                74, -2, 77, -2, 81, -2, 86, -2,
-                83, -2, -2, -2, 79, -2, -2, -2,
-                84, -2, -2, -2, 87, -2, 84, -2,
-                86, -2, -2, -2, 82, -2, 77, -2,
-                80, -2, -2, -2, 84, -2, 89, -2,
+                81, -2, -2, -2, 83, -2, -2, -2,
+                81, -2, -2, -2, 77, -2, -2, -2,
+                74, -2, -2, -2, 77, -2, -2, -2,
+                83, -2, -2, -2, -2, -2, -1, -1,
+                84, -2, -2, -2, 87, -2, -2, -2,
+                86, -2, -2, -2, 82, -2, -2, -2,
+                80, -2, -2, -2, 84, -2, -2, -2,
                 86, -2, -2, -2, -2, -2, -1, -1,
             },
-            Lead1 = LeadKind.Organ, LeadVol = 0.09f,
-            Bass = BassKind.Sustain, BassVol = 0.2f, PadVol = 0.05f, ArpVol = 0.05f,
-            Kick = "x.......x.......", KickVol = 0.3f, Hat = "",
-            Echo = 0.15f, Church = true, ChoirVol = 0.05f, BellVol = 0.1f, Reverb = 0.45f,
+            Lead1 = LeadKind.Organ, LeadVol = 0.07f,
+            Bass = BassKind.Sustain, BassVol = 0.16f, PadVol = 0.05f, ArpVol = 0f,
+            Kick = "", Hat = "",
+            Echo = 0.2f, Church = true, ChoirVol = 0.07f, BellVol = 0.08f, Reverb = 0.6f, Gain = 0.75f,
         };
 
         /// <summary>区画の曲のボス戦版：同じ和音と旋律を、速く、四つ打ちと刻む低音で。</summary>
@@ -818,7 +819,7 @@ namespace VividOfFade
                     for (int k = 0; k < 16; k++)
                     {
                         int n = chord[k % chord.Length] + 12 * (1 + (k / chord.Length) % 2);
-                        if (s.Church) AddOrgan(echoBus, barStart + k * step, step, Freq(n), s.ArpVol, true);
+                        if (s.Church) { if (k % 2 == 0) AddOrgan(echoBus, barStart + k * step, step * 2, Freq(n), s.ArpVol, false); } // 8分音符で、やわらかい管で
                         else AddPluck(echoBus, barStart + k * step, step * 2, Freq(n), s.ArpVol, s.ArpSaw);
                     }
                 }
@@ -873,7 +874,7 @@ namespace VividOfFade
                 mix[i] = (music[i] + echoBus[i] + wet[i]) * duck[i] + drums[i] + (hall != null ? hall[i] * s.Reverb : 0f);
                 peak = Mathf.Max(peak, Mathf.Abs(mix[i]));
             }
-            float norm = 0.9f / peak;
+            float norm = 0.9f / peak * s.Gain;
             for (int i = 0; i < len; i++) mix[i] = Mathf.Clamp(mix[i] * norm, -1f, 1f);
 
             var clip = AudioClip.Create("bgm_" + s.Name, len, 1, Rate, false);
@@ -951,9 +952,9 @@ namespace VividOfFade
                 {
                     case LeadKind.Square: x = Mathf.Repeat(ph, 1f) < 0.3f ? 1f : -1f; break;
                     case LeadKind.Saw: x = (Saw(ph) + Saw(ph * 1.0015f)) * 0.5f; break;
-                    case LeadKind.Organ: // 主旋律のオルガン：明るいストップを重ねて、ゆれ（トレモロ）を少し
-                        x = (Mathf.Sin(2f * Mathf.PI * ph) + 0.55f * Mathf.Sin(4f * Mathf.PI * ph) + 0.3f * Mathf.Sin(6f * Mathf.PI * ph)
-                            + 0.3f * Mathf.Sin(8f * Mathf.PI * ph) + 0.12f * Mathf.Sin(12f * Mathf.PI * ph)) * 0.45f
+                    case LeadKind.Organ: // 主旋律のオルガン：やわらかい笛の管を重ねて、ゆれ（トレモロ）を少し
+                        x = (Mathf.Sin(2f * Mathf.PI * ph) + 0.4f * Mathf.Sin(4f * Mathf.PI * ph) + 0.12f * Mathf.Sin(6f * Mathf.PI * ph)
+                            + 0.1f * Mathf.Sin(8f * Mathf.PI * ph)) * 0.6f
                             * (1f + 0.06f * Mathf.Sin(2f * Mathf.PI * 6f * t));
                         break;
                     case LeadKind.Flute: x = Mathf.Sin(2f * Mathf.PI * ph) + 0.15f * Mathf.Sin(4f * Mathf.PI * ph); break;
