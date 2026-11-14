@@ -459,7 +459,7 @@ namespace VividOfFade
 
         void DrawDamageStacks(Camera cam)
         {
-            float px = Mathf.Max(2f, Mathf.Round(number.fontSize / 6.5f));
+            float px = Mathf.Max(2f, Mathf.Round(number.fontSize / 8.5f)); // 少し小さめ
             float lineH = NumberFont.Height * px * 0.95f;
             foreach (var st in damageStacks)
             {
