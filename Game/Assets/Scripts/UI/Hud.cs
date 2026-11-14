@@ -406,6 +406,7 @@ namespace VividOfFade
         sealed class DamageStack
         {
             public Vector2 World;  // 一番下（新しい行）の位置（画面のワールド座標）
+            public object Target;  // どの敵のログか（敵ごとに分ける）
             public float LastAdd;  // 最後に足した時刻
             public readonly List<DamageLine> Lines = new List<DamageLine>();
         }
@@ -417,7 +418,7 @@ namespace VividOfFade
         const float DamageJoinTime = 0.9f;
         const int MaxDamageStacks = 40;
 
-        public void AddNumber(Vector2 world, float amount, bool crit)
+        public void AddNumber(Vector2 world, float amount, bool crit, object target = null)
         {
             Vector2 p = Iso.ToScreen(world) + new Vector2(0f, 0.45f);
             float now = Time.unscaledTime;
@@ -426,13 +427,18 @@ namespace VividOfFade
             foreach (var st in damageStacks)
             {
                 if (now - st.LastAdd > DamageJoinTime) continue;
+                if (target != null)
+                {
+                    if (st.Target == target) { stack = st; break; } // 同じ敵だけに積む（近くのほかの敵とは混ぜない）
+                    continue;
+                }
                 float d = (st.World - p).sqrMagnitude;
                 if (d < best) { best = d; stack = st; }
             }
             if (stack == null)
             {
                 if (damageStacks.Count >= MaxDamageStacks) damageStacks.RemoveAt(0);
-                stack = new DamageStack();
+                stack = new DamageStack { Target = target };
                 damageStacks.Add(stack);
             }
             stack.World = p; // 敵が動いたら、ついていく

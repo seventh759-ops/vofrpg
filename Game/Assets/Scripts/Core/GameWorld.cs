@@ -930,7 +930,7 @@ namespace VividOfFade
             }
         }
 
-        void OnEnemyDamaged(Vector2 pos, float amount, bool crit)
+        void OnEnemyDamaged(Vector2 pos, float amount, bool crit, Enemy target)
         {
             // 深淵の星：会心のときに、その場所へ星が落ちてくる（少し遅れて）
             if (crit && starfallCooldown <= 0f && Player.Stats != null && Player.Stats.StarfallChance > 0f && Random.value < Player.Stats.StarfallChance)
@@ -939,7 +939,7 @@ namespace VividOfFade
                 starfalls.Add(new Vector3(pos.x, pos.y, 0.35f));
                 Fx.Marker(pos, 1.8f, new Color(0.6f, 0.95f, 1f, 0.45f), 0.35f);
             }
-            Hud.AddNumber(pos, amount, crit);
+            Hud.AddNumber(pos, amount, crit, target);
             Sfx.Hit();
 
             Player.MarkCombat();

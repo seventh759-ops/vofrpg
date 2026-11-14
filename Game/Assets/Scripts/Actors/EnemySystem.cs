@@ -18,7 +18,7 @@ namespace VividOfFade
         public int Kills { get; set; }
 
         /// <summary>ダメージを与えた（位置・量・会心か）。数字の表示と音に使う。</summary>
-        public event Action<Vector2, float, bool> Damaged;
+        public event Action<Vector2, float, bool, Enemy> Damaged; // 位置・ダメージ・会心・当たった敵
         /// <summary>倒した（位置）。ドロップや撃破時の効果に使う。</summary>
         public event Action<Vector2> Killed;
         /// <summary>ボスを倒した（位置）。</summary>
@@ -515,7 +515,7 @@ namespace VividOfFade
             // のけぞり。攻撃が速いと何度も足されて遠くまで飛ぶので、速さに上限をつける（1回のけぞると最大 0.4 マスほど）
             float knockMult = e.IsBoss ? 0.05f : e.Elite != EliteKind.None ? 0.5f : 1f; // ボスはほとんど、精鋭は半分しかのけぞらない
             e.Knock = Vector2.ClampMagnitude(e.Knock + dir * (crit ? 5f : 3f) * knockMult, MaxKnock * knockMult);
-            Damaged?.Invoke(e.Pos, amount, crit);
+            Damaged?.Invoke(e.Pos, amount, crit, e);
             if (e.Hp <= 0f)
             {
                 e.Dying = true;
