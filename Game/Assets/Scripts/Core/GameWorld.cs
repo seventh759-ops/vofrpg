@@ -514,6 +514,7 @@ namespace VividOfFade
             UpdateSlowMo();
             float dt = Mathf.Min(Time.deltaTime, 1f / 20f);
             Input.Poll();
+            if (Loader.Active) return; // 起動のロゴが出ている間は、タップやキーをゲームに渡さない（裏のタイトル画面は止めておく）
             if (Input.MusicPressed) Music.ToggleMute();
             if (!OnTitle && !EndingOpen && Profile.Current != null) Profile.Current.PlaySeconds += Time.unscaledDeltaTime; // 保存は、ほかの保存のついでに
             // 案内役の会話中は、決定キーで次へ。ほかの操作には使わない
@@ -1590,6 +1591,7 @@ namespace VividOfFade
 
         void OnTapped(Vector2 startPos)
         {
+            if (Loader.Active) return; // 起動のロゴが出ている間は、裏のタイトル画面を押さない
             if (Hud.Guide.Active)
             {
                 Hud.HandleTap(startPos); // 会話を進める

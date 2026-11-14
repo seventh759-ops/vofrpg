@@ -20,8 +20,14 @@ namespace VividOfFade
         bool loaded;          // 準備が終わった
         const float BrandMin = 2.6f; // ブランドロゴを最低これだけ見せる（準備が早く終わっても）
 
+        /// <summary>起動のロゴを出している間（ゲームには入力を渡さない）。</summary>
+        public static bool Active { get; private set; }
+
+        void OnDestroy() => Active = false;
+
         void Start()
         {
+            Active = true;
             Application.targetFrameRate = 60;
             StartCoroutine(Load());
         }
