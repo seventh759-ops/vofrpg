@@ -662,7 +662,7 @@ namespace VividOfFade
             }
             // 強化の紋章（右）と名前（左）
             float emblem = lineH * 2.4f;
-            if (item.Enhance > 0) Hud.DrawSprite(new Rect(W - pad - emblem, y - lineH * 0.2f, emblem, emblem), PixelArt.EnhanceEmblem(item.Enhance));
+            // 強化の段は名前の「+N」と、アイコンの枠の飾りで分かる（印は出さない）
             var nameRect = new Rect(pad, y, W - pad * 2f - emblem, lineH * 1.2f);
             var name = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
             name.normal.textColor = RarityInfo.ColorOf(item.Rarity);

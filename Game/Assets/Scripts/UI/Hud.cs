@@ -2000,17 +2000,54 @@ namespace VividOfFade
             Frame(new Rect(cell.x + t, cell.y + t, cell.width - t * 2f, cell.height - t * 2f), inner, t * 0.6f);
         }
 
+        /// <summary>
+        /// 強化した品：アイコンの枠の四隅に飾り金具を付け、段が上がるほど豪華にする。左上の角に「+N」。
+        /// +1〜4：金の小さな角金具／+5〜9：大きな角金具と鋲／+10〜14：火種の橙に光る角金具（ゆらめく）／+15：青白く脈打つ角金具。
+        /// </summary>
         public static void DrawEnhance(Rect cell, Item item)
         {
             if (item == null || item.Enhance <= 0) return;
-            // 枠の内側の右下に収める（はみ出さない）
-            float s = Mathf.Min(cell.width, cell.height) * 0.42f;
-            float m = cell.width * 0.03f;
-            var er = new Rect(cell.xMax - s - m, cell.yMax - s - m, s, s);
-            DrawSprite(er, PixelArt.EnhanceEmblem(item.Enhance)); // 火種の炎
-            // 強化の段：炎の左に「+N」を小さく
-            float nh = s * 0.45f;
-            NumberFont.DrawIn(new Rect(er.x - s * 0.9f, er.yMax - nh, s * 1.05f, nh), "+" + item.Enhance, item.Enhance >= 15 ? new Color(0.75f, 0.9f, 1f) : new Color(1f, 0.85f, 0.5f), TextAnchor.MiddleRight, 1f);
+            int lv = item.Enhance;
+            int tier = lv >= 15 ? 3 : lv >= 10 ? 2 : lv >= 5 ? 1 : 0;
+            float t = Time.unscaledTime;
+            float u = Mathf.Max(2f, Mathf.Round(cell.width * 0.045f)); // 金具の線の太さ
+            float len = cell.width * (tier == 0 ? 0.22f : 0.3f);       // 金具の長さ
+            Color main = tier == 3 ? Color.Lerp(new Color(0.55f, 0.8f, 1f), Color.white, 0.5f + 0.5f * Mathf.Sin(t * 3f))
+                       : tier == 2 ? Color.Lerp(new Color(1f, 0.5f, 0.15f), new Color(1f, 0.85f, 0.4f), 0.5f + 0.5f * Mathf.Sin(t * 5f) * Mathf.Sin(t * 2.3f))
+                       : FrameGold;
+            var dark = new Color(0.1f, 0.06f, 0.04f, 0.9f);
+            // 光る段は、角のまわりがにじむ
+            if (tier >= 2)
+            {
+                var gc = main; gc.a = 0.35f;
+                float gs = len * 1.4f;
+                foreach (var p in new[] { new Vector2(cell.x, cell.y), new Vector2(cell.xMax, cell.y), new Vector2(cell.x, cell.yMax), new Vector2(cell.xMax, cell.yMax) })
+                    Glow(p.x, p.y, gs, gc);
+            }
+            void Corner(float x, float y, float sx, float sy)
+            {
+                // L 字の角金具（暗い縁取り → 色）
+                Fill(new Rect(sx > 0 ? x - 1f : x - len - 1f + 1f, sy > 0 ? y - 1f : y - u - 1f + 1f, len + 2f, u + 2f), dark);
+                Fill(new Rect(sx > 0 ? x - 1f : x - u - 1f + 1f, sy > 0 ? y - 1f : y - len - 1f + 1f, u + 2f, len + 2f), dark);
+                Fill(new Rect(sx > 0 ? x : x - len, sy > 0 ? y : y - u, len, u), main);
+                Fill(new Rect(sx > 0 ? x : x - u, sy > 0 ? y : y - len, u, len), main);
+                if (tier >= 1)
+                {
+                    // 鋲：角の内側に小さな四角
+                    float st = u * 1.6f;
+                    var sr = new Rect(sx > 0 ? x + u * 1.6f : x - u * 1.6f - st, sy > 0 ? y + u * 1.6f : y - u * 1.6f - st, st, st);
+                    Fill(new Rect(sr.x - 1f, sr.y - 1f, sr.width + 2f, sr.height + 2f), dark);
+                    Fill(sr, Color.Lerp(main, Color.white, 0.35f));
+                }
+            }
+            Corner(cell.x, cell.y, 1, 1);
+            Corner(cell.xMax, cell.y, -1, 1);
+            Corner(cell.x, cell.yMax, 1, -1);
+            Corner(cell.xMax, cell.yMax, -1, -1);
+            // 左上の角に「+N」（ドット文字）
+            float nh = cell.height * 0.24f;
+            var nc = tier == 3 ? new Color(0.8f, 0.92f, 1f) : tier == 2 ? new Color(1f, 0.75f, 0.4f) : new Color(1f, 0.9f, 0.6f);
+            NumberFont.DrawIn(new Rect(cell.x + u * 1.2f, cell.y + u * 1.2f, cell.width * 0.6f, nh), "+" + lv, nc, TextAnchor.MiddleLeft, 1f);
         }
 
         public static void DrawSprite(Rect guiRect, Sprite sprite)
