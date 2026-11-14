@@ -54,22 +54,18 @@ namespace VividOfFade
         });
 
         /// <summary>
-        /// 階段の封印（階段と同じ 64×32 のひし形に重ねる）：鉄の格子、紅い縁取り、真ん中に金の錠前。
+        /// 階段の封印（階段と同じ 64×32 のひし形に重ねる）：紅い縁取り。
         /// </summary>
         public static Sprite StairsSeal
         {
             get
             {
-                const string key = "StairsSeal64";
+                const string key = "StairsSeal64b";
                 if (cache.TryGetValue(key, out var cached)) return cached;
                 const int w = 64, h = 32;
                 var px = new Color32[w * h];
-                var iron = new Color32(120, 122, 140, 255);
-                var ironLit = new Color32(175, 178, 195, 255);
                 var rim = new Color32(170, 35, 55, 255);
                 var rimDark = new Color32(90, 15, 30, 255);
-                var gold = new Color32(240, 200, 90, 255);
-                var goldDark = new Color32(150, 105, 35, 255);
                 for (int ty = 0; ty < h; ty++)
                 {
                     int sy = h - 1 - ty;
@@ -80,16 +76,7 @@ namespace VividOfFade
                         Color32 c = new Color32(0, 0, 0, 0);
                         if (d <= 1f)
                         {
-                            float a = (u + v) * 2.5f, b = (u - v) * 2.5f;
-                            float fa = a - Mathf.Floor(a), fb = b - Mathf.Floor(b);
-                            if (fa < 0.12f || fb < 0.12f) c = (fa < 0.06f || fb < 0.06f) ? ironLit : iron; // 鉄の格子
-                            if (d > 0.84f) c = d > 0.93f ? rimDark : rim;                                       // 紅い縁
-                            // 錠前（真ん中）：上に輪、下に四角い本体
-                            float lx = Mathf.Abs(u) * 32f, ly = -v * 16f; // ly は上が正（sy は上から数えるので反転）
-                            if (lx <= 4f && ly >= -4f && ly <= 1.5f) c = (lx >= 3f || ly <= -3f) ? goldDark : gold;
-                            if (ly > 1.5f && ly <= 5f && lx <= 3f && lx >= 1.5f) c = goldDark;
-                            if (ly > 4f && ly <= 5f && lx < 1.5f) c = goldDark;
-                            if (lx < 0.8f && ly > -2.6f && ly < -0.4f) c = new Color32(40, 25, 15, 255); // 鍵穴
+                            if (d > 0.84f) c = d > 0.93f ? rimDark : rim; // 紅い縁だけ（格子や錠前はなし）
                         }
                         px[ty * w + x] = c;
                     }
