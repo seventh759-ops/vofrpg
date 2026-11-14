@@ -53,7 +53,7 @@ namespace VividOfFade
 
         AudioClip unseal;
 
-        /// <summary>階段の封印が解けた：機械の電源が入って回り出すような「ぶーぅん」。</summary>
+        /// <summary>階段の封印が解けた：仕掛けが外れる「ガッコン」。</summary>
         public void Unseal()
         {
             if (unseal == null) unseal = MakeUnseal();
@@ -61,38 +61,47 @@ namespace VividOfFade
         }
 
         /// <summary>
-        /// 機械の電源が入って回り出すような音：カチッと入って、低い唸りが「ぶーぅん」と高くなりながら回転が上がり、
-        /// 風を切る音（こもった雑音）も一緒に上がって、一定の唸りに落ち着いてから消える。
+        /// 仕掛けが外れる「ガッコン」：金具がかみ合う硬い「ガッ」と、少し遅れて重い石の「コン」、最後に低い余韻。
         /// </summary>
         static AudioClip MakeUnseal()
         {
-            const float length = 2.8f;
+            const float length = 1.4f;
             int len = (int)(Rate * length);
             var data = new float[len];
-            float ph = 0f, ph2 = 0f, lp = 0f, lp2 = 0f;
-            uint seed = 12345u;
-            for (int i = 0; i < len; i++)
+            uint seed = 4242u;
+            float Noise()
+            {
+                seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5;
+                return (seed & 0xffff) / 32768f - 1f;
+            }
+            // 「ガッ」：短い雑音（こもらせる）と、金属っぽく響く数本の音がすぐ消える
+            float lp = 0f;
+            float[] gf = { 210f, 470f, 980f, 1530f };
+            float[] ga = { 1f, 0.7f, 0.45f, 0.25f };
+            for (int i = 0; i < (int)(Rate * 0.25f); i++)
             {
                 float t = (float)i / Rate;
-                float spin = 1f - Mathf.Exp(-t * 1.6f);                     // 回転の上がり方（はじめ速く、だんだん落ち着く）
-                float f = 38f + 72f * spin;                                  // 38Hz → 110Hz あたりまで上がる
-                f *= 1f + 0.004f * Mathf.Sin(2f * Mathf.PI * 7f * t);
+                lp += 0.25f * (Noise() - lp);
+                float v = lp * 2.2f * Mathf.Exp(-t * 60f);
+                for (int k = 0; k < gf.Length; k++) v += Mathf.Sin(2f * Mathf.PI * gf[k] * t) * ga[k] * Mathf.Exp(-t * (28f + k * 10f)) * 0.5f;
+                data[i] += v * 0.35f;
+            }
+            // 「コン」：0.17秒後、重く低い音（少し音が下がる）と、ぶつかった瞬間の鈍い雑音
+            int s2 = (int)(Rate * 0.17f);
+            float ph = 0f, ph2 = 0f, lp2 = 0f;
+            for (int i = 0; s2 + i < len; i++)
+            {
+                float t = (float)i / Rate;
+                float f = 105f * (1f + 0.25f * Mathf.Exp(-t * 25f));
                 ph += f / Rate;
-                ph2 += f * 1.006f / Rate;
-                float w = 2f * Mathf.PI;
-                float hum = Mathf.Sin(w * ph) + 0.6f * Mathf.Sin(w * ph * 2f) + 0.35f * Mathf.Sin(w * ph * 3f) + 0.15f * Mathf.Sin(w * ph * 5f)
-                          + 0.45f * Mathf.Sin(w * ph2 * 2f);
-                // 風を切る音：雑音を、回転に合わせて少しずつ明るくなるこもった音に
-                seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5;
-                float n = (seed & 0xffff) / 32768f - 1f;
-                float cut = 0.01f + 0.05f * spin;
-                lp += cut * (n - lp);
-                lp2 += cut * (lp - lp2);
-                float air = lp2 * 6f * spin;
-                // 電源が入る「カチッ」
-                float click = t < 0.012f ? n * (1f - t / 0.012f) * 0.8f : 0f;
-                float env = Mathf.Min(1f, t / 0.15f) * (0.55f + 0.45f * spin) * Mathf.Clamp01((length - t) / 0.9f);
-                data[i] = (hum * 0.2f + air * 0.25f) * env + click;
+                ph2 += f * 2.3f / Rate;
+                lp2 += 0.08f * (Noise() - lp2);
+                float v = Mathf.Sin(2f * Mathf.PI * ph) * Mathf.Exp(-t * 7f)
+                        + 0.5f * Mathf.Sin(2f * Mathf.PI * ph2) * Mathf.Exp(-t * 14f)
+                        + lp2 * 3f * Mathf.Exp(-t * 35f);
+                // 低い余韻（石が落ち着く）
+                v += 0.35f * Mathf.Sin(2f * Mathf.PI * 52f * t) * Mathf.Exp(-t * 3f) * Mathf.Min(1f, t / 0.03f);
+                data[s2 + i] += v * 0.32f * Mathf.Clamp01((length - (s2 + i) / (float)Rate) / 0.2f);
             }
             var clip = AudioClip.Create("unseal", len, 1, Rate, false);
             clip.SetData(data, 0);
