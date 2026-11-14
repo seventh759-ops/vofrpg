@@ -1168,6 +1168,7 @@ namespace VividOfFade
         public float DeathFade { get; private set; } = -1f;
         public const float DeathFadeReady = 1.6f;
         float crumbTimer;
+        float explodeFxWindow; int explodeFxCount; // 撃破時の爆発の炎の数を抑える
 
         void TickDeathFade(float dt)
         {
@@ -1265,13 +1266,17 @@ namespace VividOfFade
             {
                 const float radius = 1.4f;
                 // 撃破時の爆発：橙の閃光と、外へはじける炎（ふつうの倒れ方と見分けがつくように）
-                Fx.Disc(pos, radius, new Color(1f, 0.55f, 0.2f, 0.55f), 0.22f);
-                Fx.Ring(pos, radius, new Color(1f, 0.5f, 0.15f, 0.9f));
-                for (int k = 0; k < 8; k++)
+                // たくさん同時に爆発すると炎で埋まるので、炎を出すのは 0.1 秒に3つまで（ほかは輪と閃光だけ）
+                bool flames = Time.time - explodeFxWindow > 0.1f || explodeFxCount < 3;
+                if (Time.time - explodeFxWindow > 0.1f) { explodeFxWindow = Time.time; explodeFxCount = 0; }
+                Fx.Disc(pos, radius, new Color(1f, 0.55f, 0.2f, 0.45f), 0.2f);
+                Fx.Ring(pos, radius, new Color(1f, 0.5f, 0.15f, 0.8f));
+                if (flames) explodeFxCount++;
+                for (int k = 0; flames && k < 5; k++)
                 {
-                    float a = (k * 45f + Random.Range(-10f, 10f)) * Mathf.Deg2Rad;
+                    float a = (k * 72f + Random.Range(-10f, 10f)) * Mathf.Deg2Rad;
                     var d = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
-                    Fx.Emit(pos + d * 0.2f, 0.05f, PixelArt.Flame, Color.white, 0.32f, d * radius * 6f, 0.8f, 0f, 1.1f, 0.4f, 0f, 6f);
+                    Fx.Emit(pos + d * 0.2f, 0.05f, PixelArt.Flame, Color.white, 0.28f, d * radius * 6f, 0.8f, 0f, 0.9f, 0.3f, 0f, 6f);
                 }
                 Sfx.Boom();
                 exploding = true;
