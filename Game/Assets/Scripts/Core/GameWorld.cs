@@ -500,6 +500,7 @@ namespace VividOfFade
             holdSave = false;
             ShowClassSelect();
             OnTitle = true;
+            Music.SetTitle(true); // はじめからタイトルの曲（区画の曲がいったん鳴って、タイトルで頭から鳴り直さないように）
         }
 
         T AddChild<T>(string name) where T : Component
