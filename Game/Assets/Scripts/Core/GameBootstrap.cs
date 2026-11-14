@@ -15,8 +15,8 @@ namespace VividOfFade
         static void Boot()
         {
             if (SceneManager.GetActiveScene().name != PrototypeScene) return;
-            if (Object.FindAnyObjectByType<GameWorld>() != null) return;
-            new GameObject("GameWorld").AddComponent<GameWorld>();
+            if (Object.FindAnyObjectByType<GameWorld>() != null || Object.FindAnyObjectByType<Loader>() != null) return;
+            new GameObject("Loader").AddComponent<Loader>(); // 読み込み画面を出しながら準備して、終わったら GameWorld を作る
         }
     }
 }

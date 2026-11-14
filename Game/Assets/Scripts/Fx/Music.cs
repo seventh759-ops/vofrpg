@@ -31,7 +31,34 @@ namespace VividOfFade
 
         /// <summary>テーマの番号 0 は「区画ごと」。1 から先が固定のテーマ。</summary>
         const int ZoneMode = 0;
-        readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
+        static readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>(); // 作った曲（起動の読み込み画面で先に作っておける）
+
+        /// <summary>起動のときに先に作っておく曲（タイトル・町・最初に流れる区画の曲とそのボス戦）。名前と、作る処理（別のスレッドで動かせる）。</summary>
+        public static List<(string name, System.Func<float[]> work)> StartupSongs()
+        {
+            var list = new List<(string, System.Func<float[]>)>();
+            void Add(Song s) { if (!clips.ContainsKey(s.Name)) list.Add((s.Name, () => RenderData(s))); }
+            Add(TitleSong);
+            Add(Profile.AbyssUnlocked ? AbyssTownSong : TownSong);
+            int t = ((Profile.MusicTheme % ThemeCount) + ThemeCount) % ThemeCount;
+            if (t == ZoneMode) { Add(ZoneSongs[0]); Add(BossOf(ZoneSongs[0])); }
+            else { Add(Themes[t - 1].Normal); Add(Themes[t - 1].Boss); }
+            return list;
+        }
+
+        /// <summary>別のスレッドで作った曲のデータから、曲を作って取っておく（メインのスレッドで呼ぶ）。</summary>
+        public static void StoreRendered(string name, float[] data)
+        {
+            if (clips.ContainsKey(name) || data == null) return;
+            clips[name] = MakeClip(name, data);
+        }
+
+        static AudioClip MakeClip(string name, float[] mix)
+        {
+            var clip = AudioClip.Create("bgm_" + name, mix.Length, 1, Rate, false);
+            clip.SetData(mix, 0);
+            return clip;
+        }
 
         public static int ThemeCount => Themes.Length + 1;
         public string ThemeName => theme == ZoneMode ? Loc.T("By zone", "区画ごと") : theme > 0 ? Themes[theme - 1].Name : "";
@@ -761,7 +788,10 @@ namespace VividOfFade
 
         // ================= 曲を作る =================
 
-        static AudioClip Render(Song s)
+        static AudioClip Render(Song s) => MakeClip(s.Name, RenderData(s));
+
+        /// <summary>曲のデータを作る（計算だけなので、別のスレッドでも動かせる）。</summary>
+        static float[] RenderData(Song s)
         {
             float sixteenth = 60f / s.Bpm / 4f;
             int step = Mathf.RoundToInt(sixteenth * Rate);
@@ -876,10 +906,7 @@ namespace VividOfFade
             }
             float norm = 0.9f / peak * s.Gain;
             for (int i = 0; i < len; i++) mix[i] = Mathf.Clamp(mix[i] * norm, -1f, 1f);
-
-            var clip = AudioClip.Create("bgm_" + s.Name, len, 1, Rate, false);
-            clip.SetData(mix, 0);
-            return clip;
+            return mix;
         }
 
         static bool Hit(string pattern, int k) => !string.IsNullOrEmpty(pattern) && k < pattern.Length && pattern[k] == 'x';
