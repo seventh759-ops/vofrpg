@@ -45,8 +45,10 @@ namespace VividOfFade
             // 見出しと閉じるボタン
             float btnH = H * 0.045f;
             var chB = Profile.Current;
-            string shardB = chB != null && (chB.AbyssShards > 0 || GameConfig.CanEnterAbyss(chB)) ? Loc.T($"   SHARDS {chB.AbyssShards}", $"   欠片 {chB.AbyssShards}") : ""; // 深淵の欠片（深淵へ行けるようになったら）
-            GUI.Label(new Rect(pad, pad, W, btnH), Loc.T($"BAG {inv.Bag.Count}/{Inventory.BagCapacity}   EMBERS {inv.Embers}", $"鞄 {inv.Bag.Count}/{Inventory.BagCapacity}   火種 {inv.Embers}") + shardB, hud.LabelStyle);
+            string shardB = chB != null && (chB.AbyssShards > 0 || GameConfig.CanEnterAbyss(chB)) ? Loc.T($"  SHARDS {chB.AbyssShards}", $"   欠片 {chB.AbyssShards}") : ""; // 深淵の欠片（深淵へ行けるようになったら）
+            // 閉じるボタンの手前まで。入りきらなければ字を小さくする（英語版で重ならないように）
+            var headStyle = new GUIStyle(hud.LabelStyle) { alignment = TextAnchor.MiddleLeft };
+            Hud.FitLabel(new Rect(pad, pad, W - pad * 2f - W * 0.22f - W * 0.02f, btnH), Loc.T($"BAG {inv.Bag.Count}/{Inventory.BagCapacity}  EMBERS {inv.Embers}", $"鞄 {inv.Bag.Count}/{Inventory.BagCapacity}   火種 {inv.Embers}") + shardB, headStyle);
             hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.OpenPanel(false, false, false)); // 町で開いたときは、ここで装備を保存する
 
             // 装備欄
