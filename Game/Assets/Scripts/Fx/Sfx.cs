@@ -53,7 +53,7 @@ namespace VividOfFade
 
         AudioClip unseal;
 
-        /// <summary>階段の封印が解けた：低く響く「ぶぅーん」。</summary>
+        /// <summary>階段の封印が解けた：機械の電源が入って回り出すような「ぶーぅん」。</summary>
         public void Unseal()
         {
             if (unseal == null) unseal = MakeUnseal();
@@ -61,26 +61,38 @@ namespace VividOfFade
         }
 
         /// <summary>
-        /// 低い唸り：60Hz あたりから少し上がって落ち着く低音に、2倍・3倍の音（スマホのスピーカーでも聞こえるように）。
-        /// 少しずれた2つの音でうなりを付け、ゆっくりふくらんで消える。
+        /// 機械の電源が入って回り出すような音：カチッと入って、低い唸りが「ぶーぅん」と高くなりながら回転が上がり、
+        /// 風を切る音（こもった雑音）も一緒に上がって、一定の唸りに落ち着いてから消える。
         /// </summary>
         static AudioClip MakeUnseal()
         {
-            int len = (int)(Rate * 2.6f);
+            const float length = 2.8f;
+            int len = (int)(Rate * length);
             var data = new float[len];
-            float ph = 0f, ph2 = 0f;
+            float ph = 0f, ph2 = 0f, lp = 0f, lp2 = 0f;
+            uint seed = 12345u;
             for (int i = 0; i < len; i++)
             {
                 float t = (float)i / Rate;
-                float f = 58f + 14f * (1f - Mathf.Exp(-t * 6f));           // ぶっ → ぅーん と少し上がる
-                f *= 1f + 0.006f * Mathf.Sin(2f * Mathf.PI * 5f * t);       // 小さなゆれ
+                float spin = 1f - Mathf.Exp(-t * 1.6f);                     // 回転の上がり方（はじめ速く、だんだん落ち着く）
+                float f = 38f + 72f * spin;                                  // 38Hz → 110Hz あたりまで上がる
+                f *= 1f + 0.004f * Mathf.Sin(2f * Mathf.PI * 7f * t);
                 ph += f / Rate;
-                ph2 += f * 1.007f / Rate;                                    // わずかにずらして、うなり
+                ph2 += f * 1.006f / Rate;
                 float w = 2f * Mathf.PI;
-                float v = Mathf.Sin(w * ph) + 0.55f * Mathf.Sin(w * ph * 2f) + 0.3f * Mathf.Sin(w * ph * 3f) + 0.12f * Mathf.Sin(w * ph * 4f)
-                        + 0.5f * Mathf.Sin(w * ph2 * 2f);
-                float env = Mathf.Min(1f, t / 0.06f) * Mathf.Exp(-t * 0.9f) * (1f + 0.3f * Mathf.Exp(-t * 4f)) * Mathf.Clamp01((2.6f - t) / 0.4f); // 長めに響いて消える
-                data[i] = v * env * 0.22f;
+                float hum = Mathf.Sin(w * ph) + 0.6f * Mathf.Sin(w * ph * 2f) + 0.35f * Mathf.Sin(w * ph * 3f) + 0.15f * Mathf.Sin(w * ph * 5f)
+                          + 0.45f * Mathf.Sin(w * ph2 * 2f);
+                // 風を切る音：雑音を、回転に合わせて少しずつ明るくなるこもった音に
+                seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5;
+                float n = (seed & 0xffff) / 32768f - 1f;
+                float cut = 0.01f + 0.05f * spin;
+                lp += cut * (n - lp);
+                lp2 += cut * (lp - lp2);
+                float air = lp2 * 6f * spin;
+                // 電源が入る「カチッ」
+                float click = t < 0.012f ? n * (1f - t / 0.012f) * 0.8f : 0f;
+                float env = Mathf.Min(1f, t / 0.15f) * (0.55f + 0.45f * spin) * Mathf.Clamp01((length - t) / 0.9f);
+                data[i] = (hum * 0.2f + air * 0.25f) * env + click;
             }
             var clip = AudioClip.Create("unseal", len, 1, Rate, false);
             clip.SetData(data, 0);
