@@ -440,6 +440,7 @@ namespace VividOfFade
 
             Player = AddChild<Player>("Player");
             Player.Sr = Player.gameObject.AddComponent<SpriteRenderer>();
+            Player.transform.localScale = new Vector3(GameConfig.PlayerScale, GameConfig.PlayerScale, 1f); // 敵に埋もれないよう少し大きく
             Player.Sr.sprite = PixelArt.Player;
             Player.AutoAttack = Profile.AutoAttackSetting; // 保存した設定を読み込む
             Player.Dodged += OnPlayerDodged;

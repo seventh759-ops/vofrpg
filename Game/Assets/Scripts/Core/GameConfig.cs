@@ -135,6 +135,7 @@ namespace VividOfFade
         public const float BossWindup = 0.8f;
         public const float BossSlamRadius = 2.6f;
         // 深淵の最奥のボス「アビス」：ほかのボスより強い。歴代のボスを呼び出す
+        public const float PlayerScale = 1.15f;            // プレイヤーの見た目の大きさ（当たり判定は変えない。足元の位置はそのまま）
         public const float FinalBossHpMult = 2.5f;          // ふつうのボスの何倍か
         public const float FinalBossDamageMult = 1.3f;
         public const float SummonedBossHpShare = 0.06f;     // 呼び出したボスの体力（アビスの最大体力に対して）

@@ -97,7 +97,8 @@ namespace VividOfFade
             set
             {
                 pos = value;
-                transform.position = Iso.ToScreen(value);
+                // 絵は中心が原点。大きくした分だけ上へずらし、足元の位置を変えない
+                transform.position = Iso.ToScreen(value) + new Vector2(0f, (GameConfig.PlayerScale - 1f) * 0.5f);
             }
         }
 

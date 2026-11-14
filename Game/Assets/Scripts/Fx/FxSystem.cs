@@ -107,7 +107,7 @@ namespace VividOfFade
 
         /// <summary>羽がぶわっと開いた瞬間（画面を少し揺らす）。</summary>
         public event System.Action WingsOpened;
-        const float WingTopHeight = 1.05f;        // 上がりきった高さ（頭の少し上）
+        const float WingTopHeight = 1.05f + (GameConfig.PlayerScale - 1f);        // 上がりきった高さ（頭の少し上）
         bool wingBurst;
 
         /// <summary>羽の付け根の、今の高さ（「LV UP」の文字を合わせる）。</summary>
