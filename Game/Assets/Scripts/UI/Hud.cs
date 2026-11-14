@@ -391,16 +391,94 @@ namespace VividOfFade
             });
         }
 
+        // ---- ダメージの数字：敵ごとに、ログのように縦に積み上がる（古いものが上、新しいものが下。多くなったら古いものから消える） ----
+        sealed class DamageLine
+        {
+            public string Text;
+            public Color Color;
+            public bool Big;
+            public float T;
+        }
+
+        sealed class DamageStack
+        {
+            public Vector2 World;  // 一番下（新しい行）の位置（画面のワールド座標）
+            public float LastAdd;  // 最後に足した時刻
+            public readonly List<DamageLine> Lines = new List<DamageLine>();
+        }
+
+        readonly List<DamageStack> damageStacks = new List<DamageStack>();
+        const int MaxDamageLines = 4;      // 1つの敵に出す行の数
+        const float DamageLineLife = 1.1f; // 1行が消えるまで
+        const float DamageJoinDist = 0.7f; // この近さなら同じ敵の行として積む
+        const float DamageJoinTime = 0.9f;
+        const int MaxDamageStacks = 40;
+
         public void AddNumber(Vector2 world, float amount, bool crit)
         {
-            if (numbers.Count >= MaxNumbers) numbers.RemoveAt(0);
-            numbers.Add(new FloatNumber
+            Vector2 p = Iso.ToScreen(world) + new Vector2(0f, 0.45f);
+            float now = Time.unscaledTime;
+            DamageStack stack = null;
+            float best = DamageJoinDist * DamageJoinDist;
+            foreach (var st in damageStacks)
             {
-                World = Iso.ToScreen(world) + new Vector2(UnityEngine.Random.Range(-0.15f, 0.15f), 0.4f),
+                if (now - st.LastAdd > DamageJoinTime) continue;
+                float d = (st.World - p).sqrMagnitude;
+                if (d < best) { best = d; stack = st; }
+            }
+            if (stack == null)
+            {
+                if (damageStacks.Count >= MaxDamageStacks) damageStacks.RemoveAt(0);
+                stack = new DamageStack();
+                damageStacks.Add(stack);
+            }
+            stack.World = p; // 敵が動いたら、ついていく
+            stack.LastAdd = now;
+            stack.Lines.Add(new DamageLine
+            {
                 Text = Mathf.RoundToInt(amount).ToString(),
                 Color = crit ? new Color(1f, 0.85f, 0.2f) : Color.white,
                 Big = crit,
             });
+            if (stack.Lines.Count > MaxDamageLines) stack.Lines.RemoveAt(0); // 古いものから消える
+        }
+
+        void TickDamageStacks(float dt)
+        {
+            for (int i = damageStacks.Count - 1; i >= 0; i--)
+            {
+                var st = damageStacks[i];
+                for (int j = st.Lines.Count - 1; j >= 0; j--)
+                {
+                    st.Lines[j].T += dt;
+                    if (st.Lines[j].T >= DamageLineLife) st.Lines.RemoveAt(j);
+                }
+                if (st.Lines.Count == 0) damageStacks.RemoveAt(i);
+            }
+        }
+
+        void DrawDamageStacks(Camera cam)
+        {
+            float px = Mathf.Max(2f, Mathf.Round(number.fontSize / 6.5f));
+            float lineH = NumberFont.Height * px * 0.95f;
+            foreach (var st in damageStacks)
+            {
+                Vector3 sp = cam.WorldToScreenPoint(new Vector3(st.World.x, st.World.y, 0f));
+                float y = Screen.height - sp.y;
+                // 下（新しい）から上へ並べる
+                for (int j = st.Lines.Count - 1; j >= 0; j--)
+                {
+                    var ln = st.Lines[j];
+                    float lp = px * (ln.Big ? 1.4f : 1f);
+                    if (ln.Big) lp *= 1f + 0.35f * Mathf.Clamp01(1f - ln.T * 6f); // 会心は出た瞬間ふくらむ
+                    float slide = Mathf.Clamp01(ln.T / 0.08f);                 // 出た瞬間は少し下から
+                    var c = ln.Color;
+                    c.a = Mathf.Clamp01((DamageLineLife - ln.T) / 0.3f);
+                    float h = NumberFont.Height * lp;
+                    NumberFont.Draw(new Vector2(sp.x, y - h * 0.5f + (1f - slide) * lineH * 0.4f), ln.Text, lp, c);
+                    y -= Mathf.Max(lineH, h * 0.95f);
+                }
+            }
         }
 
         float levelUpTime = -1f;
@@ -562,6 +640,7 @@ namespace VividOfFade
                 numbers[i].T += dt;
                 if (numbers[i].T >= numbers[i].Life) numbers.RemoveAt(i);
             }
+            TickDamageStacks(dt);
             for (int i = toasts.Count - 1; i >= 0; i--)
             {
                 toasts[i].T += dt;
@@ -1247,6 +1326,7 @@ namespace VividOfFade
         {
             var cam = Camera.main;
             if (cam == null) return;
+            DrawDamageStacks(cam);
             foreach (var n in numbers)
             {
                 float t = n.T / n.Life;
