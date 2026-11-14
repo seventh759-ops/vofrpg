@@ -469,12 +469,15 @@ namespace VividOfFade
             for (int i = damageStacks.Count - 1; i >= 0; i--)
             {
                 var st = damageStacks[i];
+                // 敵が倒れたら、そのログは早めに消える（3倍の速さで時間が進む）
+                bool dead = st.Target is Enemy en && (en.Dying || !en.gameObject.activeSelf);
+                float lineDt = dead ? dt * 3f : dt;
                 // 行の位置：新しい行が一番下（0）、古いほど上。ばねで動かすので、下から跳ね上がって少し行き過ぎてから落ち着く
                 int rank = 0;
                 for (int j = st.Lines.Count - 1; j >= 0; j--)
                 {
                     var ln = st.Lines[j];
-                    ln.T += dt;
+                    ln.T += lineDt;
                     float target;
                     if (ln.Leave >= 0f) { ln.Leave += dt; target = MaxDamageLines + ln.Leave * 3f; }
                     else target = rank++;
