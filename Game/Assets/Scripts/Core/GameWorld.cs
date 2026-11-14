@@ -724,7 +724,7 @@ namespace VividOfFade
                 Fx.Ring(Room.StairsPos, 2f, new Color(0.4f, 0.7f, 1f, 0.9f), 0.5f);
                 Fx.Disc(Room.StairsPos, 1.6f, new Color(0.4f, 0.7f, 1f, 0.5f), 0.5f);
                 Hud.Toast(Loc.T("The stairs are unsealed", "階段の封印が解けた"), new Color(0.6f, 0.85f, 1f));
-                Sfx.Unseal();
+                Sfx.Landed(Rarity.Rare); // 封印が解けた音は、もとの効果音（専用の音は Sfx.Unseal に残してある）
             }
             // 普通の層では、封印中も階段は見える（暗く）。ボスの層は倒すまで隠す
             stairs.enabled = Floors.StairsOpen || !Floors.IsBossFloor;
