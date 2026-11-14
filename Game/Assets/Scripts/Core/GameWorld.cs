@@ -443,6 +443,7 @@ namespace VividOfFade
             Player.Sr.sprite = PixelArt.Player;
             Player.AutoAttack = Profile.AutoAttackSetting; // 保存した設定を読み込む
             Player.Dodged += OnPlayerDodged;
+            Fx.WingsOpened += () => cameraRig.Shake(0.12f, 0.22f); // 羽が開いた重さ
             Enemies.PastBossSummoned += OnPastBossSummoned;
             Player.Hurt += OnPlayerHurt;
             Player.Evaded += pos => Hud.AddMiss(pos, true);

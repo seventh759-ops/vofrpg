@@ -466,10 +466,11 @@ namespace VividOfFade
             var cam = Camera.main;
             if (cam == null) return;
             // 羽が頭の上で開いた瞬間に出て、羽と一緒に上がりながら消える
-            float t = levelUpTime - FxSystem.WingRiseTime;
+            const float showAt = FxSystem.WingOpenAt + 0.08f; // 羽が開ききったところで
+            float t = levelUpTime - showAt;
             if (t < 0f) return;
-            const float fadeFrom = 0.95f - FxSystem.WingRiseTime;
-            float alpha = Mathf.Clamp01(t / 0.08f) * (t > fadeFrom ? Mathf.Clamp01(1f - (t - fadeFrom) / (FxSystem.LevelUpDuration - FxSystem.WingRiseTime - fadeFrom)) : 1f);
+            const float fadeFrom = 1.15f - showAt;
+            float alpha = Mathf.Clamp01(t / 0.06f) * (t > fadeFrom ? Mathf.Clamp01(1f - (t - fadeFrom) / (FxSystem.LevelUpDuration - showAt - fadeFrom)) : 1f);
             var head = Iso.ToScreen(World.Player.Pos) + new Vector2(0f, World.Fx.WingHeight); // 羽の付け根と同じ高さ
             Vector3 sp = cam.WorldToScreenPoint(new Vector3(head.x, head.y, 0f));
             // ドット絵の「LV UP」。画面の大きさに合わせて整数倍で拡大（にじまないように）

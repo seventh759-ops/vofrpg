@@ -40,7 +40,7 @@ namespace VividOfFade
         const int MaxParticles = 400;
 
         // レベルアップの羽（頭の上で開いて、上がりながら消える）
-        public const float LevelUpDuration = 1.7f;
+        public const float LevelUpDuration = 1.9f;
         const float WingOpacity = 0.9f;
         readonly SpriteRenderer[] wingGlows = new SpriteRenderer[2]; // 羽の後ろの、大きな金色の光
         float featherTimer;
@@ -87,8 +87,13 @@ namespace VividOfFade
 
         // 羽の動き：畳んだまま足元から頭の上へ上がり → ぶわっと開いて → きらめきながら消える
         public const float WingRiseTime = 0.45f;  // 上がりきるまで
-        const float WingOpenTime = 0.18f;         // 開ききるまで
-        const float WingFadeFrom = 0.95f;         // 消え始める
+        const float WingHoldTime = 0.14f;         // 上がりきったあと、力をためる（少し縮んで沈む）
+        const float WingOpenTime = 0.42f;         // 開いて、行き過ぎて、落ち着くまで
+        public const float WingOpenAt = WingRiseTime + WingHoldTime; // 開き始め（「LV UP」もこのあと出る）
+        const float WingFadeFrom = 1.15f;         // 消え始める
+
+        /// <summary>羽がぶわっと開いた瞬間（画面を少し揺らす）。</summary>
+        public event System.Action WingsOpened;
         const float WingTopHeight = 1.05f;        // 上がりきった高さ（頭の少し上）
         bool wingBurst;
 
@@ -107,12 +112,17 @@ namespace VividOfFade
             }
             float r = Mathf.Clamp01(wingT / WingRiseTime);
             r = 1f - (1f - r) * (1f - r); // すっと上がって、頭の上で止まる
-            float open = Mathf.Clamp01((wingT - WingRiseTime) / WingOpenTime);
-            open = 1f - (1f - open) * (1f - open) * (1f - open);
-            float overshoot = Mathf.Sin(open * Mathf.PI) * 0.18f; // 開いた瞬間だけ大きくふくらむ
-            float angle = Mathf.Lerp(80f, -18f, open);             // 畳んだ形から、少し上向きに広げる
-            float scale = Mathf.Lerp(0.55f, 1.5f, open) + overshoot;
-            float drift = wingT > WingFadeFrom ? (wingT - WingFadeFrom) * 0.5f : 0f;
+            // ため：上がりきったら、ぎゅっと縮んで少し沈む
+            float hold = Mathf.Clamp01((wingT - WingRiseTime) / WingHoldTime);
+            float squeeze = Mathf.Sin(hold * Mathf.PI * 0.5f) * (wingT < WingOpenAt ? 1f : 0f);
+            // 開く：重く押し広げて、行き過ぎてから戻る（減衰するばね）
+            float u = Mathf.Max(0f, wingT - WingOpenAt);
+            float open = u <= 0f ? 0f : 1f - Mathf.Exp(-u * 7f) * Mathf.Cos(u * 12f);
+            float angle = Mathf.LerpUnclamped(80f, -18f, open) + squeeze * 8f; // 畳んだ形から、少し上向きに広げる
+            float scale = Mathf.LerpUnclamped(0.55f, 1.5f, open) - squeeze * 0.1f;
+            float dip = squeeze * 0.1f;
+            float drift = (wingT > WingFadeFrom ? (wingT - WingFadeFrom) * 0.5f : 0f) - dip;
+            open = Mathf.Clamp01(open);
             float alpha = Mathf.Clamp01(wingT / 0.1f) * (wingT > WingFadeFrom ? 1f - (wingT - WingFadeFrom) / (LevelUpDuration - WingFadeFrom) : 1f);
             WingHeight = Mathf.Lerp(0.1f, WingTopHeight, r) + drift;
 
@@ -134,15 +144,17 @@ namespace VividOfFade
             var white = new Color(1f, 1f, 0.97f);
             var gold = new Color(1f, 0.86f, 0.5f);
             // 開いた瞬間：光の粒がぶわっと広がる
-            if (!wingBurst && wingT >= WingRiseTime)
+            if (!wingBurst && wingT >= WingOpenAt)
             {
                 wingBurst = true;
+                WingsOpened?.Invoke();
+                Ring(Anchor, 2.2f, new Color(1f, 0.95f, 0.8f, 0.8f), 0.3f);
                 Sparks(Anchor, 22, white, 3.2f, 0.7f, 1.2f, false, WingHeight);
                 Sparks(Anchor, 12, gold, 2.2f, 0.9f, 1.5f, true, WingHeight - 0.2f);
             }
             featherTimer -= dt;
             if (featherTimer > 0f) return;
-            if (wingT < WingRiseTime)
+            if (wingT < WingOpenAt)
             {
                 // 上がる間：細い光の尾
                 featherTimer = 0.05f;
