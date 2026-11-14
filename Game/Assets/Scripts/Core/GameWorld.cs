@@ -830,6 +830,7 @@ namespace VividOfFade
             Inventory.Embers -= cost;
             Player.AddBoon(boon);
             AltarUsed = true;
+            SaveRun(); // 中断・再開しても、もう一度は使えない
             AltarOpen = false;
             // 祭壇の火が消える：煙がのぼり、光がしぼむ
             Fx.Sparks(Room.AltarPos, 14, new Color(0.55f, 0.55f, 0.6f), 0.5f, 1.4f, 1.4f, true);
@@ -894,7 +895,10 @@ namespace VividOfFade
             Floors.Begin(floor, Room);
             Enemies.FloorTier = Floors.Tier;
             Enemies.SetZone(Room.Zone); // 敵を置く前に、区画の敵の割合と色を合わせる
-            Floors.Populate(Enemies, Room);
+            bool bossDown = resumeBossDefeated && Floors.IsBossFloor;
+            Floors.Populate(Enemies, Room, bossDown);
+            BossDownThisFloor = bossDown;
+            if (bossDown) Floors.OpenStairs(); // 倒したあとに中断していた：階段は開いたまま
             if (Floors.IsBossFloor) Guide("boss", Loc.T("A boss waits deep in this floor. When the red ring spreads, get outside it or dodge!", "この層の奥にはボスがいる。赤い輪が広がったら、輪の外へ逃げるか回避！"),
                 Loc.T("Beat it and the stairs appear. Next time you can start from the floor beyond.", "倒せば階段が現れて、次からはその先の層から始められるようになるよ。"));
             ApplyZone(Room.Zone, floor);
@@ -904,8 +908,9 @@ namespace VividOfFade
             stairs.enabled = Floors.StairsOpen;
             stairsLatch = false;
 
-            // 祭壇：並べる加護を3つ選んでおく
-            AltarUsed = false;
+            // 祭壇：並べる加護を3つ選んでおく（中断前に使っていたら、使ったまま）
+            AltarUsed = resumeAltarUsed;
+            resumeBossDefeated = resumeAltarUsed = false;
             AltarOpen = false;
             altarLatch = false;
             AltarOffers.Clear();
@@ -1093,6 +1098,8 @@ namespace VividOfFade
         /// <summary>ボスを倒した：大きな噴水と、低い確率でボス専用の Mythic 装備。</summary>
         void OnBossKilled(Vector2 pos)
         {
+            BossDownThisFloor = true; // 中断・再開しても、このボスはもう出ない
+            SaveRun();
             // ボスが倒れたら、残りの雑魚もまとめて消える（煙のように）
             foreach (var p in Enemies.BanishAll())
             {
@@ -1675,6 +1682,9 @@ namespace VividOfFade
         /// 今の挑戦を中断用に保存する（層・装備・鞄・火種・加護・体力の割合）。再開はその層の最初から。
         /// 職業選択中・死亡後は保存しない。
         /// </summary>
+        bool resumeBossDefeated, resumeAltarUsed; // 再開するときに、層の状態を引き継ぐ
+        bool BossDownThisFloor;                   // この層のボスはもう倒した
+
         void SaveRun()
         {
             var ch = Profile.Current;
@@ -1687,6 +1697,8 @@ namespace VividOfFade
             run.Boons.AddRange(Player.Boons);
             run.HpRatio = Player.MaxHp > 0 ? (float)Player.Hp / Player.MaxHp : 1f;
             run.MpRatio = Player.MaxMp > 0 ? (float)Player.Mp / Player.MaxMp : 1f;
+            run.BossDefeated = BossDownThisFloor;
+            run.AltarUsed = AltarUsed;
             Profile.Save();
         }
 
@@ -1719,6 +1731,8 @@ namespace VividOfFade
             }
             var run = ch.Run;
             holdSave = true;
+            resumeBossDefeated = run.BossDefeated; // 倒したボスは、再開しても出さない（何度も倒せないように）
+            resumeAltarUsed = run.AltarUsed;
             StartRun(type, run.Floor, false);
             Inventory.RestoreRun(run);
             Player.RestoreRun(run.Boons, run.HpRatio, run.MpRatio);

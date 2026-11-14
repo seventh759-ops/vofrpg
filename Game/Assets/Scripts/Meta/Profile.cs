@@ -107,6 +107,8 @@ namespace VividOfFade
         public List<int> Boons = new List<int>();
         public float HpRatio = 1f;
         public float MpRatio = 1f;
+        public bool BossDefeated; // この層のボスはもう倒した（再開してもボスは出ず、階段が開いている）
+        public bool AltarUsed;    // この層の祭壇はもう使った
 
         public void Repair()
         {

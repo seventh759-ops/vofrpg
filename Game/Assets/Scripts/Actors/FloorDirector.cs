@@ -33,7 +33,7 @@ namespace VividOfFade
         }
 
         /// <summary>層に入った時点で、はじめの部屋と宝の間以外のすべての部屋に、眠った敵を置く。</summary>
-        public void Populate(EnemySystem enemies, Room room)
+        public void Populate(EnemySystem enemies, Room room, bool bossDefeated = false)
         {
             // 敵の上限を部屋で分け合う（深い層で部屋が多くても、奥の部屋が空にならないように）
             int rooms = 0;
@@ -43,6 +43,7 @@ namespace VividOfFade
             {
                 if (area.IsStart || area.IsTreasure) continue;
                 int count = Mathf.Min(GameConfig.RoomEnemies(Floor, area.W * area.H), perRoom);
+                if (area.IsBoss && bossDefeated) continue; // 倒したあとに中断・再開したとき：ボスとお供は出さない
                 if (area.IsBoss)
                 {
                     bool final = Floor == GameConfig.AbyssLastFloor; // 深淵の最奥（アビス）は、ほかのボスより強い
