@@ -79,12 +79,12 @@ namespace VividOfFade
                 var pg = new GameObject("LevelUpPillar");
                 pg.transform.SetParent(transform, false);
                 wingPillar = pg.AddComponent<SpriteRenderer>();
-                wingPillar.sprite = PixelArt.Beam; // 足元が原点、高さ2ユニット
+                wingPillar.sprite = PixelArt.SoftPillar; // 足元が原点、幅1・高さ2ユニット
                 Lighting.MakeGlow(wingPillar);
                 var pf = new GameObject("LevelUpPillarFront");
                 pf.transform.SetParent(transform, false);
                 wingPillarFront = pf.AddComponent<SpriteRenderer>();
-                wingPillarFront.sprite = PixelArt.Beam;
+                wingPillarFront.sprite = PixelArt.SoftPillar;
                 Lighting.MakeGlow(wingPillarFront);
                 hinges[0].localPosition = new Vector3(-0.22f, 0f, 0f);
                 hinges[1].localPosition = new Vector3(0.22f, 0f, 0f);
@@ -149,16 +149,16 @@ namespace VividOfFade
             int order = SortOrder.For(Anchor) - 1; // キャラクターの後ろ
             // 光の柱：羽の付け根まで伸び、開いたら細くなって消える
             float pk = wingT < WingOpenAt ? 1f : Mathf.Clamp01(1f - (wingT - WingOpenAt) / 0.35f);
-            float pillarH = Mathf.Max(0.05f, WingHeight + 0.15f) / 2f;
+            float pillarH = Mathf.Max(0.05f, WingHeight + 0.75f) / 2f; // 上の方は薄れて消えるので、羽より少し高く
             float fadeIn = Mathf.Clamp01(wingT / 0.08f);
             // 後ろ：太く濃いめ／前：細く淡く（キャラクターが光に包まれて見える。足元から伸びるので浮いて見えない）
-            wingPillar.transform.position = Iso.ToScreen(Anchor) + new Vector2(0f, -0.1f);
-            wingPillar.transform.localScale = new Vector3(1.6f * 16f * (0.4f + 0.6f * pk), pillarH, 1f);
-            wingPillar.color = new Color(1f, 0.93f, 0.7f, 0.6f * pk * fadeIn);
+            wingPillar.transform.position = Iso.ToScreen(Anchor) + new Vector2(0f, -0.35f); // 足元より下から（足先まで光に包む）
+            wingPillar.transform.localScale = new Vector3(1.8f * (0.5f + 0.5f * pk), pillarH, 1f);
+            wingPillar.color = new Color(1f, 0.93f, 0.7f, 0.55f * pk * fadeIn);
             wingPillar.sortingOrder = order - 2;
-            wingPillarFront.transform.position = Iso.ToScreen(Anchor) + new Vector2(0f, -0.1f);
-            wingPillarFront.transform.localScale = new Vector3(1.15f * 16f * (0.4f + 0.6f * pk), pillarH, 1f);
-            wingPillarFront.color = new Color(1f, 0.97f, 0.85f, 0.35f * pk * fadeIn);
+            wingPillarFront.transform.position = Iso.ToScreen(Anchor) + new Vector2(0f, -0.35f); // 足元より下から（足先まで光に包む）
+            wingPillarFront.transform.localScale = new Vector3(1.3f * (0.5f + 0.5f * pk), pillarH, 1f);
+            wingPillarFront.color = new Color(1f, 0.97f, 0.85f, 0.3f * pk * fadeIn);
             wingPillarFront.sortingOrder = order + 3;
             float pulse = 0.5f + 0.5f * Mathf.Sin(wingT * 9f);
             for (int i = 0; i < 2; i++)

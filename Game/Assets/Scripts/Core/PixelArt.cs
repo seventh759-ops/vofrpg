@@ -1901,6 +1901,38 @@ namespace VividOfFade
         }
 
         /// <summary>珍しい装備から立ちのぼる光の柱。下が濃く上が薄い白。足元が原点。</summary>
+        /// <summary>
+        /// やわらかい光の柱（レベルアップ）。幅16ドット・高さ32ドット、足元が原点。
+        /// 中心ほど明るく横へ段々に薄れ、上へ行くほど消える（ドット絵らしく、明るさは数段の段差で）。
+        /// </summary>
+        public static Sprite SoftPillar
+        {
+            get
+            {
+                const string key = "SoftPillar";
+                if (cache.TryGetValue(key, out var cached)) return cached;
+                const int w = 16, h = 32;
+                var px = new Color32[w * h];
+                for (int y = 0; y < h; y++)
+                {
+                    float v = Mathf.Pow(1f - (float)y / h, 1.3f);
+                    v *= Mathf.Clamp01((y + 1f) / 5f); // 上へ行くほど薄く。下の数段もぼかす（足元より下まで、ふわっと光が広がる）
+                    for (int x = 0; x < w; x++)
+                    {
+                        float d = Mathf.Abs(x + 0.5f - w * 0.5f) / (w * 0.5f);
+                        float hz = Mathf.Clamp01(1f - d * d);
+                        float a = Mathf.Round(hz * v * 5f) / 5f; // 5段の段差
+                        px[y * w + x] = new Color32(255, 255, 255, (byte)(255 * a));
+                    }
+                }
+                var tex = MakeTexture(key, w, h, px, TextureWrapMode.Clamp);
+                var sprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0f), PixelsPerUnit, 0, SpriteMeshType.FullRect);
+                sprite.name = key;
+                cache[key] = sprite;
+                return sprite;
+            }
+        }
+
         public static Sprite Beam
         {
             get
