@@ -90,7 +90,10 @@ namespace VividOfFade
         public const float RefPastCapGrowth = 0.015f;  // Lv上限の後（段階99〜）は、強化・3次職などで1段階ごとに 1.5% ずつ強くなる想定
 
         /// <summary>基準のキャラのレベル（＝その段階で落ちる装備のレベル）。</summary>
-        public static int RefLevel(int wave) => IsAbyss(wave / 2) ? DropLevel(wave, Progression.UnlockedMaxLevel) : Mathf.Clamp(wave, 1, Progression.MaxLevel);
+        // 敵の強さの基準のキャラの装備レベル。深淵では、落ちる装備は5刻みだが、敵はなめらかに強くなるよう 100→120 を層ごとに少しずつ
+        public static int RefLevel(int wave) => IsAbyss(wave / 2)
+            ? Progression.MaxLevel + 1 + Mathf.RoundToInt((wave / 2 - AbyssFirstFloor) * (Progression.UnlockedMaxLevel - Progression.MaxLevel - 1) / (float)(AbyssLastFloor - AbyssFirstFloor))
+            : Mathf.Clamp(wave, 1, Progression.MaxLevel);
 
         /// <summary>基準のキャラの最大 HP（体力の土台60、VIT、レベル、レアの鎧、HP の効果1つの半分）。</summary>
         public static float RefHp(int wave)
@@ -252,14 +255,21 @@ namespace VividOfFade
         /// （レベルが波に追いつかなくなっても、付けられる装備が落ち続けるように）。
         /// </summary>
         public const int DropLevelAhead = 3;
+        /// <summary>深淵のその層で落ちる装備のレベル（100・105・110・115・120 のどれか）。</summary>
+        public static int AbyssGearLevel(int floor)
+        {
+            int depth = Mathf.Clamp(floor - AbyssFirstFloor + 1, 1, AbyssLastFloor - AbyssFirstFloor + 1);
+            return Mathf.Min(Progression.UnlockedMaxLevel, 100 + 5 * (depth / 5));
+        }
+
         public static int DropLevel(int wave, int characterLevel)
         {
             int floor = wave / 2;
             if (IsAbyss(floor))
             {
-                // 深淵：Lv100（深淵1層）〜120（深淵20層）の装備。自分のレベル＋3 までで、100 より下にはしない
-                int abyssLevel = Progression.MaxLevel + 1 + Mathf.RoundToInt((floor - AbyssFirstFloor) * (Progression.UnlockedMaxLevel - Progression.MaxLevel - 1) / (float)(AbyssLastFloor - AbyssFirstFloor));
-                return Mathf.Clamp(abyssLevel, Progression.MaxLevel + 1, Mathf.Max(Progression.MaxLevel + 1, Mathf.Min(characterLevel + DropLevelAhead, Progression.UnlockedMaxLevel)));
+                // 深淵の装備は、レベルが5刻みで固定：深淵1〜4層 Lv100／5〜9層 Lv105／10〜14層 Lv110／15〜19層 Lv115／20層 Lv120
+                // （区画の最後のボスの層から、次の段の装備が出る。自分のレベルより上の装備も落ちる＝付けられるようになるのが目標）
+                return AbyssGearLevel(floor);
             }
             return Mathf.Clamp(wave, 1, Mathf.Min(characterLevel + DropLevelAhead, Progression.MaxLevel)); // 塔では Lv99 を超える装備は出さない
         }
