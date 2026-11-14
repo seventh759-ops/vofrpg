@@ -1489,10 +1489,10 @@ namespace VividOfFade
                 Fx.Ring(pos, 1.6f, new Color(red.r, red.g, red.b, 0.95f), 0.35f);
                 Fx.Ring(pos, 3f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.6f);
                 Fx.Ring(pos, 4.5f, new Color(red.r, red.g, red.b, 0.8f), 0.9f);
-                // 天まで届く赤い光の柱、はじける赤と金の粒、画面がうっすら赤く光る（文字の知らせは出さない）
-                Fx.Pillar(pos, new Color(red.r, red.g, red.b, 0.95f), 2.4f, 18f, 1.6f);
-                Fx.Pillar(pos, new Color(1f, 0.9f, 0.6f, 0.9f), 0.8f, 20f, 1.1f);
-                Fx.Sparks(pos, 40, red, 5f, 1f, 4f);
+                // 赤い光の柱（キャラクターの数倍の高さ）、はじける赤と金の粒、画面がうっすら赤く光る（文字の知らせは出さない）
+                Fx.Pillar(pos, new Color(red.r, red.g, red.b, 0.9f), 1f, 7f, 1.2f);
+                Fx.Pillar(pos, new Color(1f, 0.9f, 0.6f, 0.85f), 0.35f, 8f, 0.9f);
+                Fx.Sparks(pos, 24, red, 4f, 0.9f, 3.5f);
                 Fx.Sparks(pos, 24, new Color(1f, 0.85f, 0.4f), 2f, 1.6f, 3f, true);
                 Hud.Flash(0.45f, new Color(1f, 0.25f, 0.2f, 0.45f));
                 Sfx.Fountain();
