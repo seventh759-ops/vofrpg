@@ -106,7 +106,7 @@ namespace VividOfFade
             }
         }
 
-        public string Name => (Abyss ? Loc.T("Abyssal ", "深淵・") : "") + (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
+        public string Name => (Abyss ? AbyssSets.Prefix(AbyssSets.SetOf(this)) : "") + (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
 
         public List<string> Describe()
         {

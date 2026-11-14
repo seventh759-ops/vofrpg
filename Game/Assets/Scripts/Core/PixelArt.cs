@@ -1638,11 +1638,78 @@ namespace VividOfFade
             Color32 c = RarityInfo.ColorOf(item.Rarity);
             var abyssSet = AbyssSets.SetOf(item);
             string key = $"ItemIcon16_{kind}_{item.Rarity}" + (item.Abyss ? "_Abyss" + abyssSet : "");
+            if (item.Abyss) rows = AbyssMotif(rows, abyssSet); // 深淵の品は、セットごとの意匠を描き足す
             // m 金属・w 木・g 金・L と l 光・e 内側の線・A 珍しさの色（縁取りと陰影は Shaded が付ける）
             // 深淵の装備は、金属が黒ずみ、まわりに赤紫のもやがかかる
             var over = new Dictionary<char, Color32[]> { { 'A', RampFrom(c) } };
             if (item.Abyss) over['m'] = RampFrom((Color32)Color.Lerp(new Color32(70, 40, 80, 255), Color.Lerp(Color.black, AbyssSets.ColorOf(abyssSet), 0.6f), 0.45f)); // 黒ずんだ金属を、セットの色に少し寄せる
             return Shaded(key, rows, over, item.Abyss ? (Color32?)(Color32)AbyssSets.ColorOf(abyssSet) : null, 32); // もやはセットの色
+        }
+
+        /// <summary>
+        /// 深淵の品の意匠（セットごと。どの装備の絵にも描き足せるよう、形から自動で付ける）：
+        /// 業火＝上へ立ちのぼる炎／裂け目＝品を斜めに走る紫の亀裂と、浮かぶ欠片／星落とし＝まわりに瞬く星と、金属に散る星屑／報い＝外へ突き出す紅いとげ。
+        /// </summary>
+        static string[] AbyssMotif(string[] src, UniqueType set)
+        {
+            int h = src.Length, w = src[0].Length;
+            var g = new char[h][];
+            for (int y = 0; y < h; y++) g[y] = src[y].PadRight(w, '.').ToCharArray();
+            bool Solid(int x, int y) => x >= 0 && y >= 0 && x < w && y < h && src[y].Length > x && src[y][x] != '.';
+            void Put(int x, int y, char c) { if (x >= 0 && y >= 0 && x < w && y < h && g[y][x] == '.') g[y][x] = c; }
+            switch (set)
+            {
+                case UniqueType.AbyssBlast:
+                    // いちばん上の縁から、炎の舌が立ちのぼる（根元は橙、先は黄）
+                    for (int x = 0; x < w; x++)
+                    {
+                        int top = -1;
+                        for (int y = 0; y < h; y++) if (Solid(x, y)) { top = y; break; }
+                        if (top < 1 || (x * 7 + top) % 3 == 0) continue;
+                        Put(x, top - 1, 'L');
+                        if ((x * 5 + top) % 2 == 0) Put(x, top - 2, 'l');
+                    }
+                    break;
+                case UniqueType.VoidRift:
+                {
+                    // 左上から右下へ、品の上だけを走るぎざぎざの亀裂
+                    for (int t = 0; t < w + h; t++)
+                    {
+                        int x = t / 2 + 2, y = t / 2 + (t % 4 < 2 ? 1 : 2);
+                        if (Solid(x, y)) g[y][x] = t % 3 == 0 ? 'o' : 'p'; // 紫の亀裂に、ところどころ白い光
+                    }
+                    // まわりに浮かぶ欠片
+                    Put(1, 3, 'p'); Put(2, 4, 'p'); Put(w - 3, h - 4, 'p'); Put(w - 4, h - 3, 'p'); Put(w - 2, 2, 'p'); Put(1, h - 3, 'p');
+                    break;
+                }
+                case UniqueType.Starfall:
+                {
+                    // まわりに瞬く小さな星（十字）と、金属に散る星屑
+                    void Star(int cx, int cy) { Put(cx, cy, 'o'); Put(cx - 1, cy, 'B'); Put(cx + 1, cy, 'B'); Put(cx, cy - 1, 'B'); Put(cx, cy + 1, 'B'); }
+                    Star(2, 2); Star(w - 3, h - 4); Put(w - 2, 1, 'o');
+                    for (int y = 0; y < h; y++)
+                        for (int x = 0; x < w; x++)
+                            if ((g[y][x] == 'm' || g[y][x] == 'w') && (x * 3 + y * 5) % 7 == 0) g[y][x] = 'o';
+                    break;
+                }
+                case UniqueType.Retribution:
+                    // 縁から外へ突き出す紅いとげ（ところどころ）
+                    // 2ドットの長いとげ（根元は紅、先は白く光る）
+                    for (int y = 0; y < h; y++)
+                        for (int x = 0; x < w; x++)
+                        {
+                            if (!Solid(x, y) || (x * 3 + y * 7) % 5 != 0) continue;
+                            int dx = !Solid(x - 1, y) ? -1 : !Solid(x + 1, y) ? 1 : 0;
+                            int dy = dx == 0 && !Solid(x, y - 1) ? -1 : 0;
+                            if (dx == 0 && dy == 0) continue;
+                            Put(x + dx, y + dy, 'R');
+                            Put(x + dx * 2, y + dy * 2, 'o');
+                        }
+                    break;
+            }
+            var outRows = new string[h];
+            for (int y = 0; y < h; y++) outRows[y] = new string(g[y]);
+            return outRows;
         }
 
         static readonly string[] LanternIcon16 =

@@ -6,7 +6,7 @@ namespace VividOfFade
     /// <summary>
     /// 深淵のセット：深淵の装備が持つ固有効果（業火・裂け目・星落とし・報い）が、そのままセットになる。
     /// レベルに関係なく同じ固有効果の品を数えるので、Lv100 の装備だけでもそろえられる。2つ・3つ・5つで効果が付く。
-    /// 色もセットごと（枠・光の柱・アイコンのもや）。
+    /// 色もセットごと（枠・光の柱・アイコンのもや）。絵の意匠もセットごと（PixelArt.AbyssMotif）。
     /// </summary>
     public static class AbyssSets
     {
@@ -40,6 +40,19 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>深淵の品の名前の頭（セットで変わる。例：紅蓮・稀の大剣）。</summary>
+        public static string Prefix(UniqueType set)
+        {
+            switch (set)
+            {
+                case UniqueType.AbyssBlast: return Loc.T("Hellfire ", "紅蓮・");
+                case UniqueType.VoidRift: return Loc.T("Riftborn ", "裂界・");
+                case UniqueType.Starfall: return Loc.T("Starfallen ", "星墜・");
+                case UniqueType.Retribution: return Loc.T("Vengeful ", "血報・");
+                default: return Loc.T("Abyssal ", "深淵・");
+            }
+        }
+
         /// <summary>セットの色（明るい色）。</summary>
         public static Color ColorOf(UniqueType set)
         {
@@ -48,7 +61,7 @@ namespace VividOfFade
                 case UniqueType.AbyssBlast: return new Color(1f, 0.4f, 0.15f);   // 業火：紅蓮
                 case UniqueType.VoidRift: return new Color(0.7f, 0.35f, 1f);     // 裂け目：紫
                 case UniqueType.Starfall: return new Color(0.5f, 0.88f, 1f);     // 星落とし：星の水色
-                case UniqueType.Retribution: return RarityInfo.AbyssColor;        // 報い：深淵の赤紫
+                case UniqueType.Retribution: return new Color(0.9f, 0.1f, 0.3f);  // 報い：血の紅
                 default: return RarityInfo.AbyssColor;
             }
         }
