@@ -43,7 +43,13 @@ namespace VividOfFade
         public static List<(string name, System.Func<float[]> work)> StartupSongs()
         {
             var list = new List<(string, System.Func<float[]>)>();
-            void Add(Song s) { if (!clips.TryGetValue(s.Name, out var c) || c == null) list.Add((s.Name, () => RenderData(s))); }
+            string dir = CacheDir; // Unity の API はここ（メインのスレッド）で読んでおく
+            void Add(Song s)
+            {
+                if (clips.TryGetValue(s.Name, out var c) && c != null) return;
+                string file = System.IO.Path.Combine(dir, s.Name + "_" + Fingerprint(s) + ".pcm");
+                list.Add((s.Name, () => LoadOrRender(s, file)));
+            }
             Add(TitleSong);
             Add(Profile.AbyssUnlocked ? AbyssTownSong : TownSong);
             int t = ((Profile.MusicTheme % ThemeCount) + ThemeCount) % ThemeCount;
@@ -58,6 +64,62 @@ namespace VividOfFade
             var seen = new HashSet<string>();
             list.RemoveAll(x => !seen.Add(x.Item1)); // 同じ曲は1回だけ
             return list;
+        }
+
+        // ---- 曲のキャッシュ：作った曲をスマホ（PC）に保存し、次の起動からは読むだけにする ----
+        /// <summary>曲の作り方を変えたら上げる（保存した曲を全部作り直す）。</summary>
+        const int RenderVersion = 1;
+
+        static string CacheDir => System.IO.Path.Combine(Application.persistentDataPath, "songs");
+
+        /// <summary>曲の中身の指紋（中身や作り方が変われば別の名前になり、古い保存は使われない）。</summary>
+        static string Fingerprint(Song s)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append(RenderVersion).Append('|').Append(s.Bpm).Append('|');
+            foreach (var c in s.Chords) { foreach (int n in c) sb.Append(n).Append(','); sb.Append(';'); }
+            if (s.Lead != null) foreach (int n in s.Lead) sb.Append(n).Append(',');
+            sb.Append('|').Append(s.Lead1).Append(s.LeadVol).Append(s.Bass).Append(s.BassVol).Append(s.PadVol).Append(s.ArpVol).Append(s.ArpSaw)
+              .Append(s.Kick).Append(s.Snare).Append(s.Clap).Append(s.Hat).Append(s.KickVol).Append(s.HatVol).Append(s.Duck).Append(s.Echo)
+              .Append(s.Church).Append(s.ChoirVol).Append(s.BellVol).Append(s.Reverb).Append(s.Gain);
+            // 文字列の簡単なハッシュ（FNV-1a）
+            uint h = 2166136261;
+            foreach (char ch in sb.ToString()) { h ^= ch; h *= 16777619; }
+            return h.ToString("x8");
+        }
+
+        /// <summary>保存した曲があれば読み、なければ作って保存する（別のスレッドで動かせる）。</summary>
+        static float[] LoadOrRender(Song s, string file)
+        {
+            try
+            {
+                if (System.IO.File.Exists(file))
+                {
+                    var bytes = System.IO.File.ReadAllBytes(file);
+                    var data = new float[bytes.Length / 2];
+                    for (int i = 0; i < data.Length; i++) data[i] = (short)(bytes[i * 2] | (bytes[i * 2 + 1] << 8)) / 32767f;
+                    if (data.Length > 0) return data;
+                }
+            }
+            catch (System.Exception) { } // 読めなければ作り直す
+            var mix = RenderData(s);
+            try
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file));
+                // 同じ曲の古い保存（中身が変わる前のもの）は消す
+                foreach (var old in System.IO.Directory.GetFiles(System.IO.Path.GetDirectoryName(file), s.Name + "_*.pcm"))
+                    if (old != file && System.IO.Path.GetFileName(old).Length == s.Name.Length + 1 + 8 + 4) System.IO.File.Delete(old); // town と town_abyss を取り違えない
+                var outBytes = new byte[mix.Length * 2];
+                for (int i = 0; i < mix.Length; i++)
+                {
+                    short v = (short)Mathf.Clamp(Mathf.RoundToInt(mix[i] * 32767f), -32767, 32767);
+                    outBytes[i * 2] = (byte)(v & 0xff);
+                    outBytes[i * 2 + 1] = (byte)((v >> 8) & 0xff);
+                }
+                System.IO.File.WriteAllBytes(file, outBytes);
+            }
+            catch (System.Exception) { } // 保存できなくても遊べる
+            return mix;
         }
 
         /// <summary>別のスレッドで作った曲のデータから、曲を作って取っておく（メインのスレッドで呼ぶ）。</summary>
