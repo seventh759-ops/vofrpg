@@ -49,7 +49,7 @@ namespace VividOfFade
         public void Pickup() => source.PlayOneShot(pickup);
         public void SkillUp() => source.PlayOneShot(skillUp, 0.9f);
         /// <summary>レベルアップ：電子音のラッパで「テテー」（装備が落ちたときの音とは別）。</summary>
-        public void LevelUp() => source.PlayOneShot(levelUp, 1f);
+        public void LevelUp() => source.PlayOneShot(levelUp, 0.55f); // 伸ばす音は短い効果音より大きく聞こえるので、控えめに
 
         /// <summary>
         /// 電子音のラッパ（ほかの効果音と同じ矩形波）。吹き始めに少し下からしゃくり上げ、波の幅を広げて「パッ」と開く。揺れは付けない。
