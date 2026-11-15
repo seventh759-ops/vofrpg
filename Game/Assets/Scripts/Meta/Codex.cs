@@ -142,7 +142,7 @@ namespace VividOfFade
                 foreach (var u in TowerUniques)
                 {
                     var uu = u;
-                    all.Add(new Entry { Id = "u:" + uu, Cat = Category.Uniques, Icon = () => PixelArt.ItemIcon(new Item { Slot = ItemSlot.Ring, Rarity = Rarity.Legendary, Level = 1 }), Name = () => StatText.Unique(uu), Desc = () => "",
+                    all.Add(new Entry { Id = "u:" + uu, Cat = Category.Uniques, Icon = () => PixelArt.UniqueIcon(uu), Name = () => StatText.Unique(uu), Desc = () => "",
                         Detail = () => Loc.T("A unique effect found on Legendary or better gear.", "伝説以上の装備に付く固有効果。"),
                         Hint = () => Loc.T("May appear on Legendary or better gear.", "伝説以上の装備に付くことがある。") });
                 }

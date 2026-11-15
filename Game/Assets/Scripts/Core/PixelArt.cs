@@ -662,6 +662,41 @@ namespace VividOfFade
         {
             if (cache.TryGetValue(key, out var cached)) return cached;
             int h = rows.Length, w = rows[0].Length;
+            var px = ShadePixels(rows, overrides, auraColor, strongAura);
+            // ppu を指定しなければ、絵の幅をちょうど1マスに収める（キャラ・敵は 32 ドットで 1 マス）
+            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), ppu > 0 ? ppu : w);
+        }
+
+        /// <summary>
+        /// アイコンのバッジ（スキル・状態異常と同じ形：暗い下地に色の縁）に、陰影付きの記号（16 ドット）を収める。20 ドット四方。
+        /// 加護・固有効果・絵のないスキルのアイコンをこれでそろえる。
+        /// </summary>
+        static Sprite Badge(string key, string[] glyph, Dictionary<char, Color32[]> overrides, Color32 bg, Color32 edge)
+        {
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            const int n = 20;
+            int gh = glyph.Length, gw = glyph[0].Length;
+            var g = ShadePixels(glyph, overrides, null, false);
+            var px = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                    px[y * n + x] = x == 0 || y == 0 || x == n - 1 || y == n - 1 ? edge : bg;
+            int ox = (n - gw) / 2, oy = (n - gh) / 2;
+            for (int y = 0; y < gh; y++)
+                for (int x = 0; x < gw; x++)
+                {
+                    var c = g[y * gw + x];
+                    int tx = ox + x, ty = oy + y;
+                    if (c.a == 0 || tx <= 0 || ty <= 0 || tx >= n - 1 || ty >= n - 1) continue;
+                    px[ty * n + tx] = c;
+                }
+            return Store(key, MakeTexture(key, n, n, px, TextureWrapMode.Clamp), n);
+        }
+
+        /// <summary>Shaded の色付け（テクスチャの下の行から並んだ色）。</summary>
+        static Color32[] ShadePixels(string[] rows, Dictionary<char, Color32[]> overrides, Color32? auraColor, bool strongAura)
+        {
+            int h = rows.Length, w = rows[0].Length;
             var outline = new Color32(22, 16, 30, 255); // 輪郭はいつも暗い線（3次職の光は、その外側に足す）
             var clear = new Color32(0, 0, 0, 0);
             var px = new Color32[w * h];
@@ -729,8 +764,7 @@ namespace VividOfFade
                     px = halo;
                 }
             }
-            // ppu を指定しなければ、絵の幅をちょうど1マスに収める（キャラ・敵は 32 ドットで 1 マス）
-            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), ppu > 0 ? ppu : w);
+            return px;
         }
 
         static readonly string[] LampwrightHdRows =
@@ -1639,8 +1673,27 @@ namespace VividOfFade
                 default: i = 0; break;
             }
             Color32 c = new Color(color.r, color.g, color.b, 1f);
-            string key = $"Skill16_{effect}_{c.r}_{c.g}_{c.b}";
-            return Shaded(key, SkillIconRows[i], new Dictionary<char, Color32[]> { { 'K', RampFrom(c) } });
+            string key = $"SkillBadgeFx_{effect}_{c.r}_{c.g}_{c.b}";
+            var dark = new Color32((byte)(c.r * 0.2f), (byte)(c.g * 0.2f), (byte)(c.b * 0.2f), 255);
+            return Badge(key, SkillIconRows[i], new Dictionary<char, Color32[]> { { 'K', RampFrom(c) } }, dark, c); // 縁はスキルの色
+
+        }
+
+        /// <summary>固有効果のアイコン（図鑑など）。加護やスキルの記号を流用し、伝説の色の縁のバッジに収める。</summary>
+        public static Sprite UniqueIcon(UniqueType u)
+        {
+            Color32 edge = RarityInfo.ColorOf(Rarity.Legendary);
+            var bg = new Color32(44, 22, 12, 255);
+            string key = "UniqueBadge_" + u;
+            switch (u)
+            {
+                case UniqueType.ExplodeOnKill: return Badge(key, BoonIconRows[Mathf.Min(11, BoonIconRows.Length - 1)], null, bg, edge);
+                case UniqueType.HealOnKill: return Badge(key, BoonIconRows[5], null, bg, edge);
+                case UniqueType.Vampiric: return Badge(key, BoonIconRows[6], null, bg, edge);
+                case UniqueType.SplitShot: return Badge(key, SkillIconRows[1], new Dictionary<char, Color32[]> { { 'K', RampFrom(edge) } }, bg, edge);
+                case UniqueType.DodgeNova: return Badge(key, SkillIconRows[0], new Dictionary<char, Color32[]> { { 'K', RampFrom(new Color32(255, 140, 60, 255)) } }, bg, edge);
+                default: return Badge(key, SkillIconRows[3], new Dictionary<char, Color32[]> { { 'K', RampFrom(new Color32(230, 230, 240, 255)) } }, bg, edge);
+            }
         }
 
 
@@ -4046,7 +4099,7 @@ namespace VividOfFade
         public static Sprite BoonIcon(int index)
         {
             index = Mathf.Clamp(index, 0, BoonIconRows.Length - 1);
-            return Shaded("Boon16_" + index, BoonIconRows[index]);
+            return Badge("BoonBadge_" + index, BoonIconRows[index], null, new Color32(40, 30, 18, 255), new Color32(232, 192, 84, 255)); // 祭壇の加護：金の縁
         }
 
 
