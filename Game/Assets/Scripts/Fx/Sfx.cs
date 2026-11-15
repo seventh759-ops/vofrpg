@@ -10,7 +10,7 @@ namespace VividOfFade
         const int Rate = 44100;
 
         AudioSource source;
-        AudioClip hit, pickup, ember, chime, fanfare, relic, boom, fountain, anvil, skillUp, levelRise, levelBloom;
+        AudioClip hit, pickup, ember, chime, fanfare, relic, boom, fountain, anvil, skillUp, levelUp;
         float lastHit;
         float lastEmber;
 
@@ -28,8 +28,7 @@ namespace VividOfFade
             boom = Make("boom", new[] { 90f }, 0.18f, 0.5f, Wave.Noise);
             fountain = Make("fountain", new[] { 523f, 784f, 1046f }, 0.05f, 0.3f, Wave.Square);
             anvil = MakeAnvil();
-            levelRise = MakeLevelRise();
-            levelBloom = MakeLevelBloom();
+            levelUp = MakeTeTee();
             skillUp = Make("skillUp", new[] { 1175f, 1568f, 2093f, 2637f, 3136f }, 0.045f, 0.28f, Wave.Sine); // きらりと駆け上がる（キャラのレベルアップとは別の音）
         }
 
@@ -49,10 +48,8 @@ namespace VividOfFade
 
         public void Pickup() => source.PlayOneShot(pickup);
         public void SkillUp() => source.PlayOneShot(skillUp, 0.9f);
-        /// <summary>レベルアップ：羽が上がる間の、やわらかく駆け上がる音（ドロップの音とは別）。</summary>
-        public void LevelUp() => source.PlayOneShot(levelRise, 0.9f);
-        /// <summary>レベルアップ：羽が開いた瞬間の、鐘のような明るい和音。</summary>
-        public void LevelBloom() => source.PlayOneShot(levelBloom, 0.85f);
+        /// <summary>レベルアップ：電子音のラッパで「テテー」（装備が落ちたときの音とは別）。</summary>
+        public void LevelUp() => source.PlayOneShot(levelUp, 1f);
 
         /// <summary>
         /// 電子音のラッパ（ほかの効果音と同じ矩形波）。吹き始めに少し下からしゃくり上げ、波の幅を広げて「パッ」と開く。揺れは付けない。
@@ -88,66 +85,7 @@ namespace VividOfFade
             return clip;
         }
 
-        /// <summary>キラッ：高いドとソを短く2回（羽が開いたとき）。</summary>
-        static AudioClip MakeSparkle()
-        {
-            int len = (int)(Rate * 0.25f);
-            var data = new float[len];
-            for (int i = 0; i < len; i++)
-            {
-                float t = (float)i / Rate;
-                float f = t < 0.07f ? 2093f : 3136f;
-                data[i] = Pulse(f * t, 0.125f) * Mathf.Exp(-(t < 0.07f ? t : t - 0.07f) * 22f) * 0.14f;
-            }
-            var clip = AudioClip.Create("sparkle", len, 1, Rate, false);
-            clip.SetData(data, 0);
-            return clip;
-        }
-
-        /// <summary>羽が上がる間：ラッパで「タ・タ・タ」と3つ、ド・ミ・ソと上がる。</summary>
-        static AudioClip MakeLevelRise()
-        {
-            float[] notes = { 523.25f, 659.25f, 783.99f };
-            float step = 0.15f, noteLen = 0.1f;
-            int len = (int)(Rate * (step * notes.Length + 0.2f));
-            var data = new float[len];
-            for (int n = 0; n < notes.Length; n++)
-            {
-                int start = (int)(Rate * step * n);
-                for (int i = 0; start + i < len && i < (int)(Rate * 0.3f); i++)
-                {
-                    float t = (float)i / Rate;
-                    data[start + i] += Brass(notes[n], t, noteLen) * 0.3f;
-                }
-            }
-            var clip = AudioClip.Create("levelRise", len, 1, Rate, false);
-            clip.SetData(data, 0);
-            return clip;
-        }
-
-        /// <summary>羽が開いた瞬間：ラッパの和音（ド・ソ・高いド）を「パーン」と短く吹き鳴らす（電子音のラッパ）。</summary>
-        static AudioClip MakeLevelBloom()
-        {
-            // ミを抜いたド・ソ・高いド（長調でも短調でもない響き：どの区画の曲ともぶつかりにくい）。短く切って効果音らしく
-            float[] chord = { 523.25f, 783.99f, 1046.5f };
-            float[] gain = { 0.1f, 0.09f, 0.12f }; // いちばん上の音を主に
-            float noteLen = 0.3f;
-            int len = (int)(Rate * (noteLen + 0.25f));
-            var data = new float[len];
-            for (int i = 0; i < len; i++)
-            {
-                float t = (float)i / Rate;
-                float v = 0f;
-                for (int k = 0; k < chord.Length; k++) v += Brass(chord[k], t, noteLen) * gain[k];
-                data[i] = v;
-            }
-            var clip = AudioClip.Create("levelBloom", len, 1, Rate, false);
-            clip.SetData(data, 0);
-            return clip;
-        }
-
         static float Pulse(float phase, float duty) => Mathf.Repeat(phase, 1f) < duty ? 1f : -1f;
-        static float Tri(float phase) { float p = Mathf.Repeat(phase, 1f); return p < 0.5f ? 4f * p - 1f : 3f - 4f * p; }
         public void Boom() => source.PlayOneShot(boom, 0.7f);
         public void Fountain() => source.PlayOneShot(fountain);
 
