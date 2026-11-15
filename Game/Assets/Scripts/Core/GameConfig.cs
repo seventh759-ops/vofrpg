@@ -218,6 +218,10 @@ namespace VividOfFade
         public const float TreasureRoomChance = 0.15f;
         public const int TreasureChests = 3, ChestItems = 4;
         public const float ChestRarityBonus = 2f;
+        // コウモリの急降下：近くで一瞬止まって身構え、まっすぐ速く突っ込む
+        public const float BatDiveRange = 4f, BatDiveEvery = 3.5f, BatDivePrep = 0.4f, BatDiveTime = 0.35f, BatDiveSpeed = 7f;
+        // スライム（さまよう本も）の跳びかかり：近くで身を縮め、ぴょんと跳ぶ
+        public const float SlimePounceRange = 2.4f, SlimePounceEvery = 2.8f, SlimePouncePrep = 0.3f, SlimePounceTime = 0.25f, SlimePounceSpeed = 6f;
         public const float BomberHpMult = 0.7f, BomberSpeed = 2.4f, BomberFuse = 0.8f, BomberRadius = 1.8f, BomberDamageMult = 2.5f;
         public const int EliteFountainItems = 2;
         public const float EliteRarityBonus = 0.8f;

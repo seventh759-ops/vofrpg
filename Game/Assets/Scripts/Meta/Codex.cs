@@ -28,12 +28,12 @@ namespace VividOfFade
         {
             switch (k)
             {
-                case EnemyKind.Bat: return Loc.T("Chases you while weaving side to side.", "左右にふらふら揺れながら追ってくる。");
+                case EnemyKind.Bat: return Loc.T("Chases you while weaving side to side. Up close, it rises and dives straight at you.", "左右にふらふら揺れながら追ってくる。近くまで来ると、ふわっと舞い上がってから急降下してくる。");
                 case EnemyKind.Caster: return Loc.T("Keeps its distance and fires bullets now and then.", "ちょうどよい距離を保ち、ときどき弾を撃ってくる。");
                 case EnemyKind.Brute: return Loc.T("Slow and tough. Flashes red while charging up a heavy blow.", "遅くて硬い。赤く点滅して力をためたあと、重い一撃を放つ。");
                 case EnemyKind.Bomber: return Loc.T("Runs at you and explodes. Kill it before it reaches you.", "近づいてきて爆発する。たどり着く前に倒したい。");
                 case EnemyKind.Golden: return Loc.T("Appears rarely and runs away. Drops lots of embers and gear.", "まれに現れ、逃げ回る。倒すと火種と装備をたくさん落とす。しばらくすると消える。");
-                default: return Loc.T("Comes straight at you. Weak alone, dangerous in numbers.", "まっすぐ寄ってくる。1体なら弱いが、群れると手強い。");
+                default: return Loc.T("Comes straight at you and pounces when close. Weak alone, dangerous in numbers.", "まっすぐ寄ってきて、近くでぎゅっと縮んでから跳びかかる。1体なら弱いが、群れると手強い。");
             }
         }
 
@@ -47,6 +47,8 @@ namespace VividOfFade
                 var d = BossInfo.DebuffOf(b, a);
                 if (d.HasValue) sb.Append(Loc.T($" ({Debuffs.Name(d.Value)})", $"（{Debuffs.Name(d.Value)}）"));
             }
+            var extra = BossInfo.LoopExtraOf(b);
+            if (extra.HasValue) sb.Append(Loc.T("\nFrom the 2nd loop: ", "\n2周目から：")).Append(BossInfo.AttackName(extra.Value));
             return sb.ToString();
         }
 
@@ -112,7 +114,7 @@ namespace VividOfFade
                     bool tome = z.Pattern == FloorPattern.Gold; // 沈んだ書庫は、スライムの代わりにさまよう本
                     all.Add(new Entry { Id = "e:slime:" + i, Cat = Category.Enemies, Icon = () => PixelArt.SlimeFor(z),
                         Name = () => tome ? Loc.T("Wandering Tome", "さまよう本") : KindName(EnemyKind.Slime), Desc = () => ZoneName(z),
-                        Detail = () => tome ? Loc.T("An old book that came to life. Flaps its pages and hops toward you. Weak alone, dangerous in numbers.", "命を持った古い本。ページをばたつかせて跳ねてくる。1冊なら弱いが、群れると手強い。") : KindDetail(EnemyKind.Slime), Hint = () => Loc.T($"Found in {ZoneName(z)}.", $"{ZoneName(z)}で出会う。") });
+                        Detail = () => tome ? Loc.T("An old book that came to life. Flaps its pages, hops toward you and pounces when close.", "命を持った古い本。ページをばたつかせて跳ねてきて、近くで跳びかかる。1冊なら弱いが、群れると手強い。") : KindDetail(EnemyKind.Slime), Hint = () => Loc.T($"Found in {ZoneName(z)}.", $"{ZoneName(z)}で出会う。") });
                 }
                 for (int k = 1; k < Kinds.Length; k++)
                 {

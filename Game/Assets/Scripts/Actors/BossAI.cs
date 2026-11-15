@@ -114,7 +114,30 @@ namespace VividOfFade
             }
         }
 
-        public static BossAttack Next(Enemy e) => patterns[(int)e.BossKind][e.AttackStep % patterns[(int)e.BossKind].Length];
+        /// <summary>塔の2周目からのボスが足す技（深淵に侵されて覚えた技）。</summary>
+        static readonly BossAttack[] loopExtra =
+        {
+            BossAttack.StunNova,   // 岩の巨人：地響きで気絶させる
+            BossAttack.BulletFan,  // 苔の母：胞子を扇状に飛ばす
+            BossAttack.Charge,     // 炉の巨人：突進
+            BossAttack.RoomWide,   // 霜の王：部屋全体の吹雪
+            BossAttack.Blink,      // 書庫の司書：瞬間移動
+            BossAttack.Summon,     // 虚ろの影：手下を呼ぶ
+        };
+
+        public static BossAttack Next(Enemy e)
+        {
+            var p = patterns[(int)e.BossKind];
+            if (e.LoopCycle > 0 && !IsAbyss(e.BossKind) && (int)e.BossKind < loopExtra.Length)
+            {
+                int i = e.AttackStep % (p.Length + 1); // 1巡に1回、足した技を使う
+                return i == p.Length ? loopExtra[(int)e.BossKind] : p[i];
+            }
+            return p[e.AttackStep % p.Length];
+        }
+
+        /// <summary>塔の2周目からのボスが足す技（図鑑の説明用）。なければ null。</summary>
+        public static BossAttack? LoopExtraOf(BossKind k) => !IsAbyss(k) && (int)k < loopExtra.Length ? loopExtra[(int)k] : (BossAttack?)null;
 
         public static float Windup(BossAttack a)
         {

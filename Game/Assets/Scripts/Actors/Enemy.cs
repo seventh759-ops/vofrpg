@@ -37,6 +37,7 @@ namespace VividOfFade
         public BossKind BossKind;  // 区域ごとのボス
         public BossAttack Attack;  // 予告している攻撃
         public int AttackStep;     // 攻撃の順番のどこまで来たか
+        public int LoopCycle;      // 塔の何周目のボスか（2周目からは技が1つ増える）
         public Vector2 AttackDir;  // 予告を始めたときのプレイヤーの方向
         public float BlinkCooldown;
         public bool Summoned;      // アビスに呼び出された歴代のボス（倒しても層は終わらない・体力バーは出さない）

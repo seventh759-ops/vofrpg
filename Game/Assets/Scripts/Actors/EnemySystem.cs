@@ -333,6 +333,7 @@ namespace VividOfFade
             e.Speed = GameConfig.BossSpeed;
             e.SlamTimer = BossInfo.Interval * 0.6f;
             e.BossKind = BossInfo.For(zone);
+            e.LoopCycle = zone != null ? zone.Cycle : 0;
             e.AttackStep = 0;
             e.BlinkCooldown = 0f;
             e.Charging = 0f;
@@ -388,6 +389,7 @@ namespace VividOfFade
             e.Speed = GameConfig.BossSpeed;
             e.SlamTimer = BossInfo.Interval;
             e.BossKind = kind;
+            e.LoopCycle = 0;
             e.AttackStep = 0;
             e.BlinkCooldown = 0f;
             e.Charging = 0f;
@@ -788,6 +790,21 @@ namespace VividOfFade
                 {
                     case EnemyKind.Bat:
                     {
+                        if (e.Prep > 0f)
+                        {
+                            // 急降下の前：ふわっと舞い上がって、羽を大きく広げる
+                            float p = 1f - Mathf.Clamp01(e.Prep / GameConfig.BatDivePrep);
+                            sx = 1f + 0.15f * p; sy = 1f - 0.1f * p; lift = 0.1f + 0.15f * p;
+                            break;
+                        }
+                        if (e.Charging > 0f)
+                        {
+                            // 急降下：羽をたたんで、進む方へ傾く
+                            var sd = Iso.ToScreen(e.ChargeDir);
+                            angle = -(sd.x >= 0f ? 1f : -1f) * 25f;
+                            sx = 0.8f; sy = 1.15f; lift = 0.05f;
+                            break;
+                        }
                         float flap = Mathf.Sin(t * 16f);
                         sy = 1f + 0.12f * flap; sx = 1f - 0.05f * flap;
                         lift = 0.06f + 0.04f * Mathf.Sin(t * 4f);
@@ -842,6 +859,20 @@ namespace VividOfFade
                         break;
                     default:
                     {
+                        if (e.Kind == EnemyKind.Slime && e.Prep > 0f)
+                        {
+                            // 跳びかかる前：ぎゅっと縮む
+                            float p = 1f - Mathf.Clamp01(e.Prep / GameConfig.SlimePouncePrep);
+                            sy = 1f - 0.25f * p; sx = 1f + 0.18f * p;
+                            break;
+                        }
+                        if (e.Kind == EnemyKind.Slime && e.Charging > 0f)
+                        {
+                            // 跳びかかり：縦に伸びて、弧を描いて跳ぶ
+                            float p = 1f - Mathf.Clamp01(e.Charging / GameConfig.SlimePounceTime);
+                            sy = 1.2f; sx = 0.85f; lift = Mathf.Sin(p * Mathf.PI) * 0.35f;
+                            break;
+                        }
                         // スライム（黄金も）：ぷるんと跳ねる。動いているときは大きく
                         float hop = Mathf.Sin(t * (moving ? 9f : 4f));
                         float amp = moving ? 0.12f : 0.05f;
@@ -876,17 +907,55 @@ namespace VividOfFade
         /// <summary>
         /// 種類ごとの動き。moveDir と speed を変える。爆弾虫が爆発して消えたときは true。
         /// </summary>
+        /// <summary>
+        /// 近くで身構えてから、まっすぐ速く突っ込む（コウモリの急降下・スライムの跳びかかり）。突っ込み中・身構え中は true。
+        /// </summary>
+        static bool Lunge(Enemy e, float dt, float dist, Vector2 dir, ref Vector2 moveDir, ref float speed, float range, float every, float prep, float time, float lungeSpeed)
+        {
+            if (e.Charging > 0f)
+            {
+                e.Charging -= dt;
+                moveDir = e.ChargeDir;
+                speed = lungeSpeed;
+                return true;
+            }
+            if (e.Prep > 0f)
+            {
+                e.Prep -= dt;
+                moveDir = Vector2.zero;
+                if (e.Prep <= 0f)
+                {
+                    e.Charging = time;
+                    e.ChargeDir = dir;
+                }
+                return true;
+            }
+            e.ActTimer -= dt;
+            if (e.ActTimer <= 0f && dist < range && dist > 0.5f)
+            {
+                e.ActTimer = every + UnityEngine.Random.Range(0f, 1f);
+                e.Prep = prep;
+                moveDir = Vector2.zero;
+                return true;
+            }
+            return false;
+        }
+
         bool UpdateKind(Enemy e, float dt, float dist, Vector2 dir, ref Vector2 moveDir, ref float speed, Player player, Room room)
         {
             switch (e.Kind)
             {
                 case EnemyKind.Bat:
                 {
+                    if (Lunge(e, dt, dist, dir, ref moveDir, ref speed, GameConfig.BatDiveRange, GameConfig.BatDiveEvery, GameConfig.BatDivePrep, GameConfig.BatDiveTime, GameConfig.BatDiveSpeed)) break;
                     // 追いながら、横にふらふら揺れる
                     var perp = new Vector2(-moveDir.y, moveDir.x);
                     moveDir = (moveDir + perp * Mathf.Sin(Time.time * 6f + e.Phase) * 0.9f).normalized;
                     break;
                 }
+                case EnemyKind.Slime:
+                    Lunge(e, dt, dist, dir, ref moveDir, ref speed, GameConfig.SlimePounceRange, GameConfig.SlimePounceEvery, GameConfig.SlimePouncePrep, GameConfig.SlimePounceTime, GameConfig.SlimePounceSpeed);
+                    break;
                 case EnemyKind.Caster:
                 {
                     // ちょうどよい距離を保ち、ときどき弾を撃つ
