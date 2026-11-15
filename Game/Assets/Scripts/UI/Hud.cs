@@ -1055,7 +1055,16 @@ namespace VividOfFade
             HDivider(panel.x, divY, panel.width); // 層の上の仕切り
             var floorRow = new Rect(panel.x + pp, divY + dt * 1.5f + pp * 0.3f, panel.width - pp * 2f, FloorRowH);
             string floorText = GameConfig.FloorNameEn(World.Floors.Floor) + (World.Floors.IsBossFloor ? "   BOSS" : ""); // HUD では「71F」と短く
-            NumberFont.DrawIn(new Rect(floorRow.x, floorRow.y, floorRow.width * 0.7f, floorRow.height), floorText, Color.white, TextAnchor.MiddleLeft, 0.9f, HudPx);
+            NumberFont.DrawIn(new Rect(floorRow.x, floorRow.y, floorRow.width * 0.45f, floorRow.height), floorText, Color.white, TextAnchor.MiddleLeft, 0.9f, HudPx);
+            // 普通の層：階段の封印までの残りの敵（階段の部屋）。開いたら「OPEN」
+            if (!World.Floors.IsBossFloor && World.Room.StairsArea != null)
+            {
+                int left = World.Enemies.RemainingIn(World.Room.StairsArea);
+                bool open = World.Floors.StairsOpen;
+                string t = open ? "OPEN" : $"ENEMY {left}";
+                var col = open ? new Color(0.55f, 0.8f, 1f) : new Color(1f, 0.82f, 0.4f);
+                NumberFont.DrawIn(new Rect(floorRow.x + floorRow.width * 0.42f, floorRow.y, floorRow.width * 0.3f, floorRow.height), t, col, TextAnchor.MiddleLeft, 0.9f, HudPx);
+            }
             var dodge = new Rect(floorRow.xMax - W * 0.22f, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
             Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.75f, 0.85f, 1f, 0.9f));
