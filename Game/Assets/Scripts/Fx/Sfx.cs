@@ -66,6 +66,44 @@ namespace VividOfFade
             return v * env;
         }
 
+        /// <summary>「テテー」：短いソのあとに、高いドを少し伸ばす（下に1オクターブ低いドを重ねて厚く）。</summary>
+        static AudioClip MakeTeTee()
+        {
+            float gapT = 0.1f;
+            int len = (int)(Rate * (gapT + 0.32f + 0.25f));
+            var data = new float[len];
+            for (int i = 0; i < len; i++)
+            {
+                float t = (float)i / Rate;
+                float v = Brass(783.99f, t, 0.06f) * 0.26f * (t < 0.3f ? 1f : 0f);
+                if (t >= gapT)
+                {
+                    float u = t - gapT;
+                    v += Brass(1046.5f, u, 0.32f) * 0.2f + Brass(523.25f, u, 0.32f) * 0.13f;
+                }
+                data[i] = v;
+            }
+            var clip = AudioClip.Create("tetee", len, 1, Rate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        /// <summary>キラッ：高いドとソを短く2回（羽が開いたとき）。</summary>
+        static AudioClip MakeSparkle()
+        {
+            int len = (int)(Rate * 0.25f);
+            var data = new float[len];
+            for (int i = 0; i < len; i++)
+            {
+                float t = (float)i / Rate;
+                float f = t < 0.07f ? 2093f : 3136f;
+                data[i] = Pulse(f * t, 0.125f) * Mathf.Exp(-(t < 0.07f ? t : t - 0.07f) * 22f) * 0.14f;
+            }
+            var clip = AudioClip.Create("sparkle", len, 1, Rate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
         /// <summary>羽が上がる間：ラッパで「タ・タ・タ」と3つ、ド・ミ・ソと上がる。</summary>
         static AudioClip MakeLevelRise()
         {
