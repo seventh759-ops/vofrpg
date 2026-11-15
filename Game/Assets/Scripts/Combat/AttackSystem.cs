@@ -48,17 +48,18 @@ namespace VividOfFade
             switch (st.Kind)
             {
                 case AttackKind.Projectile:
-                    if (TryAim(player, player.EffectiveLight, out var aim)) FireVolley(player, st, aim);
+                    if (TryAim(player, player.EffectiveLight, out var aim)) { FireVolley(player, st, aim); player.PlayPose(Player.Pose.Shoot, aim); }
                     else return;
                     break;
                 case AttackKind.Slash:
-                    if (TryAim(player, st.Reach + GameConfig.SlimeRadius, out var dir)) Slash(player, st, dir);
+                    if (TryAim(player, st.Reach + GameConfig.SlimeRadius, out var dir)) { Slash(player, st, dir); player.PlayPose(Player.Pose.Swing, dir); }
                     else return;
                     break;
                 case AttackKind.Pulse:
                     // 自動のときは、範囲に敵がいるときだけ焼く
                     if (player.AutoAttack && enemies.FindNearest(player.Pos, st.PulseRadius) == null) return;
                     Pulse(player, st);
+                    player.PlayPose(Player.Pose.Cast, player.FacingLogical);
                     break;
                 default:
                     return; // 回る灯りは UpdateOrbs で当てる

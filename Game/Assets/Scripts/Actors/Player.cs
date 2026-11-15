@@ -134,6 +134,8 @@ namespace VividOfFade
             dodgeCooldown = 0f;
             invuln = 0f;
             hurtTimer = 0f;
+            pose = 0f;
+            hurtPose = 0f;
             Sr.color = Color.white;
             Sr.sortingOrder = SortOrder.For(Vector2.zero);
         }
@@ -256,6 +258,7 @@ namespace VividOfFade
             Hp = Mathf.Max(0, Hp - dealt);
             invuln = GameConfig.HitInvuln;
             hurtTimer = GameConfig.HitInvuln;
+            hurtPose = HurtPoseTime;
             Hurt?.Invoke(dealt);
             if (LogDamage)
                 Debug.Log($"[Damage] {source}: raw {damage} -> {dealt} (armor {Stats.Armor:0}, taken x{Stats.DamageTaken:0.00})  HP {Hp}/{MaxHp}" + (IsDead ? "  DEAD" : ""));
@@ -343,12 +346,17 @@ namespace VividOfFade
             dashTimer = Mathf.Max(0f, dashTimer - dt);
             Pos = room.Move(Pos, Iso.ToLogical(screenVelocity) * dt, GameConfig.PlayerRadius);
 
-            if (Mathf.Abs(screenVelocity.x) > 0.01f) Sr.flipX = screenVelocity.x < 0f;
+            if (pose <= 0f && Mathf.Abs(screenVelocity.x) > 0.01f) Sr.flipX = screenVelocity.x < 0f; // 攻撃の動きの間は、攻撃した方を向いたまま
             Animate(dt, dashing ? 0f : screenVelocity.magnitude);
             Sr.sortingOrder = SortOrder.For(Pos);
+            ApplyPose(dt, dashing, screenVelocity);
             if (dashing)
             {
                 Sr.color = new Color(0.7f, 0.85f, 1f, 0.8f);
+            }
+            else if (hurtPose > HurtPoseTime - 0.09f)
+            {
+                Sr.color = new Color(1f, 0.45f, 0.45f, 1f); // 当たった瞬間は赤く
             }
             else if (hurtTimer > 0f)
             {
@@ -359,6 +367,88 @@ namespace VividOfFade
                 Sr.color = Color.white;
             }
             UpdateAura();
+        }
+
+        // ---- 体の動き（絵を描き替えず、傾け・伸び縮み・踏み込みで見せる） ----
+        public enum Pose { Swing, Shoot, Cast }
+        const float HurtPoseTime = 0.28f;
+        Pose poseKind;
+        float pose, poseLen = 1f, hurtPose;
+        Vector2 poseDir; // 画面の向き
+
+        /// <summary>攻撃・スキルの動きを始める（aim は論理の向き）。</summary>
+        public void PlayPose(Pose kind, Vector2 aim)
+        {
+            poseKind = kind;
+            poseLen = kind == Pose.Swing ? 0.2f : kind == Pose.Shoot ? 0.14f : 0.3f;
+            pose = poseLen;
+            var s = Iso.ToScreen(aim);
+            poseDir = s.sqrMagnitude > 0.0001f ? s.normalized : Vector2.down;
+            if (Mathf.Abs(poseDir.x) > 0.2f) Sr.flipX = poseDir.x < 0f; // 攻撃する方を向く
+        }
+
+        /// <summary>今の動きを体に当てる（足元の位置は変えない）。</summary>
+        void ApplyPose(float dt, bool dashing, Vector2 screenVelocity)
+        {
+            pose = Mathf.Max(0f, pose - dt);
+            hurtPose = Mathf.Max(0f, hurtPose - dt);
+            float sx = 1f, sy = 1f, angle = 0f;
+            Vector2 off = Vector2.zero;
+            if (pose > 0f)
+            {
+                float t = 1f - pose / poseLen;                       // 0 → 1
+                float side = poseDir.x >= 0f ? 1f : -1f;
+                switch (poseKind)
+                {
+                    case Pose.Swing:
+                    {
+                        // 一瞬ためて（後ろへ引く）、踏み込んで振り抜き、戻る
+                        float wind = t < 0.25f ? t / 0.25f : 0f;
+                        float hit = t < 0.25f ? 0f : Mathf.Sin((t - 0.25f) / 0.75f * Mathf.PI);
+                        off = poseDir * (0.11f * hit - 0.04f * wind);
+                        angle = -side * (14f * hit - 6f * wind);
+                        sx = 1f + 0.08f * hit; sy = 1f - 0.06f * hit;
+                        break;
+                    }
+                    case Pose.Shoot:
+                    {
+                        // 撃った反動で少し後ろへ
+                        float k = Mathf.Sin(t * Mathf.PI);
+                        off = -poseDir * 0.04f * k;
+                        angle = side * 5f * k;
+                        sy = 1f + 0.03f * k;
+                        break;
+                    }
+                    default:
+                    {
+                        // 術：ぐっと縮んで、伸び上がる
+                        float k = t < 0.35f ? -Mathf.Sin(t / 0.35f * Mathf.PI * 0.5f) : Mathf.Sin((t - 0.35f) / 0.65f * Mathf.PI) * (1f - (t - 0.35f) / 0.65f * 0.3f);
+                        sy = 1f + 0.1f * k; sx = 1f - 0.06f * k;
+                        break;
+                    }
+                }
+            }
+            else if (dashing && screenVelocity.sqrMagnitude > 0.01f)
+            {
+                // 回避：進む方へ前のめりに、少し伸びる
+                float side = screenVelocity.x >= 0f ? 1f : -1f;
+                angle = -side * 12f;
+                sx = 1.08f; sy = 0.94f;
+            }
+            if (hurtPose > 0f)
+            {
+                // のけぞって小刻みに揺れる
+                float h = hurtPose / HurtPoseTime;
+                off.x += Mathf.Sin(hurtPose * 70f) * 0.035f * h;
+                float side = Sr.flipX ? -1f : 1f;
+                angle += side * 10f * h;
+                sy *= 1f - 0.08f * h; sx *= 1f + 0.05f * h;
+            }
+            float scale = GameConfig.PlayerScale;
+            transform.localScale = new Vector3(scale * sx, scale * sy, 1f);
+            transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+            // 絵の中心から伸び縮みするので、縮んだ分だけ下げて足元を床に付けたままにする
+            transform.position = Iso.ToScreen(pos) + new Vector2(0f, (scale * sy - 1f) * 0.5f) + off;
         }
 
         /// <summary>職業の見た目に切り替える。転生していれば、足元にその回数の色のオーラを付ける。</summary>

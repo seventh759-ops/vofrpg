@@ -214,6 +214,8 @@ namespace VividOfFade
             e.Radius = GameConfig.SlimeRadius;
             e.Knock = Vector2.zero;
             e.FlashTimer = 0f;
+            e.HitPose = 0f;
+            e.AnimT = 0f;
             e.Dying = false;
             e.DyingTimer = 0f;
             e.DeathLength = 0f;
@@ -231,6 +233,7 @@ namespace VividOfFade
             e.SlamTimer = 0f;
             e.Windup = 0f;
             e.transform.localScale = Vector3.one;
+            e.transform.localRotation = Quaternion.identity;
             e.Kind = kind;
             e.Prep = 0f;
             e.Charging = 0f;
@@ -513,6 +516,7 @@ namespace VividOfFade
             if (e.IsBoss || e.Elite != EliteKind.None) amount *= EliteDamageMult;
             e.Hp -= amount;
             e.FlashTimer = 0.08f;
+            e.HitPose = HitPoseTime;
             e.Sr.color = HitColor;
             // のけぞり。攻撃が速いと何度も足されて遠くまで飛ぶので、速さに上限をつける（1回のけぞると最大 0.4 マスほど）
             float knockMult = e.IsBoss ? 0.05f : e.Elite != EliteKind.None ? 0.5f : 1f; // ボスはほとんど、精鋭は半分しかのけぞらない
@@ -662,12 +666,14 @@ namespace VividOfFade
                         float shake = 0.06f + 0.12f * tc;
                         e.transform.position = Iso.ToScreen(e.Pos) + UnityEngine.Random.insideUnitCircle * shake;
                         e.transform.localScale = Vector3.one * (e.BaseScale * (1f - 0.35f * tc * tc));
+                        e.transform.localRotation = Quaternion.identity;
                         bool flash = Mathf.Repeat(Time.time * (6f + 18f * tc), 1f) < 0.5f;
                         e.Sr.color = flash ? new Color(1f, 1f, 1f, 1f - tc * tc) : new Color(1f, 0.55f, 0.7f, 1f - tc * tc);
                         if (e.DyingTimer <= 0f) ReleaseAt(i);
                         continue;
                     }
                     // 倒れたら、横につぶれて縮みながら消える（大きく膨らむのは「撃破時の爆発」の加護と紛らわしいので、やめた）。ボスは今までどおり膨らむ
+                    e.transform.localRotation = Quaternion.identity;
                     float t = 1f - Mathf.Clamp01(e.DyingTimer / (e.IsBoss ? DeathTime * 4f : DeathTime));
                     e.transform.localScale = e.IsBoss ? Vector3.one * (e.BaseScale * (1f + t * 0.6f))
                         : new Vector3(e.BaseScale * (1f + t * 0.25f), e.BaseScale * (1f - t * 0.7f), 1f);
@@ -730,6 +736,7 @@ namespace VividOfFade
                 pos = room.Move(pos, (moveDir * speed + e.Knock) * dt + separation * 0.5f, e.Radius);
                 e.Knock = Vector2.MoveTowards(e.Knock, Vector2.zero, 20f * dt);
                 e.Pos = pos;
+                AnimateBody(e, dt, speed * moveDir.magnitude);
                 e.Sr.sortingOrder = SortOrder.For(pos);
                 if (e.Aura.enabled)
                 {
@@ -743,6 +750,91 @@ namespace VividOfFade
                 {
                     if (player.TryHit(e.ContactDamage, Describe(e) + " contact", e.Acc, NearbyCount)) e.Knock -= dir * 4f;
                 }
+            }
+        }
+
+        const float HitPoseTime = 0.14f;
+
+        /// <summary>
+        /// 体の動き（絵は描き替えず、伸び縮み・傾き・上下で見せる）。足元は床に付けたまま。
+        /// スライムは跳ね、蝙蝠は羽ばたき、術士は浮かび、巨漢は体をゆすって歩き、爆弾虫はせわしなく揺れる。
+        /// ボスはゆっくり息をし、力をためている間は膨らんでふるえる。当たると一瞬つぶれる。
+        /// </summary>
+        void AnimateBody(Enemy e, float dt, float moveSpeed)
+        {
+            bool moving = moveSpeed > 0.05f;
+            e.AnimT += dt * (moving ? 1f + Mathf.Min(moveSpeed, 4f) * 0.5f : 0.6f);
+            e.HitPose = Mathf.Max(0f, e.HitPose - dt);
+            float t = e.AnimT + e.Phase;
+            float sx = 1f, sy = 1f, angle = 0f, lift = 0f;
+            Vector2 shake = Vector2.zero;
+            if (e.IsBoss)
+            {
+                float breath = Mathf.Sin(t * 2.2f);
+                sy = 1f + 0.03f * breath; sx = 1f - 0.015f * breath;
+                if (e.Windup > 0f)
+                {
+                    // 力をためる：ぐっと膨らみ、小刻みにふるえる
+                    sx *= 1.07f; sy *= 1.05f;
+                    shake = UnityEngine.Random.insideUnitCircle * 0.035f;
+                }
+            }
+            else
+            {
+                switch (e.Kind)
+                {
+                    case EnemyKind.Bat:
+                    {
+                        float flap = Mathf.Sin(t * 16f);
+                        sy = 1f + 0.12f * flap; sx = 1f - 0.05f * flap;
+                        lift = 0.06f + 0.04f * Mathf.Sin(t * 4f);
+                        break;
+                    }
+                    case EnemyKind.Caster:
+                        lift = 0.05f + 0.04f * Mathf.Sin(t * 3f);
+                        angle = 3f * Mathf.Sin(t * 1.5f);
+                        break;
+                    case EnemyKind.Brute:
+                    {
+                        float step = Mathf.Sin(t * 5f);
+                        angle = (moving ? 6f : 2f) * step;
+                        sy = 1f - (moving ? 0.04f : 0.02f) * Mathf.Abs(step);
+                        break;
+                    }
+                    case EnemyKind.Bomber:
+                        angle = 8f * Mathf.Sin(t * 14f);
+                        sy = 1f + 0.05f * Mathf.Sin(t * 9f);
+                        break;
+                    default:
+                    {
+                        // スライム（黄金も）：ぷるんと跳ねる。動いているときは大きく
+                        float hop = Mathf.Sin(t * (moving ? 9f : 4f));
+                        float amp = moving ? 0.12f : 0.05f;
+                        sy = 1f + amp * hop; sx = 1f - amp * 0.7f * hop;
+                        if (moving) lift = Mathf.Max(0f, hop) * 0.05f;
+                        break;
+                    }
+                }
+            }
+            if (e.HitPose > 0f)
+            {
+                float h = e.HitPose / HitPoseTime;
+                float k = e.IsBoss ? 0.4f : 1f;
+                sx *= 1f + 0.16f * h * k; sy *= 1f - 0.14f * h * k;
+            }
+            float b = e.BaseScale;
+            e.transform.localScale = new Vector3(b * sx, b * sy, 1f);
+            e.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+            float hgt = e.Sr.sprite != null ? e.Sr.sprite.bounds.size.y : 1f;
+            float offY = (sy - 1f) * 0.5f * hgt * b + lift;
+            e.transform.position = Iso.ToScreen(e.Pos) + new Vector2(0f, offY) + shake;
+            if (e.Aura.enabled)
+            {
+                // 足元の輪は体の動きに付いていかず、床に置いたまま
+                float r = e.Radius * 1.5f, k = 1f / Mathf.Max(0.01f, b);
+                e.Aura.transform.localScale = new Vector3(r * 1.414f * k / sx, r * 0.707f * k / sy, 1f);
+                e.Aura.transform.localRotation = Quaternion.Euler(0f, 0f, -angle);
+                e.Aura.transform.localPosition = new Vector3(0f, (-0.3f - offY) / Mathf.Max(0.01f, b * sy), 0f);
             }
         }
 

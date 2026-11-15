@@ -15,6 +15,7 @@ namespace VividOfFade
         public static bool Cast(FxSystem fx, SkillSpec spec, Player player, Vector2 origin, Vector2 aim, float radius, Vector2 dashStart, Vector2 dashEnd)
         {
             Color c = spec.Color;
+            player?.PlayPose(Player.Pose.Cast, aim);
             switch (spec.Name)
             {
                 // ---------------- 灯術師 ----------------

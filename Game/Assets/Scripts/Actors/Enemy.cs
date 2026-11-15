@@ -58,6 +58,8 @@ namespace VividOfFade
         public float Charging;     // 突進している残り時間
         public Vector2 ChargeDir;
         public float Phase;        // ふらふら飛ぶ揺れのずれ
+        public float AnimT;        // 体の動き（跳ねる・羽ばたく）の時計
+        public float HitPose;      // 当たってつぶれる動きの残り時間
 
         // 精鋭
         public EliteKind Elite;
