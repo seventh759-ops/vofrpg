@@ -29,8 +29,8 @@ namespace VividOfFade
         readonly float[] cooldowns = new float[SkillInfo.Slots];
         readonly List<PendingStrike> strikes = new List<PendingStrike>();
 
-        /// <summary>スキルレベルが上がった（スキル名・新しいレベル）。</summary>
-        public event Action<string, int> SkillLeveled;
+        /// <summary>スキルレベルが上がった（スキル・新しいレベル・スキルの番号）。</summary>
+        public event Action<SkillSpec, int, int> SkillLeveled;
         /// <summary>新しいスキルを覚えた（スキル名）。</summary>
         public event Action<string> SkillLearned;
 
@@ -123,7 +123,7 @@ namespace VividOfFade
             if (ch.SkillUses[index] < SkillInfo.UsesToNext(ch.SkillLv[index])) return;
             ch.SkillUses[index] = 0;
             ch.SkillLv[index]++;
-            SkillLeveled?.Invoke(spec.DisplayName, ch.SkillLv[index]);
+            SkillLeveled?.Invoke(spec, ch.SkillLv[index], index);
         }
 
         /// <summary>レベルが上がったときに呼ぶ。新しく覚えたスキルを空いているボタンへ付ける。</summary>

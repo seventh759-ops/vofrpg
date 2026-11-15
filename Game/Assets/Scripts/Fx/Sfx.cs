@@ -10,7 +10,7 @@ namespace VividOfFade
         const int Rate = 44100;
 
         AudioSource source;
-        AudioClip hit, pickup, ember, chime, fanfare, relic, boom, fountain, anvil;
+        AudioClip hit, pickup, ember, chime, fanfare, relic, boom, fountain, anvil, skillUp;
         float lastHit;
         float lastEmber;
 
@@ -28,6 +28,7 @@ namespace VividOfFade
             boom = Make("boom", new[] { 90f }, 0.18f, 0.5f, Wave.Noise);
             fountain = Make("fountain", new[] { 523f, 784f, 1046f }, 0.05f, 0.3f, Wave.Square);
             anvil = MakeAnvil();
+            skillUp = Make("skillUp", new[] { 1175f, 1568f, 2093f, 2637f, 3136f }, 0.045f, 0.28f, Wave.Sine); // きらりと駆け上がる（キャラのレベルアップとは別の音）
         }
 
         public void Hit()
@@ -45,6 +46,7 @@ namespace VividOfFade
         }
 
         public void Pickup() => source.PlayOneShot(pickup);
+        public void SkillUp() => source.PlayOneShot(skillUp, 0.9f);
         public void Boom() => source.PlayOneShot(boom, 0.7f);
         public void Fountain() => source.PlayOneShot(fountain);
 

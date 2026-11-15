@@ -52,7 +52,7 @@ namespace VividOfFade
     {
         public const int PerClass = 8;
         public const int Slots = 3;
-        public const int MaxSkillLevel = 10;
+        public const int MaxSkillLevel = 20;
 
         static readonly SkillSpec[][] table =
         {
@@ -118,11 +118,11 @@ namespace VividOfFade
             return level >= Get(type, index).ReqLevel;
         }
 
-        /// <summary>スキルレベルによる強さ（威力・回復量・効果の大きさ）。Lv1 で 1、1つ上がるごとに +10%。</summary>
-        public static float Power(int skillLevel) => 1f + 0.1f * (Mathf.Max(1, skillLevel) - 1);
+        /// <summary>スキルレベルによる強さ（威力・回復量・効果の大きさ）。Lv1 で 1、1つ上がるごとに +5%（Lv20 で 1.95倍）。</summary>
+        public static float Power(int skillLevel) => 1f + 0.05f * (Mathf.Max(1, skillLevel) - 1);
 
-        /// <summary>スキルレベルによる待ち時間の倍率。1つ上がるごとに -3%。</summary>
-        public static float CooldownMult(int skillLevel) => 1f - 0.03f * (Mathf.Max(1, skillLevel) - 1);
+        /// <summary>スキルレベルによる待ち時間の倍率。1つ上がるごとに -1.5%（Lv20 で 0.715倍）。</summary>
+        public static float CooldownMult(int skillLevel) => 1f - 0.015f * (Mathf.Max(1, skillLevel) - 1);
 
         /// <summary>
         /// 実際の消費 MP。レベルが上がるほど（最大 MP が増えるぶん）、後ろのスキルほど重くなる。
@@ -131,6 +131,6 @@ namespace VividOfFade
             Mathf.RoundToInt(spec.Mp * (1f + GameConfig.SkillMpPerLevel * (Mathf.Max(1, level) - 1)) * (1f + GameConfig.SkillMpPerIndex * Mathf.Max(0, index)));
 
         /// <summary>次のスキルレベルまでに必要な使用回数。</summary>
-        public static int UsesToNext(int skillLevel) => 5 + 5 * skillLevel;
+        public static int UsesToNext(int skillLevel) => 10 + 10 * skillLevel; // Lv1→2 は20回、Lv19→20 は200回（Lv20 まで合計2090回）
     }
 }

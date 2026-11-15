@@ -253,6 +253,20 @@ namespace VividOfFade
                 float cd = World.Skills.CooldownRatio(i);
                 if (cd > 0f) Fill(new Rect(r.x, r.y, r.width, r.height * cd), new Color(0f, 0f, 0f, 0.6f));
 
+                // スキルレベルが上がった直後：スキルの色で光って、上に「LV n」が浮かぶ
+                if (index == flashSkillIndex && flashSkillT >= 0f && flashSkillT < FlashSkillTime)
+                {
+                    float ft = flashSkillT / FlashSkillTime;
+                    float pulse = (1f - ft) * (0.6f + 0.4f * Mathf.Sin(flashSkillT * 18f));
+                    var fc = flashSkillColor; fc.a = 0.35f * pulse;
+                    Fill(r, fc);
+                    var bc = Color.Lerp(flashSkillColor, Color.white, 0.4f); bc.a = pulse;
+                    OrnateFrame(r, bc, FrameT * 1.5f, false, false);
+                    float rise = r.height * (0.15f + 0.45f * Mathf.Sqrt(ft));
+                    var lc = Color.Lerp(Color.white, flashSkillColor, 0.35f); lc.a = ft < 0.7f ? 1f : 1f - (ft - 0.7f) / 0.3f;
+                    NumberFont.DrawIn(new Rect(r.x - r.width * 0.3f, r.y - rise - r.height * 0.3f, r.width * 1.6f, r.height * 0.3f), "LV" + flashSkillLv, lc, TextAnchor.MiddleCenter, 1f);
+                }
+
                 // 消費 MP（右下に小さく）
                 cost.normal.textColor = enoughMp ? new Color(0.65f, 0.8f, 1f) : new Color(1f, 0.5f, 0.5f);
                 NumberFont.DrawIn(new Rect(r.x, r.yMax - r.height * 0.34f, r.width * 0.94f, r.height * 0.32f), mpCost.ToString(), cost.normal.textColor, TextAnchor.MiddleRight, 1f);
@@ -646,6 +660,28 @@ namespace VividOfFade
             if (subH > 0f) GUI.Label(new Rect((W - textW) * 0.5f, band.y + pad + titleH, textW, subH), bannerSub, st);
         }
 
+        /// <summary>知らせを、画面には出さず履歴にだけ残す。</summary>
+        public void Log(string text, Color color)
+        {
+            if (messages.Count >= 20) messages.RemoveAt(0);
+            messages.Add(new ToastLine { Text = text, Color = color });
+        }
+
+        // ---- スキルレベルが上がったときのボタンの光 ----
+        int flashSkillIndex = -1, flashSkillLv;
+        float flashSkillT = -1f;
+        Color flashSkillColor;
+        const float FlashSkillTime = 1.4f;
+
+        /// <summary>スキルレベルが上がった：そのスキルのボタンを光らせ、「LV n」を浮かべる。</summary>
+        public void FlashSkill(int index, int lv, Color color)
+        {
+            flashSkillIndex = index;
+            flashSkillLv = lv;
+            flashSkillColor = color;
+            flashSkillT = 0f;
+        }
+
         public void Toast(string text, Color color)
         {
             if (toasts.Count >= 5) toasts.RemoveAt(0);
@@ -674,6 +710,7 @@ namespace VividOfFade
             if (boonGetTime >= 0f && World != null && !World.Paused && (boonGetTime += dt) >= BoonGetLife) boonGetTime = -1f;
             if (levelUpTime >= 0f && World != null && !World.Paused && (levelUpTime += dt) >= FxSystem.LevelUpDuration) levelUpTime = -1f;
             if (plateTime >= 0f && (plateTime += dt) >= PlateLife) plateTime = -1f;
+            if (flashSkillT >= 0f && World != null && !World.Paused && (flashSkillT += dt) >= FlashSkillTime) flashSkillT = -1f;
 
             for (int i = numbers.Count - 1; i >= 0; i--)
             {

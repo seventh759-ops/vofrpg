@@ -458,11 +458,7 @@ namespace VividOfFade
             Attack = AddChild<AttackSystem>("Attack");
             Attack.Init(Enemies, Shots, Fx);
             Skills = AddChild<SkillSystem>("Skills");
-            Skills.SkillLeveled += (name, lv) =>
-            {
-                Hud.Toast($"{name} Lv {lv}", new Color(0.6f, 0.85f, 1f));
-                Profile.Save();
-            };
+            Skills.SkillLeveled += OnSkillLeveled;
             // スキル名の文字は出さない（スキルごとの演出で分かるように。SkillVfx）
             Skills.Shake = (amount, time) => cameraRig.Shake(amount, time);
             Skills.SkillLearned += name =>
@@ -1545,6 +1541,30 @@ namespace VividOfFade
         }
 
         int DropLevel => GameConfig.DropLevel(Floors.Tier, Profile.Current != null ? Profile.Current.Level : 1);
+
+        /// <summary>
+        /// スキルレベルが上がった。キャラのレベルアップ（翼と光の柱）とは別の演出：
+        /// 頭の上にそのスキルのアイコンがぽんと出て浮かび、足元にスキルの色の輪、色の粒が渦を巻いてのぼる。下のボタンも光り、「LV n」が浮かぶ。
+        /// </summary>
+        void OnSkillLeveled(SkillSpec spec, int lv, int index)
+        {
+            var c = spec.Color; c.a = 1f;
+            Vector2 p = Player.Pos;
+            float head = 1.25f * GameConfig.PlayerScale;
+            Fx.Emit(p, head, PixelArt.SkillIcon(spec), Color.white, 1.1f, Vector2.zero, 0.7f, 0f, 1.4f, 0.75f, 0f, 2.5f);
+            Fx.Ring(p, 1.1f, c, 0.35f);
+            Fx.After(0.12f, () => Fx.Ring(Player.Pos, 1.7f, new Color(c.r, c.g, c.b, 0.6f), 0.4f));
+            for (int k = 0; k < 10; k++)
+            {
+                float a = k / 10f * Mathf.PI * 2f;
+                var dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                Fx.Emit(p + dir * 0.5f, 0.1f, PixelArt.Spark, Color.Lerp(c, Color.white, 0.4f), 0.8f, new Vector2(-dir.y, dir.x) * 1.2f, 1.6f, 0f, 1f, 0.3f, 0f, 1.5f);
+            }
+            Sfx.SkillUp();
+            Hud.FlashSkill(index, lv, c);
+            Hud.Log($"{spec.DisplayName} Lv {lv}", new Color(0.6f, 0.85f, 1f)); // 文字の知らせは履歴にだけ残す
+            Profile.Save();
+        }
 
         /// <summary>図鑑に初めて載った。区切りに届いたら、全能力値が上がる。</summary>
         void OnCodexDiscovered(string name, bool reward)
