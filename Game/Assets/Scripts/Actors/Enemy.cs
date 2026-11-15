@@ -60,6 +60,7 @@ namespace VividOfFade
         public float Phase;        // ふらふら飛ぶ揺れのずれ
         public float AnimT;        // 体の動き（跳ねる・羽ばたく）の時計
         public float HitPose;      // 当たってつぶれる動きの残り時間
+        public float AttackPose;   // 攻撃した直後の動き（反動）の残り時間
 
         // 精鋭
         public EliteKind Elite;

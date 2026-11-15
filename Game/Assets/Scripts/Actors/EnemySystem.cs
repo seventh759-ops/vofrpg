@@ -215,6 +215,7 @@ namespace VividOfFade
             e.Knock = Vector2.zero;
             e.FlashTimer = 0f;
             e.HitPose = 0f;
+            e.AttackPose = 0f;
             e.AnimT = 0f;
             e.Dying = false;
             e.DyingTimer = 0f;
@@ -766,6 +767,7 @@ namespace VividOfFade
             bool moving = moveSpeed > 0.05f;
             e.AnimT += dt * (moving ? 1f + Mathf.Min(moveSpeed, 4f) * 0.5f : 0.6f);
             e.HitPose = Mathf.Max(0f, e.HitPose - dt);
+            e.AttackPose = Mathf.Max(0f, e.AttackPose - dt);
             float t = e.AnimT + e.Phase;
             float sx = 1f, sy = 1f, angle = 0f, lift = 0f;
             Vector2 shake = Vector2.zero;
@@ -792,19 +794,51 @@ namespace VividOfFade
                         break;
                     }
                     case EnemyKind.Caster:
+                    {
                         lift = 0.05f + 0.04f * Mathf.Sin(t * 3f);
                         angle = 3f * Mathf.Sin(t * 1.5f);
+                        // 撃つ前：杖を掲げるように伸び上がる／撃った直後：反動で縮む
+                        if (e.ActTimer < 0.35f) { float p = 1f - Mathf.Clamp01(e.ActTimer / 0.35f); sy = 1f + 0.14f * p; sx = 1f - 0.06f * p; lift += 0.05f * p; }
+                        if (e.AttackPose > 0f) { float r = e.AttackPose / 0.15f; sy = 1f - 0.12f * r; sx = 1f + 0.1f * r; }
                         break;
+                    }
                     case EnemyKind.Brute:
                     {
-                        float step = Mathf.Sin(t * 5f);
-                        angle = (moving ? 6f : 2f) * step;
-                        sy = 1f - (moving ? 0.04f : 0.02f) * Mathf.Abs(step);
+                        if (e.Prep > 0f)
+                        {
+                            // 力をためる：身をかがめて、小刻みにふるえる
+                            float p = 1f - Mathf.Clamp01(e.Prep / GameConfig.BrutePrep);
+                            sy = 1f - 0.16f * p; sx = 1f + 0.12f * p;
+                            shake = UnityEngine.Random.insideUnitCircle * 0.025f * p;
+                        }
+                        else if (e.Charging > 0f)
+                        {
+                            // 突進：進む方へ前のめりに、低く長く
+                            var sd = Iso.ToScreen(e.ChargeDir);
+                            angle = -(sd.x >= 0f ? 1f : -1f) * 16f;
+                            sx = 1.14f; sy = 0.9f;
+                        }
+                        else
+                        {
+                            float step = Mathf.Sin(t * 5f);
+                            angle = (moving ? 6f : 2f) * step;
+                            sy = 1f - (moving ? 0.04f : 0.02f) * Mathf.Abs(step);
+                        }
                         break;
                     }
                     case EnemyKind.Bomber:
-                        angle = 8f * Mathf.Sin(t * 14f);
-                        sy = 1f + 0.05f * Mathf.Sin(t * 9f);
+                        if (e.Prep > 0f)
+                        {
+                            // 導火線に火がついた：どんどん膨らみ、激しくふるえる
+                            float p = 1f - Mathf.Clamp01(e.Prep / GameConfig.BomberFuse);
+                            sx = sy = 1f + 0.3f * p * p;
+                            angle = (6f + 10f * p) * Mathf.Sin(Time.time * (30f + 30f * p));
+                        }
+                        else
+                        {
+                            angle = 8f * Mathf.Sin(t * 14f);
+                            sy = 1f + 0.05f * Mathf.Sin(t * 9f);
+                        }
                         break;
                     default:
                     {
@@ -868,6 +902,7 @@ namespace VividOfFade
                         e.ActTimer = GameConfig.CasterFireInterval + UnityEngine.Random.Range(0f, 0.6f);
                         float bulletMult = GameConfig.TierDamage[e.Tier] * (e.Elite != EliteKind.None ? 1.3f : 1f);
                         fireAcc = e.Acc;
+                        e.AttackPose = 0.15f;
                         Fire(e.Pos + dir * 0.3f, dir * GameConfig.BulletSpeed, Mathf.Max(1, Mathf.RoundToInt(GameConfig.BulletDamage(FloorTier) * bulletMult)));
                     }
                     break;
