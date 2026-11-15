@@ -54,55 +54,58 @@ namespace VividOfFade
         /// <summary>レベルアップ：羽が開いた瞬間の、鐘のような明るい和音。</summary>
         public void LevelBloom() => source.PlayOneShot(levelBloom, 0.85f);
 
-        /// <summary>ほかの効果音と同じ電子音（矩形波）の手ざわりで、重なりながら駆け上がる。低いドの土台つき。</summary>
+        /// <summary>
+        /// ラッパの音（倍音を重ねた金管らしい音）。吹き始めは少しこもって、すぐ明るく開く。長い音には少し揺れ（ビブラート）。
+        /// </summary>
+        static float Brass(float f, float t, float noteLen)
+        {
+            float bright = Mathf.Lerp(0.45f, 0.82f, Mathf.Clamp01(t / 0.045f));   // 吹き始めはこもり、開く
+            float vib = t > 0.15f ? 1f + 0.006f * Mathf.Sin(2f * Mathf.PI * 5.5f * t) : 1f;
+            float v = 0f, w = 1f;
+            for (int n = 1; n <= 10; n++)
+            {
+                v += Mathf.Sin(2f * Mathf.PI * f * vib * n * t) * w / n;
+                w *= bright;
+            }
+            float env = Mathf.Min(1f, t / 0.025f) * (t < noteLen ? 1f - 0.2f * Mathf.Clamp01((t - 0.03f) / 0.1f) : Mathf.Exp(-(t - noteLen) * 18f));
+            return v * env;
+        }
+
+        /// <summary>羽が上がる間：ラッパで「タ・タ・タ」と3つ、ド・ミ・ソと上がる。</summary>
         static AudioClip MakeLevelRise()
         {
-            float[] notes = { 523.25f, 659.25f, 783.99f, 1046.5f, 1318.5f, 1568f };
-            float step = 0.07f, ring = 0.32f;
-            int len = (int)(Rate * (step * notes.Length + ring));
+            float[] notes = { 523.25f, 659.25f, 783.99f };
+            float step = 0.15f, noteLen = 0.1f;
+            int len = (int)(Rate * (step * notes.Length + 0.2f));
             var data = new float[len];
             for (int n = 0; n < notes.Length; n++)
             {
                 int start = (int)(Rate * step * n);
-                int dur = (int)(Rate * ring);
-                for (int i = 0; i < dur && start + i < len; i++)
+                for (int i = 0; start + i < len && i < (int)(Rate * 0.3f); i++)
                 {
                     float t = (float)i / Rate;
-                    float env = Mathf.Min(1f, t / 0.004f) * Mathf.Exp(-t * 9f);
-                    data[start + i] += Pulse(notes[n] * t, 0.25f) * env * 0.13f;
+                    data[start + i] += Brass(notes[n], t, noteLen) * 0.26f;
                 }
-            }
-            // 土台：低いドの三角波を、駆け上がる間ずっと
-            for (int i = 0; i < len; i++)
-            {
-                float t = (float)i / Rate;
-                float env = Mathf.Min(1f, t / 0.01f) * Mathf.Exp(-t * 2.5f);
-                data[i] += Tri(261.63f * t) * env * 0.16f;
             }
             var clip = AudioClip.Create("levelRise", len, 1, Rate, false);
             clip.SetData(data, 0);
             return clip;
         }
 
-        /// <summary>羽が開いた瞬間：ドミソドの和音を矩形波でじゃーんと鳴らし、高い音でキラッと飾る。</summary>
+        /// <summary>羽が開いた瞬間：ラッパの和音（ド・ミ・ソ・高いド）を「パーー」と長く吹き鳴らす。</summary>
         static AudioClip MakeLevelBloom()
         {
             float[] chord = { 523.25f, 659.25f, 783.99f, 1046.5f };
-            float dur = 1.1f;
-            int len = (int)(Rate * dur);
+            float[] gain = { 0.11f, 0.095f, 0.095f, 0.145f }; // いちばん上の音を主に
+            float noteLen = 0.75f;
+            int len = (int)(Rate * (noteLen + 0.35f));
             var data = new float[len];
             for (int i = 0; i < len; i++)
             {
                 float t = (float)i / Rate;
-                float env = Mathf.Min(1f, t / 0.003f) * Mathf.Exp(-t * 2.8f);
-                float vib = 1f + 0.004f * Mathf.Sin(2f * Mathf.PI * 6f * t); // 少しだけ揺らす
                 float v = 0f;
-                foreach (var f in chord) v += Pulse(f * vib * t, 0.5f);
-                v *= 0.07f;
-                v += Tri(130.81f * t) * 0.2f; // 低いドの支え
-                // キラッ：高いドとソを短く2回
-                if (t < 0.18f) v += Pulse((t < 0.09f ? 2093f : 3136f) * t, 0.125f) * Mathf.Exp(-(t % 0.09f) * 30f) * 0.08f;
-                data[i] = v * env;
+                for (int k = 0; k < chord.Length; k++) v += Brass(chord[k], t, noteLen) * gain[k];
+                data[i] = v;
             }
             var clip = AudioClip.Create("levelBloom", len, 1, Rate, false);
             clip.SetData(data, 0);
