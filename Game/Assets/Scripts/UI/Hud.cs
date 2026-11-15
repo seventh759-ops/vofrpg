@@ -1286,6 +1286,7 @@ namespace VividOfFade
             if (World.Floors.StairsOpen) Dot(room.StairsPos, dot * 1.3f, new Color(0.45f, 0.75f, 1f)); // 通れる階段は青
             else if (!World.Floors.IsBossFloor) Dot(room.StairsPos, dot * 1.3f, new Color(1f, 0.8f, 0.3f)); // 封印中は黄色（開くと青）
             if (room.HasAltar && !World.AltarUsed) Dot(room.AltarPos, dot, new Color(1f, 0.5f, 0.2f));
+            if (room.HasSpring && !World.SpringUsed) Dot(room.SpringPos, dot, new Color(0.5f, 1f, 0.7f)); // 癒やしの泉は緑
             Dot(World.Player.Pos, dot, Color.white);
         }
 

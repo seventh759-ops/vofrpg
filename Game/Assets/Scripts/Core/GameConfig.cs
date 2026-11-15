@@ -10,6 +10,7 @@ namespace VividOfFade
         public const int BossFloorEvery = 5;
         // 祭壇：ボスの層の1つ前には必ず1つ。ほかの層に出る確率（0 なら出ない）
         public const float AltarChanceOther = 0f;
+        public const float SpringChance = 0.3f; // 癒やしの泉（HP と MP を満タンに戻すだけ）が普通の層に出る確率
         public static bool AltarOnFloor(int floor) =>
             !IsBossFloor(floor) && (IsBossFloor(floor + 1) || (AltarChanceOther > 0f && ((floor * 7919 + 13) % 1000) < AltarChanceOther * 1000f));
         public const int MaxFloor = 100; // 塔の最後の層（ボス）

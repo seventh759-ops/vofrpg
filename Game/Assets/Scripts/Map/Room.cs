@@ -54,6 +54,9 @@ namespace VividOfFade
         public RoomArea StairsArea { get; private set; }
         /// <summary>祭壇の位置（ボスの層にはない）。</summary>
         public bool HasAltar { get; private set; }
+        /// <summary>癒やしの泉（普通の層にときどき。乗ると HP と MP が満タンに戻る。1つの層で1回）。</summary>
+        public bool HasSpring { get; private set; }
+        public Vector2 SpringPos { get; private set; }
         public Vector2 AltarPos { get; private set; }
         public RoomArea BossArea { get; private set; }
         /// <summary>宝の間の宝箱の位置（宝の間がなければ空）。</summary>
@@ -207,6 +210,19 @@ namespace VividOfFade
                 altarRoom = candidates[rng.Next(candidates.Count)];
                 AltarPos = new Vector2(altarRoom.X + 1.5f + rng.Next(Mathf.Max(1, altarRoom.W - 3)), altarRoom.Y + altarRoom.H - 1.5f);
             }
+            // 癒やしの泉：ときどき、祭壇とは別の部屋の隅寄りに
+            HasSpring = false;
+            if (rng.NextDouble() < GameConfig.SpringChance)
+            {
+                var springPool = new List<RoomArea>();
+                foreach (var a in candidates) if (a != altarRoom) springPool.Add(a);
+                if (springPool.Count > 0)
+                {
+                    var sr = springPool[rng.Next(springPool.Count)];
+                    HasSpring = true;
+                    SpringPos = new Vector2(sr.X + 1.5f, sr.Y + 1.5f + rng.Next(Mathf.Max(1, sr.H - 3)));
+                }
+            }
 
             // 宝の間：まれに、敵の出ない部屋に宝箱が並ぶ
             if (rng.NextDouble() < GameConfig.TreasureRoomChance)
@@ -241,6 +257,7 @@ namespace VividOfFade
             StairsArea = boss;
             BossArea = boss;
             HasAltar = false;
+            HasSpring = false;
         }
 
         void Carve(RoomArea a)

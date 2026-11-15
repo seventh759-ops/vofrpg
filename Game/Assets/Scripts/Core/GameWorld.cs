@@ -304,7 +304,10 @@ namespace VividOfFade
         bool stairsLatch;
         float stairFlameTimer;     // 階段の画面を閉じたら、一度離れるまで出さない
         SpriteRenderer stairs, stairsSeal;
-        SpriteRenderer altar, altarBeam;
+        SpriteRenderer altar, altarBeam, spring;
+        bool springUsed;
+        public bool SpringUsed => springUsed;
+        float springFxTimer;
         float altarFlameTimer;
         SpriteRenderer guideNpc; // 1層目のはじめの部屋に立つ案内役
         readonly List<SpriteRenderer> chests = new List<SpriteRenderer>(); // 宝の間の宝箱
@@ -370,6 +373,11 @@ namespace VividOfFade
             altarBeam = beamGo.AddComponent<SpriteRenderer>();
             altarBeam.sprite = PixelArt.SoftPillar;
             Lighting.MakeGlow(altarBeam);
+            var springGo = new GameObject("Spring");
+            springGo.transform.SetParent(transform, false);
+            spring = springGo.AddComponent<SpriteRenderer>();
+            spring.sprite = PixelArt.Spring(false);
+            Lighting.MakeGlow(spring);
             var guideGo = new GameObject("Guide");
             guideGo.transform.SetParent(transform, false);
             guideNpc = guideGo.AddComponent<SpriteRenderer>();
@@ -792,6 +800,7 @@ namespace VividOfFade
         /// <summary>祭壇に乗ったら、加護を選ぶ画面を出す（1つの層で1回だけ選べる）。</summary>
         void CheckAltar()
         {
+            CheckSpring();
             altar.enabled = Room.HasAltar;
             altarBeam.enabled = Room.HasAltar && !AltarUsed;
             if (!Room.HasAltar) return;
@@ -823,6 +832,32 @@ namespace VividOfFade
             altarLatch = true;
             OpenPanel(false, false, false);
             AltarOpen = true;
+        }
+
+        /// <summary>癒やしの泉：乗ると HP と MP が満タンに戻る（1つの層で1回）。使うと水が涸れる。</summary>
+        void CheckSpring()
+        {
+            spring.enabled = Room.HasSpring;
+            if (!Room.HasSpring) return;
+            spring.transform.position = Iso.ToScreen(Room.SpringPos);
+            spring.sortingOrder = SortOrder.For(Room.SpringPos);
+            if (springUsed) return;
+            // 水面から、淡い緑の光の粒が立ちのぼる
+            springFxTimer -= Time.deltaTime;
+            if (springFxTimer <= 0f)
+            {
+                springFxTimer = 0.25f;
+                Fx.Sparks(Room.SpringPos + Random.insideUnitCircle * 0.3f, 1, new Color(0.6f, 1f, 0.8f), 0.2f, 1f, 1.2f, true);
+            }
+            if ((Player.Pos - Room.SpringPos).magnitude > GameConfig.StairsRadius) return;
+            springUsed = true;
+            spring.sprite = PixelArt.Spring(true);
+            Player.Heal(Player.MaxHp);
+            Player.RestoreMp(Player.MaxMp);
+            Fx.Ring(Room.SpringPos, 1.6f, new Color(0.5f, 1f, 0.7f, 0.9f), 0.5f);
+            Fx.Sparks(Player.Pos, 18, new Color(0.6f, 1f, 0.8f), 1f, 1f, 2.2f, true);
+            Sfx.Pickup();
+            Hud.Toast(Loc.T("The spring restored your HP and MP", "癒やしの泉で、HP と MP が回復した"), new Color(0.6f, 1f, 0.75f));
         }
 
         /// <summary>祭壇で加護を1つ選ぶ。火種が足りなければ何もしない。</summary>
@@ -911,6 +946,8 @@ namespace VividOfFade
             stairs.enabled = Floors.StairsOpen;
             stairsLatch = false;
 
+            springUsed = false;
+            spring.sprite = PixelArt.Spring(false);
             // 祭壇：並べる加護を3つ選んでおく（中断前に使っていたら、使ったまま）
             AltarUsed = resumeAltarUsed;
             resumeBossDefeated = resumeAltarUsed = false;
