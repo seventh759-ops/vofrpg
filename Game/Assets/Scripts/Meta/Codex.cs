@@ -109,8 +109,10 @@ namespace VividOfFade
                 for (int i = 0; i < Zones.Count; i++)
                 {
                     var z = Zones.Tower(i);
-                    all.Add(new Entry { Id = "e:slime:" + i, Cat = Category.Enemies, Icon = () => PixelArt.SlimeFor(z), Name = () => KindName(EnemyKind.Slime), Desc = () => ZoneName(z),
-                        Detail = () => KindDetail(EnemyKind.Slime), Hint = () => Loc.T($"Found in {ZoneName(z)}.", $"{ZoneName(z)}で出会う。") });
+                    bool tome = z.Pattern == FloorPattern.Gold; // 沈んだ書庫は、スライムの代わりにさまよう本
+                    all.Add(new Entry { Id = "e:slime:" + i, Cat = Category.Enemies, Icon = () => PixelArt.SlimeFor(z),
+                        Name = () => tome ? Loc.T("Wandering Tome", "さまよう本") : KindName(EnemyKind.Slime), Desc = () => ZoneName(z),
+                        Detail = () => tome ? Loc.T("An old book that came to life. Flaps its pages and hops toward you. Weak alone, dangerous in numbers.", "命を持った古い本。ページをばたつかせて跳ねてくる。1冊なら弱いが、群れると手強い。") : KindDetail(EnemyKind.Slime), Hint = () => Loc.T($"Found in {ZoneName(z)}.", $"{ZoneName(z)}で出会う。") });
                 }
                 for (int k = 1; k < Kinds.Length; k++)
                 {

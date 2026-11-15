@@ -3372,8 +3372,66 @@ namespace VividOfFade
         };
 
         /// <summary>区画の色のスライム（段階つき。上級ほど暗い）。</summary>
+        /// <summary>
+        /// さまよう本（沈んだ書庫の区画で、スライムの代わりに出る）。表紙に目のある古い本が、ぱたぱた跳ねて寄ってくる。
+        /// 動きと強さはスライムと同じ。上級ほど表紙が暗く、しおり（2段目から）と赤く光る目（3段目）が付く。
+        /// </summary>
+        public static Sprite TomeFor(ZoneSpec z, int tier = 0)
+        {
+            tier = Mathf.Clamp(tier, 0, 2);
+            float f = tier == 0 ? 1f : tier == 1 ? 0.85f : 0.7f;
+            var over = new Dictionary<char, Color32[]>
+            {
+                { 'b', Scale(Ramp(176, 70, 56, 136, 46, 40, 98, 30, 28, 64, 18, 18), f) },
+                { 'w', Ramp(250, 240, 210, 224, 208, 168, 186, 166, 124, 136, 118, 84) },
+            };
+            var rows = (string[])TomeRows32.Clone();
+            if (tier >= 1) rows = Edit(rows, c => c, (29, 12, "uu"), (30, 12, "u"), (30, 14, "u")); // 青いしおりが垂れる
+            if (tier >= 2) rows = Edit(rows, c => c == 'x' ? 'R' : c); // 目が赤く光る
+            string key = $"Tome32_{z.Key}_{tier}";
+            if (z.Cycle > 0) return Corrupted(key, rows, over, z.Cycle);
+            return Shaded(key, rows, over);
+        }
+
+        static readonly string[] TomeRows32 =
+        {
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+            "........bbbbbbbbbbbbbbbbb.......",
+            ".......bbgbbbbbbbbbbbbbgbw......",
+            ".......bbbbbbbbbbbbbbbbbbww.....",
+            ".......bbbggggggggggggbbbww.....",
+            ".......bbbgbbbbbbbbbbgbbbww.....",
+            ".......bbbgbxxbbbbxxgbbbww.....",
+            ".......bbbgbxebbbbxegbbbww.....",
+            ".......bbbgbxebbbbxegbbbww.....",
+            ".......bbbgbbbbbbbbbbgbbbww.....",
+            ".......bbbgbbbbeebbbbgbbbww.....",
+            ".......bbbggggggggggggbbbww.....",
+            ".......bbbbbbbbbbbbbbbbbbww.....",
+            ".......bbgbbbbbbbbbbbbbgbww.....",
+            "........wwwwwwwwwwwwwwwwwww.....",
+            "........wwwwwwwwwwwwwwwwww......",
+            ".........bbbbbbbbbbbbbbbb.......",
+            "................................",
+            "................................",
+            "................................",
+        };
+
         public static Sprite SlimeFor(ZoneSpec z, int tier = 0)
         {
+            if (z.Pattern == FloorPattern.Gold) return TomeFor(z, tier); // 沈んだ書庫はスライムではなく、さまよう本
             tier = Mathf.Clamp(tier, 0, 2);
             float f = tier == 0 ? 1f : tier == 1 ? 0.85f : 0.7f;
             var over = new Dictionary<char, Color32[]>
