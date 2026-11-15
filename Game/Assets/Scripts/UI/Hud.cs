@@ -692,6 +692,7 @@ namespace VividOfFade
         void OnGUI()
         {
             if (World == null || World.Player == null) return;
+            GameFont.Apply();
             EnsureStyles();
 
             bool repaint = Event.current.type == EventType.Repaint;
@@ -1929,9 +1930,10 @@ namespace VividOfFade
         void EnsureStyles()
         {
             int size = Mathf.Max(12, Mathf.RoundToInt(Screen.height * 0.02f));
-            if (label != null && label.fontSize == size) return;
+            var font = GameFont.Get();
+            if (label != null && label.fontSize == size && label.font == font) return;
 
-            label = new GUIStyle(GUI.skin.label) { fontSize = size };
+            label = new GUIStyle(GUI.skin.label) { fontSize = size, font = font };
             label.normal.textColor = Color.white;
             small = new GUIStyle(label) { fontSize = Mathf.Max(10, Mathf.RoundToInt(size * 0.8f)) };
             centered = new GUIStyle(label) { alignment = TextAnchor.MiddleCenter };
