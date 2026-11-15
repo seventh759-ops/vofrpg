@@ -2103,14 +2103,16 @@ namespace VividOfFade
             if (item == null || item.IsEmptyMarker) return;
             var ch = Profile.Current;
             bool tooHigh = ch != null && item.ReqLevel > ch.Level;
-            var c = tooHigh ? new Color(1f, 0.4f, 0.4f) : new Color(0.92f, 0.92f, 0.96f);
-            float h = cell.height * 0.2f;
-            var r = new Rect(cell.x, cell.yMax - h - cell.height * 0.04f, cell.width * 0.94f, h);
+            var c = tooHigh ? new Color(1f, 0.42f, 0.42f) : new Color(0.95f, 0.95f, 0.98f);
+            // 小さなマス（倉庫の8列）でも読めるよう、マスの3割ほどの高さで、下に暗い帯を敷く
             string s = item.Level.ToString();
-            var shadow = new Color(0.03f, 0.02f, 0.05f, 0.9f);
-            float o = Mathf.Max(1f, Mathf.Round(h / 9f));
-            NumberFont.DrawIn(new Rect(r.x + o, r.y + o, r.width, r.height), s, shadow, TextAnchor.MiddleRight, 1f);
-            NumberFont.DrawIn(r, s, c, TextAnchor.MiddleRight, 1f);
+            float px = Mathf.Max(1f, Mathf.Floor(cell.height * 0.3f / NumberFont.Height));
+            float w = NumberFont.Width(s, px), h = NumberFont.Height * px;
+            float pad = Mathf.Max(1f, px);
+            var band = new Rect(cell.xMax - w - pad * 2f - cell.width * 0.03f, cell.yMax - h - pad * 2f - cell.height * 0.03f, w + pad * 2f, h + pad * 2f);
+            Fill(band, new Color(0.03f, 0.02f, 0.06f, 0.72f));
+            NumberFont.Draw(band.center + new Vector2(px * 0.5f, px * 0.5f), s, px, new Color(0f, 0f, 0f, 0.9f));
+            NumberFont.Draw(band.center, s, px, c);
         }
 
         public static void DrawEnhance(Rect cell, Item item)
