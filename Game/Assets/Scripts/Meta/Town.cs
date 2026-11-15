@@ -100,6 +100,55 @@ namespace VividOfFade
             return true;
         }
 
+        /// <summary>町（倉庫番）で装備できないわけ。装備できるなら null。</summary>
+        public static string CannotEquip(CharacterData ch, Item item)
+        {
+            if (item == null || ch == null) return "";
+            if (OtherClassWeapon(item, (ClassType)ch.ClassId)) return Loc.T("OTHER CLASS", "ほかの職業");
+            if (item.ReqLevel > ch.Level) return Loc.T($"NEED LV {item.ReqLevel}", $"Lv{item.ReqLevel}から");
+            return null;
+        }
+
+        /// <summary>その品を装備したら入れ替わる、今つけている品（なければ null）。指輪は空いている方、両方埋まっていれば1つ目。</summary>
+        public static Item EquippedFor(CharacterData ch, Item item)
+        {
+            int slot = EquipSlotFor(ch, item);
+            if (slot < 0 || slot >= ch.Loadout.Count) return null;
+            var cur = ch.Loadout[slot];
+            return cur == null || cur.IsEmptyMarker ? null : cur;
+        }
+
+        static int EquipSlotFor(CharacterData ch, Item item)
+        {
+            var slot = Inventory.DefaultSlot(item);
+            if (slot == EquipSlot.Ring1)
+            {
+                bool r1 = (int)EquipSlot.Ring1 < ch.Loadout.Count && ch.Loadout[(int)EquipSlot.Ring1] != null && !ch.Loadout[(int)EquipSlot.Ring1].IsEmptyMarker;
+                bool r2 = (int)EquipSlot.Ring2 < ch.Loadout.Count && ch.Loadout[(int)EquipSlot.Ring2] != null && !ch.Loadout[(int)EquipSlot.Ring2].IsEmptyMarker;
+                if (r1 && !r2) slot = EquipSlot.Ring2;
+            }
+            return (int)slot;
+        }
+
+        /// <summary>
+        /// 倉庫・持ち込む品から、そのまま装備する。今つけている品は、装備した品があった所（倉庫か持ち込む品）の同じ位置へ入れ替わる。
+        /// </summary>
+        public static bool EquipFromTown(CharacterData ch, Item item)
+        {
+            if (CannotEquip(ch, item) != null) return false;
+            List<Item> from = ch.Stash.Contains(item) ? ch.Stash : Profile.Storage.Contains(item) ? Profile.Storage : null;
+            if (from == null) return false;
+            while (ch.Loadout.Count < 5) ch.Loadout.Add(Item.EmptyMarker());
+            int slot = EquipSlotFor(ch, item);
+            var old = ch.Loadout[slot];
+            int index = from.IndexOf(item);
+            from.RemoveAt(index);
+            ch.Loadout[slot] = item;
+            if (old != null && !old.IsEmptyMarker) from.Insert(index, old);
+            Profile.Save();
+            return true;
+        }
+
         /// <summary>倉庫 → 持ち込む品。</summary>
         public static bool Take(CharacterData ch, Item item)
         {

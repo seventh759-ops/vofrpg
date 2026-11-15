@@ -242,6 +242,8 @@ namespace VividOfFade
             y += lineH + Screen.height * 0.008f;
         }
 
+        static void Sfx_Equip(GameWorld world) => world.Sfx.Pickup();
+
         // ================= 倉庫番 =================
 
         void DrawStorage(GameWorld world, CharacterData ch)
@@ -274,6 +276,16 @@ namespace VividOfFade
             name.normal.textColor = RarityInfo.ColorOf(selected.Rarity);
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH * 1.2f), selected.Name, name);
             y += lineH * 1.2f;
+            {
+                // 装備のレベルと、今つけている同じ場所の品
+                bool tooHigh = selected.ReqLevel > ch.Level;
+                var lv = new GUIStyle(small);
+                lv.normal.textColor = tooHigh ? new Color(1f, 0.5f, 0.45f) : new Color(0.85f, 0.85f, 0.9f);
+                var cur = Town.EquippedFor(ch, selected);
+                string curText = cur != null ? Loc.T($"   Now: {cur.Name} (Lv {cur.Level})", $"　装備中：{cur.Name}（Lv {cur.Level}）") : Loc.T("   Now: (empty)", "　装備中：なし");
+                Hud.FitLabel(new Rect(pad, y, W - pad * 2f, lineH), Loc.T($"Lv {selected.Level}", $"Lv {selected.Level}") + (tooHigh ? Loc.T(" (level too low)", "（レベルが足りない）") : "") + curText, lv);
+                y += lineH;
+            }
             if (Town.OtherClassWeapon(selected, type))
             {
                 var warn = new GUIStyle(small);
@@ -290,19 +302,31 @@ namespace VividOfFade
 
             float gap = W * 0.03f;
             float half = (W - pad * 2f - gap) * 0.5f;
+            float third = (W - pad * 2f - gap * 2f) / 3f;
             bool inStash = ch.Stash.Contains(selected);
             var item = selected;
-            float by1 = by - btnH - gap * 0.5f; // 上の段：移す・ロック  下の段：売却・破棄
+            float by1 = by - btnH - gap * 0.5f; // 上の段：移す・装備・ロック  下の段：売却・破棄
+            {
+                // 装備する：今つけている同じ場所の品と入れ替える（外した品は、この品があった所へ）
+                var er = new Rect(pad + third + gap, by1, third, btnH);
+                string why = Town.CannotEquip(ch, item);
+                if (why != null)
+                {
+                    Hud.Fill(er, dim);
+                    Hud.FitLabel(er, why, hud.CenteredStyle);
+                }
+                else hud.Button(er, Loc.T("EQUIP", "装備"), gold, hud.CenteredStyle, () => { if (Town.EquipFromTown(ch, item)) { selected = null; world.SyncTownGear(); Sfx_Equip(world); } });
+            }
             if (inStash)
             {
                 bool room = Profile.Storage.Count < Town.StorageCapacity;
-                hud.Button(new Rect(pad, by1, half, btnH), room ? Loc.T("TO STORAGE", "倉庫へ") : Loc.T("STORAGE FULL", "倉庫が満杯"), row, hud.CenteredStyle,
+                hud.Button(new Rect(pad, by1, third, btnH), room ? Loc.T("TO STORAGE", "倉庫へ") : Loc.T("STORAGE FULL", "倉庫が満杯"), row, hud.CenteredStyle,
                     () => { if (Town.Store(ch, item)) selected = null; });
             }
             else
             {
                 bool room = ch.Stash.Count < Inventory.BagCapacity;
-                var r = new Rect(pad, by1, half, btnH);
+                var r = new Rect(pad, by1, third, btnH);
                 if (Town.OtherClassWeapon(item, type))
                 {
                     Hud.Fill(r, dim);
@@ -314,7 +338,7 @@ namespace VividOfFade
                         () => { if (Town.Take(ch, item)) selected = null; });
                 }
             }
-            hud.Button(new Rect(pad + half + gap, by1, half, btnH), item.Locked ? Loc.T("UNLOCK", "ロック解除") : Loc.T("LOCK", "ロック"),
+            hud.Button(new Rect(pad + (third + gap) * 2f, by1, third, btnH), item.Locked ? Loc.T("UNLOCK", "ロック解除") : Loc.T("LOCK", "ロック"),
                 item.Locked ? gold : row, hud.CenteredStyle, () => { item.Locked = !item.Locked; Profile.Save(); });
 
             if (item.Locked)
@@ -359,6 +383,7 @@ namespace VividOfFade
                 Hud.DrawAbyssFrame(r, item);
                 GUI.color = old;
                 Hud.DrawEnhance(r, item);
+                Hud.DrawItemLevel(r, item);
             }
             int rows = (shown + cols - 1) / cols;
             return y + rows * (cell + gap);

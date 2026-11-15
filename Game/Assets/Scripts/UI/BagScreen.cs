@@ -280,6 +280,7 @@ namespace VividOfFade
             float inset = r.width * 0.15f;
             Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.ItemIcon(item));
             Hud.DrawEnhance(r, item);
+            Hud.DrawItemLevel(r, item);
             Hud.DrawAbyssFrame(r, item);
             if (item.Locked)
             {

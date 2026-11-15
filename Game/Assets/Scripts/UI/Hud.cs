@@ -2095,6 +2095,24 @@ namespace VividOfFade
         /// 強化した品：アイコンの枠の四隅に飾り金具を付け、段が上がるほど豪華にする。左上の角に「+N」。
         /// +1〜4：金の小さな角金具／+5〜9：大きな角金具と鋲／+10〜14：火種の橙に光る角金具（ゆらめく）／+15：青白く脈打つ角金具。
         /// </summary>
+        /// <summary>
+        /// 品のマスの右下に、装備のレベルを小さなドット文字で出す。今のキャラクターのレベルが足りない品は赤。
+        /// </summary>
+        public static void DrawItemLevel(Rect cell, Item item)
+        {
+            if (item == null || item.IsEmptyMarker) return;
+            var ch = Profile.Current;
+            bool tooHigh = ch != null && item.ReqLevel > ch.Level;
+            var c = tooHigh ? new Color(1f, 0.4f, 0.4f) : new Color(0.92f, 0.92f, 0.96f);
+            float h = cell.height * 0.2f;
+            var r = new Rect(cell.x, cell.yMax - h - cell.height * 0.04f, cell.width * 0.94f, h);
+            string s = item.Level.ToString();
+            var shadow = new Color(0.03f, 0.02f, 0.05f, 0.9f);
+            float o = Mathf.Max(1f, Mathf.Round(h / 9f));
+            NumberFont.DrawIn(new Rect(r.x + o, r.y + o, r.width, r.height), s, shadow, TextAnchor.MiddleRight, 1f);
+            NumberFont.DrawIn(r, s, c, TextAnchor.MiddleRight, 1f);
+        }
+
         public static void DrawEnhance(Rect cell, Item item)
         {
             if (item == null || item.Enhance <= 0) return;

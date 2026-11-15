@@ -187,6 +187,14 @@ namespace VividOfFade
             OpenPanel(true, false, false);
         }
 
+        /// <summary>町で装備を付け替えた（倉庫番から）。能力値の表示などに使う装備を、保存した装備に合わせ直す。</summary>
+        public void SyncTownGear()
+        {
+            var type = ClassInfo.Current;
+            Inventory.Reset(type, Profile.Current);
+            Player.ResetState(PlayerStats.From(Inventory.Equipped, type));
+        }
+
         void CloseTownBag()
         {
             TownBag = false;

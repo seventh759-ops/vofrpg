@@ -101,6 +101,7 @@ namespace VividOfFade
                 Hud.DrawSprite(new Rect(r.x + inset, r.y + inset, r.width - inset * 2f, r.height - inset * 2f), PixelArt.ItemIcon(item));
                 Hud.DrawAbyssFrame(r, item);
                 Hud.DrawEnhance(r, item);
+                Hud.DrawItemLevel(r, item);
             }
             int rows = (candidates.Count + cols - 1) / cols;
             y += rows * (cell + gap) + H * 0.01f;
