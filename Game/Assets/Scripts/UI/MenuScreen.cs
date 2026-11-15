@@ -76,9 +76,11 @@ namespace VividOfFade
             settings = false;
             settingsOnly = false;
             codex = false;
+            codexSelected = null;
         }
 
         bool codex;          // 図鑑の画面を開いているか
+        Codex.Entry codexSelected; // 詳しく見ている項目
         Codex.Category codexTab;
 
         /// <summary>
@@ -115,7 +117,7 @@ namespace VividOfFade
                 var c = (Codex.Category)i;
                 bool on = c == codexTab;
                 hud.Button(new Rect(pad + i * (tw + gap), y, tw, th), $"{names[i]} {Codex.FoundIn(c)}/{Codex.TotalIn(c)}",
-                    on ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : sub, small, () => codexTab = c);
+                    on ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : sub, small, () => { codexTab = c; codexSelected = null; });
             }
             y += th + gap;
 
@@ -136,6 +138,7 @@ namespace VividOfFade
                 bool has = Profile.CodexHas(e.Id);
                 var cell = new Rect(pad + (i % cols) * (cw + gap), y + (i / cols) * (ch + gap), cw, ch);
                 Hud.Fill(cell, new Color(1f, 1f, 1f, has ? 0.08f : 0.04f));
+                hud.Button(cell, null, new Color(0f, 0f, 0f, 0f), centered, () => codexSelected = e); // 押すと詳しく
                 Hud.OrnateFrame(cell, has ? Hud.FrameGold : new Color(0.4f, 0.38f, 0.34f, 1f), Mathf.Max(1f, Mathf.Round(H * 0.0008f)), true, false);
                 float lineH = hud.SmallStyle.fontSize * 1.3f;
                 Rect pic = textRows ? new Rect(cell.x + ch * 0.1f, cell.y + ch * 0.1f, ch * 0.8f, ch * 0.8f)
@@ -163,6 +166,67 @@ namespace VividOfFade
             }
 
             hud.Button(new Rect(pad, H - backH - H * 0.04f, bw, backH), Loc.T("BACK", "戻る"), sub, centered, () => codex = false);
+            if (codexSelected != null) DrawCodexDetail(codexSelected, W, H, pad, gap, centered);
+        }
+
+        /// <summary>図鑑の1項目を大きく見せる窓。どこを押しても閉じる。</summary>
+        void DrawCodexDetail(Codex.Entry e, float W, float H, float pad, float gap, GUIStyle centered)
+        {
+            bool has = Profile.CodexHas(e.Id);
+            hud.Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0.6f), centered, () => codexSelected = null); // 後ろを押せないように覆う
+            float pw = W - pad * 1.2f;
+            float ph = H * 0.62f;
+            var r = new Rect((W - pw) * 0.5f, (H - ph) * 0.5f, pw, ph);
+            Hud.Fill(r, new Color(0.04f, 0.04f, 0.07f, 0.97f));
+            Hud.OrnateFrame(r, has ? Hud.FrameGold : new Color(0.45f, 0.43f, 0.4f, 1f), Mathf.Max(2f, Mathf.Round(H * 0.0012f)), false, true);
+            float inner = pw * 0.06f;
+            float y = r.y + inner;
+
+            // 絵：ドットがにじまないよう、整数倍で大きく
+            var sprite = e.Icon();
+            float box = Mathf.Min(pw - inner * 2f, ph * 0.4f);
+            if (sprite != null)
+            {
+                var tex = sprite.texture;
+                float scale = Mathf.Max(1f, Mathf.Floor(box / Mathf.Max(tex.width, tex.height)));
+                float sw = tex.width * scale, sh = tex.height * scale;
+                var pic = new Rect(Mathf.Round(r.center.x - sw * 0.5f), Mathf.Round(y + (box - sh) * 0.5f), sw, sh);
+                Hud.Fill(new Rect(r.x + inner, y, pw - inner * 2f, box), new Color(1f, 1f, 1f, 0.04f));
+                var old = GUI.color;
+                GUI.color = has ? Color.white : new Color(0f, 0f, 0f, 0.9f);
+                GUI.DrawTexture(pic, tex, ScaleMode.StretchToFill);
+                GUI.color = old;
+            }
+            y += box + gap;
+
+            var title = new GUIStyle(centered) { fontSize = Mathf.RoundToInt(hud.LabelStyle.fontSize * 1.3f), fontStyle = FontStyle.Bold, wordWrap = true };
+            title.normal.textColor = has ? new Color(1f, 0.92f, 0.7f) : new Color(0.6f, 0.6f, 0.65f);
+            string name = has ? e.Name() : "？？？";
+            float tH = title.CalcHeight(new GUIContent(name), pw - inner * 2f);
+            GUI.Label(new Rect(r.x + inner, y, pw - inner * 2f, tH), name, title);
+            y += tH + gap * 0.3f;
+            string desc = e.Desc();
+            if (has && !string.IsNullOrEmpty(desc))
+            {
+                var ds = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.MiddleCenter };
+                ds.normal.textColor = new Color(0.7f, 0.7f, 0.78f);
+                Hud.FitLabel(new Rect(r.x + inner, y, pw - inner * 2f, hud.SmallStyle.fontSize * 1.4f), desc, ds);
+                y += hud.SmallStyle.fontSize * 1.4f;
+            }
+            y += gap * 0.5f;
+            Hud.Fill(new Rect(r.x + inner, y, pw - inner * 2f, Mathf.Max(1f, Mathf.Round(H * 0.0008f))), new Color(Hud.FrameGold.r, Hud.FrameGold.g, Hud.FrameGold.b, 0.5f));
+            y += gap * 0.8f;
+
+            var body = new GUIStyle(hud.LabelStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };
+            body.normal.textColor = has ? new Color(0.9f, 0.9f, 0.92f) : new Color(0.65f, 0.65f, 0.7f);
+            string text = has ? (e.Detail != null ? e.Detail() : "") : Loc.T("Not found yet.\n", "まだ見つけていない。\n") + (e.Hint != null ? e.Hint() : "");
+            var bodyRect = new Rect(r.x + inner, y, pw - inner * 2f, r.yMax - inner - y);
+            while (body.fontSize > 10 && body.CalcHeight(new GUIContent(text), bodyRect.width) > bodyRect.height) body.fontSize--; // 収まらなければ字を小さく
+            GUI.Label(bodyRect, text, body);
+
+            var hint = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.MiddleCenter };
+            hint.normal.textColor = new Color(0.6f, 0.6f, 0.65f);
+            Hud.FitLabel(new Rect(r.x, r.yMax + gap * 0.4f, pw, hud.SmallStyle.fontSize * 1.5f), Loc.T("Tap to close", "タップで閉じる"), hint);
         }
 
         bool settings; // 設定の画面を開いているか

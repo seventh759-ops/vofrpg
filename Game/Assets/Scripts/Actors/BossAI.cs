@@ -76,6 +76,31 @@ namespace VividOfFade
             new[] { BossAttack.SummonBoss, BossAttack.BulletRing, BossAttack.BulletFan, BossAttack.RoomWide, BossAttack.SummonBoss, BossAttack.BulletRing, BossAttack.StunNova, BossAttack.BulletFan },
         };
 
+        /// <summary>そのボスが使う攻撃（重ならないように、使う順で）。図鑑に使う。</summary>
+        public static System.Collections.Generic.List<BossAttack> AttacksOf(BossKind k)
+        {
+            var list = new System.Collections.Generic.List<BossAttack>();
+            foreach (var a in patterns[(int)k]) if (!list.Contains(a)) list.Add(a);
+            return list;
+        }
+
+        public static string AttackName(BossAttack a)
+        {
+            switch (a)
+            {
+                case BossAttack.Slam: return Loc.T("Ground slam", "叩きつけ");
+                case BossAttack.Charge: return Loc.T("Charge", "突進");
+                case BossAttack.BulletRing: return Loc.T("Ring of bullets", "全方向の弾");
+                case BossAttack.Summon: return Loc.T("Summon minions", "手下を呼ぶ");
+                case BossAttack.Cone: return Loc.T("Cone strike", "扇状の攻撃");
+                case BossAttack.StunNova: return Loc.T("Stunning wave", "気絶の波");
+                case BossAttack.BulletFan: return Loc.T("Fan of bullets", "扇状の弾");
+                case BossAttack.RoomWide: return Loc.T("Room-wide blast (stand in the safe circle)", "部屋全体の攻撃（安全な円の中は無事）");
+                case BossAttack.Blink: return Loc.T("Blink", "瞬間移動");
+                default: return Loc.T("Calls past bosses", "歴代のボスを呼ぶ");
+            }
+        }
+
         public static BossAttack Next(Enemy e) => patterns[(int)e.BossKind][e.AttackStep % patterns[(int)e.BossKind].Length];
 
         public static float Windup(BossAttack a)

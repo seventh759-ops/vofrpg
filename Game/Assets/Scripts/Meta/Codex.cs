@@ -20,6 +20,44 @@ namespace VividOfFade
             public System.Func<Sprite> Icon;
             public System.Func<string> Name;
             public System.Func<string> Desc;
+            public System.Func<string> Detail; // 詳しい説明（見つけたあと）
+            public System.Func<string> Hint;   // どこで見つかるか（見つける前）
+        }
+
+        static string KindDetail(EnemyKind k)
+        {
+            switch (k)
+            {
+                case EnemyKind.Bat: return Loc.T("Chases you while weaving side to side.", "左右にふらふら揺れながら追ってくる。");
+                case EnemyKind.Caster: return Loc.T("Keeps its distance and fires bullets now and then.", "ちょうどよい距離を保ち、ときどき弾を撃ってくる。");
+                case EnemyKind.Brute: return Loc.T("Slow and tough. Flashes red while charging up a heavy blow.", "遅くて硬い。赤く点滅して力をためたあと、重い一撃を放つ。");
+                case EnemyKind.Bomber: return Loc.T("Runs at you and explodes. Kill it before it reaches you.", "近づいてきて爆発する。たどり着く前に倒したい。");
+                case EnemyKind.Golden: return Loc.T("Appears rarely and runs away. Drops lots of embers and gear.", "まれに現れ、逃げ回る。倒すと火種と装備をたくさん落とす。しばらくすると消える。");
+                default: return Loc.T("Comes straight at you. Weak alone, dangerous in numbers.", "まっすぐ寄ってくる。1体なら弱いが、群れると手強い。");
+            }
+        }
+
+        static string BossDetail(BossKind b)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append(Loc.T("Attacks:", "使う技："));
+            foreach (var a in BossInfo.AttacksOf(b))
+            {
+                sb.Append("\n・").Append(BossInfo.AttackName(a));
+                var d = BossInfo.DebuffOf(b, a);
+                if (d.HasValue) sb.Append(Loc.T($" ({Debuffs.Name(d.Value)})", $"（{Debuffs.Name(d.Value)}）"));
+            }
+            return sb.ToString();
+        }
+
+        static ZoneSpec BossZone(BossKind b) => (int)b < Zones.Count ? Zones.Tower((int)b) : Zones.AbyssZone(Mathf.Clamp((int)b - Zones.Count, 0, Zones.AbyssCount - 1));
+
+        static string SetDetail(UniqueType set)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append(StatText.Unique(set));
+            foreach (int t in AbyssSets.Tiers) sb.Append("\n").Append(Loc.T($"{t} pieces: ", $"{t}つ：")).Append(AbyssSets.BonusText(set, t));
+            return sb.ToString();
         }
 
         static List<Entry> all;
@@ -71,32 +109,40 @@ namespace VividOfFade
                 for (int i = 0; i < Zones.Count; i++)
                 {
                     var z = Zones.Tower(i);
-                    all.Add(new Entry { Id = "e:slime:" + i, Cat = Category.Enemies, Icon = () => PixelArt.SlimeFor(z), Name = () => KindName(EnemyKind.Slime), Desc = () => ZoneName(z) });
+                    all.Add(new Entry { Id = "e:slime:" + i, Cat = Category.Enemies, Icon = () => PixelArt.SlimeFor(z), Name = () => KindName(EnemyKind.Slime), Desc = () => ZoneName(z),
+                        Detail = () => KindDetail(EnemyKind.Slime), Hint = () => Loc.T($"Found in {ZoneName(z)}.", $"{ZoneName(z)}で出会う。") });
                 }
                 for (int k = 1; k < Kinds.Length; k++)
                 {
                     var kind = Kinds[k];
-                    all.Add(new Entry { Id = "e:" + kind, Cat = Category.Enemies, Icon = () => PixelArt.EnemySprite(kind), Name = () => KindName(kind), Desc = () => Loc.T("The Tower", "塔") });
+                    all.Add(new Entry { Id = "e:" + kind, Cat = Category.Enemies, Icon = () => PixelArt.EnemySprite(kind), Name = () => KindName(kind), Desc = () => Loc.T("The Tower", "塔"),
+                        Detail = () => KindDetail(kind), Hint = () => Loc.T("Found in the tower.", "塔のどこかで出会う。") });
                 }
-                all.Add(new Entry { Id = "e:Golden", Cat = Category.Enemies, Icon = () => PixelArt.EnemySprite(EnemyKind.Golden), Name = () => KindName(EnemyKind.Golden), Desc = () => Loc.T("Rare", "まれ") });
+                all.Add(new Entry { Id = "e:Golden", Cat = Category.Enemies, Icon = () => PixelArt.EnemySprite(EnemyKind.Golden), Name = () => KindName(EnemyKind.Golden), Desc = () => Loc.T("Rare", "まれ"),
+                    Detail = () => KindDetail(EnemyKind.Golden), Hint = () => Loc.T("A rare, shining enemy.", "まれに現れる、光る敵。") });
                 for (int i = 0; i < Zones.AbyssCount; i++)
                 {
                     var z = Zones.AbyssZone(i);
                     foreach (var kind in Kinds)
                     {
                         var kk = kind;
-                        all.Add(new Entry { Id = $"a:{kk}:{i}", Cat = Category.Enemies, Icon = () => PixelArt.AbyssEnemy(kk, z), Name = () => KindName(kk), Desc = () => ZoneName(z) });
+                        all.Add(new Entry { Id = $"a:{kk}:{i}", Cat = Category.Enemies, Icon = () => PixelArt.AbyssEnemy(kk, z), Name = () => KindName(kk), Desc = () => ZoneName(z),
+                            Detail = () => KindDetail(kk) + Loc.T("\nTwisted by the Abyss: tougher and harder-hitting.", "\n深淵に染まり、硬く、強くなっている。"),
+                            Hint = () => Loc.T($"Found in {ZoneName(z)}.", $"{ZoneName(z)}で出会う。") });
                     }
                 }
                 foreach (BossKind b in System.Enum.GetValues(typeof(BossKind)))
                 {
                     var bb = b;
-                    all.Add(new Entry { Id = "b:" + bb, Cat = Category.Bosses, Icon = () => PixelArt.BossSprite(bb), Name = () => BossInfo.Name(bb), Desc = () => "" });
+                    all.Add(new Entry { Id = "b:" + bb, Cat = Category.Bosses, Icon = () => PixelArt.BossSprite(bb), Name = () => BossInfo.Name(bb), Desc = () => ZoneName(BossZone(bb)),
+                        Detail = () => BossDetail(bb), Hint = () => Loc.T($"Waits at the end of {ZoneName(BossZone(bb))}.", $"{ZoneName(BossZone(bb))}の最後の層で待っている。") });
                 }
                 foreach (var u in TowerUniques)
                 {
                     var uu = u;
-                    all.Add(new Entry { Id = "u:" + uu, Cat = Category.Uniques, Icon = () => PixelArt.ItemIcon(new Item { Slot = ItemSlot.Ring, Rarity = Rarity.Legendary, Level = 1 }), Name = () => StatText.Unique(uu), Desc = () => "" });
+                    all.Add(new Entry { Id = "u:" + uu, Cat = Category.Uniques, Icon = () => PixelArt.ItemIcon(new Item { Slot = ItemSlot.Ring, Rarity = Rarity.Legendary, Level = 1 }), Name = () => StatText.Unique(uu), Desc = () => "",
+                        Detail = () => Loc.T("A unique effect found on Legendary or better gear.", "伝説以上の装備に付く固有効果。"),
+                        Hint = () => Loc.T("May appear on Legendary or better gear.", "伝説以上の装備に付くことがある。") });
                 }
                 foreach (var set in AbyssSets.All)
                 {
@@ -105,7 +151,8 @@ namespace VividOfFade
                         var ss = set; var sl = slot;
                         var sample = new Item { Slot = sl, Weapon = WeaponKind.Greatblade, Rarity = Rarity.Legendary, Level = GameConfig.AbyssGearLevel(GameConfig.AbyssFirstFloor), Abyss = true };
                         sample.Uniques.Add(ss);
-                        all.Add(new Entry { Id = $"s:{ss}:{sl}", Cat = Category.Sets, Icon = () => PixelArt.ItemIcon(sample), Name = () => AbyssSets.Name(ss), Desc = () => SlotName(sl) });
+                        all.Add(new Entry { Id = $"s:{ss}:{sl}", Cat = Category.Sets, Icon = () => PixelArt.ItemIcon(sample), Name = () => AbyssSets.Name(ss), Desc = () => SlotName(sl),
+                            Detail = () => SetDetail(ss), Hint = () => Loc.T($"Abyss gear ({SlotName(sl)}) dropped beyond floor 100.", $"深淵（101層から）で落ちる{SlotName(sl)}。") });
                     }
                 }
                 return all;
