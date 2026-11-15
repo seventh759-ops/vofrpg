@@ -180,7 +180,7 @@ namespace VividOfFade
         {
             float bw = W - pad * 2f;
             float sh = H * 0.06f;
-            int rows = (Application.isMobilePlatform ? 6 : 7) + (Profile.AnyEndingSeen ? 1 : 0); // 攻撃・音楽・BGM・FPS・言語・（エンディング）・（操作の一覧）・戻る
+            int rows = (Application.isMobilePlatform ? 6 : 7) + (Profile.CurrentEndingSeen ? 1 : 0); // 攻撃・音楽・BGM・FPS・言語・（エンディング）・（操作の一覧）・戻る
             float block = H * 0.07f + rows * sh + rows * gap;
             float top = (H - block) * 0.5f; // 画面の上下の真ん中に
             var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
@@ -197,7 +197,7 @@ namespace VividOfFade
             y += sh + gap;
             hud.Button(new Rect(pad, y, bw, sh), $"Language: {Loc.LanguageName}", sub, centered, () => Loc.Next());
             y += sh + gap;
-            if (Profile.AnyEndingSeen)
+            if (Profile.CurrentEndingSeen)
             {
                 // エンディングは1回だけ。見たあとは、ここからクレジット（エンドロール）を見返せる
                 hud.Button(new Rect(pad, y, bw, sh), Loc.T("Credits", "クレジット"), sub, centered, () =>

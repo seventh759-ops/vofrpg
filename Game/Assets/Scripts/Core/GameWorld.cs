@@ -559,7 +559,7 @@ namespace VividOfFade
             GameConfig.CritResist = GameConfig.EnemyCritResist(ChoosingClass ? GameConfig.Tier(crCh != null ? crCh.BestFloor : 0) : Floors.Tier);
             LootSystem.EmberMult = fx != null ? 1f + fx.EmberFind : 1f;
             Enemies.EliteDamageMult = fx != null ? 1f + fx.EliteDamage : 1f;
-            Music.SetAbyssTown(Profile.AbyssUnlocked); // 深淵へ行けるようになったら、町の曲も深淵版
+            Music.SetAbyssTown(Profile.CurrentAbyssUnlocked); // そのキャラクターが深淵へ行けるようになったら、町の曲も深淵版
             Music.SetTown(InTown && ChoosingClass);
 
             potionCooldown = Mathf.Max(0f, potionCooldown - dt);

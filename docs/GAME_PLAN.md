@@ -328,7 +328,7 @@ PC版はキーボード（WASD／矢印、回避はスペース、スキルは1�
 - 英語と日本語を切り替えられる。**最初は英語**
 - 切り替えはメニューの「Language」か、職業選択の画面の「Language」ボタン。設定は保存される
 - 画面の文字・装備名・スキル・加護・地帯名・案内役のせりふ・通知を両方の言語で用意（`Loc.T(英語, 日本語)`）
-- 日本語のフォントは DotGothic16（SIL Open Font License、Assets/Resources/Fonts）。英語もこのフォントで表示する。ライセンス文は同じフォルダの DotGothic16_OFL.txt
+- 日本語のフォントは M PLUS 1p Bold（SIL Open Font License、Assets/Resources/Fonts）。英語もこのフォントで表示する。ライセンス文は同じフォルダの MPLUS1p_OFL.txt
 
 ## 5. 見た目【決定：16×16で一旦進める】
 

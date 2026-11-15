@@ -188,7 +188,20 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>どれかのキャラクターがエンディングを見たか（設定から見返せる）。</summary>
+        /// <summary>今のキャラクターが深淵へ行けるようになったか（町の絵と曲が深淵版になる）。キャラクターごと。</summary>
+        public static bool CurrentAbyssUnlocked
+        {
+            get
+            {
+                var c = Current;
+                return c != null && (c.BestFloor > GameConfig.MaxFloor || GameConfig.CanEnterAbyss(c));
+            }
+        }
+
+        /// <summary>今のキャラクターがエンディングを見たか（設定からクレジットを見返せる）。</summary>
+        public static bool CurrentEndingSeen => Current != null && Current.EndingSeen;
+
+        /// <summary>どれかのキャラクターがエンディングを見たか。</summary>
         public static bool AnyEndingSeen
         {
             get

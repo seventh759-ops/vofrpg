@@ -66,7 +66,7 @@ namespace VividOfFade
         /// </summary>
         public static void DrawBackdrop(float W, float H)
         {
-            bool abyss = Profile.AbyssUnlocked; // 深淵へ行けるようになったら、町も深淵版の絵
+            bool abyss = Profile.CurrentAbyssUnlocked; // そのキャラクターが深淵へ行けるようになったら、町も深淵版の絵（ほかのキャラクターは関係ない）
             var tex = abyss ? TownScene.AbyssTexture : TownScene.Texture;
             float ps = Mathf.Ceil(Mathf.Max(W / TownScene.W, H / TownScene.H));
             var bg = new Rect((W - TownScene.W * ps) * 0.5f, (H - TownScene.H * ps) * 0.5f, TownScene.W * ps, TownScene.H * ps);

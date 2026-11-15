@@ -3,8 +3,8 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>
-    /// 画面の文字に使うフォント。日本語も英語も、ドット風のゴシック（DotGothic16、SIL Open Font License）で表示する。
-    /// フォントは Assets/Resources/Fonts/DotGothic16.ttf。読めなければ Unity の標準の文字に戻る。
+    /// 画面の文字に使うフォント。日本語も英語も、太めのゴシック（M PLUS 1p Bold、SIL Open Font License）で表示する。
+    /// フォントは Assets/Resources/Fonts/MPLUS1p-Bold.ttf。読めなければ Unity の標準の文字に戻る。
     /// </summary>
     public static class GameFont
     {
@@ -19,7 +19,7 @@ namespace VividOfFade
             if (!tried)
             {
                 tried = true;
-                font = Resources.Load<Font>("Fonts/DotGothic16");
+                font = Resources.Load<Font>("Fonts/MPLUS1p-Bold");
             }
             return font;
         }
