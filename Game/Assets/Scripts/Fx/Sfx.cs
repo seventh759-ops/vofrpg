@@ -55,19 +55,14 @@ namespace VividOfFade
         public void LevelBloom() => source.PlayOneShot(levelBloom, 0.85f);
 
         /// <summary>
-        /// ラッパの音（倍音を重ねた金管らしい音）。吹き始めは少しこもって、すぐ明るく開く。長い音には少し揺れ（ビブラート）。
+        /// 電子音のラッパ（ほかの効果音と同じ矩形波）。吹き始めに少し下からしゃくり上げ、波の幅を広げて「パッ」と開く。揺れは付けない。
         /// </summary>
         static float Brass(float f, float t, float noteLen)
         {
-            float bright = Mathf.Lerp(0.45f, 0.82f, Mathf.Clamp01(t / 0.045f));   // 吹き始めはこもり、開く
-            float vib = t > 0.15f ? 1f + 0.006f * Mathf.Sin(2f * Mathf.PI * 5.5f * t) : 1f;
-            float v = 0f, w = 1f;
-            for (int n = 1; n <= 10; n++)
-            {
-                v += Mathf.Sin(2f * Mathf.PI * f * vib * n * t) * w / n;
-                w *= bright;
-            }
-            float env = Mathf.Min(1f, t / 0.025f) * (t < noteLen ? 1f - 0.2f * Mathf.Clamp01((t - 0.03f) / 0.1f) : Mathf.Exp(-(t - noteLen) * 18f));
+            float scoop = 1f - 0.06f * Mathf.Clamp01(1f - t / 0.025f);              // 吹き始めは少し低く、すぐ本来の高さへ
+            float duty = Mathf.Lerp(0.12f, 0.33f, Mathf.Clamp01(t / 0.05f));       // 細い音から、太い音へ開く
+            float v = Pulse(f * scoop * t, duty) * 0.8f + Pulse(f * 0.5f * scoop * t, 0.5f) * 0.25f; // 1オクターブ下を少し混ぜて厚く
+            float env = Mathf.Min(1f, t / 0.012f) * (t < noteLen ? 1f - 0.25f * Mathf.Clamp01((t - 0.03f) / 0.12f) : Mathf.Exp(-(t - noteLen) * 22f));
             return v * env;
         }
 
@@ -84,7 +79,7 @@ namespace VividOfFade
                 for (int i = 0; start + i < len && i < (int)(Rate * 0.3f); i++)
                 {
                     float t = (float)i / Rate;
-                    data[start + i] += Brass(notes[n], t, noteLen) * 0.26f;
+                    data[start + i] += Brass(notes[n], t, noteLen) * 0.3f;
                 }
             }
             var clip = AudioClip.Create("levelRise", len, 1, Rate, false);
@@ -92,11 +87,11 @@ namespace VividOfFade
             return clip;
         }
 
-        /// <summary>羽が開いた瞬間：ラッパの和音（ド・ミ・ソ・高いド）を「パーー」と長く吹き鳴らす。</summary>
+        /// <summary>羽が開いた瞬間：ラッパの和音（ド・ミ・ソ・高いド）を「パーー」と長く吹き鳴らす（電子音のラッパ）。</summary>
         static AudioClip MakeLevelBloom()
         {
             float[] chord = { 523.25f, 659.25f, 783.99f, 1046.5f };
-            float[] gain = { 0.11f, 0.095f, 0.095f, 0.145f }; // いちばん上の音を主に
+            float[] gain = { 0.09f, 0.075f, 0.075f, 0.11f }; // いちばん上の音を主に
             float noteLen = 0.75f;
             int len = (int)(Rate * (noteLen + 0.35f));
             var data = new float[len];
