@@ -87,13 +87,14 @@ namespace VividOfFade
             return clip;
         }
 
-        /// <summary>羽が開いた瞬間：ラッパの和音（ド・ミ・ソ・高いド）を「パーー」と長く吹き鳴らす（電子音のラッパ）。</summary>
+        /// <summary>羽が開いた瞬間：ラッパの和音（ド・ソ・高いド）を「パーン」と短く吹き鳴らす（電子音のラッパ）。</summary>
         static AudioClip MakeLevelBloom()
         {
-            float[] chord = { 523.25f, 659.25f, 783.99f, 1046.5f };
-            float[] gain = { 0.09f, 0.075f, 0.075f, 0.11f }; // いちばん上の音を主に
-            float noteLen = 0.75f;
-            int len = (int)(Rate * (noteLen + 0.35f));
+            // ミを抜いたド・ソ・高いド（長調でも短調でもない響き：どの区画の曲ともぶつかりにくい）。短く切って効果音らしく
+            float[] chord = { 523.25f, 783.99f, 1046.5f };
+            float[] gain = { 0.1f, 0.09f, 0.12f }; // いちばん上の音を主に
+            float noteLen = 0.3f;
+            int len = (int)(Rate * (noteLen + 0.25f));
             var data = new float[len];
             for (int i = 0; i < len; i++)
             {
