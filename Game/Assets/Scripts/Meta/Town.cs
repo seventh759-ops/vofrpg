@@ -133,13 +133,13 @@ namespace VividOfFade
         /// <summary>
         /// 倉庫・持ち込む品から、そのまま装備する。今つけている品は、装備した品があった所（倉庫か持ち込む品）の同じ位置へ入れ替わる。
         /// </summary>
-        public static bool EquipFromTown(CharacterData ch, Item item)
+        public static bool EquipFromTown(CharacterData ch, Item item, int slotOverride = -1)
         {
             if (CannotEquip(ch, item) != null) return false;
             List<Item> from = ch.Stash.Contains(item) ? ch.Stash : Profile.Storage.Contains(item) ? Profile.Storage : null;
             if (from == null) return false;
             while (ch.Loadout.Count < 5) ch.Loadout.Add(Item.EmptyMarker());
-            int slot = EquipSlotFor(ch, item);
+            int slot = slotOverride >= 0 && Inventory.Fits(item, (EquipSlot)slotOverride) ? slotOverride : EquipSlotFor(ch, item);
             var old = ch.Loadout[slot];
             int index = from.IndexOf(item);
             from.RemoveAt(index);

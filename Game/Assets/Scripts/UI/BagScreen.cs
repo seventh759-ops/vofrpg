@@ -584,6 +584,37 @@ namespace VividOfFade
         }
 
         /// <summary>付けたときに一番強くなる装備欄での能力（指輪は R1・R2 の良い方）。</summary>
+        /// <summary>付けるならどの欄か（指輪は強くなる方）。町の倉庫番から装備するときも同じ欄にする。</summary>
+        public static EquipSlot BestSlot(Inventory inv, Item item)
+        {
+            BestCandidate(inv, item, out var slot);
+            return slot;
+        }
+
+        /// <summary>
+        /// 町の倉庫番で選んだ品を、今の装備と比べて描く（鞄の画面と同じ：総合の判定、「効果」「能力」のタブ）。
+        /// </summary>
+        public void DrawTownCompare(GameWorld world, Item item, Rect area)
+        {
+            var inv = world.Inventory;
+            var candidate = BestCandidate(inv, item, out var slot);
+            var now = world.Player.BaseStats;
+            float change = now.Power > 0f ? candidate.Power / now.Power - 1f : 0f;
+            float tabH = hud.SmallStyle.fontSize * 2f;
+            float tabW = area.width * 0.25f;
+            hud.Button(new Rect(area.x, area.y, tabW, tabH), Loc.T("EFFECTS", "効果"), statsTab ? new Color(1f, 1f, 1f, 0.06f) : new Color(1f, 1f, 1f, 0.25f), hud.CenteredStyle, () => statsTab = false);
+            hud.Button(new Rect(area.x + tabW + area.width * 0.02f, area.y, tabW, tabH), Loc.T("STATS", "能力"), statsTab ? new Color(1f, 1f, 1f, 0.25f) : new Color(1f, 1f, 1f, 0.06f), hud.CenteredStyle, () => statsTab = true);
+            DrawVerdict(change, new Rect(area.x + area.width * 0.5f, area.y, area.width * 0.5f, tabH), true);
+            float top = area.y + tabH + area.height * 0.02f;
+            var body = new Rect(area.x, top, area.width, area.yMax - top);
+            if (statsTab) DrawStatTable(world.Player, now, candidate, body);
+            else
+            {
+                DrawDescription(item, new Rect(body.x, body.y, body.width * 0.48f, body.height), world, false);
+                DrawItemDiff(item, inv.Equipped[(int)slot], slot, new Rect(body.x + body.width * 0.5f, body.y, body.width * 0.5f, body.height));
+            }
+        }
+
         static PlayerStats BestCandidate(Inventory inv, Item item, out EquipSlot slot)
         {
             if (item.Slot != ItemSlot.Ring)

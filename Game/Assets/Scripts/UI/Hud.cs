@@ -45,6 +45,7 @@ namespace VividOfFade
         readonly List<Action> pendingActions = new List<Action>();
 
         BagScreen bag;
+        public BagScreen Bag => bag;
         StatsScreen stats;
         SkillsScreen skills;
         ReturnScreen returnScreen;

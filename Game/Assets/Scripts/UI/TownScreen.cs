@@ -44,6 +44,7 @@ namespace VividOfFade
 
         public void Draw(GameWorld world)
         {
+            worldRef = world;
             var ch = Profile.Current;
             if (ch == null) return;
             float W = Screen.width, H = Screen.height;
@@ -213,8 +214,11 @@ namespace VividOfFade
             return Loc.T("Ready? The tower is waiting.", "準備はいいかい？ 塔が待ってる。");
         }
 
+        GameWorld worldRef;
+
         void Open(Panel p)
         {
+            if (p == Panel.Storage && worldRef != null) worldRef.SyncTownGear(); // 比べるために、今の装備を読み直す
             panel = p;
             selected = null;
             lastBought = null;
@@ -263,70 +267,88 @@ namespace VividOfFade
             y = Grid(Profile.Storage, Town.StorageCapacity, y, pad, type) + H * 0.01f;
 
             float btnH = H * 0.05f;
-            float by = H - pad - btnH;
             if (selected == null || (!ch.Stash.Contains(selected) && !Profile.Storage.Contains(selected)))
             {
                 selected = null;
-                GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T("Tap an item to move it or salvage it.", "品をタップすると、移したり分解したりできる。"), small);
+                GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T("Tap an item to compare, equip, move or sell it.", "品をタップすると、比べたり、装備・移動・売却ができる。"), small);
                 return;
             }
+
+            // 選んだ品は、下から出る窓で詳しく見せる（今の装備と比べられるよう広く）。窓の外を押すと閉じる
+            hud.Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0.55f), hud.CenteredStyle, () => { selected = null; armed = null; });
+            var panelR = new Rect(pad * 0.5f, H * 0.3f, W - pad, H * 0.7f - pad * 0.5f);
+            Hud.Fill(panelR, new Color(0.04f, 0.04f, 0.07f, 0.97f));
+            Hud.OrnateFrame(panelR, Hud.FrameGold, Mathf.Max(2f, Mathf.Round(H * 0.0012f)), false, true);
+            hud.Button(panelR, null, new Color(0f, 0f, 0f, 0f), hud.CenteredStyle, () => { }); // 窓の中を押しても閉じない
+            float inner = W * 0.04f;
+            float cx = panelR.x + inner, cw = panelR.width - inner * 2f;
+            y = panelR.y + inner;
+            float by = panelR.yMax - inner - btnH;
 
             // 選んだ品の中身
             var name = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
             name.normal.textColor = RarityInfo.ColorOf(selected.Rarity);
-            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH * 1.2f), selected.Name, name);
+            GUI.Label(new Rect(cx, y, cw, lineH * 1.2f), selected.Name, name);
             y += lineH * 1.2f;
             {
                 // 装備のレベルと、今つけている同じ場所の品
                 bool tooHigh = selected.ReqLevel > ch.Level;
                 var lv = new GUIStyle(small);
                 lv.normal.textColor = tooHigh ? new Color(1f, 0.5f, 0.45f) : new Color(0.85f, 0.85f, 0.9f);
-                var cur = Town.EquippedFor(ch, selected);
+                var cur = Town.OtherClassWeapon(selected, type) ? null : world.Inventory.Equipped[(int)BagScreen.BestSlot(world.Inventory, selected)];
                 string curText = cur != null ? Loc.T($"   Now: {cur.Name} (Lv {cur.Level})", $"　装備中：{cur.Name}（Lv {cur.Level}）") : Loc.T("   Now: (empty)", "　装備中：なし");
-                Hud.FitLabel(new Rect(pad, y, W - pad * 2f, lineH), Loc.T($"Lv {selected.Level}", $"Lv {selected.Level}") + (tooHigh ? Loc.T(" (level too low)", "（レベルが足りない）") : "") + curText, lv);
+                Hud.FitLabel(new Rect(cx, y, cw, lineH), Loc.T($"Lv {selected.Level}", $"Lv {selected.Level}") + (tooHigh ? Loc.T(" (level too low)", "（レベルが足りない）") : "") + curText, lv);
                 y += lineH;
             }
             if (Town.OtherClassWeapon(selected, type))
             {
                 var warn = new GUIStyle(small);
                 warn.normal.textColor = new Color(1f, 0.6f, 0.5f);
-                GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T($"Weapon for {ClassInfo.Get(ClassInfo.Weapon(selected.Weapon).Class).DisplayName}", $"{ClassInfo.Get(ClassInfo.Weapon(selected.Weapon).Class).DisplayName}の武器"), warn);
+                GUI.Label(new Rect(cx, y, cw, lineH), Loc.T($"Weapon for {ClassInfo.Get(ClassInfo.Weapon(selected.Weapon).Class).DisplayName}", $"{ClassInfo.Get(ClassInfo.Weapon(selected.Weapon).Class).DisplayName}の武器"), warn);
                 y += lineH;
             }
-            foreach (var line in selected.Describe())
+            // 今の装備と比べる（鞄の画面と同じ：効果の差・能力の表・強くなるか）
             {
-                if (y + lineH > by - btnH - W * 0.03f - H * 0.01f) break; // 2段のボタンの上まで
-                GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), line, small);
-                y += lineH;
+                float bottom = by - btnH - W * 0.03f - H * 0.01f; // 2段のボタンの上まで
+                if (Town.OtherClassWeapon(selected, type))
+                {
+                    foreach (var line in selected.Describe())
+                    {
+                        if (y + lineH > bottom) break;
+                        GUI.Label(new Rect(cx, y, cw, lineH), line, small);
+                        y += lineH;
+                    }
+                }
+                else hud.Bag.DrawTownCompare(world, selected, new Rect(cx, y, cw, bottom - y));
             }
 
             float gap = W * 0.03f;
-            float half = (W - pad * 2f - gap) * 0.5f;
-            float third = (W - pad * 2f - gap * 2f) / 3f;
+            float half = (cw - gap) * 0.5f;
+            float third = (cw - gap * 2f) / 3f;
             bool inStash = ch.Stash.Contains(selected);
             var item = selected;
             float by1 = by - btnH - gap * 0.5f; // 上の段：移す・装備・ロック  下の段：売却・破棄
             {
                 // 装備する：今つけている同じ場所の品と入れ替える（外した品は、この品があった所へ）
-                var er = new Rect(pad + third + gap, by1, third, btnH);
+                var er = new Rect(cx + third + gap, by1, third, btnH);
                 string why = Town.CannotEquip(ch, item);
                 if (why != null)
                 {
                     Hud.Fill(er, dim);
                     Hud.FitLabel(er, why, hud.CenteredStyle);
                 }
-                else hud.Button(er, Loc.T("EQUIP", "装備"), gold, hud.CenteredStyle, () => { if (Town.EquipFromTown(ch, item)) { selected = null; world.SyncTownGear(); Sfx_Equip(world); } });
+                else hud.Button(er, Loc.T("EQUIP", "装備"), gold, hud.CenteredStyle, () => { if (Town.EquipFromTown(ch, item, (int)BagScreen.BestSlot(world.Inventory, item))) { selected = null; world.SyncTownGear(); Sfx_Equip(world); } });
             }
             if (inStash)
             {
                 bool room = Profile.Storage.Count < Town.StorageCapacity;
-                hud.Button(new Rect(pad, by1, third, btnH), room ? Loc.T("TO STORAGE", "倉庫へ") : Loc.T("STORAGE FULL", "倉庫が満杯"), row, hud.CenteredStyle,
+                hud.Button(new Rect(cx, by1, third, btnH), room ? Loc.T("TO STORAGE", "倉庫へ") : Loc.T("STORAGE FULL", "倉庫が満杯"), row, hud.CenteredStyle,
                     () => { if (Town.Store(ch, item)) selected = null; });
             }
             else
             {
                 bool room = ch.Stash.Count < Inventory.BagCapacity;
-                var r = new Rect(pad, by1, third, btnH);
+                var r = new Rect(cx, by1, third, btnH);
                 if (Town.OtherClassWeapon(item, type))
                 {
                     Hud.Fill(r, dim);
@@ -338,20 +360,20 @@ namespace VividOfFade
                         () => { if (Town.Take(ch, item)) selected = null; });
                 }
             }
-            hud.Button(new Rect(pad + (third + gap) * 2f, by1, third, btnH), item.Locked ? Loc.T("UNLOCK", "ロック解除") : Loc.T("LOCK", "ロック"),
+            hud.Button(new Rect(cx + (third + gap) * 2f, by1, third, btnH), item.Locked ? Loc.T("UNLOCK", "ロック解除") : Loc.T("LOCK", "ロック"),
                 item.Locked ? gold : row, hud.CenteredStyle, () => { item.Locked = !item.Locked; Profile.Save(); });
 
             if (item.Locked)
             {
-                var lr = new Rect(pad, by, W - pad * 2f, btnH);
+                var lr = new Rect(cx, by, cw, btnH);
                 Hud.Fill(lr, dim);
                 Hud.FitLabel(lr, Loc.T("Locked: unlock to sell or discard", "ロック中：外すと売却・破棄できる"), hud.CenteredStyle);
             }
             else
             {
-                Confirm(new Rect(pad, by, half, btnH), "salvage", Loc.T($"SELL +{Town.SalvageValue(item)} embers", $"売却 火種+{Town.SalvageValue(item)}"),
+                Confirm(new Rect(cx, by, half, btnH), "salvage", Loc.T($"SELL +{Town.SalvageValue(item)} embers", $"売却 火種+{Town.SalvageValue(item)}"),
                     () => { if (Town.Salvage(ch, item)) selected = null; });
-                Confirm(new Rect(pad + half + gap, by, half, btnH), "discard", Loc.T("DISCARD", "破棄"),
+                Confirm(new Rect(cx + half + gap, by, half, btnH), "discard", Loc.T("DISCARD", "破棄"),
                     () => { if (Town.Discard(ch, item)) selected = null; });
             }
         }
