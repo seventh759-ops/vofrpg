@@ -619,6 +619,34 @@ namespace VividOfFade
             GUI.color = old;
         }
 
+        float skillUpTime = -1f;
+        const float SkillUpLife = 1.2f;
+
+        /// <summary>
+        /// スキルレベルが上がったとき、頭の上に「SKILL UP」（ドット文字、スキルの色）。
+        /// キャラのレベルアップ（虹色の「LV UP」と翼）と見分けがつくよう、単色で小さめ、ぽんと出てから少し浮かんで消える。
+        /// </summary>
+        void DrawSkillUp()
+        {
+            if (skillUpTime < 0f) return;
+            var cam = Camera.main;
+            if (cam == null) return;
+            float t = skillUpTime / SkillUpLife;
+            float alpha = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
+            float extra = levelUpTime >= 0f ? 0.7f : 0f; // キャラのレベルアップと重なったら、「LV UP」の上に出す
+            var head = Iso.ToScreen(World.Player.Pos) + new Vector2(0f, 1.35f * GameConfig.PlayerScale + extra + 0.35f * Mathf.Sqrt(t));
+            Vector3 sp = cam.WorldToScreenPoint(new Vector3(head.x, head.y, 0f));
+            float pop = 1f + 0.4f * Mathf.Clamp01(1f - skillUpTime / 0.15f);
+            float px = Mathf.Max(2f, Mathf.Round(number.fontSize / 8.5f)) * pop;
+            var c = Color.Lerp(flashSkillColor, Color.white, 0.25f); c.a = alpha;
+            var center = new Vector2(sp.x, Screen.height - sp.y);
+            var shadow = new Color(0.05f, 0.03f, 0.08f, 0.9f * alpha);
+            float o = Mathf.Max(1f, Mathf.Round(px * 0.5f));
+            foreach (var d in new[] { new Vector2(o, 0), new Vector2(-o, 0), new Vector2(0, o), new Vector2(0, -o), new Vector2(o, o) })
+                NumberFont.Draw(center + d, "SKILL UP", px, shadow);
+            NumberFont.Draw(center, "SKILL UP", px, c);
+        }
+
         string bannerTitle;
         string bannerSub;
         Color bannerColor;
@@ -676,6 +704,7 @@ namespace VividOfFade
         /// <summary>スキルレベルが上がった：そのスキルのボタンを光らせ、「LV n」を浮かべる。</summary>
         public void FlashSkill(int index, int lv, Color color)
         {
+            skillUpTime = 0f;
             flashSkillIndex = index;
             flashSkillLv = lv;
             flashSkillColor = color;
@@ -711,6 +740,7 @@ namespace VividOfFade
             if (levelUpTime >= 0f && World != null && !World.Paused && (levelUpTime += dt) >= FxSystem.LevelUpDuration) levelUpTime = -1f;
             if (plateTime >= 0f && (plateTime += dt) >= PlateLife) plateTime = -1f;
             if (flashSkillT >= 0f && World != null && !World.Paused && (flashSkillT += dt) >= FlashSkillTime) flashSkillT = -1f;
+            if (skillUpTime >= 0f && World != null && !World.Paused && (skillUpTime += dt) >= SkillUpLife) skillUpTime = -1f;
 
             for (int i = numbers.Count - 1; i >= 0; i--)
             {
@@ -744,6 +774,7 @@ namespace VividOfFade
             {
                 DrawNumbers();
                 DrawLevelUp();
+                DrawSkillUp();
                 DrawBoonGet();
                 DrawEliteLabels();
                 DrawHud();

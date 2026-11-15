@@ -1544,14 +1544,12 @@ namespace VividOfFade
 
         /// <summary>
         /// スキルレベルが上がった。キャラのレベルアップ（翼と光の柱）とは別の演出：
-        /// 頭の上にそのスキルのアイコンがぽんと出て浮かび、足元にスキルの色の輪、色の粒が渦を巻いてのぼる。下のボタンも光り、「LV n」が浮かぶ。
+        /// 頭の上に「SKILL UP」（スキルの色のドット文字）が出て浮かび、足元にスキルの色の輪、色の粒が渦を巻いてのぼる。下のボタンも光り、「LV n」が浮かぶ。
         /// </summary>
         void OnSkillLeveled(SkillSpec spec, int lv, int index)
         {
             var c = spec.Color; c.a = 1f;
             Vector2 p = Player.Pos;
-            float head = 1.25f * GameConfig.PlayerScale;
-            Fx.Emit(p, head, PixelArt.SkillIcon(spec), Color.white, 1.1f, Vector2.zero, 0.7f, 0f, 1.4f, 0.75f, 0f, 2.5f);
             Fx.Ring(p, 1.1f, c, 0.35f);
             Fx.After(0.12f, () => Fx.Ring(Player.Pos, 1.7f, new Color(c.r, c.g, c.b, 0.6f), 0.4f));
             for (int k = 0; k < 10; k++)
