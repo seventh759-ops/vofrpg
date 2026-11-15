@@ -83,12 +83,8 @@ namespace VividOfFade
                     fx.After(0.15f, () => fx.Ring(origin, 1.7f, Fade(c, 0.5f), 0.35f));
                     return true;
 
-                case "Crescent Wave": // 三日月の刃が扇に飛ぶ
-                    for (int k = 0; k < spec.Count; k++)
-                    {
-                        Vector2 d = Rotate(aim, (k - (spec.Count - 1) * 0.5f) * 12f);
-                        CrescentShot(fx, origin, d, new Color(0.85f, 0.9f, 1f, 1f), 1.4f);
-                    }
+                case "Crescent Wave": // 三日月の刃（弾そのものが三日月）を放つ瞬間の閃き
+                    fx.Slash(origin, aim, 1.4f, 90f, new Color(0.85f, 0.9f, 1f, 0.8f));
                     return true;
 
                 case "Second Wind": // 緑の葉が渦を巻いて舞い上がる
@@ -218,13 +214,9 @@ namespace VividOfFade
                     fx.Ring(origin, 1.8f, Fade(c, 0.7f), 0.4f);
                     return true;
 
-                case "Umbral Storm": // 影の三日月が渦を巻いて飛ぶ
-                    for (int k = 0; k < spec.Count; k++)
-                    {
-                        Vector2 d = Rotate(aim, (k - (spec.Count - 1) * 0.5f) * 12f);
-                        fx.After(k * 0.02f, () => CrescentShot(fx, origin, d, new Color(0.6f, 0.4f, 1f, 1f), 1.5f));
-                    }
+                case "Umbral Storm": // 影の三日月（弾そのもの）を放つ瞬間の、黒い渦
                     fx.Disc(origin, 1.4f, new Color(0.15f, 0.05f, 0.3f, 0.6f), 0.35f);
+                    fx.Slash(origin, aim, 1.5f, 160f, new Color(0.6f, 0.4f, 1f, 0.8f));
                     return true;
 
                 case "Sanguine Tide": // 血の波が3重に押し寄せ、しぶきが散る
@@ -256,6 +248,24 @@ namespace VividOfFade
                     return true;
             }
             return false;
+        }
+
+        /// <summary>弾を撃つスキルの、弾の絵（なければふつうの火の玉）。</summary>
+        public static ProjectileSystem.Look ShotLook(SkillSpec spec)
+        {
+            switch (spec.Name)
+            {
+                case "Fire Barrage": // 尾を引く炎の玉（炎の先が後ろへ流れる）
+                    return new ProjectileSystem.Look { Sprite = PixelArt.Flame, Tint = Color.white, AlignToDir = true, AngleOffset = 90f, Scale = 1.4f };
+                case "Crescent Wave": // 白銀の三日月
+                    return new ProjectileSystem.Look { Sprite = PixelArt.Crescent, Tint = new Color(0.85f, 0.92f, 1f), AlignToDir = true, Scale = 1.2f };
+                case "Constellation": // 回る星
+                    return new ProjectileSystem.Look { Sprite = PixelArt.Star, Tint = new Color(0.8f, 0.92f, 1f), Spin = 540f, Scale = 1.3f };
+                case "Umbral Storm": // 影の三日月
+                    return new ProjectileSystem.Look { Sprite = PixelArt.Crescent, Tint = new Color(0.65f, 0.45f, 1f), AlignToDir = true, Scale = 1.4f };
+                default:
+                    return default;
+            }
         }
 
         /// <summary>狙って落とすスキル：落ちるまでの演出（予告）。</summary>

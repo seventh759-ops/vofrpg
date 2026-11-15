@@ -27,9 +27,33 @@ namespace VividOfFade
             return p;
         }
 
-        public void Fire(Vector2 pos, Vector2 dir, float damage, bool crit, int pierce, float range)
+        /// <summary>弾の見た目（スキルごと）。sprite が null ならふつうの火の玉。</summary>
+        public struct Look
+        {
+            public Sprite Sprite;
+            public Color Tint;
+            public float AngleOffset; // 進む向きに合わせるときの、絵の向きのずれ（度）
+            public bool AlignToDir;   // 進む向きに回す（三日月・炎の尾）
+            public float Spin;        // 回り続ける（星）
+            public float Scale;
+        }
+
+        public void Fire(Vector2 pos, Vector2 dir, float damage, bool crit, int pierce, float range) => Fire(pos, dir, damage, crit, pierce, range, default);
+
+        public void Fire(Vector2 pos, Vector2 dir, float damage, bool crit, int pierce, float range, Look look)
         {
             var p = pool.Get();
+            p.Sr.sprite = look.Sprite != null ? look.Sprite : PixelArt.Fireball;
+            p.Sr.color = look.Sprite != null ? look.Tint : Color.white;
+            p.Spin = look.Spin;
+            float ang = 0f;
+            if (look.AlignToDir)
+            {
+                Vector2 sd = Iso.ToScreen(dir);
+                ang = Mathf.Atan2(sd.y, sd.x) * Mathf.Rad2Deg + look.AngleOffset;
+            }
+            p.Angle = ang;
+            p.transform.localRotation = Quaternion.Euler(0f, 0f, ang);
             p.Pos = pos;
             p.Velocity = dir * GameConfig.ShotSpeed;
             // 明るさの少し先まで飛んで消える
@@ -37,7 +61,8 @@ namespace VividOfFade
             p.Damage = damage;
             p.Crit = crit;
             p.PierceLeft = pierce;
-            p.transform.localScale = crit ? new Vector3(1.5f, 1.5f, 1f) : Vector3.one;
+            float sc = (look.Scale > 0f ? look.Scale : 1f) * (crit ? 1.5f : 1f);
+            p.transform.localScale = new Vector3(sc, sc, 1f);
             p.LastHit = null;
             p.Sr.sortingOrder = SortOrder.For(pos) + 1;
             active.Add(p);
@@ -52,6 +77,7 @@ namespace VividOfFade
                 Vector2 pos = p.Pos + p.Velocity * dt;
                 p.Pos = pos;
                 p.Sr.sortingOrder = SortOrder.For(pos) + 1;
+                if (p.Spin != 0f) { p.Angle += p.Spin * dt; p.transform.localRotation = Quaternion.Euler(0f, 0f, p.Angle); }
 
                 if (p.Life <= 0f || !room.Contains(pos))
                 {

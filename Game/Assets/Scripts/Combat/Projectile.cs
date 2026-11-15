@@ -12,6 +12,8 @@ namespace VividOfFade
         public bool Crit;
         public int PierceLeft;
         public Enemy LastHit;
+        public float Spin;   // 回る速さ（度/秒。スキルの星など）
+        public float Angle;  // 今の向き（度）
 
         Vector2 pos;
 

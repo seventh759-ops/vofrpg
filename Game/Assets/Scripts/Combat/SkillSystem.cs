@@ -198,7 +198,7 @@ namespace VividOfFade
                         float angle = spec.AllAround ? 360f * k / n : (k - (n - 1) * 0.5f) * 12f;
                         Vector2 dir = Rotate(aim, angle);
                         bool crit = UnityEngine.Random.value < st.EffectiveCrit;
-                        shots.Fire(origin + dir * 0.3f, dir, damage * (crit ? st.CritMult : 1f), crit, 2, spec.Range);
+                        shots.Fire(origin + dir * 0.3f, dir, damage * (crit ? st.CritMult : 1f), crit, 2, spec.Range, SkillVfx.ShotLook(spec)); // スキルごとの弾の絵
                     }
                     if (!SkillVfx.Cast(fx, spec, player, origin, aim, radius, origin, origin))
                     {
