@@ -189,9 +189,9 @@ namespace VividOfFade
             {
                 Name = b.Name, Subtitle = b.Subtitle, NameJa = b.NameJa, SubtitleJa = b.SubtitleJa, Pattern = b.Pattern,
                 Floor = T(b.Floor, deep, k), FloorAlt = T(b.FloorAlt, new Color32(40, 14, 32, 255), k), Edge = T(b.Edge, new Color32(22, 6, 16, 255), k),
-                Accent = T(b.Accent, new Color32(210, 40, 70, 255), Mathf.Min(0.3f * cycle, 0.85f)),
+                Accent = T(b.Accent, new Color32(120, 28, 48, 255), Mathf.Min(0.18f * cycle, 0.5f)), // 赤は暗めに。深淵（101層から）の赤い光より目立たせない
                 WallTop = T(b.WallTop, new Color32(60, 22, 48, 255), k), WallLeft = T(b.WallLeft, new Color32(38, 12, 30, 255), k), WallRight = T(b.WallRight, new Color32(24, 6, 18, 255), k),
-                AmbientColor = Color.Lerp(b.AmbientColor, new Color(0.95f, 0.35f, 0.5f), k), Ambient = Mathf.Max(0.12f, b.Ambient - 0.03f * cycle),
+                AmbientColor = Color.Lerp(b.AmbientColor, new Color(0.8f, 0.45f, 0.6f), k * 0.6f), Ambient = Mathf.Max(0.12f, b.Ambient - 0.03f * cycle),
                 Background = Color.Lerp(b.Background, new Color(0.06f, 0.01f, 0.04f), k),
                 Slime = b.Slime, SlimeDark = b.SlimeDark, Cycle = cycle,
             };
