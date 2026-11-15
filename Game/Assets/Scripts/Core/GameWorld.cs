@@ -487,7 +487,7 @@ namespace VividOfFade
             Player.Sr.sprite = PixelArt.Player;
             Player.AutoAttack = Profile.AutoAttackSetting; // 保存した設定を読み込む
             Player.Dodged += OnPlayerDodged;
-            Fx.WingsOpened += () => cameraRig.Shake(0.12f, 0.22f); // 羽が開いた重さ
+            Fx.WingsOpened += () => { cameraRig.Shake(0.12f, 0.22f); Sfx.LevelBloom(); }; // 羽が開いた重さと、鐘のような和音
             Enemies.PastBossSummoned += OnPastBossSummoned;
             Player.Hurt += OnPlayerHurt;
             Player.Evaded += pos => Hud.AddMiss(pos, true);
@@ -1468,7 +1468,7 @@ namespace VividOfFade
             Fx.Anchor = Player.Pos;
             Fx.LevelUp();
             Hud.ShowLevelUp(ch.Level, gained * Progression.PointsPerLevel);
-            Sfx.Landed(Rarity.Legendary);
+            Sfx.LevelUp(); // 装備が落ちたときの音とは別の、レベルアップ専用の音
             Hud.Toast(Loc.T($"LEVEL UP!  Lv {ch.Level}  (+{gained * Progression.PointsPerLevel} points)", $"レベルアップ！  Lv {ch.Level}  （ポイント +{gained * Progression.PointsPerLevel}）"), new Color(1f, 0.95f, 0.5f));
             Guide("levelup", Loc.T("Level up! Spend points with the C key or STATS in the MENU.", "レベルが上がった！ ポイントは C キーかメニューの「能力値」で振れる。"),
                 Loc.T("Want more MP? Put a little into WIS early. It changes how much you gain each level.", "MP が欲しいなら、早めに WIS を少し振っておくといい。レベルアップのたびに伸びが変わるからね。"));

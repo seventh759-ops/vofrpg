@@ -10,7 +10,7 @@ namespace VividOfFade
         const int Rate = 44100;
 
         AudioSource source;
-        AudioClip hit, pickup, ember, chime, fanfare, relic, boom, fountain, anvil, skillUp;
+        AudioClip hit, pickup, ember, chime, fanfare, relic, boom, fountain, anvil, skillUp, levelRise, levelBloom;
         float lastHit;
         float lastEmber;
 
@@ -28,6 +28,8 @@ namespace VividOfFade
             boom = Make("boom", new[] { 90f }, 0.18f, 0.5f, Wave.Noise);
             fountain = Make("fountain", new[] { 523f, 784f, 1046f }, 0.05f, 0.3f, Wave.Square);
             anvil = MakeAnvil();
+            levelRise = MakeLevelRise();
+            levelBloom = MakeLevelBloom();
             skillUp = Make("skillUp", new[] { 1175f, 1568f, 2093f, 2637f, 3136f }, 0.045f, 0.28f, Wave.Sine); // きらりと駆け上がる（キャラのレベルアップとは別の音）
         }
 
@@ -47,6 +49,59 @@ namespace VividOfFade
 
         public void Pickup() => source.PlayOneShot(pickup);
         public void SkillUp() => source.PlayOneShot(skillUp, 0.9f);
+        /// <summary>レベルアップ：羽が上がる間の、やわらかく駆け上がる音（ドロップの音とは別）。</summary>
+        public void LevelUp() => source.PlayOneShot(levelRise, 0.9f);
+        /// <summary>レベルアップ：羽が開いた瞬間の、鐘のような明るい和音。</summary>
+        public void LevelBloom() => source.PlayOneShot(levelBloom, 0.85f);
+
+        /// <summary>ド・ミ・ソ・ド・ミと、重なりながら駆け上がる（それぞれ少し長く響く）。</summary>
+        static AudioClip MakeLevelRise()
+        {
+            float[] notes = { 523.25f, 659.25f, 783.99f, 1046.5f, 1318.5f };
+            float step = 0.075f, ring = 0.45f;
+            int len = (int)(Rate * (step * notes.Length + ring));
+            var data = new float[len];
+            for (int n = 0; n < notes.Length; n++)
+            {
+                int start = (int)(Rate * step * n);
+                int dur = (int)(Rate * ring);
+                for (int i = 0; i < dur && start + i < len; i++)
+                {
+                    float t = (float)i / Rate;
+                    float env = Mathf.Min(1f, t / 0.006f) * Mathf.Exp(-t * 7f);
+                    float ph = 2f * Mathf.PI * notes[n] * t;
+                    data[start + i] += (Mathf.Sin(ph) + 0.3f * Mathf.Sin(ph * 2f)) * env * 0.16f;
+                }
+            }
+            var clip = AudioClip.Create("levelRise", len, 1, Rate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        /// <summary>高いドミソドの和音を鐘のように鳴らし、きらきらと揺らしながら消えていく。</summary>
+        static AudioClip MakeLevelBloom()
+        {
+            float[] notes = { 1046.5f, 1318.5f, 1568f, 2093f };
+            float dur = 1.3f;
+            int len = (int)(Rate * dur);
+            var data = new float[len];
+            for (int i = 0; i < len; i++)
+            {
+                float t = (float)i / Rate;
+                float env = Mathf.Min(1f, t / 0.004f) * Mathf.Exp(-t * 3.2f);
+                float shimmer = 0.85f + 0.15f * Mathf.Sin(2f * Mathf.PI * 7f * t);
+                float v = 0f;
+                for (int n = 0; n < notes.Length; n++)
+                {
+                    float ph = 2f * Mathf.PI * notes[n] * t;
+                    v += Mathf.Sin(ph) + 0.25f * Mathf.Sin(ph * 2.76f) * Mathf.Exp(-t * 6f); // 鐘らしい倍音は早めに消す
+                }
+                data[i] = v * env * shimmer * 0.09f;
+            }
+            var clip = AudioClip.Create("levelBloom", len, 1, Rate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
         public void Boom() => source.PlayOneShot(boom, 0.7f);
         public void Fountain() => source.PlayOneShot(fountain);
 
