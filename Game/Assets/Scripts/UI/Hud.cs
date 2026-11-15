@@ -1870,14 +1870,14 @@ namespace VividOfFade
                     float tw = r.xMax - tx - inner;
                     float lh = small.fontSize * 1.35f;
                     FitLabel(new Rect(tx, r.y + inner, tw * 0.7f, nameStyle.fontSize * 1.4f), key + AdvancedClasses.NameFor(ch), nameStyle);
-                    var spec = ClassInfo.Get((ClassType)ch.ClassId);
-                    // 1行に収まらなければ字を小さくする（火種の数が右端で切れないように。枠の右の余白の内側まで）
-                    FitLabel(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f, r.xMax - inner - tx, lh),
-                        $"Lv {ch.Level}  " + Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor) + Loc.T($"  Embers {ch.Embers}", $"  火種 {ch.Embers}"), new GUIStyle(small) { alignment = TextAnchor.MiddleLeft });
-                    var sub = new GUIStyle(small);
+                    // 状態は2行に分ける（1行に詰めると字が小さくなりすぎる）。職業の名前は上の名前と重なるので出さない
+                    var info = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+                    float iy = r.y + inner + nameStyle.fontSize * 1.5f;
+                    FitLabel(new Rect(tx, iy, r.xMax - inner - tx, lh), $"Lv {ch.Level}   " + Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor), info);
+                    var sub = new GUIStyle(info);
                     sub.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
-                    GUI.Label(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.5f + lh, tw, lh),
-                        spec.DisplayName + (ch.Run.Active ? Loc.T("   (suspended: ", "   （中断中：") + GameConfig.FloorName(ch.Run.Floor) + Loc.T(")", "）") : ""), sub);
+                    FitLabel(new Rect(tx, iy + lh, r.xMax - inner - tx, lh),
+                        Loc.T($"Embers {ch.Embers}", $"火種 {ch.Embers}") + (ch.Run.Active ? Loc.T("   (suspended: ", "   （中断中：") + GameConfig.FloorName(ch.Run.Floor) + Loc.T(")", "）") : ""), sub);
 
                     // 消す：右上の小さなごみ箱。押すと確認の窓が出る（消しても倉庫は残る）
                     float ds = r.height * 0.26f;
