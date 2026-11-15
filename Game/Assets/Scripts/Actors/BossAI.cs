@@ -40,6 +40,19 @@ namespace VividOfFade
         /// <summary>距離を取って撃ち、近づかれると離れた場所へ瞬間移動するボス。</summary>
         public static bool KeepsAway(BossKind k) => k == BossKind.Librarian || k == BossKind.StarEater;
 
+        /// <summary>その層でのボスの名前（塔の2周目からは、深淵に侵された強化版として頭に言葉が付く）。</summary>
+        public static string NameAt(BossKind k, int floor)
+        {
+            if (IsAbyss(k) || GameConfig.IsAbyss(floor)) return Name(k);
+            switch (Zones.For(floor).Cycle)
+            {
+                case 0: return Name(k);
+                case 1: return Loc.T("Raging ", "猛る") + Name(k);
+                case 2: return Loc.T("Corrupted ", "蝕まれた") + Name(k);
+                default: return Loc.T("Abyss-Drowned ", "深淵に呑まれた") + Name(k);
+            }
+        }
+
         public static string Name(BossKind k)
         {
             switch (k)

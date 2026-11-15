@@ -2342,10 +2342,14 @@ namespace VividOfFade
         };
 
         /// <summary>区域ごとのボスの絵（32 ドット、陰影つき。BossKind の順）。敵の絵を土台に、色と飾りを変えている。</summary>
-        public static Sprite BossSprite(BossKind kind)
+        public static Sprite BossSprite(BossKind kind) => BossSprite(kind, 0);
+
+        /// <summary>ボスの絵。塔の2周目からは、周の数だけ深淵に侵された姿。</summary>
+        public static Sprite BossSprite(BossKind kind, int cycle)
         {
             if (BossInfo.IsAbyss(kind)) return AbyssBossSprite(kind);
             int i = Mathf.Clamp((int)kind, 0, BossRows.Length - 1);
+            if (cycle > 0) return Corrupted($"Boss32_{i}_c{cycle}", BossRows[i], BossColors[i], cycle);
             return Shaded("Boss32_" + i, BossRows[i], BossColors[i]);
         }
 
@@ -3182,6 +3186,47 @@ namespace VividOfFade
         }
 
         /// <summary>敵の絵（段階つき）。スライムはここでは緑（区画の色は SlimeFor）。</summary>
+        /// <summary>
+        /// 深淵に侵された姿（塔の2周目から）。色を周の数だけ深淵の赤紫へ寄せ、3周目からは赤い光の縁が付く。目は元のまま。
+        /// </summary>
+        static Sprite Corrupted(string key, string[] rows, Dictionary<char, Color32[]> over, int cycle)
+        {
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            var target = Ramp(176, 52, 92, 124, 32, 72, 82, 18, 52, 50, 10, 32);
+            float k = Mathf.Min(0.16f * cycle, 0.5f);
+            var o = new Dictionary<char, Color32[]>();
+            foreach (var row in rows)
+            {
+                foreach (char ch in row)
+                {
+                    if (ch == '.' || ch == 'e' || o.ContainsKey(ch) || glows.ContainsKey(ch)) continue;
+                    Color32[] r = null;
+                    if (over != null && over.TryGetValue(ch, out var or)) r = or;
+                    else if (!ramps.TryGetValue(ch, out r)) continue;
+                    var m = new Color32[4];
+                    for (int i = 0; i < 4; i++) m[i] = Color32.Lerp(r[i], target[i], k);
+                    o[ch] = m;
+                }
+            }
+            Color32? aura = cycle >= 2 ? new Color32(230, 40, 80, 255) : (Color32?)null;
+            return Shaded(key, rows, o, aura);
+        }
+
+        /// <summary>周の数だけ深淵に侵された敵（0 ならふつうの絵）。</summary>
+        public static Sprite EnemySprite(EnemyKind kind, int tier, int cycle)
+        {
+            if (cycle <= 0 || kind == EnemyKind.Golden) return EnemySprite(kind, tier);
+            tier = Mathf.Clamp(tier, 0, 2);
+            switch (kind)
+            {
+                case EnemyKind.Bat: return Corrupted($"Bat32_{tier}_c{cycle}", BatRows32[tier], TierDarken(tier, 'P', 'M'), cycle);
+                case EnemyKind.Caster: return Corrupted($"Caster32_{tier}_c{cycle}", CasterRows32[tier], TierDarken(tier, 'j'), cycle);
+                case EnemyKind.Brute: return Corrupted($"Brute32_{tier}_c{cycle}", BruteRows32[tier], TierDarken(tier, 'q'), cycle);
+                case EnemyKind.Bomber: return Corrupted($"Bomber32_{tier}_c{cycle}", BomberRows32[tier], TierDarken(tier, 'i'), cycle);
+                default: return Corrupted($"Slime32_{tier}_c{cycle}", SlimeRows32[tier], TierDarken(tier, 'G', 'D'), cycle);
+            }
+        }
+
         public static Sprite EnemySprite(EnemyKind kind, int tier = 0)
         {
             tier = Mathf.Clamp(tier, 0, 2);
@@ -3416,11 +3461,13 @@ namespace VividOfFade
         {
             tier = Mathf.Clamp(tier, 0, 2);
             float f = tier == 0 ? 1f : tier == 1 ? 0.85f : 0.7f;
-            return Shaded($"Slime32_{z.Name}_{tier}", SlimeRows32[tier], new Dictionary<char, Color32[]>
+            var over = new Dictionary<char, Color32[]>
             {
                 { 'G', RampFrom(z.Slime, f) },
                 { 'D', RampFrom(z.SlimeDark, f) },
-            });
+            };
+            if (z.Cycle > 0) return Corrupted($"Slime32_{z.Key}_{tier}", SlimeRows32[tier], over, z.Cycle);
+            return Shaded($"Slime32_{z.Name}_{tier}", SlimeRows32[tier], over);
         }
 
         public static Sprite Slime => EnemySprite(EnemyKind.Slime);
@@ -4247,7 +4294,7 @@ namespace VividOfFade
 
         /// <summary>区画ごとの床（色と模様）。alt は市松のもう一方。</summary>
         public static Sprite IsoFloorFor(ZoneSpec z, bool alt) =>
-            IsoTile($"Floor_{z.Name}_{alt}", alt ? z.FloorAlt : z.Floor, z.Edge, z.Accent, z.Pattern, alt ? 7 : 0);
+            IsoTile($"Floor_{z.Key}_{alt}", alt ? z.FloorAlt : z.Floor, z.Edge, z.Accent, z.Pattern, alt ? 7 : 0);
 
         /// <summary>クォータービューの壁ブロック（32×32。上面のひし形と左右の側面）。足元のひし形の中心が原点。</summary>
         public static Sprite IsoWall
@@ -4299,7 +4346,7 @@ namespace VividOfFade
         /// </summary>
         public static Sprite IsoWallFor(ZoneSpec z)
         {
-            string key = $"Wall64_{z.Name}";
+            string key = $"Wall64_{z.Key}";
             if (cache.TryGetValue(key, out var cached)) return cached;
             const int w = 64, side = 20, h = 32 + side;
             var px = new Color32[w * h];

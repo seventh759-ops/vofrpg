@@ -91,7 +91,7 @@ namespace VividOfFade
             if (kind == EnemyKind.Golden) return PixelArt.EnemySprite(kind, tier);
             if (zone != null && zone.Pattern >= FloorPattern.Rift) return PixelArt.AbyssEnemy(kind, zone, tier);
             if (kind == EnemyKind.Slime && zone != null) return PixelArt.SlimeFor(zone, tier);
-            return PixelArt.EnemySprite(kind, tier);
+            return PixelArt.EnemySprite(kind, tier, zone != null ? zone.Cycle : 0);
         }
 
         /// <summary>区画が変わったら、これから出るスライムの色と、敵の種類の割合を変える。</summary>
@@ -338,7 +338,7 @@ namespace VividOfFade
             e.Windup = 0f;
             e.Enraged = false;
             e.SafeSpots.Clear();
-            e.Sr.sprite = PixelArt.BossSprite(e.BossKind);
+            e.Sr.sprite = PixelArt.BossSprite(e.BossKind, zone != null ? zone.Cycle : 0);
             e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale, 1f);
             e.Sr.color = Color.white;
             e.Tint = Color.white;

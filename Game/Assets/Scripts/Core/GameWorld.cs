@@ -245,7 +245,24 @@ namespace VividOfFade
             Sfx.Landed(Rarity.Mythic);
         }
 
-        float auraMoteTimer;
+        float auraMoteTimer, corruptionMoteTimer;
+
+        /// <summary>塔の2周目から：深淵の赤い粒が、床からふわりと漂いのぼる（周を重ねるほど多い）。</summary>
+        void TickCorruptionMotes(float dt)
+        {
+            if (InTown || ChoosingClass || GameConfig.IsAbyss(Floors.Floor)) return;
+            int cycle = Zones.For(Floors.Floor).Cycle;
+            if (cycle <= 0) return;
+            corruptionMoteTimer -= dt;
+            while (corruptionMoteTimer <= 0f)
+            {
+                corruptionMoteTimer += 0.35f / cycle;
+                Vector2 p = Player.Pos + Random.insideUnitCircle * 6f;
+                var c = Random.value < 0.3f ? new Color(1f, 0.55f, 0.65f, 0.7f) : new Color(0.85f, 0.15f, 0.3f, 0.65f);
+                Fx.Emit(p, Random.Range(0f, 0.3f), PixelArt.Spark, c, Random.Range(1.8f, 3f), Random.insideUnitCircle * 0.15f,
+                    Random.Range(0.25f, 0.5f), 0f, Random.Range(0.6f, 1f), 0.2f, 0f, 0.3f);
+            }
+        }
 
         /// <summary>転生した人の足元から、オーラの色の光の粒が立ちのぼる（回数が多いほど多い）。</summary>
         void TickAuraMotes(float dt)
@@ -626,6 +643,7 @@ namespace VividOfFade
             {
                 Player.Tick(dt, Input, Room);
                 TickAuraMotes(dt);
+                TickCorruptionMotes(dt);
                 TickAbyssGear(dt);
                 TickCollapse(dt);
                 Attack.Tick(dt, Player, !Player.Stunned && (AutoAttack || Input.AttackHeld)); // 気絶中は攻撃しない
@@ -656,7 +674,7 @@ namespace VividOfFade
             if (boss != null && bossAnnouncedFloor != Floors.Floor)
             {
                 bossAnnouncedFloor = Floors.Floor;
-                Hud.ShowBanner(BossInfo.Name(boss.BossKind), GameConfig.FloorName(Floors.Floor) + Loc.T(" boss", "のボス"), new Color(1f, 0.4f, 0.35f));
+                Hud.ShowBanner(BossInfo.NameAt(boss.BossKind, Floors.Floor), GameConfig.FloorName(Floors.Floor) + Loc.T(" boss", "のボス"), new Color(1f, 0.4f, 0.35f));
             }
 
             // 気絶中は、頭の上に黄色い火花が回る

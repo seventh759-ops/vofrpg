@@ -24,13 +24,24 @@ namespace VividOfFade
         public Color Background;    // 迷宮の外の色
         public Color32 Slime;       // その区画のスライムの色
         public Color32 SlimeDark;
-        public int Cycle;           // 何周目か（2周目以降は少し暗く、名前に II を付ける）
+        public int Cycle;           // 何周目か（周を重ねるほど深淵に侵され、名前の頭に言葉が付く）
 
-        public string Title => Cycle > 0 ? $"{Loc.T(Name, NameJa)} {Roman(Cycle + 1)}" : Loc.T(Name, NameJa);
+        public string Title => CyclePrefix(Cycle) + Loc.T(Name, NameJa);
+
+        /// <summary>周ごとに区画の名前の頭に付ける言葉（深淵に近づいていく）。</summary>
+        public static string CyclePrefix(int cycle)
+        {
+            switch (cycle)
+            {
+                case 0: return "";
+                case 1: return Loc.T("Deeper ", "深き");
+                case 2: return Loc.T("Corrupted ", "蝕まれた");
+                default: return Loc.T("Abyss-Drowned ", "深淵に呑まれた");
+            }
+        }
         public string DisplaySubtitle => Loc.T(Subtitle, SubtitleJa);
         public string Key => $"{Name}_{Cycle}";
 
-        static string Roman(int n) => n == 2 ? "II" : n == 3 ? "III" : n == 4 ? "IV" : n == 5 ? "V" : n.ToString();
     }
 
     /// <summary>区画の表。5層ごとに次の区画へ。最後まで行くと、少し暗くした最初の区画に戻る。</summary>
@@ -170,12 +181,18 @@ namespace VividOfFade
             int cycle = index / table.Length;
             var b = table[index % table.Length];
             if (cycle == 0) return b;
+            // 周を重ねるほど、深淵の赤紫に染まっていく（床・壁・光・模様）。模様は強めに染めて、床の割れ目から赤い光が漏れるように見せる
+            float k = Mathf.Min(0.22f * cycle, 0.66f);
+            Color32 T(Color32 c, Color32 to, float m) => Color32.Lerp(c, to, m);
+            var deep = new Color32(46, 18, 38, 255);
             return new ZoneSpec
             {
                 Name = b.Name, Subtitle = b.Subtitle, NameJa = b.NameJa, SubtitleJa = b.SubtitleJa, Pattern = b.Pattern,
-                Floor = b.Floor, FloorAlt = b.FloorAlt, Edge = b.Edge, Accent = b.Accent,
-                WallTop = b.WallTop, WallLeft = b.WallLeft, WallRight = b.WallRight,
-                AmbientColor = b.AmbientColor, Ambient = Mathf.Max(0.12f, b.Ambient - 0.03f * cycle), Background = b.Background,
+                Floor = T(b.Floor, deep, k), FloorAlt = T(b.FloorAlt, new Color32(40, 14, 32, 255), k), Edge = T(b.Edge, new Color32(22, 6, 16, 255), k),
+                Accent = T(b.Accent, new Color32(210, 40, 70, 255), Mathf.Min(0.3f * cycle, 0.85f)),
+                WallTop = T(b.WallTop, new Color32(60, 22, 48, 255), k), WallLeft = T(b.WallLeft, new Color32(38, 12, 30, 255), k), WallRight = T(b.WallRight, new Color32(24, 6, 18, 255), k),
+                AmbientColor = Color.Lerp(b.AmbientColor, new Color(0.95f, 0.35f, 0.5f), k), Ambient = Mathf.Max(0.12f, b.Ambient - 0.03f * cycle),
+                Background = Color.Lerp(b.Background, new Color(0.06f, 0.01f, 0.04f), k),
                 Slime = b.Slime, SlimeDark = b.SlimeDark, Cycle = cycle,
             };
         }
