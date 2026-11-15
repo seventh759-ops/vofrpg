@@ -270,7 +270,7 @@ namespace VividOfFade
                 EmbersPickedUp?.Invoke(amount);
                 return;
             }
-            if (inventory.Add(g.Item)) PickedUp?.Invoke(g.Item);
+            if (inventory.Add(g.Item)) { Codex.MarkItem(g.Item); PickedUp?.Invoke(g.Item); }
         }
 
         /// <summary>地面のドロップをまとめて拾う（層を下りるとき）。鞄に入らない装備は残念ながら置いていく。</summary>
@@ -279,7 +279,7 @@ namespace VividOfFade
             foreach (var g in active)
             {
                 if (g.Item == null) inventory.Embers += Mathf.RoundToInt(g.Embers * EmberMult);
-                else if (inventory.CanTake(g.Item)) inventory.Add(g.Item);
+                else if (inventory.CanTake(g.Item)) { inventory.Add(g.Item); Codex.MarkItem(g.Item); }
             }
             Clear();
         }

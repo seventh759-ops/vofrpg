@@ -434,6 +434,7 @@ namespace VividOfFade
             Loot.Init(Inventory);
             Loot.Landed += OnLootLanded;
             Loot.PickedUp += OnItemPickedUp;
+            Codex.SetListener(OnCodexDiscovered);
             Loot.EmbersPickedUp += _ => Sfx.Ember();
 
             Fx = AddChild<FxSystem>("Fx");
@@ -1526,6 +1527,17 @@ namespace VividOfFade
         }
 
         int DropLevel => GameConfig.DropLevel(Floors.Tier, Profile.Current != null ? Profile.Current.Level : 1);
+
+        /// <summary>図鑑に初めて載った。区切りに届いたら、全能力値が上がる。</summary>
+        void OnCodexDiscovered(string name, bool reward)
+        {
+            Hud.Toast(Loc.T($"Codex: {name}", $"図鑑に登録：{name}"), new Color(0.75f, 0.85f, 1f));
+            if (!reward) return;
+            Hud.Toast(Loc.T($"Codex {Codex.Found}/{Codex.Total}: all stats +1 (total +{Codex.AttrBonus})",
+                $"図鑑 {Codex.Found}/{Codex.Total}：全能力値 +1（合計 +{Codex.AttrBonus}）"), new Color(1f, 0.85f, 0.4f));
+            Sfx.Landed(Rarity.Rare);
+            RefreshStats();
+        }
 
         void RefreshStats()
         {

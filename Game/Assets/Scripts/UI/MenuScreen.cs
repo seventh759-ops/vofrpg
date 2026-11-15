@@ -34,6 +34,11 @@ namespace VividOfFade
                 DrawSettings(world, W, H, pad, gap, centered);
                 return;
             }
+            if (codex)
+            {
+                DrawCodex(W, H, pad, gap, centered);
+                return;
+            }
             var ch = Profile.Current;
             var inv = world.Inventory;
             int points = ch != null ? ch.Points : 0;
@@ -42,7 +47,7 @@ namespace VividOfFade
             float bw = W - pad * 2f;
             float bh = H * 0.08f;
             float sh0 = H * 0.06f;
-            float block = H * 0.07f + 4f * bh + 3f * gap + gap * 2f + sh0;
+            float block = H * 0.07f + 5f * bh + 4f * gap + gap * 2f + sh0;
             float top = (H - block) * 0.5f;
             var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
             Hud.FitLabel(new Rect(0, top, W, H * 0.06f), "MENU", title);
@@ -54,6 +59,8 @@ namespace VividOfFade
                 points > 0 ? highlight : main, centered, () => world.OpenPanel(false, true, false));
             y += bh + gap;
             hud.Button(new Rect(pad, y, bw, bh), Loc.T("SKILLS", "スキル"), main, centered, () => world.OpenPanel(false, false, true));
+            y += bh + gap;
+            hud.Button(new Rect(pad, y, bw, bh), Loc.T($"CODEX   {Codex.Found}/{Codex.Total}", $"図鑑   {Codex.Found}/{Codex.Total}"), main, centered, () => codex = true);
             y += bh + gap * 2f;
 
             // 設定の画面への入口（攻撃のしかた・音楽・BGM・FPS・言語・操作の一覧）
@@ -68,6 +75,94 @@ namespace VividOfFade
         {
             settings = false;
             settingsOnly = false;
+            codex = false;
+        }
+
+        bool codex;          // 図鑑の画面を開いているか
+        Codex.Category codexTab;
+
+        /// <summary>
+        /// 図鑑：上に分類のタブ、真ん中に見つけたものの絵（まだのものは黒い影）、下に進み具合と次の報酬。
+        /// </summary>
+        void DrawCodex(float W, float H, float pad, float gap, GUIStyle centered)
+        {
+            float bw = W - pad * 2f;
+            float top = H * 0.08f;
+            var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
+            Hud.FitLabel(new Rect(0, top, W, H * 0.06f), Loc.T("CODEX", "図鑑"), title);
+            float y = top + H * 0.07f;
+
+            // 進み具合と報酬
+            int found = Codex.Found, total = Codex.Total;
+            int next = (found / Codex.PerReward + 1) * Codex.PerReward;
+            string progress = Loc.T($"{found}/{total}   All stats +{Codex.AttrBonus}", $"{found}/{total}   全能力値 +{Codex.AttrBonus}");
+            Hud.FitLabel(new Rect(pad, y, bw, H * 0.035f), progress, centered);
+            y += H * 0.035f;
+            var small = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.MiddleCenter };
+            small.normal.textColor = new Color(0.8f, 0.8f, 0.85f);
+            string hint = found >= total ? Loc.T("Complete!", "すべて埋まった！")
+                : Loc.T($"Next +1 at {Mathf.Min(next, total)}  (every {Codex.PerReward} entries)", $"次の +1 まで あと {Mathf.Min(next, total) - found}（{Codex.PerReward}つごとに +1）");
+            if (next > total && found < total) hint = Loc.T("No more rewards, but there is more to find", "報酬はここまで。まだ埋まっていないものがある");
+            Hud.FitLabel(new Rect(pad, y, bw, H * 0.03f), hint, small);
+            y += H * 0.03f + gap;
+
+            // 分類のタブ
+            string[] names = { Loc.T("Enemies", "敵"), Loc.T("Bosses", "ボス"), Loc.T("Uniques", "固有効果"), Loc.T("Abyss Sets", "深淵のセット") };
+            float tw = (bw - gap * (Codex.CategoryCount - 1)) / Codex.CategoryCount;
+            float th = H * 0.05f;
+            for (int i = 0; i < Codex.CategoryCount; i++)
+            {
+                var c = (Codex.Category)i;
+                bool on = c == codexTab;
+                hud.Button(new Rect(pad + i * (tw + gap), y, tw, th), $"{names[i]} {Codex.FoundIn(c)}/{Codex.TotalIn(c)}",
+                    on ? new Color(0.5f, 0.4f, 0.05f, 0.75f) : sub, small, () => codexTab = c);
+            }
+            y += th + gap;
+
+            // 中身
+            float backH = H * 0.06f;
+            float areaH = H - y - backH - H * 0.06f;
+            var list = new System.Collections.Generic.List<Codex.Entry>();
+            foreach (var e in Codex.All) if (e.Cat == codexTab) list.Add(e);
+            bool textRows = codexTab == Codex.Category.Uniques; // 固有効果は文が長いので、1行ずつ
+            int cols = textRows ? 1 : codexTab == Codex.Category.Bosses ? 3 : 4;
+            int rows = Mathf.CeilToInt(list.Count / (float)cols);
+            float cw = (bw - gap * (cols - 1)) / cols;
+            float ch = Mathf.Min(textRows ? H * 0.07f : cw * 1.25f, (areaH - gap * (rows - 1)) / Mathf.Max(1, rows));
+            var nameStyle = new GUIStyle(hud.SmallStyle) { alignment = textRows ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter, wordWrap = textRows };
+            for (int i = 0; i < list.Count; i++)
+            {
+                var e = list[i];
+                bool has = Profile.CodexHas(e.Id);
+                var cell = new Rect(pad + (i % cols) * (cw + gap), y + (i / cols) * (ch + gap), cw, ch);
+                Hud.Fill(cell, new Color(1f, 1f, 1f, has ? 0.08f : 0.04f));
+                Hud.OrnateFrame(cell, has ? Hud.FrameGold : new Color(0.4f, 0.38f, 0.34f, 1f), Mathf.Max(1f, Mathf.Round(H * 0.0008f)), true, false);
+                float lineH = hud.SmallStyle.fontSize * 1.3f;
+                Rect pic = textRows ? new Rect(cell.x + ch * 0.1f, cell.y + ch * 0.1f, ch * 0.8f, ch * 0.8f)
+                                    : new Rect(cell.x + cw * 0.12f, cell.y + ch * 0.04f, cw * 0.76f, ch - lineH * 2.2f);
+                var old = GUI.color;
+                GUI.color = has ? Color.white : new Color(0f, 0f, 0f, 0.85f); // まだのものは黒い影
+                Hud.DrawSprite(pic, e.Icon());
+                GUI.color = old;
+                nameStyle.normal.textColor = has ? Color.white : new Color(0.55f, 0.55f, 0.6f);
+                if (textRows)
+                {
+                    GUI.Label(new Rect(pic.xMax + gap, cell.y, cell.xMax - pic.xMax - gap * 2f, ch), has ? e.Name() : "？？？", nameStyle);
+                }
+                else
+                {
+                    Hud.FitLabel(new Rect(cell.x, cell.yMax - lineH * 2.1f, cw, lineH), has ? e.Name() : "？？？", nameStyle);
+                    string d = e.Desc();
+                    if (!string.IsNullOrEmpty(d))
+                    {
+                        var ds = new GUIStyle(nameStyle) { fontSize = Mathf.Max(8, Mathf.RoundToInt(nameStyle.fontSize * 0.8f)) };
+                        ds.normal.textColor = new Color(0.7f, 0.7f, 0.75f);
+                        Hud.FitLabel(new Rect(cell.x, cell.yMax - lineH * 1.1f, cw, lineH), d, ds);
+                    }
+                }
+            }
+
+            hud.Button(new Rect(pad, H - backH - H * 0.04f, bw, backH), Loc.T("BACK", "戻る"), sub, centered, () => codex = false);
         }
 
         bool settings; // 設定の画面を開いているか

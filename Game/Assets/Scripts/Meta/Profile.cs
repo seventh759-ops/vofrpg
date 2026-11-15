@@ -132,6 +132,7 @@ namespace VividOfFade
         public int MusicVolume = -1;                          // BGM の音量 0（なし）〜5。-1 は前の版（4 にする）
         public List<string> TipsSeen = new List<string>(); // 案内役が説明し終えた場面
         public List<CharacterData> Characters = new List<CharacterData>();
+        public List<string> Codex = new List<string>();     // 図鑑：見つけたもの（全キャラクターで共有）
         public List<Item> Storage = new List<Item>();      // 町の倉庫（全職業で共有）
     }
 
@@ -314,6 +315,27 @@ namespace VividOfFade
             }
         }
 
+        public static bool CodexHas(string id)
+        {
+            EnsureLoaded();
+            return data.Codex.Contains(id);
+        }
+
+        /// <summary>図鑑に載せる。初めてなら true（保存もする）。</summary>
+        public static bool CodexAdd(string id)
+        {
+            EnsureLoaded();
+            if (data.Codex.Contains(id)) return false;
+            data.Codex.Add(id);
+            Save();
+            return true;
+        }
+
+        public static int CodexCount
+        {
+            get { EnsureLoaded(); return data.Codex.Count; }
+        }
+
         public static bool TipSeen(string id)
         {
             EnsureLoaded();
@@ -357,6 +379,7 @@ namespace VividOfFade
             }
             if (data == null) data = new SaveData();
             if (data.Characters == null) data.Characters = new List<CharacterData>();
+            if (data.Codex == null) data.Codex = new List<string>();
             if (data.TipsSeen == null) data.TipsSeen = new List<string>();
             if (data.Storage == null) data.Storage = new List<Item>();
             foreach (var it in data.Storage) it?.Repair();

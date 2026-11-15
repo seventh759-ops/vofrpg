@@ -136,6 +136,24 @@ namespace VividOfFade
         };
 
         public static int Count => table.Length;
+        public static int AbyssCount => abyss.Length;
+        public static ZoneSpec Tower(int i) => table[i];
+        public static ZoneSpec AbyssZone(int i) => abyss[i];
+
+        /// <summary>塔の区画の番号（2周目の区画も同じ番号）。見つからなければ -1。</summary>
+        public static int TowerIndex(ZoneSpec z)
+        {
+            if (z == null) return -1;
+            for (int i = 0; i < table.Length; i++) if (table[i].Name == z.Name) return i;
+            return -1;
+        }
+
+        public static int AbyssIndex(ZoneSpec z)
+        {
+            if (z == null) return -1;
+            for (int i = 0; i < abyss.Length; i++) if (abyss[i].Name == z.Name) return i;
+            return -1;
+        }
 
         /// <summary>塔の区画の名前（エンドロール用）。</summary>
         public static System.Collections.Generic.IEnumerable<string> TowerNames { get { foreach (var z in table) yield return Loc.T(z.Name, z.NameJa); } }

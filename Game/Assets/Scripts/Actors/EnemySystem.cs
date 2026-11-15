@@ -533,6 +533,7 @@ namespace VividOfFade
                 }
                 Kills++;
                 LastKillExpMult = e.ExpMult;
+                Codex.MarkKill(e, zone);
                 Killed?.Invoke(e.Pos);
                 if (e.IsBoss && !e.Summoned) BossKilled?.Invoke(e.Pos); // 呼び出された歴代のボスを倒しても、層は終わらない
                 if (e.Elite != EliteKind.None) EliteKilled?.Invoke(e.Pos);

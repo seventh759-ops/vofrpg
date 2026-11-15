@@ -208,7 +208,7 @@ namespace VividOfFade
                 Light = cls.BaseLight,
                 Armor = cls.Armor,
             };
-            for (int i = 0; i < Attributes.Count; i++) s.Attr[i] = cls.BaseStats[i] + ch.Alloc[i] + ThirdClasses.BonusStats(ch); // 転生1回ごとに全能力値+5
+            for (int i = 0; i < Attributes.Count; i++) s.Attr[i] = cls.BaseStats[i] + ch.Alloc[i] + ThirdClasses.BonusStats(ch) + Codex.AttrBonus; // 転生1回ごとに全能力値+5、図鑑の区切りごとに+1
             int bonusHp = 0, bonusMp = 0;
             float hpRegen = 0f, mpRegen = 0f, reduction = 0f, cdr = 0f, dodgeCdr = 0f, hpPct = 0f;
             int hitBonus = 0, evaBonus = 0;
