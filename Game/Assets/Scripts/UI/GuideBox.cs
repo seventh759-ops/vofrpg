@@ -9,7 +9,7 @@ namespace VividOfFade
     /// </summary>
     public sealed class GuideBox
     {
-        /// <summary>案内役の名前（決まったらここを変える）。</summary>
+        /// <summary>案内役の名前。「？？？」が正式な名前（正体は明かさない）。</summary>
         public const string Name = "？？？";
 
         readonly Hud hud;
