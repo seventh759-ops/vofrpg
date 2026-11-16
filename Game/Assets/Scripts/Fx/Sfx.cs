@@ -37,8 +37,8 @@ namespace VividOfFade
         // 少し前（Window 秒）に鳴らし始めた数を数えて、多すぎるときは鳴らさない。
         // レベルアップ・装備が落ちた音など、聞き逃したくない音（important）は数えるだけで、いつも鳴らす。
         const float Window = 0.25f;     // この間に鳴り始めた音を「鳴っている」とみなす
-        const int MaxVoices = 9;        // 全体でこの数まで
-        const int MaxSame = 4;          // 同じ音はこの数まで
+        const int MaxVoices = 12;       // 全体でこの数まで
+        const int MaxSame = 5;          // 同じ音はこの数まで
         const float SameGap = 0.04f;    // 同じ音は、この間隔より詰めて鳴らさない
         readonly System.Collections.Generic.List<(AudioClip clip, float at)> recent = new System.Collections.Generic.List<(AudioClip, float)>();
 
