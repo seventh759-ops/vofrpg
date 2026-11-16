@@ -12,7 +12,7 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: YK.Co
+  companyName: TOMOSHIBI WORKS
   productName: Vivid of Fade
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
@@ -71,7 +71,7 @@ PlayerSettings:
   thermalStateCriticalIOSFPS: 15
   disableDepthAndStencilBuffers: 0
   androidStartInFullscreen: 1
-  androidRenderOutsideSafeArea: 1
+  androidRenderOutsideSafeArea: 0
   androidUseSwappy: 1
   androidDisplayOptions: 1
   androidBlitType: 0
