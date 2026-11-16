@@ -58,8 +58,7 @@ namespace VividOfFade
                     lastSame = Mathf.Max(lastSame, r.at);
                 }
                 if (recent.Count >= MaxVoices || same >= MaxSame || (lastSame >= 0f && now - lastSame < SameGap)) return;
-                // 重なっているほど、少しずつ小さく（重なっても音が割れにくいように）
-                volume *= 1f / (1f + 0.05f * recent.Count);
+                // 数で抑えているので、音量は下げない（重なっても1つずつの大きさはそのまま）
             }
             recent.Add((clip, now));
             source.PlayOneShot(clip, volume);
