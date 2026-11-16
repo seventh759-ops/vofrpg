@@ -48,18 +48,18 @@ namespace VividOfFade
 
         public void Pickup() => source.PlayOneShot(pickup);
         public void SkillUp() => source.PlayOneShot(skillUp, 0.9f);
-        /// <summary>レベルアップ：ほかの効果音と同じ電子音で「ててーん　てててーん」（装備が落ちたときの音とは別）。</summary>
+        /// <summary>レベルアップ：ほかの効果音と同じ電子音で「てててーん」（装備が落ちたときの音とは別）。</summary>
         public void LevelUp() => source.PlayOneShot(levelUp);
 
         /// <summary>
-        /// 「ててーん　てててーん」：ほかの効果音（Make）と同じ作り方（矩形波の1音ずつ、鳴った瞬間がいちばん大きく、すっと減る）。
-        /// 前半はソ→高いド、少し間をあけて、後半はド・ド・ド→高いソで締める（ミを使わないので、どの区画の曲ともぶつかりにくい）。
+        /// 「てててーん」：ほかの効果音（Make）と同じ作り方（矩形波の1音ずつ、鳴った瞬間がいちばん大きく、すっと減る）。
+        /// ド・ド・ド→高いソ（ミを使わないので、どの区画の曲ともぶつかりにくい）。
         /// 0 Hz は休み。
         /// </summary>
         static AudioClip MakeTeTee()
         {
-            float[] notes = { 783.99f, 1046.5f, 0f, 1046.5f, 1046.5f, 1046.5f, 1568f };
-            float[] lengths = { 0.08f, 0.24f, 0.06f, 0.07f, 0.07f, 0.07f, 0.32f };
+            float[] notes = { 1046.5f, 1046.5f, 1046.5f, 1568f };
+            float[] lengths = { 0.07f, 0.07f, 0.07f, 0.32f };
             int total = 0;
             foreach (var l in lengths) total += (int)(Rate * l);
             var data = new float[total];
