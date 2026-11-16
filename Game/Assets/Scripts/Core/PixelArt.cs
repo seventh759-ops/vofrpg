@@ -2190,13 +2190,16 @@ namespace VividOfFade
 
 
         /// <summary>宝の間の宝箱（閉じている／開いた）。</summary>
-        public static Sprite Chest(bool open) => open ? Shaded("ChestOpen28", ChestOpenRows, null, null, 32) : Shaded("ChestClosed28", ChestClosedRows, null, null, 32);
+        public static Sprite Chest(bool open) => open ? Shaded("ChestOpen28", ChestOpenRows, new Dictionary<char, Color32[]> { { 'K', Ramp(70, 44, 34, 52, 32, 26, 38, 22, 18, 26, 14, 12) } }, null, 32) : Shaded("ChestClosed28", ChestClosedRows, null, null, 32);
 
 
 
         // ---- 置き物と弾（陰影つき、1 マス = 32 ドットの細かさ）----
+        // 閉じた宝箱（開いた箱と同じ高さ。上は空き）
         static readonly string[] ChestClosedRows =
         {
+            "............................",
+            "............................",
             "............................",
             "...wwggwwwwwwwwwwwwwwggww...",
             "..wwwggwwwwwwwwwwwwwwggwww..",
@@ -2219,17 +2222,20 @@ namespace VividOfFade
             ".gggggggggggggggggggggggggg.",
         };
 
+        // 開いた宝箱：ふたを後ろへ大きく立てて裏側を見せ、中の宝が光る（閉じた箱と同じ高さにそろえ、箱の位置がずれないように）
         static readonly string[] ChestOpenRows =
         {
-            "..wwwggwwwwwwwwwwwwwwggwww..",
-            "..wwwggwwwwwwwwwwwwwwggwww..",
-            "..wwwggwwwwwwwwwwwwwwggwww..",
-            "..wwwggwwwwwwwwwwwwwwggwww..",
-            "..gggggggggggggggggggggggg..",
-            "..lllllllolllllllollllllll..",
-            "..llllllgglllollgglllllggl..",
-            "..llggllllllggllllllggllll..",
-            "..llllllllggllllllggllllll..",
+            "....wwggwwwwwwwwwwwwggww....",
+            "....wwggKKKKKKKKKKKKggww....",
+            "...wwwggKKKKKKKKKKKKggwww...",
+            "...wwwggKKKKKKKKKKKKggwww...",
+            "...wwwggKKKKKKKKKKKKggwww...",
+            "..wwwwggKKKKKKKKKKKKggwwww..",
+            "..ggggggggggggggggggggggggo.",
+            ".gKKKKKKKoKKKKKKlLlKKKKKKKg.",
+            ".gKKKlLlKKKlLlKlLoLlKKlLKKg.",
+            ".gKlLoLlKlLoLLlLLLLLlLLoLlg.",
+            ".glLLLLLlLLLLLoLLLLLLLLLLLg.",
             ".gggggggggggggggggggggggggg.",
             ".wwwwggwwwwggggggwwwwggwwww.",
             ".wwwwggwwwwggggggwwwwggwwww.",

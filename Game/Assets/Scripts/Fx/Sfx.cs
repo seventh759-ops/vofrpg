@@ -32,24 +32,57 @@ namespace VividOfFade
             skillUp = Make("skillUp", new[] { 1175f, 1568f, 2093f, 2637f, 3136f }, 0.045f, 0.28f, Wave.Sine); // きらりと駆け上がる（キャラのレベルアップとは別の音）
         }
 
+        // ---- 同時に鳴らす数の上限 ----
+        // 一度にたくさん倒すと、当たり・火種・爆発の音が何十も重なって割れるので、
+        // 少し前（Window 秒）に鳴らし始めた数を数えて、多すぎるときは鳴らさない。
+        // レベルアップ・装備が落ちた音など、聞き逃したくない音（important）は数えるだけで、いつも鳴らす。
+        const float Window = 0.25f;     // この間に鳴り始めた音を「鳴っている」とみなす
+        const int MaxVoices = 8;        // 全体でこの数まで
+        const int MaxSame = 3;          // 同じ音はこの数まで
+        const float SameGap = 0.04f;    // 同じ音は、この間隔より詰めて鳴らさない
+        readonly System.Collections.Generic.List<(AudioClip clip, float at)> recent = new System.Collections.Generic.List<(AudioClip, float)>();
+
+        void Play(AudioClip clip, float volume = 1f, bool important = false)
+        {
+            if (clip == null) return;
+            float now = Time.unscaledTime;
+            recent.RemoveAll(r => now - r.at > Window);
+            if (!important)
+            {
+                int same = 0;
+                float lastSame = -1f;
+                foreach (var r in recent)
+                {
+                    if (r.clip != clip) continue;
+                    same++;
+                    lastSame = Mathf.Max(lastSame, r.at);
+                }
+                if (recent.Count >= MaxVoices || same >= MaxSame || (lastSame >= 0f && now - lastSame < SameGap)) return;
+                // 重なっているほど、少しずつ小さく（重なっても音が割れにくいように）
+                volume *= 1f / (1f + 0.08f * recent.Count);
+            }
+            recent.Add((clip, now));
+            source.PlayOneShot(clip, volume);
+        }
+
         public void Hit()
         {
             if (Time.unscaledTime - lastHit < 0.045f) return;
             lastHit = Time.unscaledTime;
-            source.PlayOneShot(hit, 0.6f);
+            Play(hit, 0.6f);
         }
 
         public void Ember()
         {
             if (Time.unscaledTime - lastEmber < 0.03f) return;
             lastEmber = Time.unscaledTime;
-            source.PlayOneShot(ember, 0.6f);
+            Play(ember, 0.6f);
         }
 
-        public void Pickup() => source.PlayOneShot(pickup);
-        public void SkillUp() => source.PlayOneShot(skillUp, 0.9f);
+        public void Pickup() => Play(pickup);
+        public void SkillUp() => Play(skillUp, 0.9f, true);
         /// <summary>レベルアップ：ほかの効果音と同じ電子音で「てててーん」（装備が落ちたときの音とは別）。</summary>
-        public void LevelUp() => source.PlayOneShot(levelUp);
+        public void LevelUp() => Play(levelUp, 1f, true);
 
         /// <summary>
         /// 「てててーん」：ほかの効果音（Make）と同じ作り方（矩形波の1音ずつ、鳴った瞬間がいちばん大きく、すっと減る）。
@@ -84,11 +117,11 @@ namespace VividOfFade
         }
 
         static float Pulse(float phase, float duty) => Mathf.Repeat(phase, 1f) < duty ? 1f : -1f;
-        public void Boom() => source.PlayOneShot(boom, 0.7f);
-        public void Fountain() => source.PlayOneShot(fountain);
+        public void Boom() => Play(boom, 0.7f);
+        public void Fountain() => Play(fountain);
 
         /// <summary>鍛冶屋で強化したとき：金床を叩く「カン、カン」。</summary>
-        public void Anvil() => source.PlayOneShot(anvil, 0.8f);
+        public void Anvil() => Play(anvil, 0.8f, true);
 
         AudioClip unseal;
 
@@ -96,7 +129,7 @@ namespace VividOfFade
         public void Unseal()
         {
             if (unseal == null) unseal = MakeUnseal();
-            source.PlayOneShot(unseal, 0.9f);
+            Play(unseal, 0.9f, true);
         }
 
         /// <summary>
@@ -157,14 +190,14 @@ namespace VividOfFade
             if (tick == null) tick = Make("tick", new[] { 2200f }, 0.012f, 0.2f, Wave.Square);
             if (Time.unscaledTime - lastTick < 0.05f) return;
             lastTick = Time.unscaledTime;
-            source.PlayOneShot(tick, 0.5f);
+            Play(tick, 0.5f, true);
         }
 
         /// <summary>スロットが止まった「チン」。</summary>
         public void SlotStop()
         {
             if (stop == null) stop = Make("slotstop", new[] { 1568f, 2093f }, 0.06f, 0.35f, Wave.Sine);
-            source.PlayOneShot(stop, 0.8f);
+            Play(stop, 0.8f, true);
         }
 
         /// <summary>金属を叩いた音（倍音が整数倍でない澄んだ響き＋叩いた瞬間の雑音）を2回。</summary>
@@ -196,10 +229,10 @@ namespace VividOfFade
         {
             switch (r)
             {
-                case Rarity.Rare: source.PlayOneShot(chime); break;
-                case Rarity.Legendary: source.PlayOneShot(fanfare); break;
+                case Rarity.Rare: Play(chime); break;                     // 黄色はたくさん落ちるので、上限の対象
+                case Rarity.Legendary: Play(fanfare, 1f, true); break;   // 紫以上は聞き逃さないように、いつも鳴らす
                 case Rarity.Relic:
-                case Rarity.Mythic: source.PlayOneShot(relic); break;
+                case Rarity.Mythic: Play(relic, 1f, true); break;
             }
         }
 
