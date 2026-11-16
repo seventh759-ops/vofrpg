@@ -2,6 +2,10 @@ using UnityEngine;
 
 namespace VividOfFade
 {
+    // 【セーブの決まり】このファイルの列挙（装備の種類・珍しさ・武器・効果・固有効果）は、セーブに番号で入る。
+    // 配布したあとに種類を足すときは、必ず最後に足す（途中に入れたり、並べ替えたり、消したりしない）。
+    // 図鑑は名前（例 "b:Golem"）で覚えているので、名前も変えない。
+
     /// <summary>装備の種類。指輪は2つまで付けられる。</summary>
     public enum ItemSlot { Weapon, Lantern, Armor, Ring }
 

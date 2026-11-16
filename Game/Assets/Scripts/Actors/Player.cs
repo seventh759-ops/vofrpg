@@ -287,8 +287,8 @@ namespace VividOfFade
             return TakeHit(damage, source);
         }
 
-        /// <summary>受けたダメージをコンソールに出す（デバッグ用）。</summary>
-        public static bool LogDamage = true;
+        /// <summary>受けたダメージをコンソールに出す（調べるときだけ true にする。ふだんは重くなるので出さない）。</summary>
+        public static bool LogDamage = false;
 
 
         public void Tick(float dt, PlayerInputReader input, Room room)

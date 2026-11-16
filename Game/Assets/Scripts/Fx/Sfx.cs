@@ -42,9 +42,33 @@ namespace VividOfFade
         const float SameGap = 0.04f;    // 同じ音は、この間隔より詰めて鳴らさない
         readonly System.Collections.Generic.List<(AudioClip clip, float at)> recent = new System.Collections.Generic.List<(AudioClip, float)>();
 
+        /// <summary>効果音の音量の段階（0 はなし、1〜5）。5 が今までと同じ大きさ（Unity は 1 より大きくできないので、5 がいちばん大きい）。</summary>
+        static readonly float[] Volumes = { 0f, 0.25f, 0.45f, 0.65f, 0.85f, 1f };
+
+        /// <summary>効果音の音量を次の段階へ（なし → 1 → … → 5 → なし）。保存して、確かめの音を鳴らす。</summary>
+        public void NextVolume()
+        {
+            Profile.SfxVolumeSetting = (Profile.SfxVolumeSetting + 1) % Volumes.Length;
+            Play(pickup, 1f, true);
+        }
+
+        /// <summary>設定の画面に出す、今の音量（「オフ」か「■■■□□」）。</summary>
+        public string VolumeLabel
+        {
+            get
+            {
+                int v = Profile.SfxVolumeSetting;
+                if (v == 0) return Loc.T("OFF", "オフ");
+                return new string('■', v) + new string('□', Volumes.Length - 1 - v);
+            }
+        }
+
         void Play(AudioClip clip, float volume = 1f, bool important = false)
         {
             if (clip == null) return;
+            float master = Volumes[Mathf.Clamp(Profile.SfxVolumeSetting, 0, Volumes.Length - 1)];
+            if (master <= 0f) return;
+            volume *= master;
             float now = Time.unscaledTime;
             recent.RemoveAll(r => now - r.at > Window);
             if (!important)

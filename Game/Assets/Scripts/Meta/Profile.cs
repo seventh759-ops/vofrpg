@@ -124,12 +124,13 @@ namespace VividOfFade
     [Serializable]
     public sealed class SaveData
     {
-        public int Version = 1;
+        public int Version = 1;                               // 読み込んだあと Profile.Migrate で今の版に上げる
         public int Bgm;                                       // 0 = 区画ごと（前の版の MusicTheme は番号の意味が違うので使わない）
         public int Language;                                  // 0 = English（デフォルト）, 1 = 日本語
         public bool ManualAttack;                             // 攻撃：押す間（false なら自動）
         public bool ShowFps;                                  // FPS を出す
         public int MusicVolume = -1;                          // BGM の音量 0（なし）〜5。-1 は前の版（4 にする）
+        public int SfxVolume = -1;                            // 効果音の音量 0（なし）〜5。-1 は前の版（5 にする＝今までと同じ大きさ）
         public List<string> TipsSeen = new List<string>(); // 案内役が説明し終えた場面
         public List<CharacterData> Characters = new List<CharacterData>();
         public List<string> Codex = new List<string>();     // 図鑑：見つけたもの（全キャラクターで共有）
@@ -313,6 +314,13 @@ namespace VividOfFade
             set { EnsureLoaded(); data.MusicVolume = UnityEngine.Mathf.Clamp(value, 0, 5); Save(); }
         }
 
+        /// <summary>効果音の音量（0 はなし、1〜5。5 が今までと同じ大きさ）。保存する。</summary>
+        public static int SfxVolumeSetting
+        {
+            get { EnsureLoaded(); if (data.SfxVolume < 0 || data.SfxVolume > 5) data.SfxVolume = 5; return data.SfxVolume; }
+            set { EnsureLoaded(); data.SfxVolume = UnityEngine.Mathf.Clamp(value, 0, 5); Save(); }
+        }
+
         /// <summary>表示の言語（Loc で使う）。</summary>
         public static int LanguageSetting
         {
@@ -362,14 +370,17 @@ namespace VividOfFade
             Save();
         }
 
+        static string BackupPath => FilePath + ".bak";
+
         public static void Save()
         {
             if (data == null) return;
             try
             {
-                // 書きかけで壊れないよう、一時ファイルに書いてから置き換える
+                // 書きかけで壊れないよう、一時ファイルに書いてから置き換える。置き換える前の版は予備（.bak）に残す
                 string tmp = FilePath + ".tmp";
                 File.WriteAllText(tmp, JsonUtility.ToJson(data, true));
+                if (File.Exists(FilePath)) File.Copy(FilePath, BackupPath, true);
                 if (File.Exists(FilePath)) File.Delete(FilePath);
                 File.Move(tmp, FilePath);
             }
@@ -379,18 +390,52 @@ namespace VividOfFade
             }
         }
 
-        static void EnsureLoaded()
+        /// <summary>セーブの形の版。保存の形を変えたら上げて、Migrate に読み替えを足す。</summary>
+        public const int CurrentVersion = 2;
+
+        /// <summary>
+        /// 古い版のセーブを、今の形へ読み替える（版を1つずつ上げていく）。
+        /// 注意：装備の効果・固有効果・ボス・職業・珍しさなどはセーブに「番号」で入るので、種類を足すときは必ず列挙の最後に足す（途中に入れると、持っている品の中身が変わる）。
+        /// </summary>
+        static void Migrate(SaveData d)
         {
-            if (data != null) return;
+            if (d.Version < 2)
+            {
+                // 1 → 2：形は同じ（予備のセーブと読み替えの仕組みを入れた版）
+                d.Version = 2;
+            }
+            d.Version = CurrentVersion;
+        }
+
+        static SaveData TryRead(string path)
+        {
             try
             {
-                if (File.Exists(FilePath)) data = JsonUtility.FromJson<SaveData>(File.ReadAllText(FilePath));
+                if (!File.Exists(path)) return null;
+                var text = File.ReadAllText(path);
+                if (string.IsNullOrWhiteSpace(text)) return null;
+                return JsonUtility.FromJson<SaveData>(text);
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"Load failed, starting fresh: {e.Message}");
+                Debug.LogWarning($"Load failed ({Path.GetFileName(path)}): {e.Message}");
+                return null;
+            }
+        }
+
+        static void EnsureLoaded()
+        {
+            if (data != null) return;
+            data = TryRead(FilePath);
+            if (data == null && File.Exists(FilePath))
+            {
+                // 本体が読めない（壊れている）：予備から戻す。壊れたファイルは消さずに脇へ残す（あとで調べられるように）
+                try { File.Copy(FilePath, FilePath + ".broken", true); } catch (Exception) { }
+                data = TryRead(BackupPath);
+                if (data != null) Debug.LogWarning("Save was damaged; restored from backup.");
             }
             if (data == null) data = new SaveData();
+            Migrate(data);
             if (data.Characters == null) data.Characters = new List<CharacterData>();
             if (data.Codex == null) data.Codex = new List<string>();
             if (data.TipsSeen == null) data.TipsSeen = new List<string>();

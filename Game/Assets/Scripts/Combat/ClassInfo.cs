@@ -4,6 +4,7 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>職業。灯術師・影刃・灯番。</summary>
+    // 【セーブの決まり】キャラクターの職業は番号で入る。足すときは最後に。
     public enum ClassType { Lampwright, Shadeblade, Warden }
 
     /// <summary>通常攻撃の形。</summary>

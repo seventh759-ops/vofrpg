@@ -5,6 +5,7 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>区域ごとのボス（FloorPattern の順）。RiftWarden からは深淵のボス。</summary>
+    // 【セーブの決まり】図鑑が名前で覚えているので、名前を変えない。足すときは最後に。
     public enum BossKind { Golem, Mother, Forge, Frost, Librarian, Void, RiftWarden, StarEater, MoonPriest, AbyssKing }
 
     /// <summary>

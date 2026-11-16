@@ -244,7 +244,7 @@ namespace VividOfFade
         {
             float bw = W - pad * 2f;
             float sh = H * 0.06f;
-            int rows = (Application.isMobilePlatform ? 6 : 7) + (Profile.CurrentEndingSeen ? 1 : 0); // 攻撃・音楽・BGM・FPS・言語・（エンディング）・（操作の一覧）・戻る
+            int rows = (Application.isMobilePlatform ? 7 : 8) + (Profile.CurrentEndingSeen ? 1 : 0); // 攻撃・音楽・効果音・BGM・FPS・言語・（エンディング）・（操作の一覧）・戻る
             float block = H * 0.07f + rows * sh + rows * gap;
             float top = (H - block) * 0.5f; // 画面の上下の真ん中に
             var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
@@ -254,6 +254,8 @@ namespace VividOfFade
                 () => world.AutoAttack = !world.AutoAttack);
             y += sh + gap;
             hud.Button(new Rect(pad, y, bw, sh), Loc.T("Music volume: ", "音楽の音量：") + world.Music.VolumeLabel, sub, centered, () => world.Music.NextVolume()); // 押すたびに、なし → 1 〜 5
+            y += sh + gap;
+            hud.Button(new Rect(pad, y, bw, sh), Loc.T("Sound volume: ", "効果音の音量：") + world.Sfx.VolumeLabel, sub, centered, () => world.Sfx.NextVolume()); // 押すたびに、なし → 1 〜 5（確かめの音が鳴る）
             y += sh + gap;
             hud.Button(new Rect(pad, y, bw, sh), $"BGM: {world.Music.ThemeName}", sub, centered, () => world.NextMusic());
             y += sh + gap;

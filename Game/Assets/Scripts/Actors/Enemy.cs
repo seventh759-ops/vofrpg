@@ -10,6 +10,7 @@ namespace VividOfFade
     /// 岩鬼：力をためてから突進する／爆弾虫：近づくと導火線に火がつき、少しして爆発する。
     /// 黄金：まれに出る。逃げ回り、しばらくすると消える。倒すとドロップがあふれる。
     /// </summary>
+    // 【セーブの決まり】図鑑が名前で覚えているので、名前を変えない。足すときは最後に。
     public enum EnemyKind { Slime, Bat, Caster, Brute, Bomber, Golden }
 
     /// <summary>敵1体の状態。動きは EnemySystem がまとめて処理する。</summary>
