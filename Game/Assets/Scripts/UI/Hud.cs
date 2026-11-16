@@ -2105,14 +2105,14 @@ namespace VividOfFade
             var ch = Profile.Current;
             bool tooHigh = ch != null && item.ReqLevel > ch.Level;
             var c = tooHigh ? new Color(1f, 0.42f, 0.42f) : new Color(0.95f, 0.95f, 0.98f);
-            // 小さなマス（倉庫の8列）でも読めるよう、マスの3割ほどの高さで、下に暗い帯を敷く
+            // 左上に小さく（強化の +N は右上）。小さなマスでも読めるよう、うすい暗い帯を敷く
             string s = item.Level.ToString();
-            float px = Mathf.Max(1f, Mathf.Floor(cell.height * 0.3f / NumberFont.Height));
+            float px = Mathf.Max(2f, Mathf.Floor(cell.height * 0.2f / NumberFont.Height));
             float w = NumberFont.Width(s, px), h = NumberFont.Height * px;
-            float pad = Mathf.Max(1f, px);
-            var band = new Rect(cell.xMax - w - pad * 2f - cell.width * 0.03f, cell.yMax - h - pad * 2f - cell.height * 0.03f, w + pad * 2f, h + pad * 2f);
-            Fill(band, new Color(0.03f, 0.02f, 0.06f, 0.72f));
-            NumberFont.Draw(band.center + new Vector2(px * 0.5f, px * 0.5f), s, px, new Color(0f, 0f, 0f, 0.9f));
+            float pad = Mathf.Max(1f, Mathf.Round(px * 0.5f));
+            var band = new Rect(cell.x + cell.width * 0.04f, cell.y + cell.height * 0.04f, w + pad * 2f, h + pad * 2f);
+            Fill(band, new Color(0.03f, 0.02f, 0.06f, 0.6f));
+            NumberFont.Draw(band.center + new Vector2(Mathf.Max(1f, px * 0.5f), Mathf.Max(1f, px * 0.5f)), s, px, new Color(0f, 0f, 0f, 0.9f));
             NumberFont.Draw(band.center, s, px, c);
         }
 
@@ -2173,7 +2173,7 @@ namespace VividOfFade
             // 左上の「+N」（ドット文字）：角金具の内側に
             float nh = cell.height * 0.22f;
             var nc = tier == 3 ? new Color(0.8f, 0.92f, 1f) : tier == 2 ? new Color(1f, 0.75f, 0.4f) : new Color(1f, 0.9f, 0.6f);
-            NumberFont.DrawIn(new Rect(cell.x + u * 3f, cell.y + u * 2.2f, cell.width * 0.6f, nh), "+" + lv, nc, TextAnchor.MiddleLeft, 1f);
+            NumberFont.DrawIn(new Rect(cell.xMax - u * 3f - cell.width * 0.6f, cell.y + u * 2.2f, cell.width * 0.6f, nh), "+" + lv, nc, TextAnchor.MiddleRight, 1f); // 強化は右上（レベルは左上）
         }
 
         public static void DrawSprite(Rect guiRect, Sprite sprite)
