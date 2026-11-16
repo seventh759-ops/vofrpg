@@ -48,39 +48,33 @@ namespace VividOfFade
 
         public void Pickup() => source.PlayOneShot(pickup);
         public void SkillUp() => source.PlayOneShot(skillUp, 0.9f);
-        /// <summary>レベルアップ：電子音のラッパで「テテー」（装備が落ちたときの音とは別）。</summary>
-        public void LevelUp() => source.PlayOneShot(levelUp, 0.55f); // 伸ばす音は短い効果音より大きく聞こえるので、控えめに
+        /// <summary>レベルアップ：ほかの効果音と同じ電子音で「テテー」（装備が落ちたときの音とは別）。</summary>
+        public void LevelUp() => source.PlayOneShot(levelUp);
 
         /// <summary>
-        /// 電子音のラッパ（ほかの効果音と同じ矩形波）。吹き始めに少し下からしゃくり上げ、波の幅を広げて「パッ」と開く。揺れは付けない。
+        /// 「テテー」：ほかの効果音（Make）と同じ作り方：矩形波の1音ずつで、鳴った瞬間がいちばん大きく、すっと減っていく。
+        /// 短いソのあとに、高いドを少し長く。
         /// </summary>
-        static float Brass(float f, float t, float noteLen)
-        {
-            float scoop = 1f - 0.06f * Mathf.Clamp01(1f - t / 0.025f);              // 吹き始めは少し低く、すぐ本来の高さへ
-            float duty = Mathf.Lerp(0.12f, 0.33f, Mathf.Clamp01(t / 0.05f));       // 細い音から、太い音へ開く
-            float v = Pulse(f * scoop * t, duty) * 0.8f + Pulse(f * 0.5f * scoop * t, 0.5f) * 0.25f; // 1オクターブ下を少し混ぜて厚く
-            float env = Mathf.Min(1f, t / 0.012f) * (t < noteLen ? 1f - 0.25f * Mathf.Clamp01((t - 0.03f) / 0.12f) : Mathf.Exp(-(t - noteLen) * 22f));
-            return v * env;
-        }
-
-        /// <summary>「テテー」：短いソのあとに、高いドを少し伸ばす（下に1オクターブ低いドを重ねて厚く）。</summary>
         static AudioClip MakeTeTee()
         {
-            float gapT = 0.1f;
-            int len = (int)(Rate * (gapT + 0.32f + 0.25f));
-            var data = new float[len];
-            for (int i = 0; i < len; i++)
+            float[] notes = { 783.99f, 1046.5f };
+            float[] lengths = { 0.08f, 0.26f };
+            int total = 0;
+            foreach (var l in lengths) total += (int)(Rate * l);
+            var data = new float[total];
+            int at = 0;
+            for (int n = 0; n < notes.Length; n++)
             {
-                float t = (float)i / Rate;
-                float v = Brass(783.99f, t, 0.06f) * 0.26f * (t < 0.3f ? 1f : 0f);
-                if (t >= gapT)
+                int per = (int)(Rate * lengths[n]);
+                for (int i = 0; i < per; i++)
                 {
-                    float u = t - gapT;
-                    v += Brass(1046.5f, u, 0.32f) * 0.2f + Brass(523.25f, u, 0.32f) * 0.13f;
+                    float t = (float)i / Rate;
+                    float env = 1f - (float)i / per;
+                    data[at + i] = Pulse(notes[n] * t, 0.5f) * env * env * 0.35f;
                 }
-                data[i] = v;
+                at += per;
             }
-            var clip = AudioClip.Create("tetee", len, 1, Rate, false);
+            var clip = AudioClip.Create("tetee", data.Length, 1, Rate, false);
             clip.SetData(data, 0);
             return clip;
         }
