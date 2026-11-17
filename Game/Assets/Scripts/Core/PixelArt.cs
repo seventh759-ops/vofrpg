@@ -614,10 +614,12 @@ namespace VividOfFade
         /// <summary>彩灯者の色：外套の裏は淡い紫、髪は銀。</summary>
         static readonly Dictionary<char, Color32[]> VividOver = new Dictionary<char, Color32[]>
         {
-            { 'a', Ramp(220, 190, 255, 178, 146, 236, 132, 104, 196, 92, 70, 150) },
-            { 'q', Ramp(236, 238, 250, 196, 200, 220, 150, 156, 182, 104, 110, 140) },
-            { 'j', Ramp(140, 240, 150, 90, 210, 110, 56, 160, 76, 36, 110, 52) },
-            { 'n', Ramp(70, 74, 130, 50, 52, 100, 36, 38, 76, 24, 26, 52) },
+            { 'q', Ramp(232, 234, 248, 190, 194, 216, 142, 148, 178, 96, 100, 134) },   // 銀の髪
+            { 'x', Ramp(255, 255, 255, 236, 238, 246, 200, 204, 222, 150, 156, 182) },  // 白い上着
+            { 'u', Ramp(232, 240, 255, 196, 214, 246, 150, 170, 220, 104, 120, 176) },  // 淡い青の肩掛け
+            { 'v', Ramp(214, 208, 244, 176, 168, 220, 134, 124, 184, 92, 84, 140) },   // 長い外套（淡い紫を帯びた白。上着と見分けがつくよう少し濃く）
+            { 'T', Ramp(240, 242, 250, 210, 214, 228, 168, 172, 192, 120, 124, 146) },  // 白いズボン
+            { 'b', Ramp(255, 255, 255, 228, 230, 240, 186, 190, 206, 136, 140, 160) },  // 白い長靴
         };
 
         static readonly Color32[] ThirdOutline =
@@ -779,38 +781,38 @@ namespace VividOfFade
             return px;
         }
 
-        /// <summary>彩灯者（専用の絵）：頭の上に光の輪、銀の髪に金の額飾り、虹の帯が斜めに走る白い短い外套、紺の脚、そばに浮かぶ光の結晶。武器は持たない（どの武器も使う）。</summary>
+        /// <summary>彩灯者（専用の絵）：長い銀の髪に結晶の額飾り、虹色の目、金の縁取りと淡い宝石の付いた白い詰め襟の上着と重ねた肩掛け、左右に長く流れる白い外套、白いズボンと長靴。胸元に虹色の結晶を持つ。</summary>
         static readonly string[] VividbearerHdRows =
         {
             "................................",
-            "...........o..o..o..o...........",
-            "..........o..........o..........",
             "............qqqqqqqq............",
-            "...........qqqqqqqqqq...........",
-            "..........qqqqqqqqqqqq..........",
-            "..........qqHHHHHHHHqq..........",
-            "..........qqssssssssqq..........",
-            "..........qqsesssesqqq..........",
-            "..........qqssssssssqq..........",
-            "...........qssssssssq...........",
-            "...........qqssrrssqq...........",
-            "............qqssssqq............",
-            "..........xxxxxxxxxxxx......o...",
-            ".........xxrrHHjjuuaaxx....pBp..",
-            "........xxxxrrHHjjuuaaxx..pBoBp.",
-            ".......xxxxxxxrrHHjjuuaxx..pBp..",
-            ".......sxxxxxxxxrrHHjjuuxs..p...",
-            "......ssxxxxxxxxxxrrHHjjxss.....",
-            "........xxxxxxxxxxxxrrHHx.......",
-            "........xxxxxxxxxxxxxxrrx.......",
-            ".........xxxxxxxxxxxxxxx........",
-            ".........gggggggggggggggg.......",
-            "...........nnnnn..nnnnn.........",
-            "...........nnnnn..nnnnn.........",
-            "...........nnnnn..nnnnn.........",
-            "...........nnnnn..nnnnn.........",
-            "..........bbbbbb..bbbbbb........",
-            "..........bbbbbb..bbbbbb........",
+            "..........qqqqHBBHqqqq..........",
+            ".........qqqqHqqqqHqqqq.........",
+            "........qqqqqqqqqqqqqqqq........",
+            "........qqqqqsqqqqsqqqqq........",
+            "........qqqqssssssssqqqq........",
+            "........qqqseesssseesqqq........",
+            "........qqqsRBsssspBsqqq........",
+            "........qqqqssssssssqqqq........",
+            "........qqqqqsssrssqqqqq........",
+            "........qqqqq.ssss.qqqqq........",
+            ".......vqqqquugxxguuqqqqv.......",
+            "......vvquuuuugBgguuuuuqvv......",
+            "......vvuuuguuxxxxuuguuuvv......",
+            "......vvuuuuggxxxxgguuuuvv......",
+            ".....vvvxxxxgxxpBxxgxxxxvvv.....",
+            ".....vvvxxxsgxRBpxgsxxxxvvv.....",
+            ".....vvvxxxssgggggggssxxvvv.....",
+            ".....vvvxxxgxxxxxxxxgxxxvvv.....",
+            ".....vvvxxgxBxxxxxxBxgxxvvv.....",
+            ".....vvvxxgxxxxTTxxxxgxxvvv.....",
+            "....vvvvxgxxxpTTTTpxxxgxvvvv....",
+            "....vvvvxgggggTT.TTgggggvvvv....",
+            "....vvv......TTT..TTT....vvv....",
+            "...vvv.......TTT..TTT.....vvv...",
+            "...vv........TTT..TTT......vv...",
+            "............bbbb..bbbb..........",
+            "............bbbb..bbbb..........",
             "................................",
             "................................",
             "................................",
