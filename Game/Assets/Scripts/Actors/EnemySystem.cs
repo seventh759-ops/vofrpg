@@ -216,6 +216,7 @@ namespace VividOfFade
             e.FlashTimer = 0f;
             e.HitPose = 0f;
             e.AttackPose = 0f;
+            e.SlowTimer = 0f;
             e.AnimT = 0f;
             e.Dying = false;
             e.DyingTimer = 0f;
@@ -512,7 +513,13 @@ namespace VividOfFade
             return n;
         }
 
-        public void Damage(Enemy e, float amount, Vector2 dir, bool crit)
+        /// <summary>弾が当たったときの、足の遅くなり方（速さの倍率）。</summary>
+        public const float ShotSlowMult = 0.6f;
+
+        /// <summary>
+        /// ダメージを与える。knockScale はのけぞりの強さ（弾は強め）、slow はその秒数だけ足を遅くする（弾が当たったとき）。
+        /// </summary>
+        public void Damage(Enemy e, float amount, Vector2 dir, bool crit, float knockScale = 1f, float slow = 0f)
         {
             if (e.Dying) return;
             if (e.Dormant) Wake(e.Home); // 外から攻撃されたら、その部屋の敵がみんな起きる
@@ -523,7 +530,8 @@ namespace VividOfFade
             e.Sr.color = HitColor;
             // のけぞり。攻撃が速いと何度も足されて遠くまで飛ぶので、速さに上限をつける（1回のけぞると最大 0.4 マスほど）
             float knockMult = e.IsBoss ? 0.05f : e.Elite != EliteKind.None ? 0.5f : 1f; // ボスはほとんど、精鋭は半分しかのけぞらない
-            e.Knock = Vector2.ClampMagnitude(e.Knock + dir * (crit ? 5f : 3f) * knockMult, MaxKnock * knockMult);
+            e.Knock = Vector2.ClampMagnitude(e.Knock + dir * (crit ? 5f : 3f) * knockMult * knockScale, MaxKnock * knockMult * knockScale);
+            if (slow > 0f && !e.IsBoss) e.SlowTimer = Mathf.Max(e.SlowTimer, slow);
             Damaged?.Invoke(e.Pos, amount, crit, e);
             if (e.Hp <= 0f)
             {
@@ -737,6 +745,7 @@ namespace VividOfFade
                     }
                 }
 
+                if (e.SlowTimer > 0f) { e.SlowTimer -= dt; speed *= ShotSlowMult; } // 弾が当たって足が遅くなっている
                 pos = room.Move(pos, (moveDir * speed + e.Knock) * dt + separation * 0.5f, e.Radius);
                 e.Knock = Vector2.MoveTowards(e.Knock, Vector2.zero, 20f * dt);
                 e.Pos = pos;

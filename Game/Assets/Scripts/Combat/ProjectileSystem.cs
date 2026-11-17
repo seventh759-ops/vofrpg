@@ -6,6 +6,9 @@ namespace VividOfFade
     /// <summary>火の玉をまとめて動かし、敵との当たりを調べる。</summary>
     public sealed class ProjectileSystem : MonoBehaviour
     {
+        /// <summary>プレイヤーの弾が当たったときの、のけぞりの強さ（ふつうの攻撃の倍率）と、足が遅くなる秒数。</summary>
+        public const float ShotKnock = 1.6f, ShotSlow = 0.6f;
+
         readonly List<Projectile> active = new List<Projectile>();
         Pool<Projectile> pool;
 
@@ -92,7 +95,7 @@ namespace VividOfFade
                     float r = GameConfig.ShotRadius + e.Radius;
                     if ((e.Pos - pos).sqrMagnitude > r * r) continue;
 
-                    enemies.Damage(e, p.Damage, p.Velocity.normalized, p.Crit);
+                    enemies.Damage(e, p.Damage, p.Velocity.normalized, p.Crit, ShotKnock, ShotSlow); // 弾は強めに押し返し、少しの間だけ足を遅くする（遠くから戦う職業が距離を保てるように）
                     p.LastHit = e;
                     if (p.PierceLeft <= 0)
                     {

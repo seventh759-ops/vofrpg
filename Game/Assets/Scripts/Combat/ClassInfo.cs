@@ -33,6 +33,7 @@ namespace VividOfFade
         public float DefenseWeight = 0.5f;
         public float DamageTaken = 1f;  // 受けるダメージの倍率
         public float DamageMult = 1f;   // 与えるダメージの倍率（遠くから安全に戦える職業は低め）
+        public float SkillMult = 1f;    // スキルのダメージの倍率（灯術師は高め：近寄られると脆い分、スキルで押し返す）
         public float DodgeCooldownMult = 1f;
         public float Speed;
         public float BaseLight;
@@ -97,6 +98,7 @@ namespace VividOfFade
                 Line1 = "Hurls fire from afar.",
                 Line2 = "Stronger with wide light.",
                 BaseHp = 50, BaseStats = new[] { 4, 6, 12, 6, 8 }, MainAttr = Attr.Int, SubAttr = Attr.Wis, DefenseWeight = 0.35f,
+                DodgeCooldownMult = 0.7f, SkillMult = 1.25f, // 打たれ弱い分、よく避けて距離を取り直せ、スキルも強め
                 Speed = 4.5f, BaseLight = 3f, Crit = 0.05f, Armor = 0f,
                 Starter = WeaponKind.Wand,
                 Weapons = new[] { WeaponKind.Wand, WeaponKind.Repeater, WeaponKind.Fan },
