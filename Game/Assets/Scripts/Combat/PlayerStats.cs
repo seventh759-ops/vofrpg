@@ -7,6 +7,7 @@ namespace VividOfFade
     {
         public ClassType Class;
         public AttackKind Kind;
+        public WeaponKind Weapon;   // 持っている武器の種類（装備の評価で、武器ごとの基準に使う）
         /// <summary>遠近両用（彩灯者）：武器の攻撃に加えて、近くは斬り、遠くは撃つ。</summary>
         public bool Hybrid;
         public int Level;
@@ -127,16 +128,35 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>その武器の素の「何体ぶん当たるか」（効果の上乗せなし）。装備の評価の基準に使う。</summary>
+        float BaseMultiplicity(WeaponSpec w)
+        {
+            switch (w.Attack)
+            {
+                case AttackKind.Slash: return 1f + (Mathf.Max(1, w.MaxTargets) - 1) * SecondaryHit;
+                case AttackKind.Orbit: return Mathf.Max(1, w.Orbs);
+                case AttackKind.Pulse: return 1.6f + Light * 0.25f; // 明るさの分は「届く広さ」で数えるので、ここでは割り戻す
+                default: return Mathf.Max(1, w.Shots) * (1f + 0.15f * w.Pierce);
+            }
+        }
+
         /// <summary>装備の良し悪しを比べるための大まかな強さ。</summary>
         public float Power
         {
             get
             {
                 var spec = ClassInfo.Get(Class);
-                float dps = Damage * (1f + EffectiveCrit * (CritMult - 1f)) * Multiplicity / FireInterval;
+                // 攻撃：武器ごとに基準（その武器の素の値：ダメージ・倍率・間隔・当たる数・会心）を決め、それで割る。
+                // こうすると、同じレベル・同じ珍しさの武器は、種類が違っても同じ評価から始まる（剣・短剣・杖・鎖灯…で差が出ない）。
+                // そのうえで、武器の数値の振れ・レベル・珍しさ・付いた効果（攻撃速度・会心・弾+1 など）・能力値の合い方で差が付く。
+                var w = ClassInfo.Weapon(Weapon);
+                float crit = Mathf.Clamp01(CritChance - w.CritBonus - GameConfig.CritResist); // 短剣の会心の上乗せは武器の素の値なので数えない
+                float dps = Damage * (1f + crit * (CritMult - 1f)) * Multiplicity / FireInterval;
+                dps /= Mathf.Max(0.01f, w.BaseDamage * w.Mult * BaseMultiplicity(w) / Mathf.Max(0.05f, w.Interval));
                 // 命中・回避（DEX）：レベルの半分を層とみなして、その層の敵と比べる
                 int tier = GameConfig.Tier(Mathf.Max(1, Level / 2));
-                if (Kind == AttackKind.Slash) dps *= HitChance(tier);                 // 近接だけ命中の判定がある
+                // 近接だけ命中の判定がある。命中が上がる分は数えるが、武器の種類で不利にならないよう、8割を基準にした差だけを少し数える
+                if (Kind == AttackKind.Slash) dps *= 1f + (HitChance(tier) - 0.8f) * 0.5f;
                 // 守り：実際に耐えられる量（受けるダメージ = 元 × 被ダメージ倍率 × 100 /（100 + 防御））を、職業ごとの重みで累乗する
                 // （灯術師 0.35・影刃 0.45・灯番 0.6）。攻撃（そのまま掛ける）と釣り合わせ、体力の実数値を優遇しすぎないように
                 float ehp = Mathf.Max(1f, MaxHp) * (100f + Mathf.Max(0f, Armor)) / 100f / Mathf.Max(0.1f, DamageTaken);
@@ -331,6 +351,7 @@ namespace VividOfFade
 
             var w = ClassInfo.Weapon(kind);
             s.Kind = w.Attack;
+            s.Weapon = kind;
             s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
             baseDamage += flatDamage; // 「攻撃力 +N」は基礎攻撃力に足す（倍率の前）
             s.AllSub = type == ClassType.Vividbearer;
