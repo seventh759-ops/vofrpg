@@ -872,6 +872,13 @@ namespace VividOfFade
             l.Add((ClassInfo.Get(ClassType.Vividbearer).DisplayName, 1)); // 特別な職
             Head(Loc.T("- Guide -", "― 案内役 ―"));
             l.Add(("？？？", 1));
+            Head(Loc.T("- Made by -", "― 制作 ―"));
+            l.Add(("TOMOSHIBI WORKS", 1));
+            Head(Loc.T("- Development Support -", "― 開発協力 ―"));
+            l.Add(("Claude (Anthropic)", 1));
+            Head(Loc.T("- Font -", "― フォント ―"));
+            l.Add(("M PLUS 1p", 1));
+            l.Add(("The M+ Project Authors  (SIL Open Font License)", 1));
             l.Add(("", 0));
             l.Add(("", 0));
             return l;
