@@ -7,6 +7,8 @@ namespace VividOfFade
     {
         public ClassType Class;
         public AttackKind Kind;
+        /// <summary>遠近両用（彩灯者）：武器の攻撃に加えて、近くは斬り、遠くは撃つ。</summary>
+        public bool Hybrid;
         public int Level;
 
         /// <summary>能力値の合計（初期値＋振ったポイント＋装備）。</summary>
@@ -361,6 +363,23 @@ namespace VividOfFade
                 case AttackKind.Pulse:
                     s.PulseRadius = 1.6f + s.Light * 0.25f + 0.3f * extra;
                     break;
+            }
+            // 彩灯者：遠近両用。武器の攻撃に加えて、近くの敵は斬り、遠くの敵には弾を撃つ（足りない方の数値をここで決める）
+            if (SpecialClass.Of(ch) != null)
+            {
+                s.Hybrid = true;
+                if (w.Attack != AttackKind.Slash)
+                {
+                    s.Reach = 1.6f + Mathf.Max(0f, s.Light - cls.BaseLight) * 0.1f;
+                    s.ArcDeg = Mathf.Min(120f + 15f * extra, 300f);
+                    s.MaxTargets = 3 + extra;
+                }
+                if (w.Attack != AttackKind.Projectile)
+                {
+                    s.Pierce = pierce;
+                    s.Shots = 2 + extra;
+                    s.SpreadDeg = 12f;
+                }
             }
             s.Shots = Mathf.Max(1, s.Shots);
 

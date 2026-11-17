@@ -6,7 +6,8 @@ namespace VividOfFade
     /// 特別な職「彩灯者」（どの基本職でも共通の1つ）。
     /// 基本職のまま（転職せずに）Lv99 まで育てて転生すると、基本職に戻らずに、この職の Lv1 になる。
     /// 強さは3次職と同じくらい（補正＋8つ目のスキル、経験値は1.2倍）。ここから先の転職はなく、Lv99 でまた転生すると基本職に戻る。
-    /// 武器はもとの職業のものをそのまま使う。見た目は、もとの職業の絵を白と鮮やかな色に塗り替え、桃色の光の縁を付ける。
+    /// どの職業の武器も使える（落ちる武器も全職業のもの）。遠近両用：武器の攻撃に加えて、近くの敵は斬り、遠くの敵には弾を撃つ。
+    /// 見た目は、もとの職業の絵を白と鮮やかな色に塗り替え、桃色の光の縁を付ける。
     /// タイトルの「VIVID」にちなんだ、このゲーム用のオリジナルの名前。数値は仮で、遊んでから調整する。
     /// </summary>
     public static class SpecialClass
@@ -14,8 +15,8 @@ namespace VividOfFade
         public static readonly AdvancedSpec Spec = new AdvancedSpec
         {
             Name = "Vividbearer", NameJa = "彩灯者",
-            Desc = "Damage +35%, attack speed +15%, crit +8%, max HP +25%, light +2, +1 projectile.",
-            DescJa = "ダメージ+35%、攻撃速度+15%、会心率+8%、最大HP+25%、明るさ+2、弾+1。",
+            Desc = "Uses every class's weapons. Attacks at any range: cuts nearby enemies and shoots distant ones. Damage +35%, attack speed +15%, crit +8%, max HP +25%, light +2, +1 projectile.",
+            DescJa = "どの職業の武器も使える。遠近両用：近くの敵は斬り、遠くの敵には弾を撃つ。ダメージ+35%、攻撃速度+15%、会心率+8%、最大HP+25%、明るさ+2、弾+1。",
             Passive = new BoonSpec { Damage = 0.35f, AttackSpeed = 0.15f, Crit = 0.08f, HpPct = 0.25f, Light = 2f, Extra = 1 },
             Skill = new SkillSpec
             {

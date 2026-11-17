@@ -45,6 +45,13 @@ namespace VividOfFade
 
             if (!wantFire || timer > 0f) return;
 
+            if (st.Hybrid)
+            {
+                if (!HybridAttack(player, st)) return;
+                timer = Random.value < st.DoubleStrikeChance ? 0.05f : st.FireInterval;
+                return;
+            }
+
             switch (st.Kind)
             {
                 case AttackKind.Projectile:
@@ -66,6 +73,36 @@ namespace VividOfFade
             }
             // ボス装備の固有効果：一定の確率ですぐにもう一度攻撃する
             timer = Random.value < st.DoubleStrikeChance ? 0.05f : st.FireInterval;
+        }
+
+        /// <summary>
+        /// 遠近両用（彩灯者）：近くに敵がいれば斬る（周りを焼く武器なら焼く）。いなければ遠くの敵へ弾を撃つ（弾の武器ならその弾）。
+        /// 回る灯りの武器は、灯りが回り続けたうえで、これも行う。攻撃したら true。
+        /// </summary>
+        bool HybridAttack(Player player, PlayerStats st)
+        {
+            float melee = st.Reach + GameConfig.SlimeRadius;
+            if (st.Kind == AttackKind.Pulse && enemies.FindNearest(player.Pos, st.PulseRadius) != null)
+            {
+                Pulse(player, st);
+                player.PlayPose(Player.Pose.Cast, player.FacingLogical);
+                return true;
+            }
+            var near = enemies.FindNearest(player.Pos, melee);
+            if (near != null)
+            {
+                var dir = (near.Pos - player.Pos).sqrMagnitude > 0.0001f ? (near.Pos - player.Pos).normalized : player.FacingLogical;
+                Slash(player, st, dir);
+                player.PlayPose(Player.Pose.Swing, dir);
+                return true;
+            }
+            if (TryAim(player, player.EffectiveLight, out var aim))
+            {
+                FireVolley(player, st, aim);
+                player.PlayPose(Player.Pose.Shoot, aim);
+                return true;
+            }
+            return false;
         }
 
         /// <summary>範囲内の一番近い敵へ向ける。押している間だけのときは、敵がいなくても向いている方へ。</summary>

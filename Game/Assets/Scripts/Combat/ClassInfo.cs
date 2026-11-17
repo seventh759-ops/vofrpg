@@ -153,6 +153,20 @@ namespace VividOfFade
 
         public static ClassSpec Get(ClassType type) => classes[(int)type];
         public static ClassSpec CurrentSpec => Get(Current);
+
+        static WeaponKind[] allWeapons;
+        /// <summary>どの職業の武器も合わせた一覧（彩灯者に落ちる武器）。</summary>
+        public static WeaponKind[] AllWeapons
+        {
+            get
+            {
+                if (allWeapons != null) return allWeapons;
+                var list = new System.Collections.Generic.List<WeaponKind>();
+                foreach (var c in classes) foreach (var w in c.Weapons) if (!list.Contains(w)) list.Add(w);
+                allWeapons = list.ToArray();
+                return allWeapons;
+            }
+        }
         public static int Count => classes.Length;
 
         public static WeaponSpec Weapon(WeaponKind kind)

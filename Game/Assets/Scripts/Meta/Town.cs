@@ -333,6 +333,6 @@ namespace VividOfFade
 
         /// <summary>その武器を今の職業で使えないか（ほかの職業の武器）。</summary>
         public static bool OtherClassWeapon(Item item, ClassType type) =>
-            item.Slot == ItemSlot.Weapon && ClassInfo.Weapon(item.Weapon).Class != type;
+            item.Slot == ItemSlot.Weapon && ClassInfo.Weapon(item.Weapon).Class != type && !Profile.Get(type).Special; // 彩灯者は、どの職業の武器も使える
     }
 }

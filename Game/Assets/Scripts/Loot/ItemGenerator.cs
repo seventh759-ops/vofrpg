@@ -93,7 +93,7 @@ namespace VividOfFade
             switch (item.Slot)
             {
                 case ItemSlot.Weapon:
-                    var kinds = ClassInfo.CurrentSpec.Weapons; // 今の職業の武器だけが落ちる
+                    var kinds = Profile.Get(ClassInfo.Current).Special ? ClassInfo.AllWeapons : ClassInfo.CurrentSpec.Weapons; // 今の職業の武器だけが落ちる（彩灯者は、どの職業の武器も）
                     item.Weapon = kinds[Random.Range(0, kinds.Length)];
                     item.BaseValue = WeaponDamage(item.Weapon, item.Level, item.Rarity);
                     break;
