@@ -33,6 +33,6 @@ namespace VividOfFade
         public static AdvancedSpec Of(CharacterData ch) => ch != null && ch.Special ? Spec : null;
 
         /// <summary>転生したら彩灯者になるか（基本職のまま、まだ彩灯者でない）。</summary>
-        public static bool RebirthBecomesSpecial(CharacterData ch) => ch != null && ch.Advanced < 0 && !ch.Special;
+        public static bool RebirthBecomesSpecial(CharacterData ch) => ch != null && ch.Advanced < 0 && ch.ClassId < ClassInfo.PlayableCount;
     }
 }

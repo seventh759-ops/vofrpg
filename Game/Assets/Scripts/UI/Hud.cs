@@ -863,12 +863,13 @@ namespace VividOfFade
             Head(Loc.T("- Those Who Stood in the Way -", "― 立ちはだかった者たち ―"));
             foreach (BossKind k in System.Enum.GetValues(typeof(BossKind))) l.Add((BossInfo.Name(k), 1));
             Head(Loc.T("- Those Who Carried the Light -", "― 灯りを運んだ者たち ―"));
-            for (int c = 0; c < ClassInfo.Count; c++)
+            for (int c = 0; c < ClassInfo.PlayableCount; c++)
             {
                 var type = (ClassType)c;
                 l.Add((ClassInfo.Get(type).DisplayName, 1));
                 for (int a = 0; a < 2; a++) l.Add(($"{AdvancedClasses.Get(type, a).DisplayName}  /  {ThirdClasses.Get(type, a).DisplayName}", 1));
             }
+            l.Add((ClassInfo.Get(ClassType.Vividbearer).DisplayName, 1)); // 特別な職
             Head(Loc.T("- Guide -", "― 案内役 ―"));
             l.Add(("？？？", 1));
             l.Add(("", 0));
@@ -1884,7 +1885,7 @@ namespace VividOfFade
             if (confirmDeleteSlot >= 0) return; // 消す確認の窓が出ている間は選ばない
             if (newSlot >= 0)
             {
-                if (n < ClassInfo.Count)
+                if (n < ClassInfo.PlayableCount)
                 {
                     World.CreateCharacter(newSlot, (ClassType)n);
                     newSlot = -1;
@@ -1966,7 +1967,7 @@ namespace VividOfFade
             float W = Screen.width, H = Screen.height;
             GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), Loc.T($"New character (slot {newSlot + 1}): choose a class", $"新しいキャラクター（枠 {newSlot + 1}）：職業を選ぶ"), centered);
             float y = H * 0.25f;
-            int n = ClassInfo.Count;
+            int n = ClassInfo.PlayableCount; // 作るときに選べるのは基本職の3つ（彩灯者は転生でだけなれる）
             float area = H * 0.5f;
             float bh = Mathf.Min(H * 0.14f, (area - gap * (n - 1)) / n);
             var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(label.fontSize * 1.2f) };

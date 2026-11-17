@@ -5,7 +5,7 @@ namespace VividOfFade
 {
     /// <summary>職業。灯術師・影刃・灯番。</summary>
     // 【セーブの決まり】キャラクターの職業は番号で入る。足すときは最後に。
-    public enum ClassType { Lampwright, Shadeblade, Warden }
+    public enum ClassType { Lampwright, Shadeblade, Warden, Vividbearer } // Vividbearer（彩灯者）は、作るときには選べない特別な職（基本職のまま Lv99 で転生するとなる）
 
     /// <summary>通常攻撃の形。</summary>
     public enum AttackKind { Projectile, Slash, Orbit, Pulse }
@@ -122,6 +122,18 @@ namespace VividOfFade
                 Starter = WeaponKind.Censer,
                 Weapons = new[] { WeaponKind.Censer, WeaponKind.Chain, WeaponKind.Brazier },
             },
+            // 特別な職：彩灯者（作るときには選べない。基本職のまま Lv99 で転生するとなる）。どの職業の武器も使い、遠近両用
+            new ClassSpec
+            {
+                Type = ClassType.Vividbearer, Name = "Vividbearer", NameJa = "彩灯者", Line1Ja = "どの武器も使い、遠くも近くも戦う。", Line2Ja = "転職せずに転生した者だけがなれる。",
+                Line1 = "Wields any weapon, near or far.",
+                Line2 = "Only the reborn who never changed class.",
+                BaseHp = 65, BaseStats = new[] { 8, 9, 8, 9, 8 }, MainAttr = Attr.Dex, SubAttr = Attr.Wis, DefenseWeight = 0.45f,
+                DodgeCooldownMult = 0.85f,
+                Speed = 4.8f, BaseLight = 3.2f, Crit = 0.07f, Armor = 5f,
+                Starter = WeaponKind.Wand,
+                Weapons = new[] { WeaponKind.Wand, WeaponKind.Repeater, WeaponKind.Fan, WeaponKind.Sword, WeaponKind.Dagger, WeaponKind.Greatblade, WeaponKind.Censer, WeaponKind.Chain, WeaponKind.Brazier },
+            },
         };
 
         static readonly Dictionary<WeaponKind, WeaponSpec> weapons = new Dictionary<WeaponKind, WeaponSpec>
@@ -162,12 +174,14 @@ namespace VividOfFade
             {
                 if (allWeapons != null) return allWeapons;
                 var list = new System.Collections.Generic.List<WeaponKind>();
-                foreach (var c in classes) foreach (var w in c.Weapons) if (!list.Contains(w)) list.Add(w);
+                for (int i = 0; i < PlayableCount; i++) foreach (var w in classes[i].Weapons) if (!list.Contains(w)) list.Add(w);
                 allWeapons = list.ToArray();
                 return allWeapons;
             }
         }
         public static int Count => classes.Length;
+        /// <summary>作るときに選べる職業の数（彩灯者は除く）。</summary>
+        public const int PlayableCount = 3;
 
         public static WeaponSpec Weapon(WeaponKind kind)
         {

@@ -41,14 +41,9 @@ namespace VividOfFade
         {
             frame = Mathf.Clamp(frame, 0, PlayerFrameCount - 1);
             string suffix = frame == 0 ? "" : "_f" + frame;
-            // 特別な職「彩灯者」：もとの職業の絵を、白い服と鮮やかな桃色・水色に塗り替え、桃色の光の縁を付ける
-            if (ch != null && ch.Special)
-            {
-                string skey = $"PlayerHd_{type}_Special" + suffix;
-                if (cache.TryGetValue(skey, out var sc)) return sc;
-                var baseRows = type == ClassType.Shadeblade ? ShadebladeHdRows : type == ClassType.Warden ? WardenHdRows : LampwrightHdRows;
-                return Shaded(skey, AnimRows(baseRows, frame), SpecialOver, SpecialClass.AuraColor);
-            }
+            // 特別な職「彩灯者」：専用の絵に、桃色の光の縁
+            if (type == ClassType.Vividbearer)
+                return Shaded("PlayerHd_Vividbearer" + suffix, AnimRows(VividbearerHdRows, frame), VividOver, SpecialClass.AuraColor);
             // 上位職なら、その見た目（色を変えて、目印の小物を足す）
             if (ch != null && ch.Advanced >= 0)
             {
@@ -616,17 +611,12 @@ namespace VividOfFade
             new Dictionary<char, Color32[]> { { 'm', Ramp(170, 190, 230, 110, 130, 176, 74, 90, 130, 46, 56, 86) }, { 'v', Ramp(70, 96, 170, 44, 64, 130, 30, 44, 94, 20, 28, 64) }, { 'F', Ramp(40, 56, 116, 32, 46, 98, 24, 34, 76, 16, 22, 54) } }, // Aegis
         };
 
-        /// <summary>彩灯者の色：服は白、合わせ・模様・外套の裏は桃色、縁取りと襟巻きは水色。</summary>
-        static readonly Dictionary<char, Color32[]> SpecialOver = new Dictionary<char, Color32[]>
+        /// <summary>彩灯者の色：外套の裏は淡い紫、髪は銀。</summary>
+        static readonly Dictionary<char, Color32[]> VividOver = new Dictionary<char, Color32[]>
         {
-            { 'c', Ramp(252, 252, 255, 218, 220, 236, 172, 174, 200, 120, 122, 152) },
-            { 'n', Ramp(252, 252, 255, 218, 220, 236, 172, 174, 200, 120, 122, 152) },
-            { 'v', Ramp(252, 252, 255, 218, 220, 236, 172, 174, 200, 120, 122, 152) },
-            { 'd', Ramp(255, 150, 232, 240, 96, 214, 182, 52, 162, 122, 30, 112) },
-            { 'M', Ramp(255, 150, 232, 240, 96, 214, 182, 52, 162, 122, 30, 112) },
-            { 'f', Ramp(255, 150, 232, 240, 96, 214, 182, 52, 162, 122, 30, 112) },
-            { 'u', Ramp(150, 240, 255, 80, 210, 245, 40, 150, 200, 24, 96, 140) },
-            { 'r', Ramp(150, 240, 255, 80, 210, 245, 40, 150, 200, 24, 96, 140) },
+            { 'a', Ramp(220, 190, 255, 178, 146, 236, 132, 104, 196, 92, 70, 150) },
+            { 'q', Ramp(236, 238, 250, 196, 200, 220, 150, 156, 182, 104, 110, 140) },
+            { 'j', Ramp(140, 240, 150, 90, 210, 110, 56, 160, 76, 36, 110, 52) },
         };
 
         static readonly Color32[] ThirdOutline =
@@ -787,6 +777,43 @@ namespace VividOfFade
             }
             return px;
         }
+
+        /// <summary>彩灯者：白い外套と虹の襟巻き、銀の髪に金の額飾り、光る結晶の杖。外套の裏は淡い紫で、すそが後ろへ流れる。</summary>
+        static readonly string[] VividbearerHdRows =
+        {
+            ".........................o......",
+            ".............xx........pBo......",
+            ".............xxx.....opBBBp.....",
+            "............xaxx......BBoBB.....",
+            "...........xxaxxxx...opBBBp.....",
+            "..........xxaxxxxxx....pBp......",
+            ".........xHgHgHgHgx....gwg......",
+            ".........xaqqqqqqax....gwwg.....",
+            ".........xaqsqqsqax.....ww......",
+            ".........xasessesax.....ww......",
+            ".........xassssssax.....ww......",
+            "..........xassrssa......ww......",
+            "..........rrHHjjuux.....ww......",
+            ".........rrrHHjjuuaa....ww......",
+            "........rxxxaaHxxxxaa...ww......",
+            ".....rrHxxxaaaHxxxaagsssww......",
+            "....r..xxxxaaaaxxxagssssww......",
+            ".......xxxabbgbbxxxsss..gg......",
+            ".....aa.xxxbbbbbxxxas...ww......",
+            "....aaa.xbbxaxaxxxxa....ww......",
+            "....aa.xbbbxaxxaxxxxa...ww......",
+            "...aaa.xbbxxaxxxaxxxa...ww......",
+            "...aa.xxxxaaxxxaaxxxxa..ww......",
+            "..aaa.xxxaaxxxxaaxxxa...ww......",
+            "..aa..xxxaHxxxaaaxxxa...gg......",
+            ".aaa.xxxaaHxxxxaaaxxxa..ww......",
+            ".aaa.xxxaHxxxxxaaaxxx...ww......",
+            ".....ggggggggggggggggg..ww......",
+            "........bbbb...bbbb.....ww......",
+            "........bbbb...bbbb.....ww......",
+            "........................ww......",
+            "........................gg......",
+        };
 
         static readonly string[] LampwrightHdRows =
         {

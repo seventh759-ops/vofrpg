@@ -104,6 +104,22 @@ namespace VividOfFade
                 new SkillSpec { Name = "Judgment", NameJa = "裁き", DescJa = "とても広い光の波。HP20%回復。", Desc = "Vast wave of light; heals 20%.", ReqLevel = 35, Mp = 45, Cooldown = 14f,
                     Effect = SkillEffect.Nova, Mult = 7.5f, Radius = 4.5f, HealPct = 0.2f, Color = new Color(1f, 0.95f, 0.7f, 0.9f) },
             },
+            // 彩灯者（Vividbearer）：鮮やかな光の色で戦う、遠近両用の特別な職
+            new[]
+            {
+                new SkillSpec { Name = "Prism Ring", NameJa = "彩の輪", DescJa = "周りに七色の光を放つ。", Desc = "A ring of seven-colored light around you.", ReqLevel = 1, Mp = 8, Cooldown = 3f,
+                    Effect = SkillEffect.Nova, Mult = 4f, Radius = 2.4f, Color = new Color(1f, 0.45f, 0.85f, 0.9f) },
+                new SkillSpec { Name = "Spectrum Volley", NameJa = "七彩の矢", DescJa = "敵へ7本の光の矢を放つ。", Desc = "7 light arrows at the enemy.", ReqLevel = 5, Mp = 12, Cooldown = 4f,
+                    Effect = SkillEffect.Barrage, Mult = 2.5f, Count = 7, Color = new Color(0.5f, 0.9f, 1f, 0.9f) },
+                new SkillSpec { Name = "Vivid Step", NameJa = "彩の歩み", DescJa = "光をまとって突進し、敵を切り裂く。", Desc = "Dash wrapped in light, cutting through enemies.", ReqLevel = 10, Mp = 12, Cooldown = 5f,
+                    Effect = SkillEffect.Dash, Mult = 6f, Radius = 1f, Range = 5f, Color = new Color(1f, 0.85f, 0.4f, 0.9f) },
+                new SkillSpec { Name = "Rainbow Pillar", NameJa = "虹の柱", DescJa = "一番近い敵に、虹の光の柱が落ちる。", Desc = "A pillar of rainbow light falls on the nearest enemy.", ReqLevel = 18, Mp = 20, Cooldown = 6f,
+                    Effect = SkillEffect.Strike, Mult = 10f, Radius = 1.8f, Delay = 0.5f, Range = 8f, Color = new Color(0.7f, 0.5f, 1f, 0.9f) },
+                new SkillSpec { Name = "Vivid Grace", NameJa = "彩の加護", DescJa = "10秒、ダメージ+25%・防御+30。", Desc = "Damage +25%, armor +30 for 10s.", ReqLevel = 26, Mp = 25, Cooldown = 18f,
+                    Effect = SkillEffect.Buff, Duration = 10f, BuffDamage = 0.25f, BuffArmor = 30f, Color = new Color(1f, 0.6f, 0.9f, 0.9f) },
+                new SkillSpec { Name = "Kaleidoscope", NameJa = "極彩", DescJa = "とても大きな七色の光の輪。", Desc = "A huge ring of seven-colored light.", ReqLevel = 35, Mp = 40, Cooldown = 12f,
+                    Effect = SkillEffect.Nova, Mult = 8f, Radius = 4.2f, Color = new Color(0.95f, 0.5f, 1f, 0.9f) },
+            },
         };
 
         public static SkillSpec Get(ClassType type, int index) =>

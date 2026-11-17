@@ -225,7 +225,19 @@ namespace VividOfFade
             if (!ThirdClasses.CanRebirth(ch)) return false;
             ch.Embers -= ThirdClasses.Cost(ch);
             ch.Rebirths++;
-            ch.Special = SpecialClass.RebirthBecomesSpecial(ch); // 基本職のまま転生すると彩灯者に。それ以外は基本職に戻る
+            if (SpecialClass.RebirthBecomesSpecial(ch))
+            {
+                // 基本職のまま転生した：彩灯者になる（職業そのものが変わる。スキルも別）
+                ch.OriginClassId = ch.ClassId;
+                ch.ClassId = (int)ClassType.Vividbearer;
+                SwapSkills(ch);
+            }
+            else if (ch.Special)
+            {
+                // 彩灯者から転生した：もとの基本職へ戻る
+                ch.ClassId = Mathf.Clamp(ch.OriginClassId, 0, ClassInfo.PlayableCount - 1);
+                SwapSkills(ch);
+            }
             ch.Advanced = -1;
             ch.Third = false;
             for (int i = 0; i < ch.Slots.Length; i++)
@@ -233,6 +245,28 @@ namespace VividOfFade
             BackToLevel1(ch, 0);
             Profile.Save();
             return true;
+        }
+
+        /// <summary>
+        /// もとの職業と彩灯者を行き来するとき：スキルの熟練度を入れ替え（使っていない方は取っておく）、ボタンは1つ目のスキルだけにする。
+        /// </summary>
+        static void SwapSkills(CharacterData ch)
+        {
+            var lv = ch.StashedSkillLv;
+            var uses = ch.StashedSkillUses;
+            ch.StashedSkillLv = ch.SkillLv;
+            ch.StashedSkillUses = ch.SkillUses;
+            ch.SkillLv = lv != null && lv.Length == SkillInfo.PerClass ? lv : NewArray(SkillInfo.PerClass, 1);
+            ch.SkillUses = uses != null && uses.Length == SkillInfo.PerClass ? uses : NewArray(SkillInfo.PerClass, 0);
+            ch.Slots = new[] { 0, -1, -1 };
+            ch.SlotAuto = new bool[SkillInfo.Slots];
+        }
+
+        static int[] NewArray(int n, int fill)
+        {
+            var a = new int[n];
+            for (int i = 0; i < n; i++) a[i] = fill;
+            return a;
         }
 
         /// <summary>直前の転職・転生で倉庫へ送った品の数（知らせるため）。</summary>
@@ -249,7 +283,7 @@ namespace VividOfFade
             for (int i = 0; i < ch.Loadout.Count; i++)
             {
                 var it = ch.Loadout[i];
-                if (it == null || it.IsEmptyMarker || it.ReqLevel <= ch.Level) continue;
+                if (it == null || it.IsEmptyMarker || (it.ReqLevel <= ch.Level && !OtherClassWeapon(it, (ClassType)ch.ClassId))) continue; // レベルが足りない品と、使えなくなった職業の武器
                 if (Profile.Storage.Count >= StorageCapacity) break;
                 it.Carried = false;
                 Profile.Storage.Add(it);
@@ -333,6 +367,6 @@ namespace VividOfFade
 
         /// <summary>その武器を今の職業で使えないか（ほかの職業の武器）。</summary>
         public static bool OtherClassWeapon(Item item, ClassType type) =>
-            item.Slot == ItemSlot.Weapon && ClassInfo.Weapon(item.Weapon).Class != type && !Profile.Get(type).Special; // 彩灯者は、どの職業の武器も使える
+            item.Slot == ItemSlot.Weapon && ClassInfo.Weapon(item.Weapon).Class != type && type != ClassType.Vividbearer; // 彩灯者は、どの職業の武器も使える
     }
 }

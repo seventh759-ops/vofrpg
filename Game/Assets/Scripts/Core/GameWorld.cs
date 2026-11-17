@@ -259,6 +259,8 @@ namespace VividOfFade
             var ch = Profile.Current;
             if (ch == null) return;
             Profile.Save();
+            ClassInfo.Current = (ClassType)ch.ClassId; // 彩灯者になった・もとの職業へ戻ったときは、職業そのものが変わる
+            SyncTownGear();
             Player.SetClass(ClassInfo.Current);
             if (ch.Special)
             {

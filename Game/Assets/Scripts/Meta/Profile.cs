@@ -43,7 +43,12 @@ namespace VividOfFade
         public int Advanced = -1;                     // 上位職（-1 は基本職。0 か 1）
         public bool Third;                            // 3次職になった（上位職で Lv50 から）
         public int Rebirths;                          // 転生した回数（どの職でも Lv99 から。基本職に戻る。1回ごとに全能力値+5）
-        public bool Special;                          // 特別な職「彩灯者」（基本職のまま Lv99 で転生するとなる）
+        public int OriginClassId = -1;                // 彩灯者になる前の基本職（彩灯者から転生すると、ここへ戻る）
+        public int[] StashedSkillLv;                  // 今は使っていない方（もとの職業／彩灯者）のスキルの熟練度
+        public int[] StashedSkillUses;
+
+        /// <summary>特別な職「彩灯者」か（基本職のまま Lv99 で転生するとなる）。</summary>
+        public bool Special => ClassId == (int)ClassType.Vividbearer;
         public int HpPotions;                         // 回復薬（町の商人で買う）
         public int MpPotions;                         // 魔力の薬
 
@@ -59,7 +64,8 @@ namespace VividOfFade
             CarrySlots = Mathf.Min(CarrySlots, Town.MaxCarrySlots);
             if (Advanced < -1 || Advanced > 1) Advanced = -1;
             if (Advanced < 0) Third = false; // 3次職は上位職の先だけ
-            if (Special) { Advanced = -1; Third = false; } // 彩灯者は、上位職・3次職とは別の道
+            if (ClassId < 0 || ClassId >= ClassInfo.Count) ClassId = 0;
+            if (Special) { Advanced = -1; Third = false; if (OriginClassId < 0 || OriginClassId >= ClassInfo.PlayableCount) OriginClassId = 0; } // 彩灯者は、上位職・3次職とは別の道
             if (Rebirths < 0) Rebirths = 0;
             HpPotions = Mathf.Clamp(HpPotions, 0, Town.MaxPotions);
             MpPotions = Mathf.Clamp(MpPotions, 0, Town.MaxPotions);

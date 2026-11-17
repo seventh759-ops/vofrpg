@@ -93,7 +93,7 @@ namespace VividOfFade
             switch (item.Slot)
             {
                 case ItemSlot.Weapon:
-                    var kinds = Profile.Get(ClassInfo.Current).Special ? ClassInfo.AllWeapons : ClassInfo.CurrentSpec.Weapons; // 今の職業の武器だけが落ちる（彩灯者は、どの職業の武器も）
+                    var kinds = ClassInfo.CurrentSpec.Weapons; // 今の職業の武器だけが落ちる（彩灯者は、どの職業の武器も）
                     item.Weapon = kinds[Random.Range(0, kinds.Length)];
                     item.BaseValue = WeaponDamage(item.Weapon, item.Level, item.Rarity);
                     break;
@@ -254,7 +254,7 @@ namespace VividOfFade
         {
             var candidates = StatPool(item.Slot); // 装備の種類ごとの効果から選ぶ
             if (exclude != null) foreach (var x in exclude) candidates.Remove(x);
-            if (ClassInfo.Current != ClassType.Lampwright) candidates.Remove(StatType.Pierce); // 貫通は火の玉だけ
+            if (ClassInfo.Current != ClassType.Lampwright && ClassInfo.Current != ClassType.Vividbearer) candidates.Remove(StatType.Pierce); // 貫通は火の玉だけ（彩灯者は遠近両用で弾も撃つ）
             for (int n = 0; n < count && candidates.Count > 0; n++)
             {
                 float total = 0f;
