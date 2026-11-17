@@ -620,6 +620,7 @@ namespace VividOfFade
             { 'v', Ramp(214, 208, 244, 176, 168, 220, 134, 124, 184, 92, 84, 140) },   // 長い外套（淡い紫を帯びた白。上着と見分けがつくよう少し濃く）
             { 'T', Ramp(240, 242, 250, 210, 214, 228, 168, 172, 192, 120, 124, 146) },  // 白いズボン
             { 'b', Ramp(255, 255, 255, 228, 230, 240, 186, 190, 206, 136, 140, 160) },  // 白い長靴
+            { 'K', Ramp(236, 170, 170, 224, 150, 150, 206, 132, 132, 180, 112, 112) },  // 口（淡い紅）
         };
 
         static readonly Color32[] ThirdOutline =
@@ -794,15 +795,15 @@ namespace VividOfFade
             "........qqqseesssseesqqq........",
             "........qqqsRBsssspBsqqq........",
             "........qqqqssssssssqqqq........",
-            "........qqqqqsssrssqqqqq........",
+            "........qqqqqssKKssqqqqq........",
             "........qqqqq.ssss.qqqqq........",
             ".......vqqqquugxxguuqqqqv.......",
-            "......vvquuuuugBgguuuuuqvv......",
+            "......vvquuuuugBBguuuuuqvv......",
             "......vvuuuguuxxxxuuguuuvv......",
             "......vvuuuuggxxxxgguuuuvv......",
             ".....vvvxxxxgxxpBxxgxxxxvvv.....",
-            ".....vvvxxxsgxRBpxgsxxxxvvv.....",
-            ".....vvvxxxssgggggggssxxvvv.....",
+            ".....vvvxxxsgxRBpjxgsxxxvvv.....",
+            ".....vvvxxxssggggggssxxxvvv.....",
             ".....vvvxxxgxxxxxxxxgxxxvvv.....",
             ".....vvvxxgxBxxxxxxBxgxxvvv.....",
             ".....vvvxxgxxxxTTxxxxgxxvvv.....",
