@@ -235,21 +235,34 @@ namespace VividOfFade
             Skills.Learn(ch, AdvancedClasses.SkillIndex);
             Profile.Save();
             var adv = AdvancedClasses.Of(ClassInfo.Current, ch);
-            if (adv != null) Hud.Toast(Loc.T($"Class changed: {adv.DisplayName}  (Lv 1, +{AdvancedClasses.BonusPoints} points)", $"転職：{adv.DisplayName}（Lv1、ポイント +{AdvancedClasses.BonusPoints}）") + StoredNote(), new Color(1f, 0.85f, 0.4f));
+            Player.SetClass(ClassInfo.Current); // 見た目を上位職に
+            if (adv != null) Hud.Toast(Loc.T($"Class changed: {adv.DisplayName}  (Lv 1, {ch.Points} points)", $"転職：{adv.DisplayName}（Lv1、ポイント {ch.Points}）") + StoredNote(), new Color(1f, 0.85f, 0.4f));
             Sfx.Landed(Rarity.Legendary);
         }
 
-        /// <summary>転生した：8つ目のスキルを覚えて、空いているボタンに付ける。</summary>
+        /// <summary>3次職になった：8つ目のスキルを覚えて、空いているボタンに付ける。</summary>
+        public void OnThird()
+        {
+            var ch = Profile.Current;
+            if (ch == null) return;
+            Skills.Learn(ch, ThirdClasses.SkillIndex);
+            Profile.Save();
+            Player.SetClass(ClassInfo.Current); // 見た目を3次職に
+            var third = ThirdClasses.Of(ClassInfo.Current, ch);
+            if (third != null) Hud.Toast(Loc.T($"Class changed: {third.DisplayName}  (Lv 1, {ch.Points} points)", $"3次職：{third.DisplayName}（Lv1、ポイント {ch.Points}）") + StoredNote(), new Color(1f, 0.8f, 0.35f));
+            Sfx.Landed(Rarity.Relic);
+        }
+
+        /// <summary>転生した：基本職に戻る（見た目と足元のオーラの色が変わる）。</summary>
         public void OnRebirth()
         {
             var ch = Profile.Current;
             if (ch == null) return;
-            if (ch.Rebirths == 1) Skills.Learn(ch, ThirdClasses.SkillIndex); // 8つ目のスキルは1回目の転生で覚える
             Profile.Save();
-            Player.SetClass(ClassInfo.Current); // 足元のオーラの色を変える
-            var third = ThirdClasses.Of(ClassInfo.Current, ch);
-            if (third != null) Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: {third.DisplayName}  (Lv 1, +{ThirdClasses.BonusPoints} points, all stats +{ThirdClasses.BonusStats(ch)})",
-                $"転生 {ch.Rebirths}回目：{third.DisplayName}（Lv1、ポイント +{ThirdClasses.BonusPoints}、全能力値 +{ThirdClasses.BonusStats(ch)}）") + StoredNote(), ThirdClasses.AuraColor(ch.Rebirths));
+            Player.SetClass(ClassInfo.Current);
+            var name = ClassInfo.Get(ClassInfo.Current).DisplayName;
+            Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: back to {name}  (Lv 1, {ch.Points} points, all stats +{ThirdClasses.BonusStats(ch)})",
+                $"転生 {ch.Rebirths}回目：{name}に戻った（Lv1、ポイント {ch.Points}、全能力値 +{ThirdClasses.BonusStats(ch)}）") + StoredNote(), ThirdClasses.AuraColor(ch.Rebirths));
             Sfx.Landed(Rarity.Mythic);
         }
 

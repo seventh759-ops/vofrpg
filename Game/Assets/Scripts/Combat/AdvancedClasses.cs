@@ -19,16 +19,17 @@ namespace VividOfFade
     }
 
     /// <summary>
-    /// 転職（町の師匠）。Lv30 から、職業ごとに2つの上位職から1つを選ぶ（1回だけ）。
-    /// 転職すると Lv1 に戻り（振った能力値も戻る）、ボーナスとして 30 ポイントを振れる。
+    /// 転職（町の師匠）。基本職で Lv50 から、職業ごとに2つの上位職から1つを選ぶ。
+    /// 転職すると Lv1 に戻り（振った能力値も戻る）、ずっと持つボーナスのポイントが +30 され、それを全部振り直せる。
+    /// 上位職は経験値が1.1倍重い。転生すると基本職に戻るので、次は別の上位職も選べる。
     /// どれもこのゲーム用のオリジナルの名前。数値はすべて仮で、遊んでから調整する。
     /// </summary>
     public static class AdvancedClasses
     {
-        public const int ReqLevel = 30;
+        public const int ReqLevel = 50;
         public const int Cost = 500;      // 火種
         public const int SkillIndex = 6;  // 7つ目のスキルの番号
-        public const int BonusPoints = 30; // 転職すると Lv1 に戻り、このポイントを振れる
+        public const int BonusPoints = 30; // 転職すると、ずっと持つボーナスのポイントにこれを足す
 
         static readonly AdvancedSpec[][] table =
         {

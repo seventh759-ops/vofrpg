@@ -3,15 +3,18 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>
-    /// 転生（3次職）。上位職で Lv99 になったら、町の師匠で火種を払って転生できる（何回でも）。
-    /// 1回目で上位職ごとに決まった3次職になる。Lv1 に戻り、ボーナスのポイントを振れる。
-    /// 3次職の補正（上位職の補正に重なる）、攻撃力が伸びる能力値がもう1つ（ExtraAttr）、8つ目のスキル、見た目と名前が変わる。
-    /// 転生するたびに全能力値+5（ずっと、回数分たまる）。足元のオーラの色が回数で変わる（白→青→黄→紫→金→赤）。
+    /// 3次職と転生（町の師匠）。
+    /// ・3次職：上位職で Lv50 から、火種を払って、上位職ごとに決まった3次職になる。Lv1 に戻り、ずっと持つボーナスのポイントが +60。
+    ///   3次職の補正（上位職の補正に重なる）、攻撃力が伸びる能力値がもう1つ（ExtraAttr）、8つ目のスキル、見た目と名前が変わる。経験値は1.2倍重い。
+    /// ・転生：どの職でも Lv99 から（何回でも、火種は毎回倍）。基本職に戻って Lv1。ボーナスのポイントはそのまま持ち越し、全能力値+5（ずっと、回数分たまる）。
+    ///   足元のオーラの色が回数で変わる（白→青→黄→紫→金→赤）。
     /// どれもこのゲーム用のオリジナルの名前。数値はすべて仮で、遊んでから調整する。
     /// </summary>
     public static class ThirdClasses
     {
-        public const int ReqLevel = 99;
+        public const int ReqLevel = 99;      // 転生できるレベル（どの職でも）
+        public const int PromoteLevel = 50;  // 上位職から3次職へ転職できるレベル
+        public const int PromoteCost = 1000; // 3次職への転職の火種
         public const int BaseCost = 2000;    // 1回目の転生の火種。2回目からは倍々（2000→4000→8000…）
 
         /// <summary>次の転生にかかる火種（転生した回数ぶん倍になる）。</summary>
@@ -120,8 +123,12 @@ namespace VividOfFade
             return third != null ? third.Skill : locked;
         }
 
+        /// <summary>3次職へ転職できるか（上位職で Lv50、火種が足りる）。</summary>
+        public static bool CanPromote(CharacterData ch) => ch != null && ch.Advanced >= 0 && !ch.Third && ch.Level >= PromoteLevel && ch.Embers >= PromoteCost;
+
+        /// <summary>転生の条件（どの職でも Lv99）。</summary>
         public static bool MeetsRequirements(CharacterData ch) =>
-            ch != null && ch.Advanced >= 0 && ch.Level >= ReqLevel;
+            ch != null && ch.Level >= ReqLevel;
 
         public static bool CanRebirth(CharacterData ch) => MeetsRequirements(ch) && ch.Embers >= Cost(ch);
     }

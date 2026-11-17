@@ -52,7 +52,7 @@ namespace VividOfFade
 
             // 経験値
             float y = pad + btnH + H * 0.015f;
-            int need = Progression.ExpToNext(ch.Level);
+            int need = Progression.ExpToNext(ch, ch.Level);
             var bar = new Rect(pad, y, W - pad * 2f, H * 0.012f);
             Hud.Fill(bar, new Color(1f, 1f, 1f, 0.12f));
             Hud.Fill(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01((float)ch.Exp / need), bar.height), new Color(1f, 0.85f, 0.3f, 0.9f));

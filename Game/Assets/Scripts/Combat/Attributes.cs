@@ -73,6 +73,12 @@ namespace VividOfFade
             return ExpTo98;
         }
 
+        /// <summary>職業の段階で経験値を重くする倍率：基本職 1.0・上位職 1.1・3次職 1.2。</summary>
+        public static float TierExpMult(CharacterData c) => c == null ? 1f : c.Third ? 1.2f : c.Advanced >= 0 ? 1.1f : 1f;
+
+        /// <summary>そのキャラクターの、次のレベルまでの経験値（職業の段階の重さを掛ける）。</summary>
+        public static int ExpToNext(CharacterData c, int level) => Mathf.RoundToInt(ExpToNext(level) * TierExpMult(c));
+
         /// <summary>レベルアップ1回で増える最大 MP（そのときの WIS で決まる）。</summary>
         public static int MpPerLevel(int wis) => 2 + wis / 3;
 
@@ -100,9 +106,9 @@ namespace VividOfFade
             if (c.Level >= cap) return 0;
             c.Exp += amount;
             int gained = 0;
-            while (c.Level < cap && c.Exp >= ExpToNext(c.Level))
+            while (c.Level < cap && c.Exp >= ExpToNext(c, c.Level))
             {
-                c.Exp -= ExpToNext(c.Level);
+                c.Exp -= ExpToNext(c, c.Level);
                 c.Level++;
                 c.MpGrown += MpPerLevel(BaseWis(c)); // 振る前の、今の WIS で決まる
                 c.Points += PointsPerLevel;

@@ -40,9 +40,10 @@ namespace VividOfFade
         public int Deaths;                            // 力尽きた回数
         public int AbyssShards;                       // 深淵の欠片（深淵の装備の強化に使う。深淵でまれに手に入る）
         public RunSave Run = new RunSave();           // 中断した挑戦
-        public int Advanced = -1;                     // 上位職（-1 はまだ。0 か 1）
-        public bool Third;                            // 転生して3次職になった（Rebirths が1以上）
-        public int Rebirths;                          // 転生した回数（何回でもできる。1回ごとに全能力値+5）
+        public int Advanced = -1;                     // 上位職（-1 は基本職。0 か 1）
+        public bool Third;                            // 3次職になった（上位職で Lv50 から）
+        public int Rebirths;                          // 転生した回数（どの職でも Lv99 から。基本職に戻る。1回ごとに全能力値+5）
+        public int BankedPoints;                      // ずっと持つボーナスのポイント（転職・3次職でもらった分の合計。Lv1 に戻るたびに全部振り直せる）
         public int HpPotions;                         // 回復薬（町の商人で買う）
         public int MpPotions;                         // 魔力の薬
 
@@ -57,10 +58,9 @@ namespace VividOfFade
             if (CarrySlots < 1) CarrySlots = 3;
             CarrySlots = Mathf.Min(CarrySlots, Town.MaxCarrySlots);
             if (Advanced < -1 || Advanced > 1) Advanced = -1;
-            if (Advanced < 0) { Third = false; Rebirths = 0; }
-            if (Third && Rebirths < 1) Rebirths = 1; // 転生が1回きりだった頃のセーブ
+            if (Advanced < 0) Third = false; // 3次職は上位職の先だけ
             if (Rebirths < 0) Rebirths = 0;
-            Third = Rebirths > 0;
+            if (BankedPoints < 0) BankedPoints = 0;
             HpPotions = Mathf.Clamp(HpPotions, 0, Town.MaxPotions);
             MpPotions = Mathf.Clamp(MpPotions, 0, Town.MaxPotions);
             foreach (var it in Loadout) it?.Repair();
@@ -391,7 +391,7 @@ namespace VividOfFade
         }
 
         /// <summary>セーブの形の版。保存の形を変えたら上げて、Migrate に読み替えを足す。</summary>
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         /// <summary>
         /// 古い版のセーブを、今の形へ読み替える（版を1つずつ上げていく）。
@@ -403,6 +403,21 @@ namespace VividOfFade
             {
                 // 1 → 2：形は同じ（予備のセーブと読み替えの仕組みを入れた版）
                 d.Version = 2;
+            }
+            if (d.Version < 3)
+            {
+                // 2 → 3：転職のルールが変わった（3次職は転生ではなく上位職 Lv50 から。転生は基本職に戻る）。
+                // 今の職業・レベル・転生の回数はそのまま。これまでにもらったボーナスのポイントを「ずっと持つポイント」に記録する
+                if (d.Characters != null)
+                {
+                    foreach (var c in d.Characters)
+                    {
+                        if (c == null) continue;
+                        if (c.Third && c.Rebirths < 1) c.Rebirths = 1; // 転生が1回きりだった頃のセーブ
+                        c.BankedPoints = (c.Advanced >= 0 ? AdvancedClasses.BonusPoints : 0) + (c.Third && c.Advanced >= 0 ? ThirdClasses.BonusPoints : 0);
+                    }
+                }
+                d.Version = 3;
             }
             d.Version = CurrentVersion;
         }
