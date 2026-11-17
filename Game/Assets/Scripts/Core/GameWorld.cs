@@ -236,7 +236,8 @@ namespace VividOfFade
             Profile.Save();
             var adv = AdvancedClasses.Of(ClassInfo.Current, ch);
             Player.SetClass(ClassInfo.Current); // 見た目を上位職に
-            if (adv != null) Hud.Toast(Loc.T($"Class changed: {adv.DisplayName}  (Lv 1, {ch.Points} points)", $"転職：{adv.DisplayName}（Lv1、ポイント {ch.Points}）") + StoredNote(), new Color(1f, 0.85f, 0.4f));
+            if (adv != null) Hud.Toast(Loc.T($"Class changed: {adv.DisplayName}", $"転職：{adv.DisplayName}"), new Color(1f, 0.85f, 0.4f));
+            ToastStored();
             Sfx.Landed(Rarity.Legendary);
         }
 
@@ -249,7 +250,8 @@ namespace VividOfFade
             Profile.Save();
             Player.SetClass(ClassInfo.Current); // 見た目を3次職に
             var third = ThirdClasses.Of(ClassInfo.Current, ch);
-            if (third != null) Hud.Toast(Loc.T($"Class changed: {third.DisplayName}  (Lv 1, {ch.Points} points)", $"3次職：{third.DisplayName}（Lv1、ポイント {ch.Points}）") + StoredNote(), new Color(1f, 0.8f, 0.35f));
+            if (third != null) Hud.Toast(Loc.T($"Class changed: {third.DisplayName}", $"3次職：{third.DisplayName}"), new Color(1f, 0.8f, 0.35f));
+            ToastStored();
             Sfx.Landed(Rarity.Relic);
         }
 
@@ -267,14 +269,17 @@ namespace VividOfFade
                 // 基本職のまま転生した：特別な職「彩灯者」に
                 Skills.Learn(ch, ThirdClasses.SkillIndex);
                 Profile.Save();
-                Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: you became a {SpecialClass.Spec.DisplayName}!  (Lv 1, all stats +{ThirdClasses.BonusStats(ch)})",
-                    $"転生 {ch.Rebirths}回目：特別な職「{SpecialClass.Spec.DisplayName}」になった！（Lv1、全能力値 +{ThirdClasses.BonusStats(ch)}）") + StoredNote(), (Color)SpecialClass.AuraColor);
+                // 知らせは短く2行に分ける（長い1行は縮んで読めなくなるので）
+                Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: became a {SpecialClass.Spec.DisplayName}!", $"転生{ch.Rebirths}回目：{SpecialClass.Spec.DisplayName}になった！"), (Color)SpecialClass.AuraColor);
+                Hud.Toast(Loc.T($"All stats +{ThirdClasses.BonusStats(ch)}", $"全能力値 +{ThirdClasses.BonusStats(ch)}"), (Color)SpecialClass.AuraColor);
+                ToastStored();
                 Sfx.Landed(Rarity.Mythic);
                 return;
             }
             var name = ClassInfo.Get(ClassInfo.Current).DisplayName;
-            Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: back to {name}  (Lv 1, {ch.Points} points, all stats +{ThirdClasses.BonusStats(ch)})",
-                $"転生 {ch.Rebirths}回目：{name}に戻った（Lv1、ポイント {ch.Points}、全能力値 +{ThirdClasses.BonusStats(ch)}）") + StoredNote(), ThirdClasses.AuraColor(ch.Rebirths));
+            Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: back to {name}", $"転生{ch.Rebirths}回目：{name}に戻った"), ThirdClasses.AuraColor(ch.Rebirths));
+            Hud.Toast(Loc.T($"All stats +{ThirdClasses.BonusStats(ch)}", $"全能力値 +{ThirdClasses.BonusStats(ch)}"), ThirdClasses.AuraColor(ch.Rebirths));
+            ToastStored();
             Sfx.Landed(Rarity.Mythic);
         }
 
@@ -311,9 +316,12 @@ namespace VividOfFade
         }
 
         /// <summary>転職・転生で装備できなくなった品を倉庫へ送ったときのひとこと。</summary>
-        static string StoredNote() => Town.LastStored > 0
-            ? Loc.T($"  /  {Town.LastStored} item(s) too high-level now sent to storage", $"  /  装備できなくなった品 {Town.LastStored} 個を倉庫へ")
-            : "";
+        /// <summary>転職・転生で装備できなくなった品を倉庫へ送ったら、別の行で知らせる。</summary>
+        void ToastStored()
+        {
+            if (Town.LastStored > 0)
+                Hud.Toast(Loc.T($"{Town.LastStored} item(s) sent to storage", $"使えなくなった品 {Town.LastStored} 個を倉庫へ"), new Color(0.8f, 0.8f, 0.85f));
+        }
 
         float potionCooldown;
 

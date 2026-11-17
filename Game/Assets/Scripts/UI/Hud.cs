@@ -1050,6 +1050,13 @@ namespace VividOfFade
                 GUI.DrawTexture(new Rect(logoRect.x - lh * 0.05f, logoRect.y - lh * 0.05f, logoRect.width + lh * 0.1f, logoRect.height + lh * 0.1f), TitleArt.Glow);
                 GUI.color = oldColor;
                 GUI.DrawTexture(logoRect, logo);
+                if (!Application.isMobilePlatform)
+                {
+                    // 操作の案内（PC・エディタ向け）：ロゴのすぐ右に小さく
+                    var hint = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+                    hint.normal.textColor = new Color(1f, 1f, 1f, 0.45f);
+                    GUI.Label(new Rect(logoRect.xMax + mm * 1.2f, titleRow.y, W * 0.3f, titleRow.height), Loc.T("H: Controls", "H：操作"), hint);
+                }
                 if (ch != null && ch.Rebirths > 0)
                 {
                     // 転生の印：MENU の左に、オーラの色の宝石と「転生N」
@@ -1176,12 +1183,9 @@ namespace VividOfFade
                     c.a = t.T < ToastLife ? 1f : 0.55f;
                     var style = new GUIStyle(small);
                     style.normal.textColor = c;
-                    // 右下に「H：操作」がある行だけ、その幅をあける。収まらない文は縮めて1行に収める（切らない）
+                    // 収まらない文は縮めて1行に収める（切らない）。「H：操作」は上の段へ移したので、窓の端まで使う
                     int row = k - start;
-                    float reserve = 0f;
-                    if (row == LogLines - 1 && !Application.isMobilePlatform)
-                        reserve = Mathf.Max(reserve, small.CalcSize(new GUIContent(Loc.T("H: Controls", "H：操作"))).x + mm);
-                    FitLabel(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + row * logH, msgR.width - mm * 2f - reserve, logH), "+ " + t.Text, style);
+                    FitLabel(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + row * logH, msgR.width - mm * 2f, logH), "+ " + t.Text, style);
                 }
             }
 
@@ -1238,15 +1242,8 @@ namespace VividOfFade
                 Fill(ToGui(new Rect(input.StickKnob.x - k, input.StickKnob.y - k, k * 2f, k * 2f)), new Color(1f, 1f, 1f, 0.4f));
             }
 
-            // 操作の説明（PC・エディタ向け）。ふだんは「H: Controls」だけ出し、H で一覧を開く
-            if (!Application.isMobilePlatform)
-            {
-                var hint = new GUIStyle(small) { alignment = TextAnchor.LowerRight };
-                hint.normal.textColor = new Color(1f, 1f, 1f, 0.5f);
-                var mw = MessageWindow;
-                GUI.Label(new Rect(mw.x, mw.yMax - lineH - mm * 0.4f, mw.width - mm, lineH), Loc.T("H: Controls", "H：操作"), hint);
-                if (ShowHelp) DrawHelp();
-            }
+            // 操作の一覧（PC・エディタ向け。H で開閉）。「H：操作」の案内は、いちばん上の段のロゴの右に出す
+            if (!Application.isMobilePlatform && ShowHelp) DrawHelp();
         }
 
         /// <summary>操作の一覧（H で開閉）。</summary>
