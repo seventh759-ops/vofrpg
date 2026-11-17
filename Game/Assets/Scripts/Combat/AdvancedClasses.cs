@@ -19,7 +19,7 @@ namespace VividOfFade
     }
 
     /// <summary>
-    /// 転職（町の師匠）。基本職で Lv50 から、職業ごとに2つの上位職から1つを選ぶ。
+    /// 転職（町の女神像で儀を受ける）。基本職で Lv50 から、職業ごとに2つの上位職から1つを選ぶ。
     /// 転職すると Lv1 に戻り（振った能力値も戻る）、ボーナスとして 30 ポイントを振れる。
     /// 上位職は経験値が1.1倍重い。転生すると基本職に戻るので、次は別の上位職も選べる。
     /// どれもこのゲーム用のオリジナルの名前。数値はすべて仮で、遊んでから調整する。
@@ -105,7 +105,7 @@ namespace VividOfFade
         static readonly SkillSpec locked = new SkillSpec
         {
             Name = "(Advanced class skill)", NameJa = "（上位職のスキル）",
-            Desc = "Change class at the Master in town (Lv 50).", DescJa = "町の師匠で転職すると覚える（Lv50から）。",
+            Desc = "Receive the rite at the goddess statue in town (Lv 50).", DescJa = "町の女神像で転職の儀を受けると覚える（Lv50から）。",
             ReqLevel = ReqLevel, Mp = 0, Cooldown = 1f, Effect = SkillEffect.Nova, Color = new Color(0.6f, 0.6f, 0.6f, 0.9f),
         };
 

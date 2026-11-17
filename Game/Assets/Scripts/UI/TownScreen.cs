@@ -4,7 +4,7 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>
-    /// 町（メニュー型）。職業を選んだあとに来る。出撃・倉庫番・商人・転職の師匠・荷運び・職業を変える。
+    /// 町（メニュー型）。職業を選んだあとに来る。出撃・倉庫番・商人・女神像（転職・転生の儀）・荷運び・職業を変える。
     /// 帰還や死亡のあとも、ここに戻る。
     /// </summary>
     public sealed class TownScreen
@@ -168,8 +168,8 @@ namespace VividOfFade
             }
             Tile(0, PixelArt.TownIcon(0), Loc.T("Storage", "倉庫番"), $"{Profile.Storage.Count}/{Town.StorageCapacity}", () => Open(Panel.Storage));
             Tile(1, PixelArt.TownIcon(1), Loc.T("Merchant", "商人"), Loc.T("Potions / gear", "薬・装備"), () => Open(Panel.Merchant));
-            // 師匠は、転職できるようになるまで「？？？」（転職・転生は条件を満たしたら明かす）
-            if (adv == null && ch.Level < AdvancedClasses.ReqLevel && ch.Rebirths == 0) // 転生したことがあれば、師匠はずっと見せる
+            // 女神像は、転職できるようになるまで「？？？」（転職・転生は条件を満たしたら明かす）
+            if (adv == null && ch.Level < AdvancedClasses.ReqLevel && ch.Rebirths == 0) // 転生したことがあれば、女神像はずっと見せる
             {
                 var r2 = new Rect(pad + (2 % cols) * (tw + tgap), y, tw, th);
                 Hud.Fill(r2, new Color(0.02f, 0.02f, 0.05f, 0.62f));
@@ -178,7 +178,7 @@ namespace VividOfFade
                 q.normal.textColor = new Color(0.55f, 0.55f, 0.6f);
                 GUI.Label(r2, "？？？", q);
             }
-            else Tile(2, PixelArt.TownIcon(2), Loc.T("Master", "師匠"), masterLine, () => Open(Panel.Master), masterNotice);
+            else Tile(2, PixelArt.TownIcon(2), Loc.T("Goddess", "女神像"), masterLine, () => Open(Panel.Master), masterNotice);
             Tile(3, PixelArt.TownIcon(3), Loc.T("Porter", "荷運び"), Loc.T($"Carry {ch.CarrySlots}/{Town.MaxCarrySlots}", $"持ち帰り {ch.CarrySlots}/{Town.MaxCarrySlots}"), () => Open(Panel.Porter));
             Tile(4, PixelArt.TownIcon(4), Loc.T("Blacksmith", "鍛冶屋"), Loc.T("Mythic only", "神話（赤）だけ"), () => Open(Panel.Smith));
             Tile(5, PixelArt.PlayerFor(ch), Loc.T("Characters", "キャラ選択"), Loc.T("Switch", "切り替え"), world.ShowClassSelect);
@@ -215,7 +215,7 @@ namespace VividOfFade
         static string Greeting(CharacterData ch)
         {
             if ((ch.Advanced < 0 && !ch.Special && ch.Level >= AdvancedClasses.ReqLevel) || (ch.Advanced >= 0 && !ch.Third && ch.Level >= ThirdClasses.PromoteLevel) || ch.Level >= ThirdClasses.ReqLevel)
-                return Loc.T("You have grown strong. Go see the master.", "強くなったね。師匠のところへ行ってみな。");
+                return Loc.T("You have grown strong. Go pray at the goddess statue.", "強くなったね。女神像のところへ行ってみな。");
             if (ch.HpPotions == 0)
                 return Loc.T("No potions? The merchant has some.", "薬がないのかい？ 商人が売ってるよ。");
             return Loc.T("Ready? The tower is waiting.", "準備はいいかい？ 塔が待ってる。");
@@ -511,7 +511,7 @@ namespace VividOfFade
             }
         }
 
-        // ================= 転職の師匠 =================
+        // ================= 女神像（転職・転生の儀） =================
 
         void DrawMaster(GameWorld world, CharacterData ch)
         {
@@ -520,7 +520,7 @@ namespace VividOfFade
             var type = ClassInfo.Current;
             var small = hud.SmallStyle;
             float lineH = small.fontSize * 1.4f;
-            Header(Loc.T("MASTER", "転職の師匠"), ch.Embers, W, pad, out float y);
+            Header(Loc.T("GODDESS STATUE", "女神像"), ch.Embers, W, pad, out float y);
 
             // 転生は、Lv99 になるまで明かさない（一度転生したら、ずっと見せる）。下に細い欄で出す
             bool showRebirth = ThirdClasses.MeetsRequirements(ch) || ch.Rebirths > 0;
@@ -540,9 +540,9 @@ namespace VividOfFade
                 return;
             }
             var wrap = new GUIStyle(small) { wordWrap = true };
-            y += MasterSays(new Rect(pad, y, W - pad * 2f, H * 0.12f),
-                Loc.T("You've come a long way. Change class and you start over from the beginning... and the road ahead is harder than anything so far.",
-                    "よくここまで来たな。転職すれば一からやり直しだ。この先の修行は、これまで以上に厳しくなるぞ。")) + H * 0.015f;
+            y += GoddessSays(new Rect(pad, y, W - pad * 2f, H * 0.12f),
+                Loc.T("You have come far. Choose a new path and you will walk it again from the very beginning. The road ahead is harder than any before.",
+                    "よくぞここまで辿り着きました。新たな道を選べば、あなたは一から歩み直すことになります。その先は、これまで以上に険しい道です。")) + H * 0.015f;
 
             float cardH = Mathf.Min(H * 0.3f, (bottom - y - H * 0.015f) * 0.5f);
             for (int i = 0; i < 2; i++)
@@ -572,7 +572,7 @@ namespace VividOfFade
                 if (AdvancedClasses.CanChange(ch))
                 {
                     int pick = i;
-                    Confirm(btn, "adv" + i, Loc.T($"CHANGE CLASS  ({AdvancedClasses.Cost} embers)", $"転職する（火種 {AdvancedClasses.Cost}）"), () =>
+                    Confirm(btn, "adv" + i, Loc.T($"RECEIVE THE RITE  ({AdvancedClasses.Cost} embers)", $"転職の儀を受ける（火種 {AdvancedClasses.Cost}）"), () =>
                     {
                         if (Town.ChangeClass(ch, pick)) world.OnAdvanced();
                     });
@@ -603,8 +603,8 @@ namespace VividOfFade
             if (!ch.Third && ch.Level < ThirdClasses.PromoteLevel)
             {
                 var plain = new GUIStyle(hud.LabelStyle) { wordWrap = true };
-                MasterSays(new Rect(pad, y, W - pad * 2f, H * 0.12f),
-                    Loc.T($"A {current.DisplayName}, eh. You're still halfway down the road. Come back when you're stronger.", $"{current.DisplayName}か。まだ道の途中だ。もっと強くなってから、また来な。"));
+                GoddessSays(new Rect(pad, y, W - pad * 2f, H * 0.12f),
+                    Loc.T($"One who walks the path of the {current.DisplayName}... You are still halfway. Gain more strength, then come again.", $"{current.DisplayName}の道を歩む者よ。まだ道半ばです。さらなる力を得て、また来なさい。"));
                 return;
             }
             var r = new Rect(pad, y, W - pad * 2f, Mathf.Min(H * 0.42f, bottom - y));
@@ -653,10 +653,10 @@ namespace VividOfFade
             note.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
             note.fontStyle = FontStyle.Italic;
             note.normal.textColor = new Color(1f, 0.9f, 0.65f);
-            Hud.FitLabel(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH), Loc.T("\"Back to the beginning again. The road only gets steeper from here.\"", "「また一からだ。ここから先は、もっと険しい道になるぞ」"), note);
+            Hud.FitLabel(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH), Loc.T("\"Once more from the beginning. From here, the road grows steeper still.\"", "「再び一から。ここから先は、さらに険しい道となるでしょう」"), note);
             if (ThirdClasses.CanPromote(ch))
             {
-                Confirm(btn, "third", Loc.T($"BECOME {third.DisplayName}  ({ThirdClasses.PromoteCost} embers)", $"{third.DisplayName}になる（火種 {ThirdClasses.PromoteCost}）"), () =>
+                Confirm(btn, "third", Loc.T($"RITE: {third.DisplayName}  ({ThirdClasses.PromoteCost} embers)", $"{third.DisplayName}への儀を受ける（火種 {ThirdClasses.PromoteCost}）"), () =>
                 {
                     if (Town.PromoteThird(ch)) world.OnThird();
                 });
@@ -670,8 +670,8 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>師匠のせりふ（左に師匠の絵、右にかぎかっこの言葉）。使った高さを返す。</summary>
-        float MasterSays(Rect area, string text)
+        /// <summary>女神像の言葉（左に女神像の絵、右にかぎかっこの言葉）。使った高さを返す。</summary>
+        float GoddessSays(Rect area, string text)
         {
             float icon = Mathf.Min(area.height, Screen.width * 0.13f);
             Hud.DrawSprite(new Rect(area.x, area.y, icon, icon), PixelArt.TownIcon(2));
@@ -693,8 +693,8 @@ namespace VividOfFade
             float lineH = small.fontSize * 1.4f;
             var wrap = new GUIStyle(small) { wordWrap = true };
             var spec = SpecialClass.Spec;
-            y += MasterSays(new Rect(pad, y, W - pad * 2f, H * 0.12f),
-                Loc.T("To think someone would come this far without changing class... No one can copy that light of yours.", "転職せずにここまで来る者がいるとはな……その光は、誰にも真似できん。")) + H * 0.015f;
+            y += GoddessSays(new Rect(pad, y, W - pad * 2f, H * 0.12f),
+                Loc.T("To reach this far without ever changing your path... No one else can bear that light.", "職を変えずにここまで至る者がいるとは……その光は、誰にも真似できません。")) + H * 0.015f;
             var r = new Rect(pad, y, W - pad * 2f, Mathf.Min(H * 0.36f, bottom - y));
             Hud.Fill(r, new Color(0.45f, 0.2f, 0.42f, 0.5f));
             float inner = r.width * 0.04f;
@@ -734,12 +734,12 @@ namespace VividOfFade
             string head = ch.Rebirths > 0 ? Loc.T($"REBIRTH  (reborn {ch.Rebirths} time(s), all stats +{ThirdClasses.BonusStats(ch)})", $"転生（{ch.Rebirths}回、全能力値 +{ThirdClasses.BonusStats(ch)}）") : Loc.T("REBIRTH", "転生");
             Hud.FitLabel(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH * 1.2f), head, title);
             ty += lineH * 1.2f;
-            // 説明は師匠のせりふで（数値は出さない。条件はボタンに出る）
+            // 説明は女神像の言葉で（数値は出さない。条件はボタンに出る）
             string desc = SpecialClass.RebirthBecomesSpecial(ch)
-                ? Loc.T("\"You came all this way without ever changing class... Be reborn like that, and you may become something special.\"",
-                    "「転職せずに、ここまで来たか……このまま生まれ変われば、お前は特別な何かになれるかもしれん」")
-                : Loc.T("\"Well done. Be reborn and you start over again, but the strength you forged stays in your body. Try as many times as you like.\"",
-                    "「見事だ。生まれ変わればまた一からだが、鍛えた力は体に残る。何度でも挑むといい」");
+                ? Loc.T("\"You have come all this way without ever changing your path... Be reborn as you are, and you shall become something special.\"",
+                    "「職を変えずに、ここまで来たのですね……そのまま生まれ変われば、あなたは特別な何かになれるでしょう」")
+                : Loc.T("\"Well done. Reborn, you begin anew, yet the strength you have forged remains within you. Try as many times as you wish.\"",
+                    "「見事です。生まれ変われば再び一からですが、鍛えた力はその身に残ります。何度でも挑みなさい」");
             wrap.fontStyle = FontStyle.Italic;
             wrap.normal.textColor = new Color(1f, 0.9f, 0.65f);
             float btnH = Screen.height * 0.045f;
@@ -748,7 +748,7 @@ namespace VividOfFade
             var btn = new Rect(r.x + inner, r.yMax - inner * 0.6f - btnH, r.width - inner * 2f, btnH);
             if (ThirdClasses.CanRebirth(ch))
             {
-                Confirm(btn, "rebirth", Loc.T($"REBIRTH #{ch.Rebirths + 1}  ({ThirdClasses.Cost(ch)} embers)", $"{ch.Rebirths + 1}回目の転生（火種 {ThirdClasses.Cost(ch)}）"), () =>
+                Confirm(btn, "rebirth", Loc.T($"RITE OF REBIRTH #{ch.Rebirths + 1}  ({ThirdClasses.Cost(ch)} embers)", $"転生の儀を受ける・{ch.Rebirths + 1}回目（火種 {ThirdClasses.Cost(ch)}）"), () =>
                 {
                     if (Town.Rebirth(ch)) world.OnRebirth();
                 });

@@ -159,7 +159,7 @@ namespace VividOfFade
             return Shaded(key, AdvRows[k], AdvOver[k]);
         }
 
-        /// <summary>3次職の見た目（町の師匠の画面で、転生する前に見せる）。</summary>
+        /// <summary>3次職の見た目（町の女神像の画面で、3次職になる前に見せる）。</summary>
         public static Sprite ThirdPreview(ClassType type, int advanced) => AdvancedLook(type, Mathf.Clamp(advanced, 0, 1), true);
 
         // 上位職と3次職の絵（1人ずつ描いたもの）。並びは 職業×2＋上位職（炎呼び・灯台守・夜狩り・血刃・陽縛り・城壁）
@@ -2892,24 +2892,24 @@ namespace VividOfFade
                 ".....bbbbbb.....",
                 "................",
             },
-            new[]
+            new[] // 女神像：白い大理石の像が、灯りを高く掲げる（転職・転生の儀を受ける所）
             {
-                "................",
-                "................",
-                "..nnaaaaaaaaaa..",
-                "..nnaaaaaaaaaa..",
-                "..nnaaaagaaaaa..",
-                "..nnaaaagaaaaa..",
-                "..nnaaagggaaaa..",
-                "..nnaagggggaaa..",
-                "..nnaagglggaaa..",
-                "..nnaaagggaaaa..",
-                "..nnaaaagaaaaa..",
-                "..nnaaaagaaaaa..",
-                "..nnaaaaaaaaaa..",
-                "..nnxxxxxxxxxx..",
-                "..nnxxxxxxxxxx..",
-                "................",
+                "..........LL....",
+                ".........LlL....",
+                "......xx..q.....",
+                ".....xxxx.x.....",
+                ".....xxxx.x.....",
+                "......xx.xx.....",
+                "....xxxxxxx.....",
+                "...xxxxxxx......",
+                "...xxxxxxx......",
+                "....xxxxxx......",
+                "....xxqxxx......",
+                "...xxxqxxxx.....",
+                "...xxqxxqxx.....",
+                "..qqqqqqqqqqq...",
+                "..qxxxxxxxxxq...",
+                "..qqqqqqqqqqq...",
             },
             new[]
             {
@@ -4144,7 +4144,7 @@ namespace VividOfFade
             },
         };
 
-        /// <summary>町の施設のアイコン（16ドット、陰影つき）。0 倉庫番・1 商人・2 師匠・3 荷運び・4 鍛冶屋。</summary>
+        /// <summary>町の施設のアイコン（16ドット、陰影つき）。0 倉庫番・1 商人・2 女神像・3 荷運び・4 鍛冶屋。</summary>
         public static Sprite TownIcon(int index)
         {
             index = Mathf.Clamp(index, 0, TownIconRows.Length - 1);

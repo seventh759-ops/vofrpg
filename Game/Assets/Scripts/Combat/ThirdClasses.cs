@@ -3,7 +3,7 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>
-    /// 3次職と転生（町の師匠）。
+    /// 3次職と転生（町の女神像で儀を受ける）。
     /// ・3次職：上位職で Lv50 から、火種を払って、上位職ごとに決まった3次職になる。Lv1 に戻り、ボーナスとして 60 ポイントを振れる。
     ///   3次職の補正（上位職の補正に重なる）、攻撃力が伸びる能力値がもう1つ（ExtraAttr）、8つ目のスキル、見た目と名前が変わる。経験値は1.2倍重い。
     /// ・転生：どの職でも Lv99 から（何回でも、火種は毎回倍）。基本職に戻って Lv1（ボーナスのポイントはなし）。全能力値+5（ずっと、回数分たまる）。
@@ -107,7 +107,7 @@ namespace VividOfFade
         static readonly SkillSpec locked = new SkillSpec
         {
             Name = "(Rebirth skill)", NameJa = "（3次職のスキル）",
-            Desc = "Become a 3rd class at the Master in town (advanced class Lv 50).", DescJa = "町の師匠で3次職になると覚える（上位職 Lv50から）。",
+            Desc = "Receive the rite at the goddess statue in town (advanced class Lv 50).", DescJa = "町の女神像で3次職への儀を受けると覚える（上位職 Lv50から）。",
             ReqLevel = ReqLevel, Mp = 0, Cooldown = 1f, Effect = SkillEffect.Nova, Color = new Color(0.6f, 0.6f, 0.6f, 0.9f),
         };
 
