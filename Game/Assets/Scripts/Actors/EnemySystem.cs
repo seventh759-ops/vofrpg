@@ -606,6 +606,21 @@ namespace VividOfFade
         }
 
         /// <summary>一番近い敵（眠っている敵は狙わない）。</summary>
+        /// <summary>近い順に最大 n 体（眠っている・倒れかけの敵は除く）。</summary>
+        public List<Enemy> FindNearestN(Vector2 from, float range, int n)
+        {
+            var list = new List<Enemy>();
+            float rangeSq = range * range;
+            foreach (var e in Active)
+            {
+                if (e.Dying || e.Dormant) continue;
+                if ((e.Pos - from).sqrMagnitude < rangeSq) list.Add(e);
+            }
+            list.Sort((a, b) => (a.Pos - from).sqrMagnitude.CompareTo((b.Pos - from).sqrMagnitude));
+            if (list.Count > n) list.RemoveRange(n, list.Count - n);
+            return list;
+        }
+
         public Enemy FindNearest(Vector2 from, float range)
         {
             Enemy best = null;

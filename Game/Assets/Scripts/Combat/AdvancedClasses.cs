@@ -116,7 +116,9 @@ namespace VividOfFade
 
         public static SkillSpec SkillFor(ClassType type)
         {
-            var adv = Of(type, Profile.Get(type));
+            var ch = Profile.Get(type);
+            if (ch != null && ch.Special) return SpecialClass.SeventhSkill; // 彩灯者：転職はないが、7つ目はレベルで覚える
+            var adv = Of(type, ch);
             return adv != null ? adv.Skill : locked;
         }
 

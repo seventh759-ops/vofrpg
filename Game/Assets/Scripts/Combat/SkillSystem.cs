@@ -228,6 +228,22 @@ namespace VividOfFade
                     break;
                 }
 
+                case SkillEffect.Strike when spec.Count > 1:
+                {
+                    // 近くの敵それぞれに1本ずつ（少しずつずらして落とす）。敵が少なければ、その数だけ
+                    var targets = enemies.FindNearestN(origin, spec.Range, spec.Count);
+                    if (targets.Count == 0) targets.Add(null);
+                    for (int k = 0; k < targets.Count; k++)
+                    {
+                        Vector2 at = targets[k] != null ? targets[k].Pos : origin + Aim(player, spec.Range) * 3f;
+                        float delay = spec.Delay + 0.08f * k;
+                        strikes.Add(new PendingStrike { Pos = at, Timer = delay, Damage = damage, Radius = radius, Color = spec.Color, Spec = spec });
+                        if (!SkillVfx.StrikeWarn(fx, spec, at, radius, delay))
+                            fx.Ring(at, radius, new Color(1f, 0.3f, 0.2f, 0.6f), delay);
+                    }
+                    break;
+                }
+
                 case SkillEffect.Strike:
                 {
                     var target = enemies.FindNearest(origin, spec.Range);

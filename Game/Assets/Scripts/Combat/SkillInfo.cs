@@ -117,8 +117,8 @@ namespace VividOfFade
                     Effect = SkillEffect.Strike, Mult = 10f, Radius = 1.8f, Delay = 0.5f, Range = 8f, Color = new Color(0.7f, 0.5f, 1f, 0.9f) },
                 new SkillSpec { Name = "Vivid Grace", NameJa = "彩の加護", DescJa = "20秒、ダメージ+50%・防御+60。", Desc = "Damage +50%, armor +60 for 20s.", ReqLevel = 26, Mp = 25, Cooldown = 18f,
                     Effect = SkillEffect.Buff, Duration = 20f, BuffDamage = 0.5f, BuffArmor = 60f, Color = new Color(1f, 0.6f, 0.9f, 0.9f) },
-                new SkillSpec { Name = "Kaleidoscope", NameJa = "極彩", DescJa = "とても大きな七色の光の輪。", Desc = "A huge ring of seven-colored light.", ReqLevel = 35, Mp = 40, Cooldown = 12f,
-                    Effect = SkillEffect.Nova, Mult = 8f, Radius = 4.2f, Color = new Color(0.95f, 0.5f, 1f, 0.9f) },
+                new SkillSpec { Name = "Prism Burst", NameJa = "彩光", DescJa = "周りに鮮やかな光を放つ。HP10%回復。", Desc = "A burst of vivid light around you; heals 10%.", ReqLevel = 35, Mp = 40, Cooldown = 12f,
+                    Effect = SkillEffect.Nova, Mult = 8f, Radius = 4.5f, HealPct = 0.1f, Color = new Color(1f, 0.4f, 0.85f, 0.9f) },
             },
         };
 
@@ -129,7 +129,7 @@ namespace VividOfFade
 
         public static bool Learned(ClassType type, int index, int level)
         {
-            if (index == AdvancedClasses.SkillIndex && Profile.Get(type).Advanced < 0) return false;
+            if (index == AdvancedClasses.SkillIndex && Profile.Get(type).Advanced < 0 && !Profile.Get(type).Special) return false; // 彩灯者は7つ目をレベルで覚える
             if (index == ThirdClasses.SkillIndex && !Profile.Get(type).Third && !Profile.Get(type).Special) return false;
             return level >= Get(type, index).ReqLevel;
         }

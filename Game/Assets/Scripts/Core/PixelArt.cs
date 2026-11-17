@@ -1186,10 +1186,10 @@ namespace VividOfFade
             },
         };
 
-        static readonly string[] SkillArtNames = { "Flame Ring", "Fire Barrage", "Flare", "Meteor", "Ember Shield", "Inferno", "Starfall", "Beacon", "Cataclysm", "Constellation", "Whirlwind", "Shadow Dash", "Frenzy", "Crescent Wave", "Second Wind", "Thousand Cuts", "Eclipse Rush", "Crimson Spiral", "Umbral Storm", "Sanguine Tide", "Holy Pulse", "Mend", "Lantern Ward", "Kindle", "Flame Pillar", "Judgment", "Sunburst", "Iron Vigil", "Daybreak", "Unbreakable", "Prism Ring", "Spectrum Volley", "Vivid Step", "Rainbow Pillar", "Vivid Grace", "Kaleidoscope", "Prism Burst" };
+        static readonly string[] SkillArtNames = { "Flame Ring", "Fire Barrage", "Flare", "Meteor", "Ember Shield", "Inferno", "Starfall", "Beacon", "Cataclysm", "Constellation", "Whirlwind", "Shadow Dash", "Frenzy", "Crescent Wave", "Second Wind", "Thousand Cuts", "Eclipse Rush", "Crimson Spiral", "Umbral Storm", "Sanguine Tide", "Holy Pulse", "Mend", "Lantern Ward", "Kindle", "Flame Pillar", "Judgment", "Sunburst", "Iron Vigil", "Daybreak", "Unbreakable", "Prism Ring", "Spectrum Volley", "Vivid Step", "Rainbow Pillar", "Vivid Grace", "Kaleidoscope", "Prism Burst", "Rainbow Rain" };
 
         /// <summary>そのスキルの職業（0 灯術師・1 影刃・2 灯番）。背景と縁の色を決める。</summary>
-        static readonly int[] SkillArtClass = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3 };
+        static readonly int[] SkillArtClass = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3 };
 
         /// <summary>職業ごとの背景と縁の色。</summary>
         static readonly Color32[][] SkillBadgeClass =
@@ -1919,6 +1919,25 @@ namespace VividOfFade
                 "EBBwBBBBBBBBwBBE",
                 "EBBBBBBBBBBBBBBE",
                 "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[] // Rainbow Rain（彩灯者・7つ目）
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBrrBBBBBBBBBBE",
+                "EBBrrBBBBBBccBBE",
+                "EBBooBBBBBBccBBE",
+                "EBBooBByyBBbbBBE",
+                "EBByyBByyBBbbBBE",
+                "EBBwwBBggBBppBBE",
+                "EBBBBBBggBBwwBBE",
+                "EBBBBBBccBBBBBBE",
+                "EBBBpBBwwBBBBBBE",
+                "EBBpwpBBBBBBpBBE",
+                "EBBBBBBBBBBpwpBE",
+                "EBBBBBBBpBBBBBBE",
+                "EBBBBBBpwpBBBBBE",
                 "EEEEEEEEEEEEEEEE",
             },
         };

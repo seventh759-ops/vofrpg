@@ -45,7 +45,7 @@ namespace VividOfFade
             var visible = new System.Collections.Generic.List<int>();
             for (int i = 0; i < SkillInfo.PerClass; i++)
             {
-                if (i == AdvancedClasses.SkillIndex && ch.Advanced < 0) continue;
+                if (i == AdvancedClasses.SkillIndex && ch.Advanced < 0 && !ch.Special) continue;
                 if (i == ThirdClasses.SkillIndex && !ch.Third && !ch.Special) continue;
                 visible.Add(i);
             }
