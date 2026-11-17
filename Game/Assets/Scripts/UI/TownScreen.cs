@@ -539,12 +539,10 @@ namespace VividOfFade
                 DrawThird(world, ch, type, current, y, bottom);
                 return;
             }
-            string status = Loc.T($"From Lv {AdvancedClasses.ReqLevel}, for {AdvancedClasses.Cost} embers. You go back to Lv 1 (stat points reset).",
-                $"Lv{AdvancedClasses.ReqLevel}から、火種 {AdvancedClasses.Cost}。Lv1 に戻る（振った能力値も戻る）。");
             var wrap = new GUIStyle(small) { wordWrap = true };
-            float sh = wrap.CalcHeight(new GUIContent(status), W - pad * 2f);
-            GUI.Label(new Rect(pad, y, W - pad * 2f, sh), status, wrap);
-            y += sh + H * 0.015f;
+            y += MasterSays(new Rect(pad, y, W - pad * 2f, H * 0.12f),
+                Loc.T("You've come a long way. Change class and you start over from the beginning... and the road ahead is harder than anything so far.",
+                    "よくここまで来たな。転職すれば一からやり直しだ。この先の修行は、これまで以上に厳しくなるぞ。")) + H * 0.015f;
 
             float cardH = Mathf.Min(H * 0.3f, (bottom - y - H * 0.015f) * 0.5f);
             for (int i = 0; i < 2; i++)
@@ -605,7 +603,8 @@ namespace VividOfFade
             if (!ch.Third && ch.Level < ThirdClasses.PromoteLevel)
             {
                 var plain = new GUIStyle(hud.LabelStyle) { wordWrap = true };
-                GUI.Label(new Rect(pad, y, W - pad * 2f, H * 0.1f), Loc.T($"You are a {current.DisplayName}. Keep growing stronger.", $"あなたは{current.DisplayName}。さらに強くなりな。"), plain);
+                MasterSays(new Rect(pad, y, W - pad * 2f, H * 0.12f),
+                    Loc.T($"A {current.DisplayName}, eh. You're still halfway down the road. Come back when you're stronger.", $"{current.DisplayName}か。まだ道の途中だ。もっと強くなってから、また来な。"));
                 return;
             }
             var r = new Rect(pad, y, W - pad * 2f, Mathf.Min(H * 0.42f, bottom - y));
@@ -652,7 +651,9 @@ namespace VividOfFade
             Req(Loc.T($"{ThirdClasses.PromoteCost} embers   (have {ch.Embers})", $"火種 {ThirdClasses.PromoteCost}   （持っている {ch.Embers}）"), ch.Embers >= ThirdClasses.PromoteCost);
             var note = new GUIStyle(small);
             note.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
-            GUI.Label(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH), Loc.T("You go back to Lv 1.", "Lv1 に戻る。"), note);
+            note.fontStyle = FontStyle.Italic;
+            note.normal.textColor = new Color(1f, 0.9f, 0.65f);
+            Hud.FitLabel(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH), Loc.T("\"Back to the beginning again. The road only gets steeper from here.\"", "「また一からだ。ここから先は、もっと険しい道になるぞ」"), note);
             if (ThirdClasses.CanPromote(ch))
             {
                 Confirm(btn, "third", Loc.T($"BECOME {third.DisplayName}  ({ThirdClasses.PromoteCost} embers)", $"{third.DisplayName}になる（火種 {ThirdClasses.PromoteCost}）"), () =>
@@ -669,6 +670,20 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>師匠のせりふ（左に師匠の絵、右にかぎかっこの言葉）。使った高さを返す。</summary>
+        float MasterSays(Rect area, string text)
+        {
+            float icon = Mathf.Min(area.height, Screen.width * 0.13f);
+            Hud.DrawSprite(new Rect(area.x, area.y, icon, icon), PixelArt.TownIcon(2));
+            var st = new GUIStyle(hud.SmallStyle) { wordWrap = true, fontStyle = FontStyle.Italic };
+            st.normal.textColor = new Color(1f, 0.9f, 0.65f);
+            string line = Loc.Ja ? "「" + text + "」" : "\"" + text + "\"";
+            float tw = area.width - icon * 1.15f;
+            float h = st.CalcHeight(new GUIContent(line), tw);
+            GUI.Label(new Rect(area.x + icon * 1.15f, area.y, tw, h), line, st);
+            return Mathf.Max(icon, h);
+        }
+
         /// <summary>特別な職「彩灯者」になっているとき：今の職業の欄（ここから先の転職はない）。</summary>
         void DrawSpecialCard(CharacterData ch, ClassType type, float y, float bottom)
         {
@@ -678,6 +693,8 @@ namespace VividOfFade
             float lineH = small.fontSize * 1.4f;
             var wrap = new GUIStyle(small) { wordWrap = true };
             var spec = SpecialClass.Spec;
+            y += MasterSays(new Rect(pad, y, W - pad * 2f, H * 0.12f),
+                Loc.T("To think someone would come this far without changing class... No one can copy that light of yours.", "転職せずにここまで来る者がいるとはな……その光は、誰にも真似できん。")) + H * 0.015f;
             var r = new Rect(pad, y, W - pad * 2f, Mathf.Min(H * 0.36f, bottom - y));
             Hud.Fill(r, new Color(0.45f, 0.2f, 0.42f, 0.5f));
             float inner = r.width * 0.04f;
@@ -717,11 +734,14 @@ namespace VividOfFade
             string head = ch.Rebirths > 0 ? Loc.T($"REBIRTH  (reborn {ch.Rebirths} time(s), all stats +{ThirdClasses.BonusStats(ch)})", $"転生（{ch.Rebirths}回、全能力値 +{ThirdClasses.BonusStats(ch)}）") : Loc.T("REBIRTH", "転生");
             Hud.FitLabel(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH * 1.2f), head, title);
             ty += lineH * 1.2f;
+            // 説明は師匠のせりふで（数値は出さない。条件はボタンに出る）
             string desc = SpecialClass.RebirthBecomesSpecial(ch)
-                ? Loc.T($"At Lv {ThirdClasses.ReqLevel}. You never changed class... reborn like this, you will become a special class (Lv 1), all stats +{ThirdClasses.StatsPerRebirth} more, permanently.",
-                    $"Lv{ThirdClasses.ReqLevel}から。転職せずにここまで来たね……このまま転生すると、特別な職「？？？」の Lv1 になる。全能力値もずっと +{ThirdClasses.StatsPerRebirth}。")
-                : Loc.T($"Any class at Lv {ThirdClasses.ReqLevel}: back to your base class at Lv 1, all stats +{ThirdClasses.StatsPerRebirth} more, permanently (cost doubles each time).",
-                    $"どの職でも Lv{ThirdClasses.ReqLevel}から。基本職の Lv1 に戻り、全能力値がずっと +{ThirdClasses.StatsPerRebirth}（転生のたびに積み上がる。火種は毎回倍）。");
+                ? Loc.T("\"You came all this way without ever changing class... Be reborn like that, and you may become something special.\"",
+                    "「転職せずに、ここまで来たか……このまま生まれ変われば、お前は特別な何かになれるかもしれん」")
+                : Loc.T("\"Well done. Be reborn and you start over again, but the strength you forged stays in your body. Try as many times as you like.\"",
+                    "「見事だ。生まれ変わればまた一からだが、鍛えた力は体に残る。何度でも挑むといい」");
+            wrap.fontStyle = FontStyle.Italic;
+            wrap.normal.textColor = new Color(1f, 0.9f, 0.65f);
             float btnH = Screen.height * 0.045f;
             float dh = Mathf.Min(wrap.CalcHeight(new GUIContent(desc), r.width - inner * 2f), r.yMax - inner * 0.6f - btnH - ty);
             GUI.Label(new Rect(r.x + inner, ty, r.width - inner * 2f, dh), desc, wrap);
