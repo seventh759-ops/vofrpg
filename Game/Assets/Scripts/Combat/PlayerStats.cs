@@ -21,6 +21,8 @@ namespace VividOfFade
         public float Damage;
         /// <summary>今の武器で攻撃力が伸びる主能力・副能力。</summary>
         public Attr MainAttr, SubAttr;
+        /// <summary>彩灯者：主能力はなく、5つの能力値がすべて副能力（1ポイントで攻撃力 +1%）。</summary>
+        public bool AllSub;
         /// <summary>3次職の追加の能力値（なければ null）。副能力と同じく 1 ポイントで攻撃力 +1%。</summary>
         public Attr? ThirdAttr;
         /// <summary>
@@ -145,7 +147,8 @@ namespace VividOfFade
                 float extras = (1f + SkillDamage * 0.3f) * (1f + (1f - CooldownMult) * 0.3f)
                     * (1f + EliteDamage * 0.2f) * (1f + (AreaMult - 1f) * 0.2f) * (1f + (ExpGain + EmberFind + MagicFind) * 0.1f);
                 // その職業が重視する能力値（主・副。影刃なら STR と DEX）を少しだけ上乗せ。ほかの能力値は上乗せしない
-                float favored = 1f + 0.001f * (Attr[(int)spec.MainAttr] + Attr[(int)spec.SubAttr] + (ThirdAttr.HasValue ? Attr[(int)ThirdAttr.Value] : 0));
+                float favored = AllSub ? 1f + 0.0004f * (Attr[0] + Attr[1] + Attr[2] + Attr[3] + Attr[4])   // 彩灯者は、どの能力値も少しずつ
+                    : 1f + 0.001f * (Attr[(int)spec.MainAttr] + Attr[(int)spec.SubAttr] + (ThirdAttr.HasValue ? Attr[(int)ThirdAttr.Value] : 0));
                 return dps * survive * reach * favored * (1f + ExplodeMult * 0.5f) * (1f + DoubleStrikeChance)
                     * (1f + DodgeNovaMult * 0.1f) * (1f + LifeSteal * 10f) * extras;
             }
@@ -330,7 +333,11 @@ namespace VividOfFade
             s.Kind = w.Attack;
             s.Light = Mathf.Min(s.Light, GameConfig.MaxLight);
             baseDamage += flatDamage; // 「攻撃力 +N」は基礎攻撃力に足す（倍率の前）
-            s.Damage = baseDamage * w.Mult * (1f + dmgPct) * (1f + main * 0.02f + sub * 0.01f + thirdAttr * 0.01f) * cls.DamageMult;
+            s.AllSub = type == ClassType.Vividbearer;
+            int allAttr = 0;
+            for (int i = 0; i < Attributes.Count; i++) allAttr += s.Attr[i];
+            float attrMult = s.AllSub ? 1f + allAttr * 0.01f : 1f + main * 0.02f + sub * 0.01f + thirdAttr * 0.01f; // 彩灯者は、どの能力値も副能力として +1%
+            s.Damage = baseDamage * w.Mult * (1f + dmgPct) * attrMult * cls.DamageMult;
             var starter = ClassInfo.Weapon(cls.Starter);
             float Throughput(WeaponSpec x) => x.Mult * Mathf.Max(1, x.Attack == AttackKind.Orbit ? x.Orbs : x.Shots) / Mathf.Max(0.05f, x.Interval);
             s.SkillBase = s.Damage / w.Mult * starter.Mult * Mathf.Clamp(Throughput(w) / Throughput(starter), 0.5f, 2f);

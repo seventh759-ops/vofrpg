@@ -110,7 +110,8 @@ namespace VividOfFade
                 Hud.Fill(row, new Color(1f, 1f, 1f, i % 2 == 0 ? 0.06f : 0.03f));
 
                 var nameStyle = new GUIStyle(label) { fontStyle = FontStyle.Bold };
-                if (attr == st.MainAttr) nameStyle.normal.textColor = new Color(1f, 0.85f, 0.3f);      // 今の武器の主能力
+                if (st.AllSub) nameStyle.normal.textColor = new Color(0.95f, 0.75f, 0.5f);             // 彩灯者：主能力はなく、すべてが副能力
+                else if (attr == st.MainAttr) nameStyle.normal.textColor = new Color(1f, 0.85f, 0.3f); // 今の武器の主能力
                 else if (attr == st.SubAttr || attr == st.ThirdAttr) nameStyle.normal.textColor = new Color(0.95f, 0.75f, 0.5f); // 副能力・3次職の追加の能力値
                 GUI.Label(new Rect(row.x + pad * 0.3f, row.y, W * 0.18f, rowH * 0.6f), Attributes.ShortName(attr), nameStyle);
                 string gear = fromGear > 0 ? $"  (+{fromGear})" : "";
