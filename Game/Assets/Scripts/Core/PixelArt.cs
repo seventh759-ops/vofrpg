@@ -2852,6 +2852,15 @@ namespace VividOfFade
             },
         };
 
+        /// <summary>大理石（女神像）の色：x 体と衣（象牙色）・k 顔と腕（明るい）・q 彫りの影と台座。</summary>
+        static readonly Dictionary<char, Color32[]> MarbleOver = new Dictionary<char, Color32[]>
+        {
+            { 'x', Ramp(222, 216, 196, 192, 186, 164, 152, 146, 126, 108, 102, 88) },
+            { 'k', Ramp(252, 250, 242, 238, 234, 220, 204, 198, 180, 160, 154, 136) },
+            { 'q', Ramp(178, 174, 162, 146, 142, 130, 112, 108, 98, 80, 76, 68) },
+            { 'g', Ramp(214, 208, 190, 188, 182, 164, 150, 144, 128, 108, 102, 90) },
+        };
+
         static readonly string[][] TownIconRows =
         {
             new[] // 倉庫番：石のアーチに収まった、鉄の帯と輪の取っ手の付いた木の両開きの扉
@@ -2924,40 +2933,40 @@ namespace VividOfFade
                 "................................",
                 "................................",
             },
-            new[] // 女神像：白い大理石の像が、灯りを高く掲げる（転職・転生の儀を受ける所）
+            new[] // 女神像：月桂冠を戴き、目を閉じて胸の前で手を組んで祈る大理石の胸像。台座に太陽と月の印（原画 docs/art/goddess_reference.jpg）
             {
-                "................................",
-                ".......................LL.......",
-                "......................LllL......",
-                "......................LLLL......",
-                ".......................gg.......",
-                "........xxxx..........xx........",
-                ".......xxxxxx........xxx........",
-                "......xxxxxxxx.......xx.........",
-                "......xxqxxxxx......xxx.........",
-                "......xxxxxxxx.....xxx..........",
-                ".......xxxxxx.....xxx...........",
-                "........xxxx.....xxx............",
-                "......xxxxxxxxxxxxxx............",
-                ".....xxxxxxxxxxxxxx.............",
-                "....xxxxxxqxxxxxxx..............",
-                "....xxxxxxqxxxxxxx..............",
-                "....xxx.xxxqxxxxxx..............",
-                "....xx..xxxxqxxxxx..............",
-                "....xx..xxxxxqxxxx..............",
-                ".......xxxxxxqxxxxx.............",
-                ".......xxxxxxxqxxxxx............",
-                "......xxxqxxxxqxxxxxx...........",
-                "......xxxqxxxxxqxxxxxx..........",
-                ".....xxxxqxxxxxxqxxxxxx.........",
-                ".....xxxxxqxxxxxxqxxxxxx........",
-                "....xxxxxxqxxxxxxxqxxxxxx.......",
-                "....xxxxxxxqxxxxxxxqxxxxx.......",
-                "....qqqqqqqqqqqqqqqqqqqqqqq.....",
-                "....qxxxxxxxxxxxxxxxxxxxxxq.....",
-                "....qxxxxqqqxxxxxxxqqqxxxxq.....",
-                "....qqqqqqqqqqqqqqqqqqqqqqq.....",
-                "................................",
+                "............xxxxxxxx............",
+                "..........xxxxxxqxxxxxx.........",
+                ".........xqqxxxxqxxxxqqx........",
+                "........xqxqxxxxqxxxxqxqx.......",
+                "........xxqxxkkkkkkxxxqxx.......",
+                ".......xxxxxkkkkkkkkxxxxx.......",
+                ".......xxxxkkkkkkkkkkxxxx.......",
+                ".......xxxxkqqkkkkqqkxxxx.......",
+                ".......xqxxkkkkkkkkkkxxqx.......",
+                ".......xqxxkkkkqkkkkkxxqx.......",
+                ".......xxqxxkkkkkkkkxxqxx.......",
+                ".......xxqxxkkkqqkkkxxqxx.......",
+                "........xqxxxkkkkkkxxxqx........",
+                "........xxqxxxkkkkxxxqxx........",
+                ".......xxqxxxxkkkkxxxxqxx.......",
+                "....xxxxxxxxxxkkkkxxxxxxxxx.....",
+                "...xxxxxxxxxxxkkkkxxxxxxxxxxx...",
+                "..xxxxxxqxxxxqkkkkqxxxxqxxxxxx..",
+                "..xxxxxqxxxxxkkkkkkxxxxxqxxxxx..",
+                "..xxxxqxxxxxkkkqqkkkxxxxxqxxxx..",
+                "..xxxxqxxxxxkkkqqkkkxxxxxqxxxx..",
+                "..xxxqxxxxxkkkxqqxkkkxxxxxqxxx..",
+                "...xxqxxxxkkkxxqqxxkkkxxxxqxx...",
+                "...xxxkkkkkkxxxqqxxxkkkkkkxxx...",
+                "....xxkkkkkxxxxqqxxxxkkkkkxx....",
+                ".....xxxxxxxxxxqqxxxxxxxxxx.....",
+                "........qqqqqqqqqqqqqqqqqq......",
+                ".........qxxxxxxxxxxxxxxq.......",
+                ".........qxxgggggggggggxq.......",
+                ".........qxxgLggggggBggxq.......",
+                ".........qxxgggggggggggxq.......",
+                ".........qqqqqqqqqqqqqqqq.......",
             },
             new[] // 荷運び：緑の背負い袋
             {
@@ -4228,7 +4237,7 @@ namespace VividOfFade
         public static Sprite TownIcon(int index)
         {
             index = Mathf.Clamp(index, 0, TownIconRows.Length - 1);
-            return Shaded("Town32_" + index, TownIconRows[index]);
+            return Shaded("Town32_" + index, TownIconRows[index], index == 2 ? MarbleOver : null);
         }
 
 
