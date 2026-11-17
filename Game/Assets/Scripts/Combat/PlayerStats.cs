@@ -369,6 +369,8 @@ namespace VividOfFade
             if (adv != null) s = s.WithBoon(adv.Passive);
             var third = ThirdClasses.Of(type, ch);
             if (third != null) s = s.WithBoon(third.Passive);
+            var special = SpecialClass.Of(ch);
+            if (special != null) s = s.WithBoon(special.Passive);
             return s;
         }
     }

@@ -41,6 +41,14 @@ namespace VividOfFade
         {
             frame = Mathf.Clamp(frame, 0, PlayerFrameCount - 1);
             string suffix = frame == 0 ? "" : "_f" + frame;
+            // 特別な職「彩灯者」：もとの職業の絵を、白い服と鮮やかな桃色・水色に塗り替え、桃色の光の縁を付ける
+            if (ch != null && ch.Special)
+            {
+                string skey = $"PlayerHd_{type}_Special" + suffix;
+                if (cache.TryGetValue(skey, out var sc)) return sc;
+                var baseRows = type == ClassType.Shadeblade ? ShadebladeHdRows : type == ClassType.Warden ? WardenHdRows : LampwrightHdRows;
+                return Shaded(skey, AnimRows(baseRows, frame), SpecialOver, SpecialClass.AuraColor);
+            }
             // 上位職なら、その見た目（色を変えて、目印の小物を足す）
             if (ch != null && ch.Advanced >= 0)
             {
@@ -606,6 +614,19 @@ namespace VividOfFade
             new Dictionary<char, Color32[]> { { 'n', Ramp(120, 52, 62, 86, 34, 44, 60, 22, 30, 40, 14, 20) }, { 'F', Ramp(70, 26, 34, 56, 20, 28, 42, 14, 20, 28, 8, 14) }, { 'T', Ramp(150, 30, 40, 120, 20, 30, 90, 12, 20, 60, 8, 14) } }, // Bloodsovereign
             new Dictionary<char, Color32[]> { { 'v', Ramp(255, 244, 200, 236, 210, 120, 196, 160, 70, 140, 108, 40) }, { 'm', Ramp(255, 250, 230, 222, 214, 186, 170, 160, 130, 118, 110, 86) }, { 'F', Ramp(220, 190, 100, 200, 166, 80, 168, 134, 56, 124, 96, 36) } }, // Dawnbringer
             new Dictionary<char, Color32[]> { { 'm', Ramp(170, 190, 230, 110, 130, 176, 74, 90, 130, 46, 56, 86) }, { 'v', Ramp(70, 96, 170, 44, 64, 130, 30, 44, 94, 20, 28, 64) }, { 'F', Ramp(40, 56, 116, 32, 46, 98, 24, 34, 76, 16, 22, 54) } }, // Aegis
+        };
+
+        /// <summary>彩灯者の色：服は白、合わせ・模様・外套の裏は桃色、縁取りと襟巻きは水色。</summary>
+        static readonly Dictionary<char, Color32[]> SpecialOver = new Dictionary<char, Color32[]>
+        {
+            { 'c', Ramp(252, 252, 255, 218, 220, 236, 172, 174, 200, 120, 122, 152) },
+            { 'n', Ramp(252, 252, 255, 218, 220, 236, 172, 174, 200, 120, 122, 152) },
+            { 'v', Ramp(252, 252, 255, 218, 220, 236, 172, 174, 200, 120, 122, 152) },
+            { 'd', Ramp(255, 150, 232, 240, 96, 214, 182, 52, 162, 122, 30, 112) },
+            { 'M', Ramp(255, 150, 232, 240, 96, 214, 182, 52, 162, 122, 30, 112) },
+            { 'f', Ramp(255, 150, 232, 240, 96, 214, 182, 52, 162, 122, 30, 112) },
+            { 'u', Ramp(150, 240, 255, 80, 210, 245, 40, 150, 200, 24, 96, 140) },
+            { 'r', Ramp(150, 240, 255, 80, 210, 245, 40, 150, 200, 24, 96, 140) },
         };
 
         static readonly Color32[] ThirdOutline =

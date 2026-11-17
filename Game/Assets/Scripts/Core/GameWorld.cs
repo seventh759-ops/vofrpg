@@ -260,6 +260,16 @@ namespace VividOfFade
             if (ch == null) return;
             Profile.Save();
             Player.SetClass(ClassInfo.Current);
+            if (ch.Special)
+            {
+                // 基本職のまま転生した：特別な職「彩灯者」に
+                Skills.Learn(ch, ThirdClasses.SkillIndex);
+                Profile.Save();
+                Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: you became a {SpecialClass.Spec.DisplayName}!  (Lv 1, all stats +{ThirdClasses.BonusStats(ch)})",
+                    $"転生 {ch.Rebirths}回目：特別な職「{SpecialClass.Spec.DisplayName}」になった！（Lv1、全能力値 +{ThirdClasses.BonusStats(ch)}）") + StoredNote(), (Color)SpecialClass.AuraColor);
+                Sfx.Landed(Rarity.Mythic);
+                return;
+            }
             var name = ClassInfo.Get(ClassInfo.Current).DisplayName;
             Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: back to {name}  (Lv 1, {ch.Points} points, all stats +{ThirdClasses.BonusStats(ch)})",
                 $"転生 {ch.Rebirths}回目：{name}に戻った（Lv1、ポイント {ch.Points}、全能力値 +{ThirdClasses.BonusStats(ch)}）") + StoredNote(), ThirdClasses.AuraColor(ch.Rebirths));

@@ -105,7 +105,7 @@ namespace VividOfFade
         static readonly SkillSpec locked = new SkillSpec
         {
             Name = "(Advanced class skill)", NameJa = "（上位職のスキル）",
-            Desc = "Change class at the Master in town (Lv 30).", DescJa = "町の師匠で転職すると覚える（Lv30から）。",
+            Desc = "Change class at the Master in town (Lv 50).", DescJa = "町の師匠で転職すると覚える（Lv50から）。",
             ReqLevel = ReqLevel, Mp = 0, Cooldown = 1f, Effect = SkillEffect.Nova, Color = new Color(0.6f, 0.6f, 0.6f, 0.9f),
         };
 
@@ -123,6 +123,7 @@ namespace VividOfFade
         /// <summary>そのキャラクターの職業の名前（3次職・上位職・元の職業の順）。</summary>
         public static string NameFor(CharacterData ch)
         {
+            if (ch.Special) return SpecialClass.Spec.DisplayName;
             var type = (ClassType)ch.ClassId;
             var third = ThirdClasses.Of(type, ch);
             if (third != null) return third.DisplayName;
@@ -134,12 +135,13 @@ namespace VividOfFade
         public static string NameOf(ClassType type)
         {
             var ch = Profile.Get(type);
+            if (ch.Special) return SpecialClass.Spec.DisplayName;
             var third = ThirdClasses.Of(type, ch);
             if (third != null) return third.DisplayName;
             var adv = Of(type, ch);
             return adv != null ? adv.DisplayName : ClassInfo.Get(type).DisplayName;
         }
 
-        public static bool CanChange(CharacterData ch) => ch != null && ch.Advanced < 0 && ch.Level >= ReqLevel && ch.Embers >= Cost;
+        public static bool CanChange(CharacterData ch) => ch != null && ch.Advanced < 0 && !ch.Special && ch.Level >= ReqLevel && ch.Embers >= Cost;
     }
 }

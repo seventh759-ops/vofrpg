@@ -131,12 +131,13 @@ namespace VividOfFade
 
             // 施設はアイコンのタイル（3列×2段）。6つ目は「職業を変える」
             var adv = AdvancedClasses.Of(type, ch);
-            bool advReady = adv == null && ch.Level >= AdvancedClasses.ReqLevel;
+            bool advReady = adv == null && !ch.Special && ch.Level >= AdvancedClasses.ReqLevel;
             bool thirdReady = adv != null && !ch.Third && ch.Level >= ThirdClasses.PromoteLevel;
             bool rebirthReady = ThirdClasses.MeetsRequirements(ch);
             bool masterNotice = advReady || thirdReady || rebirthReady;
             var thirdSpec = ThirdClasses.Of(type, ch);
             string masterLine = rebirthReady ? Loc.T("Rebirth ready!", "転生できる！")
+                : ch.Special ? SpecialClass.Spec.DisplayName
                 : thirdReady ? Loc.T("3rd class ready!", "3次職になれる！")
                 : advReady ? Loc.T("Class change!", "転職できる！")
                 : thirdSpec != null ? thirdSpec.DisplayName
@@ -213,7 +214,7 @@ namespace VividOfFade
 
         static string Greeting(CharacterData ch)
         {
-            if ((ch.Advanced < 0 && ch.Level >= AdvancedClasses.ReqLevel) || (ch.Advanced >= 0 && !ch.Third && ch.Level >= ThirdClasses.PromoteLevel) || ch.Level >= ThirdClasses.ReqLevel)
+            if ((ch.Advanced < 0 && !ch.Special && ch.Level >= AdvancedClasses.ReqLevel) || (ch.Advanced >= 0 && !ch.Third && ch.Level >= ThirdClasses.PromoteLevel) || ch.Level >= ThirdClasses.ReqLevel)
                 return Loc.T("You have grown strong. Go see the master.", "強くなったね。師匠のところへ行ってみな。");
             if (ch.HpPotions == 0)
                 return Loc.T("No potions? The merchant has some.", "薬がないのかい？ 商人が売ってるよ。");
@@ -527,6 +528,11 @@ namespace VividOfFade
             float bottom = H - pad - rebirthH - (showRebirth ? H * 0.015f : 0f);
             if (showRebirth) DrawRebirthBar(world, ch, new Rect(pad, H - pad - rebirthH, W - pad * 2f, rebirthH));
 
+            if (ch.Special)
+            {
+                DrawSpecialCard(ch, type, y, bottom);
+                return;
+            }
             var current = AdvancedClasses.Of(type, ch);
             if (current != null)
             {
@@ -668,7 +674,46 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>転生の欄（どの職でも Lv99 から。基本職に戻り、ボーナスは持ち越し、全能力値+5）。</summary>
+        /// <summary>特別な職「彩灯者」になっているとき：今の職業の欄（ここから先の転職はない）。</summary>
+        void DrawSpecialCard(CharacterData ch, ClassType type, float y, float bottom)
+        {
+            float W = Screen.width, H = Screen.height;
+            float pad = W * 0.05f;
+            var small = hud.SmallStyle;
+            float lineH = small.fontSize * 1.4f;
+            var wrap = new GUIStyle(small) { wordWrap = true };
+            var spec = SpecialClass.Spec;
+            string status = Loc.T($"You are a {spec.DisplayName}, a special class reached only by rebirth without changing class. There is no further class change; at Lv {ThirdClasses.ReqLevel} you can be reborn again.",
+                $"あなたは{spec.DisplayName}。転職せずに転生した者だけがなれる、特別な職。ここから先の転職はなく、Lv{ThirdClasses.ReqLevel}でまた転生できる。");
+            float sh = wrap.CalcHeight(new GUIContent(status), W - pad * 2f);
+            GUI.Label(new Rect(pad, y, W - pad * 2f, sh), status, wrap);
+            y += sh + H * 0.015f;
+
+            var r = new Rect(pad, y, W - pad * 2f, Mathf.Min(H * 0.36f, bottom - y));
+            Hud.Fill(r, new Color(0.45f, 0.2f, 0.42f, 0.5f));
+            float inner = r.width * 0.04f;
+            float ty = r.y + inner;
+            float portrait = r.width * 0.22f;
+            Hud.DrawSprite(new Rect(r.xMax - inner - portrait, ty, portrait, portrait), PixelArt.PlayerFor(ch));
+            var nameStyle = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(hud.LabelStyle.fontSize * 1.3f) };
+            nameStyle.normal.textColor = Color.Lerp((Color)SpecialClass.AuraColor, Color.white, 0.3f);
+            GUI.Label(new Rect(r.x + inner, ty, r.width, lineH * 1.5f), spec.DisplayName, nameStyle);
+            ty += lineH * 1.6f;
+            float textW = r.width - inner * 3f - portrait;
+            float dh = wrap.CalcHeight(new GUIContent(spec.DisplayDesc), textW);
+            GUI.Label(new Rect(r.x + inner, ty, textW, dh), spec.DisplayDesc, wrap);
+            ty = Mathf.Max(ty + dh, r.y + inner + portrait) + lineH * 0.4f;
+            var skill = spec.Skill;
+            float icon = lineH * 2f;
+            Hud.DrawSprite(new Rect(r.x + inner, ty, icon, icon), PixelArt.SkillIcon(skill));
+            var sk = new GUIStyle(small) { fontStyle = FontStyle.Bold };
+            GUI.Label(new Rect(r.x + inner + icon * 1.2f, ty, r.width, lineH), Loc.T($"Skill: {skill.DisplayName}   MP {skill.Mp}", $"スキル：{skill.DisplayName}   MP {skill.Mp}"), sk);
+            GUI.Label(new Rect(r.x + inner + icon * 1.2f, ty + lineH, r.width - inner * 2f - icon * 1.2f, lineH), skill.DisplayDesc, small);
+            var btn = new Rect(r.x + inner, r.yMax - inner - H * 0.055f, r.width - inner * 2f, H * 0.055f);
+            GUI.Label(btn, Loc.T("YOUR CLASS", "今の職業"), hud.CenteredStyle);
+        }
+
+        /// <summary>転生の欄（どの職でも Lv99 から。基本職に戻り、全能力値+5。基本職のまま転生すると彩灯者になる）。</summary>
         void DrawRebirthBar(GameWorld world, CharacterData ch, Rect r)
         {
             var small = hud.SmallStyle;
@@ -683,8 +728,11 @@ namespace VividOfFade
             string head = ch.Rebirths > 0 ? Loc.T($"REBIRTH  (reborn {ch.Rebirths} time(s), all stats +{ThirdClasses.BonusStats(ch)})", $"転生（{ch.Rebirths}回、全能力値 +{ThirdClasses.BonusStats(ch)}）") : Loc.T("REBIRTH", "転生");
             Hud.FitLabel(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH * 1.2f), head, title);
             ty += lineH * 1.2f;
-            string desc = Loc.T($"Any class at Lv {ThirdClasses.ReqLevel}: back to your base class at Lv 1, all stats +{ThirdClasses.StatsPerRebirth} more, permanently (cost doubles each time).",
-                $"どの職でも Lv{ThirdClasses.ReqLevel}から。基本職の Lv1 に戻り、全能力値がずっと +{ThirdClasses.StatsPerRebirth}（転生のたびに積み上がる。火種は毎回倍）。");
+            string desc = SpecialClass.RebirthBecomesSpecial(ch)
+                ? Loc.T($"At Lv {ThirdClasses.ReqLevel}. You never changed class... reborn like this, you will become a special class (Lv 1), all stats +{ThirdClasses.StatsPerRebirth} more, permanently.",
+                    $"Lv{ThirdClasses.ReqLevel}から。転職せずにここまで来たね……このまま転生すると、特別な職「？？？」の Lv1 になる。全能力値もずっと +{ThirdClasses.StatsPerRebirth}。")
+                : Loc.T($"Any class at Lv {ThirdClasses.ReqLevel}: back to your base class at Lv 1, all stats +{ThirdClasses.StatsPerRebirth} more, permanently (cost doubles each time).",
+                    $"どの職でも Lv{ThirdClasses.ReqLevel}から。基本職の Lv1 に戻り、全能力値がずっと +{ThirdClasses.StatsPerRebirth}（転生のたびに積み上がる。火種は毎回倍）。");
             float btnH = Screen.height * 0.045f;
             float dh = Mathf.Min(wrap.CalcHeight(new GUIContent(desc), r.width - inner * 2f), r.yMax - inner * 0.6f - btnH - ty);
             GUI.Label(new Rect(r.x + inner, ty, r.width - inner * 2f, dh), desc, wrap);

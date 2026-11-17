@@ -74,7 +74,7 @@ namespace VividOfFade
         }
 
         /// <summary>職業の段階で経験値を重くする倍率：基本職 1.0・上位職 1.1・3次職 1.2。</summary>
-        public static float TierExpMult(CharacterData c) => c == null ? 1f : c.Third ? 1.2f : c.Advanced >= 0 ? 1.1f : 1f;
+        public static float TierExpMult(CharacterData c) => c == null ? 1f : c.Third || c.Special ? 1.2f : c.Advanced >= 0 ? 1.1f : 1f;
 
         /// <summary>そのキャラクターの、次のレベルまでの経験値（職業の段階の重さを掛ける）。</summary>
         public static int ExpToNext(CharacterData c, int level) => Mathf.RoundToInt(ExpToNext(level) * TierExpMult(c));

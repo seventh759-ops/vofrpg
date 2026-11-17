@@ -107,7 +107,7 @@ namespace VividOfFade
         static readonly SkillSpec locked = new SkillSpec
         {
             Name = "(Rebirth skill)", NameJa = "（3次職のスキル）",
-            Desc = "Rebirth at the Master in town (Lv 99).", DescJa = "町の師匠で転生すると覚える（Lv99）。",
+            Desc = "Become a 3rd class at the Master in town (advanced class Lv 50).", DescJa = "町の師匠で3次職になると覚える（上位職 Lv50から）。",
             ReqLevel = ReqLevel, Mp = 0, Cooldown = 1f, Effect = SkillEffect.Nova, Color = new Color(0.6f, 0.6f, 0.6f, 0.9f),
         };
 
@@ -119,7 +119,9 @@ namespace VividOfFade
 
         public static SkillSpec SkillFor(ClassType type)
         {
-            var third = Of(type, Profile.Get(type));
+            var ch = Profile.Get(type);
+            if (ch.Special) return SpecialClass.Spec.Skill; // 彩灯者の専用スキルも8つ目の欄
+            var third = Of(type, ch);
             return third != null ? third.Skill : locked;
         }
 

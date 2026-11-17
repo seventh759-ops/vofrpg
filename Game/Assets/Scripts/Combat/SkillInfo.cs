@@ -114,7 +114,7 @@ namespace VividOfFade
         public static bool Learned(ClassType type, int index, int level)
         {
             if (index == AdvancedClasses.SkillIndex && Profile.Get(type).Advanced < 0) return false;
-            if (index == ThirdClasses.SkillIndex && !Profile.Get(type).Third) return false;
+            if (index == ThirdClasses.SkillIndex && !Profile.Get(type).Third && !Profile.Get(type).Special) return false;
             return level >= Get(type, index).ReqLevel;
         }
 

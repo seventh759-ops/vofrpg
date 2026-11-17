@@ -225,6 +225,7 @@ namespace VividOfFade
             if (!ThirdClasses.CanRebirth(ch)) return false;
             ch.Embers -= ThirdClasses.Cost(ch);
             ch.Rebirths++;
+            ch.Special = SpecialClass.RebirthBecomesSpecial(ch); // 基本職のまま転生すると彩灯者に。それ以外は基本職に戻る
             ch.Advanced = -1;
             ch.Third = false;
             for (int i = 0; i < ch.Slots.Length; i++)

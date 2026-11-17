@@ -46,7 +46,7 @@ namespace VividOfFade
             for (int i = 0; i < SkillInfo.PerClass; i++)
             {
                 if (i == AdvancedClasses.SkillIndex && ch.Advanced < 0) continue;
-                if (i == ThirdClasses.SkillIndex && !ch.Third) continue;
+                if (i == ThirdClasses.SkillIndex && !ch.Third && !ch.Special) continue;
                 visible.Add(i);
             }
             if (selected >= 0 && !SkillInfo.Learned(ClassInfo.Current, selected, ch.Level)) selected = -1;
