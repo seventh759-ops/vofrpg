@@ -43,7 +43,6 @@ namespace VividOfFade
         public int Advanced = -1;                     // 上位職（-1 は基本職。0 か 1）
         public bool Third;                            // 3次職になった（上位職で Lv50 から）
         public int Rebirths;                          // 転生した回数（どの職でも Lv99 から。基本職に戻る。1回ごとに全能力値+5）
-        public int BankedPoints;                      // ずっと持つボーナスのポイント（転職・3次職でもらった分の合計。Lv1 に戻るたびに全部振り直せる）
         public int HpPotions;                         // 回復薬（町の商人で買う）
         public int MpPotions;                         // 魔力の薬
 
@@ -60,7 +59,6 @@ namespace VividOfFade
             if (Advanced < -1 || Advanced > 1) Advanced = -1;
             if (Advanced < 0) Third = false; // 3次職は上位職の先だけ
             if (Rebirths < 0) Rebirths = 0;
-            if (BankedPoints < 0) BankedPoints = 0;
             HpPotions = Mathf.Clamp(HpPotions, 0, Town.MaxPotions);
             MpPotions = Mathf.Clamp(MpPotions, 0, Town.MaxPotions);
             foreach (var it in Loadout) it?.Repair();
@@ -407,14 +405,13 @@ namespace VividOfFade
             if (d.Version < 3)
             {
                 // 2 → 3：転職のルールが変わった（3次職は転生ではなく上位職 Lv50 から。転生は基本職に戻る）。
-                // 今の職業・レベル・転生の回数はそのまま。これまでにもらったボーナスのポイントを「ずっと持つポイント」に記録する
+                // 今の職業・レベル・転生の回数はそのまま
                 if (d.Characters != null)
                 {
                     foreach (var c in d.Characters)
                     {
                         if (c == null) continue;
                         if (c.Third && c.Rebirths < 1) c.Rebirths = 1; // 転生が1回きりだった頃のセーブ
-                        c.BankedPoints = (c.Advanced >= 0 ? AdvancedClasses.BonusPoints : 0) + (c.Third && c.Advanced >= 0 ? ThirdClasses.BonusPoints : 0);
                     }
                 }
                 d.Version = 3;

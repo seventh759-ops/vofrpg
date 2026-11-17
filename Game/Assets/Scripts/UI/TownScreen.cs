@@ -533,8 +533,8 @@ namespace VividOfFade
                 DrawThird(world, ch, type, current, y, bottom);
                 return;
             }
-            string status = Loc.T($"From Lv {AdvancedClasses.ReqLevel}, for {AdvancedClasses.Cost} embers. You go back to Lv 1 (stat points reset), your bonus points grow by {AdvancedClasses.BonusPoints} and you can spend them all again. Experience needed is x1.1.",
-                $"Lv{AdvancedClasses.ReqLevel}から、火種 {AdvancedClasses.Cost}。Lv1 に戻り（振った能力値も戻る）、ずっと持つボーナスのポイントが +{AdvancedClasses.BonusPoints}。それを全部振り直せる。経験値は1.1倍重くなる。");
+            string status = Loc.T($"From Lv {AdvancedClasses.ReqLevel}, for {AdvancedClasses.Cost} embers. You go back to Lv 1 (stat points reset) and get {AdvancedClasses.BonusPoints} bonus points. Experience needed is x1.1.",
+                $"Lv{AdvancedClasses.ReqLevel}から、火種 {AdvancedClasses.Cost}。Lv1 に戻り（振った能力値も戻る）、ボーナスで {AdvancedClasses.BonusPoints} ポイント振れる。経験値は1.1倍重くなる。");
             var wrap = new GUIStyle(small) { wordWrap = true };
             float sh = wrap.CalcHeight(new GUIContent(status), W - pad * 2f);
             GUI.Label(new Rect(pad, y, W - pad * 2f, sh), status, wrap);
@@ -604,8 +604,8 @@ namespace VividOfFade
             }
             string status = ch.Third
                 ? Loc.T($"You are a {third.DisplayName}.", $"あなたは{third.DisplayName}。")
-                : Loc.T($"You are a {current.DisplayName}. From Lv {ThirdClasses.PromoteLevel}, for {ThirdClasses.PromoteCost} embers, you can become a {third.DisplayName}. Back to Lv 1, your bonus points grow by {ThirdClasses.BonusPoints}. Experience needed is x1.2.",
-                    $"あなたは{current.DisplayName}。Lv{ThirdClasses.PromoteLevel}から、火種 {ThirdClasses.PromoteCost} で{third.DisplayName}になれる。Lv1 に戻り、ずっと持つボーナスのポイントが +{ThirdClasses.BonusPoints}。経験値は1.2倍重くなる。");
+                : Loc.T($"You are a {current.DisplayName}. From Lv {ThirdClasses.PromoteLevel}, for {ThirdClasses.PromoteCost} embers, you can become a {third.DisplayName}. Back to Lv 1 with {ThirdClasses.BonusPoints} bonus points. Experience needed is x1.2.",
+                    $"あなたは{current.DisplayName}。Lv{ThirdClasses.PromoteLevel}から、火種 {ThirdClasses.PromoteCost} で{third.DisplayName}になれる。Lv1 に戻り、ボーナスで {ThirdClasses.BonusPoints} ポイント振れる。経験値は1.2倍重くなる。");
             float sh = wrap.CalcHeight(new GUIContent(status), W - pad * 2f);
             GUI.Label(new Rect(pad, y, W - pad * 2f, sh), status, wrap);
             y += sh + H * 0.015f;
@@ -683,8 +683,8 @@ namespace VividOfFade
             string head = ch.Rebirths > 0 ? Loc.T($"REBIRTH  (reborn {ch.Rebirths} time(s), all stats +{ThirdClasses.BonusStats(ch)})", $"転生（{ch.Rebirths}回、全能力値 +{ThirdClasses.BonusStats(ch)}）") : Loc.T("REBIRTH", "転生");
             Hud.FitLabel(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH * 1.2f), head, title);
             ty += lineH * 1.2f;
-            string desc = Loc.T($"Any class at Lv {ThirdClasses.ReqLevel}: back to your base class at Lv 1. Bonus points carry over, all stats +{ThirdClasses.StatsPerRebirth} more (cost doubles each time).",
-                $"どの職でも Lv{ThirdClasses.ReqLevel}から。基本職の Lv1 に戻る。ボーナスのポイントは持ち越し、全能力値がさらに +{ThirdClasses.StatsPerRebirth}（火種は毎回倍）。");
+            string desc = Loc.T($"Any class at Lv {ThirdClasses.ReqLevel}: back to your base class at Lv 1, all stats +{ThirdClasses.StatsPerRebirth} more, permanently (cost doubles each time).",
+                $"どの職でも Lv{ThirdClasses.ReqLevel}から。基本職の Lv1 に戻り、全能力値がずっと +{ThirdClasses.StatsPerRebirth}（転生のたびに積み上がる。火種は毎回倍）。");
             float btnH = Screen.height * 0.045f;
             float dh = Mathf.Min(wrap.CalcHeight(new GUIContent(desc), r.width - inner * 2f), r.yMax - inner * 0.6f - btnH - ty);
             GUI.Label(new Rect(r.x + inner, ty, r.width - inner * 2f, dh), desc, wrap);

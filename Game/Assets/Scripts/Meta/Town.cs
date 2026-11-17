@@ -179,47 +179,46 @@ namespace VividOfFade
         }
 
         /// <summary>
-        /// Lv1・経験値0に戻し、振った能力値も戻して、ずっと持つボーナスのポイントを全部振れる状態にする（転職・3次職・転生で共通）。
+        /// Lv1・経験値0に戻し、振った能力値も戻して、そのときのボーナスのポイントだけを振れる状態にする（転職・3次職・転生で共通）。
+        /// ボーナスは持ち越さない（上位職 30・3次職 60・転生 0。転生は全能力値+5 がずっと積み上がる）。
         /// スキルの熟練度・装備・火種・最深層はそのまま。必要レベルに届かなくなった装備は倉庫へ。
         /// </summary>
-        static void BackToLevel1(CharacterData ch)
+        static void BackToLevel1(CharacterData ch, int bonusPoints)
         {
             ch.Level = 1;
             ch.Exp = 0;
             for (int i = 0; i < ch.Alloc.Length; i++) ch.Alloc[i] = 0;
-            ch.Points = ch.BankedPoints;
+            ch.Points = bonusPoints;
             ch.MpGrown = 0;
             StoreUnusableGear(ch);
         }
 
-        /// <summary>転職：基本職 Lv50 から、2つの上位職のどちらかへ。ボーナスのポイント +30。7つ目のスキルを覚える。</summary>
+        /// <summary>転職：基本職 Lv50 から、2つの上位職のどちらかへ。ボーナスで 30 ポイント振れる。7つ目のスキルを覚える。</summary>
         public static bool ChangeClass(CharacterData ch, int index)
         {
             if (!AdvancedClasses.CanChange(ch)) return false;
             ch.Embers -= AdvancedClasses.Cost;
             ch.Advanced = Mathf.Clamp(index, 0, 1);
             ch.Third = false;
-            ch.BankedPoints += AdvancedClasses.BonusPoints;
-            BackToLevel1(ch);
+            BackToLevel1(ch, AdvancedClasses.BonusPoints);
             Profile.Save();
             return true;
         }
 
-        /// <summary>3次職への転職：上位職 Lv50 から、上位職ごとに決まった3次職へ。ボーナスのポイント +60。8つ目のスキルを覚える。</summary>
+        /// <summary>3次職への転職：上位職 Lv50 から、上位職ごとに決まった3次職へ。ボーナスで 60 ポイント振れる。8つ目のスキルを覚える。</summary>
         public static bool PromoteThird(CharacterData ch)
         {
             if (!ThirdClasses.CanPromote(ch)) return false;
             ch.Embers -= ThirdClasses.PromoteCost;
             ch.Third = true;
-            ch.BankedPoints += ThirdClasses.BonusPoints;
-            BackToLevel1(ch);
+            BackToLevel1(ch, ThirdClasses.BonusPoints);
             Profile.Save();
             return true;
         }
 
         /// <summary>
         /// 転生：どの職でも Lv99 から（何回でも、火種は毎回倍）。基本職に戻って Lv1。転生の回数が1つ増える（全能力値+5）。
-        /// ボーナスのポイントは持ち越す。上位職・3次職のスキルはボタンから外す（転職し直すと、熟練度はそのままで戻る）。
+        /// ボーナスのポイントは持ち越さない。上位職・3次職のスキルはボタンから外す（転職し直すと、熟練度はそのままで戻る）。
         /// </summary>
         public static bool Rebirth(CharacterData ch)
         {
@@ -230,7 +229,7 @@ namespace VividOfFade
             ch.Third = false;
             for (int i = 0; i < ch.Slots.Length; i++)
                 if (ch.Slots[i] == AdvancedClasses.SkillIndex || ch.Slots[i] == ThirdClasses.SkillIndex) ch.Slots[i] = -1;
-            BackToLevel1(ch);
+            BackToLevel1(ch, 0);
             Profile.Save();
             return true;
         }
