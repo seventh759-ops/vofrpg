@@ -539,8 +539,8 @@ namespace VividOfFade
                 DrawThird(world, ch, type, current, y, bottom);
                 return;
             }
-            string status = Loc.T($"From Lv {AdvancedClasses.ReqLevel}, for {AdvancedClasses.Cost} embers. You go back to Lv 1 (stat points reset) and get {AdvancedClasses.BonusPoints} bonus points. Experience needed is x1.1.",
-                $"Lv{AdvancedClasses.ReqLevel}から、火種 {AdvancedClasses.Cost}。Lv1 に戻り（振った能力値も戻る）、ボーナスで {AdvancedClasses.BonusPoints} ポイント振れる。経験値は1.1倍重くなる。");
+            string status = Loc.T($"From Lv {AdvancedClasses.ReqLevel}, for {AdvancedClasses.Cost} embers. You go back to Lv 1 (stat points reset).",
+                $"Lv{AdvancedClasses.ReqLevel}から、火種 {AdvancedClasses.Cost}。Lv1 に戻る（振った能力値も戻る）。");
             var wrap = new GUIStyle(small) { wordWrap = true };
             float sh = wrap.CalcHeight(new GUIContent(status), W - pad * 2f);
             GUI.Label(new Rect(pad, y, W - pad * 2f, sh), status, wrap);
@@ -652,7 +652,7 @@ namespace VividOfFade
             Req(Loc.T($"{ThirdClasses.PromoteCost} embers   (have {ch.Embers})", $"火種 {ThirdClasses.PromoteCost}   （持っている {ch.Embers}）"), ch.Embers >= ThirdClasses.PromoteCost);
             var note = new GUIStyle(small);
             note.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
-            GUI.Label(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH), Loc.T($"Back to Lv 1 with {ThirdClasses.BonusPoints} bonus points. Experience x1.2.", $"Lv1 に戻り、{ThirdClasses.BonusPoints}ポイント振れる。経験値は1.2倍。"), note);
+            GUI.Label(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH), Loc.T("You go back to Lv 1.", "Lv1 に戻る。"), note);
             if (ThirdClasses.CanPromote(ch))
             {
                 Confirm(btn, "third", Loc.T($"BECOME {third.DisplayName}  ({ThirdClasses.PromoteCost} embers)", $"{third.DisplayName}になる（火種 {ThirdClasses.PromoteCost}）"), () =>
