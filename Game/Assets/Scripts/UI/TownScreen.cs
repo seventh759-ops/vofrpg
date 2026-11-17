@@ -608,14 +608,6 @@ namespace VividOfFade
                 GUI.Label(new Rect(pad, y, W - pad * 2f, H * 0.1f), Loc.T($"You are a {current.DisplayName}. Keep growing stronger.", $"あなたは{current.DisplayName}。さらに強くなりな。"), plain);
                 return;
             }
-            string status = ch.Third
-                ? Loc.T($"You are a {third.DisplayName}.", $"あなたは{third.DisplayName}。")
-                : Loc.T($"You are a {current.DisplayName}. From Lv {ThirdClasses.PromoteLevel}, for {ThirdClasses.PromoteCost} embers, you can become a {third.DisplayName}. Back to Lv 1 with {ThirdClasses.BonusPoints} bonus points. Experience needed is x1.2.",
-                    $"あなたは{current.DisplayName}。Lv{ThirdClasses.PromoteLevel}から、火種 {ThirdClasses.PromoteCost} で{third.DisplayName}になれる。Lv1 に戻り、ボーナスで {ThirdClasses.BonusPoints} ポイント振れる。経験値は1.2倍重くなる。");
-            float sh = wrap.CalcHeight(new GUIContent(status), W - pad * 2f);
-            GUI.Label(new Rect(pad, y, W - pad * 2f, sh), status, wrap);
-            y += sh + H * 0.015f;
-
             var r = new Rect(pad, y, W - pad * 2f, Mathf.Min(H * 0.42f, bottom - y));
             Hud.Fill(r, ch.Third ? new Color(0.5f, 0.4f, 0.1f, 0.5f) : row);
             float inner = r.width * 0.04f;
@@ -658,6 +650,9 @@ namespace VividOfFade
             }
             Req(Loc.T($"Lv {ThirdClasses.PromoteLevel}   (now Lv {ch.Level})", $"Lv{ThirdClasses.PromoteLevel}   （今 Lv{ch.Level}）"), ch.Level >= ThirdClasses.PromoteLevel);
             Req(Loc.T($"{ThirdClasses.PromoteCost} embers   (have {ch.Embers})", $"火種 {ThirdClasses.PromoteCost}   （持っている {ch.Embers}）"), ch.Embers >= ThirdClasses.PromoteCost);
+            var note = new GUIStyle(small);
+            note.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
+            GUI.Label(new Rect(r.x + inner, ty, r.width - inner * 2f, lineH), Loc.T($"Back to Lv 1 with {ThirdClasses.BonusPoints} bonus points. Experience x1.2.", $"Lv1 に戻り、{ThirdClasses.BonusPoints}ポイント振れる。経験値は1.2倍。"), note);
             if (ThirdClasses.CanPromote(ch))
             {
                 Confirm(btn, "third", Loc.T($"BECOME {third.DisplayName}  ({ThirdClasses.PromoteCost} embers)", $"{third.DisplayName}になる（火種 {ThirdClasses.PromoteCost}）"), () =>
@@ -683,12 +678,6 @@ namespace VividOfFade
             float lineH = small.fontSize * 1.4f;
             var wrap = new GUIStyle(small) { wordWrap = true };
             var spec = SpecialClass.Spec;
-            string status = Loc.T($"You are a {spec.DisplayName}, a special class reached only by rebirth without changing class. There is no further class change; at Lv {ThirdClasses.ReqLevel} you can be reborn again.",
-                $"あなたは{spec.DisplayName}。転職せずに転生した者だけがなれる、特別な職。ここから先の転職はなく、Lv{ThirdClasses.ReqLevel}でまた転生できる。");
-            float sh = wrap.CalcHeight(new GUIContent(status), W - pad * 2f);
-            GUI.Label(new Rect(pad, y, W - pad * 2f, sh), status, wrap);
-            y += sh + H * 0.015f;
-
             var r = new Rect(pad, y, W - pad * 2f, Mathf.Min(H * 0.36f, bottom - y));
             Hud.Fill(r, new Color(0.45f, 0.2f, 0.42f, 0.5f));
             float inner = r.width * 0.04f;
