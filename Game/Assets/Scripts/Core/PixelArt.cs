@@ -689,23 +689,101 @@ namespace VividOfFade
         static Sprite Badge(string key, string[] glyph, Dictionary<char, Color32[]> overrides, Color32 bg, Color32 edge)
         {
             if (cache.TryGetValue(key, out var cached)) return cached;
-            const int n = 20;
-            int gh = glyph.Length, gw = glyph[0].Length;
-            var g = ShadePixels(glyph, overrides, null, false);
+            // 32 ドットの記号（16 ドットの絵を Scale2x でなめらかに倍にして、陰影を付け直す）を、40 ドットのバッジに収める
+            const int n = 40;
+            var big = Scale2x(glyph);
+            int gh = big.Length, gw = big[0].Length;
+            var g = ShadePixels(big, overrides, null, false);
             var px = new Color32[n * n];
+            var edgeLight = Mix(edge, new Color32(255, 255, 255, 255), 0.3f);
+            var edgeDark = Mix(edge, new Color32(0, 0, 0, 255), 0.35f);
             for (int y = 0; y < n; y++)
                 for (int x = 0; x < n; x++)
-                    px[y * n + x] = x == 0 || y == 0 || x == n - 1 || y == n - 1 ? edge : bg;
+                {
+                    int ring = Mathf.Min(Mathf.Min(x, y), Mathf.Min(n - 1 - x, n - 1 - y));
+                    // 縁は2ドット：外側は色そのまま、内側は左上を明るく・右下を暗く（ふくらんで見えるように）
+                    px[y * n + x] = ring == 0 ? edge : ring == 1 ? (x + (n - 1 - y) < n ? edgeDark : edgeLight) : bg;
+                }
             int ox = (n - gw) / 2, oy = (n - gh) / 2;
             for (int y = 0; y < gh; y++)
                 for (int x = 0; x < gw; x++)
                 {
                     var c = g[y * gw + x];
                     int tx = ox + x, ty = oy + y;
-                    if (c.a == 0 || tx <= 0 || ty <= 0 || tx >= n - 1 || ty >= n - 1) continue;
+                    if (c.a == 0 || tx <= 1 || ty <= 1 || tx >= n - 2 || ty >= n - 2) continue;
                     px[ty * n + tx] = c;
                 }
             return Store(key, MakeTexture(key, n, n, px, TextureWrapMode.Clamp), n);
+        }
+
+        /// <summary>
+        /// 16 ドットの平塗りのバッジ（スキル・薬・状態異常。縁 E と下地 B は palette で決まる）を、32 ドットにする。
+        /// Scale2x でなめらかに倍にし、記号には左上の明るい縁と右下の影を付け、縁は外側を色そのまま・内側を明暗で2ドットにする。
+        /// </summary>
+        static Sprite FlatBadge32(string key, string[] rows16, Dictionary<char, Color32> palette)
+        {
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            var big = Scale2x(rows16);
+            int h = big.Length, w = big[0].Length;
+            char At(int x, int y) => x >= 0 && y >= 0 && x < w && y < h ? big[y][x] : 'E';
+            var clear = new Color32(0, 0, 0, 0);
+            var white = new Color32(255, 255, 255, 255);
+            var black = new Color32(0, 0, 0, 255);
+            var px = new Color32[w * h];
+            palette.TryGetValue('E', out var edge);
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    int ring = Mathf.Min(Mathf.Min(x, y), Mathf.Min(w - 1 - x, h - 1 - y));
+                    char ch = big[y][x];
+                    Color32 c;
+                    if (ring == 0) c = edge;
+                    else if (ring == 1) c = x + (h - 1 - y) < w ? Mix(edge, black, 0.35f) : Mix(edge, white, 0.3f);
+                    else if (!palette.TryGetValue(ch, out c)) c = clear;
+                    else if (ch != 'B' && ch != 'E')
+                    {
+                        // 記号の陰影：上か左が別の色なら明るく、下か右が別の色なら暗く
+                        bool lit = At(x - 1, y) != ch || At(x, y - 1) != ch;
+                        bool dark = At(x + 1, y) != ch || At(x, y + 1) != ch;
+                        if (lit && !dark) c = Mix(c, white, 0.28f);
+                        else if (dark && !lit) c = Mix(c, black, 0.22f);
+                    }
+                    px[(h - 1 - y) * w + x] = c;
+                }
+            }
+            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), w);
+        }
+
+        /// <summary>
+        /// ドット絵の拡大（Scale2x）：1ドットを2×2にするとき、まわりの並びを見て斜めの線をなめらかにする。文字の並びのまま倍にする。
+        /// </summary>
+        static string[] Scale2x(string[] src)
+        {
+            int h = src.Length, w = src[0].Length;
+            char P(int x, int y) => src[Mathf.Clamp(y, 0, h - 1)][Mathf.Clamp(x, 0, w - 1)];
+            var o = new char[h * 2][];
+            for (int i = 0; i < h * 2; i++) o[i] = new char[w * 2];
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    char e = P(x, y), b = P(x, y - 1), d = P(x - 1, y), f = P(x + 1, y), hh = P(x, y + 1);
+                    char e0 = e, e1 = e, e2 = e, e3 = e;
+                    if (b != hh && d != f)
+                    {
+                        if (d == b) e0 = d;
+                        if (b == f) e1 = f;
+                        if (d == hh) e2 = d;
+                        if (hh == f) e3 = f;
+                    }
+                    o[y * 2][x * 2] = e0; o[y * 2][x * 2 + 1] = e1;
+                    o[y * 2 + 1][x * 2] = e2; o[y * 2 + 1][x * 2 + 1] = e3;
+                }
+            }
+            var r = new string[h * 2];
+            for (int i = 0; i < h * 2; i++) r[i] = new string(o[i]);
+            return r;
         }
 
         /// <summary>Shaded の色付け（テクスチャの下の行から並んだ色）。</summary>
@@ -941,7 +1019,7 @@ namespace VividOfFade
                 { 'B', SkillBadgeClass[SkillArtClass[i]][0] },
                 { 'E', SkillBadgeClass[SkillArtClass[i]][1] },
             };
-            return FromArt("SkillBadge_" + i, SkillArtRows[i], pal);
+            return FlatBadge32("SkillBadge32_" + i, SkillArtRows[i], pal);
         }
 
         /// <summary>回復薬・魔力の薬のアイコン（スキルと同じバッジ、平塗り）。赤い瓶に赤い縁／青い瓶に青い縁。</summary>
@@ -952,7 +1030,7 @@ namespace VividOfFade
                 { 'B', hp ? new Color32(52, 16, 20, 255) : new Color32(16, 24, 56, 255) },
                 { 'E', hp ? new Color32(220, 64, 64, 255) : new Color32(80, 130, 240, 255) },
             };
-            return FromArt(hp ? "PotionHp" : "PotionMp", PotionRows[hp ? 0 : 1], pal);
+            return FlatBadge32(hp ? "PotionHp32" : "PotionMp32", PotionRows[hp ? 0 : 1], pal);
         }
 
         static readonly string[][] PotionRows =
@@ -1006,7 +1084,7 @@ namespace VividOfFade
                 { 'E', new Color32(214, 56, 56, 255) },
             };
             int i = Mathf.Clamp((int)kind, 0, DebuffRows.Length - 1);
-            return FromArt("Debuff_" + i, DebuffRows[i], pal);
+            return FlatBadge32("Debuff32_" + i, DebuffRows[i], pal);
         }
 
         static readonly string[][] DebuffRows =
@@ -1108,10 +1186,10 @@ namespace VividOfFade
             },
         };
 
-        static readonly string[] SkillArtNames = { "Flame Ring", "Fire Barrage", "Flare", "Meteor", "Ember Shield", "Inferno", "Starfall", "Beacon", "Cataclysm", "Constellation", "Whirlwind", "Shadow Dash", "Frenzy", "Crescent Wave", "Second Wind", "Thousand Cuts", "Eclipse Rush", "Crimson Spiral", "Umbral Storm", "Sanguine Tide", "Holy Pulse", "Mend", "Lantern Ward", "Kindle", "Flame Pillar", "Judgment", "Sunburst", "Iron Vigil", "Daybreak", "Unbreakable" };
+        static readonly string[] SkillArtNames = { "Flame Ring", "Fire Barrage", "Flare", "Meteor", "Ember Shield", "Inferno", "Starfall", "Beacon", "Cataclysm", "Constellation", "Whirlwind", "Shadow Dash", "Frenzy", "Crescent Wave", "Second Wind", "Thousand Cuts", "Eclipse Rush", "Crimson Spiral", "Umbral Storm", "Sanguine Tide", "Holy Pulse", "Mend", "Lantern Ward", "Kindle", "Flame Pillar", "Judgment", "Sunburst", "Iron Vigil", "Daybreak", "Unbreakable", "Prism Ring", "Spectrum Volley", "Vivid Step", "Rainbow Pillar", "Vivid Grace", "Kaleidoscope", "Prism Burst" };
 
         /// <summary>そのスキルの職業（0 灯術師・1 影刃・2 灯番）。背景と縁の色を決める。</summary>
-        static readonly int[] SkillArtClass = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 };
+        static readonly int[] SkillArtClass = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3 };
 
         /// <summary>職業ごとの背景と縁の色。</summary>
         static readonly Color32[][] SkillBadgeClass =
@@ -1119,6 +1197,7 @@ namespace VividOfFade
             new[] { new Color32(60, 26, 18, 255), new Color32(236, 124, 44, 255) },
             new[] { new Color32(34, 22, 48, 255), new Color32(146, 100, 216, 255) },
             new[] { new Color32(22, 28, 54, 255), new Color32(232, 192, 84, 255) },
+            new[] { new Color32(44, 20, 58, 255), new Color32(255, 110, 220, 255) }, // 彩灯者：深い紫に桃色の縁
         };
 
         /// <summary>記号の色（平塗り）。</summary>
@@ -1706,6 +1785,139 @@ namespace VividOfFade
                 "EBBsssskkssssBBE",
                 "EBBsssskkssssBBE",
                 "EBBsssskkssssBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[] // Prism Ring（彩灯者）
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBrrooBBBBBE",
+                "EBBBBrBBBByBBBBE",
+                "EBBBpBBBBBByBBBE",
+                "EBBpBBBBBBBBgBBE",
+                "EBBpBBBBBBBBgBBE",
+                "EBBbBBBwwBBBcBBE",
+                "EBBbBBBwwBBBcBBE",
+                "EBBbBBBBBBBBcBBE",
+                "EBBBcBBBBBBgBBBE",
+                "EBBBBcBBBBgBBBBE",
+                "EBBBBBcggyBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[] // Spectrum Volley（彩灯者）
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBrrBBE",
+                "EBBBBBBBBBrrrBBE",
+                "EBBBBBBBBrrBBBBE",
+                "EBBBBBBBoyBBggBE",
+                "EBBBBBBoyBBgggBE",
+                "EBBBBByoBBggBBBE",
+                "EBBBBwyBBccBBBBE",
+                "EBBBwwBBccbbBBBE",
+                "EBBwwBBccBbbBBBE",
+                "EBwwBBcbBBBBBBBE",
+                "EBwBBccBBBBBBBBE",
+                "EBBBpbBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[] // Vivid Step（彩灯者）
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBrrrrrBBBBwBBBE",
+                "EBBBBBBBBBBwwBBE",
+                "EBooooooBBBwwwBE",
+                "EBBBBBBBBBBwwwwE",
+                "EByyyyyyywwwwwwE",
+                "EBBBBBBBBBBwwwwE",
+                "EBggggggBBBwwwBE",
+                "EBBBBBBBBBBwwBBE",
+                "EBccccBBBBBwBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBppBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[] // Rainbow Pillar（彩灯者）
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBwwwwBBBBBE",
+                "EBBBBBrrrrBBBBBE",
+                "EBBBBBrrrrBBBBBE",
+                "EBBBBBooooBBBBBE",
+                "EBBBBBooooBBBBBE",
+                "EBBBBByyyyBBBBBE",
+                "EBBBBByyyyBBBBBE",
+                "EBBBBBggggBBBBBE",
+                "EBBBBBggggBBBBBE",
+                "EBBBBBccccBBBBBE",
+                "EBBBBBbbbbBBBBBE",
+                "EBBBBpppppppBBBE",
+                "EBBwwwwwwwwwwBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[] // Vivid Grace（彩灯者）
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBwBBBBBBBE",
+                "EBBBBBBwBBBBBBBE",
+                "EBBBBpppppppBBBE",
+                "EBBBpwwwwwwwpBBE",
+                "EBBBpwrryggwpBBE",
+                "EBBBpwrryggwpBBE",
+                "EBBBpwoyycbwpBBE",
+                "EBBBBpwyccwpBBBE",
+                "EBBBBpwwbwwpBBBE",
+                "EBBBBBpwwwpBBBBE",
+                "EBBBBBBpwpBBBBBE",
+                "EBBBBBBBpBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[] // Kaleidoscope（彩灯者）
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBrBBBBBBBE",
+                "EBBpBBBrBBBoBBBE",
+                "EBBBpBBrBBoBBBBE",
+                "EBBBBpBrBoBBBBBE",
+                "EBBBBBpwwBBBBBBE",
+                "EbbbbbwwwwyyyyyE",
+                "EBBBBBwwwwBBBBBE",
+                "EBBBBBBwwgBBBBBE",
+                "EBBBBBcBgBgBBBBE",
+                "EBBBBcBBgBBgBBBE",
+                "EBBBcBBBgBBBgBBE",
+                "EBBBBBBBgBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EEEEEEEEEEEEEEEE",
+            },
+            new[] // Prism Burst（彩灯者）
+            {
+                "EEEEEEEEEEEEEEEE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBwBBBBBBBBwBBE",
+                "EBBBwBBccBBwBBBE",
+                "EBBBBBcwwcBBBBBE",
+                "EBBBBcwwwwcBBBBE",
+                "EBBBcwwpbwwcBBBE",
+                "EBBcwwpbcgwwcBBE",
+                "EBBBcwwyogwcBBBE",
+                "EBBBBcwwrwcBBBBE",
+                "EBBBBBcwwcBBBBBE",
+                "EBBBwBBccBBwBBBE",
+                "EBBwBBBBBBBBwBBE",
+                "EBBBBBBBBBBBBBBE",
                 "EBBBBBBBBBBBBBBE",
                 "EEEEEEEEEEEEEEEE",
             },
