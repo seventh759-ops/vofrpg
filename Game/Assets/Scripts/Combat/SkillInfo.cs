@@ -144,7 +144,10 @@ namespace VividOfFade
         /// 実際の消費 MP。レベルが上がるほど（最大 MP が増えるぶん）、後ろのスキルほど重くなる。
         /// </summary>
         public static int MpCost(SkillSpec spec, int index, int level) =>
-            Mathf.RoundToInt(spec.Mp * (1f + GameConfig.SkillMpPerLevel * (Mathf.Max(1, level) - 1)) * (1f + GameConfig.SkillMpPerIndex * Mathf.Max(0, index)));
+            Mathf.RoundToInt(spec.Mp * (1f + GameConfig.SkillMpPerLevel * (Mathf.Max(1, level) - 1))
+                * (1f + GameConfig.SkillMpPerIndex * Mathf.Clamp(index, 0, AdvancedClasses.SkillIndex - 1) * (index >= AdvancedClasses.SkillIndex ? 0f : 1f)));
+        // 7つ目・8つ目（上位職・3次職・彩灯者）のスキルは、もとの消費 MP を高めに決めてあるので「後ろの欄ほど重い」倍率はかけない
+        // （かけると、転職したばかりの Lv1 では最大 MP より重くなって使えない）
 
         /// <summary>次のスキルレベルまでに必要な使用回数。</summary>
         public static int UsesToNext(int skillLevel) => 10 + 10 * skillLevel; // Lv1→2 は20回、Lv19→20 は200回（Lv20 まで合計2090回）
