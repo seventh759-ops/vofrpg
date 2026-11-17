@@ -183,6 +183,7 @@ namespace VividOfFade
             s.Armor += b.BuffArmor * power;
             if (b.BuffTaken < 1f) s.DamageTaken *= Mathf.Max(0.3f, 1f - (1f - b.BuffTaken) * power);
             s.Light = Mathf.Min(s.Light + b.BuffLight * power, GameConfig.MaxLight + 3f);
+            s.MoveSpeed *= 1f + b.BuffMoveSpeed * power;
             int e = b.BuffExtra;
             if (e > 0)
             {

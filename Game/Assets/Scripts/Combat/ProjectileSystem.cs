@@ -64,9 +64,27 @@ namespace VividOfFade
             float sc = (look.Scale > 0f ? look.Scale : 1f) * (crit ? 1.5f : 1f);
             p.transform.localScale = new Vector3(sc, sc, 1f);
             p.LastHit = null;
+            p.Homing = false;
+            p.Target = null;
+            p.AngleOffset = look.AlignToDir ? look.AngleOffset : float.NaN;
             p.Sr.sortingOrder = SortOrder.For(pos) + 1;
             active.Add(p);
         }
+
+        /// <summary>狙った敵を追いかける弾（スキルの矢）。狙った敵が倒れたら、近くの別の敵へ向きを変える。</summary>
+        public void FireHoming(Vector2 pos, Vector2 dir, float damage, bool crit, Enemy target, Look look)
+        {
+            Fire(pos, dir, damage, crit, 0, 99f, look);
+            var p = active[active.Count - 1];
+            p.Homing = true;
+            p.Target = target;
+            p.Velocity = dir * GameConfig.ShotSpeed * 0.85f;
+            p.Life = HomingLife;
+        }
+
+        const float HomingLife = 2.5f;     // 追いかける弾が消えるまで（秒）
+        const float HomingTurn = 10f;      // 向きを変える速さ
+        const float HomingSearch = 8f;     // 次の敵を探す広さ（マス）
 
         public void Tick(float dt, EnemySystem enemies, Room room)
         {
@@ -74,6 +92,26 @@ namespace VividOfFade
             {
                 var p = active[i];
                 p.Life -= dt;
+                if (p.Homing)
+                {
+                    if (p.Target == null || p.Target.Dying || !p.Target.gameObject.activeSelf) p.Target = enemies.FindNearest(p.Pos, HomingSearch);
+                    if (p.Target != null)
+                    {
+                        Vector2 want = p.Target.Pos - p.Pos;
+                        if (want.sqrMagnitude > 0.0001f)
+                        {
+                            float speed = p.Velocity.magnitude;
+                            Vector2 dir = Vector2.Lerp(p.Velocity / Mathf.Max(0.001f, speed), want.normalized, Mathf.Clamp01(HomingTurn * dt)).normalized;
+                            p.Velocity = dir * speed;
+                            if (!float.IsNaN(p.AngleOffset))
+                            {
+                                Vector2 sd = Iso.ToScreen(dir);
+                                p.Angle = Mathf.Atan2(sd.y, sd.x) * Mathf.Rad2Deg + p.AngleOffset;
+                                p.transform.localRotation = Quaternion.Euler(0f, 0f, p.Angle);
+                            }
+                        }
+                    }
+                }
                 Vector2 pos = p.Pos + p.Velocity * dt;
                 p.Pos = pos;
                 p.Sr.sortingOrder = SortOrder.For(pos) + 1;

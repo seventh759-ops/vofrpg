@@ -189,6 +189,16 @@ namespace VividOfFade
             "....gww.....",
         }, WhitePal);
 
+        /// <summary>光の矢（12×5。右を向いた矢）。</summary>
+        public static Sprite LightArrow => FromArt("FxLightArrow", new[]
+        {
+            "f........g..",
+            "gf......gwg.",
+            "wwwwwwwwwwwg",
+            "gf......gwg.",
+            "f........g..",
+        }, WhitePal);
+
         /// <summary>光の十字（7×10）。</summary>
         public static Sprite HolyCross => FromArt("FxCross", new[]
         {

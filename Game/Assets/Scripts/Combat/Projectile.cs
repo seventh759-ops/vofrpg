@@ -14,6 +14,9 @@ namespace VividOfFade
         public Enemy LastHit;
         public float Spin;   // 回る速さ（度/秒。スキルの星など）
         public float Angle;  // 今の向き（度）
+        public bool Homing;  // 狙った敵を追いかける（倒れたら近くの別の敵へ）
+        public Enemy Target;
+        public float AngleOffset; // 追いかけて向きが変わるとき、絵の向きのずれ（度）。AlignToDir でなければ NaN
 
         Vector2 pos;
 

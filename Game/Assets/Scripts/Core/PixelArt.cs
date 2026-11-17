@@ -1186,7 +1186,7 @@ namespace VividOfFade
             },
         };
 
-        static readonly string[] SkillArtNames = { "Flame Ring", "Fire Barrage", "Flare", "Meteor", "Ember Shield", "Inferno", "Starfall", "Beacon", "Cataclysm", "Constellation", "Whirlwind", "Shadow Dash", "Frenzy", "Crescent Wave", "Second Wind", "Thousand Cuts", "Eclipse Rush", "Crimson Spiral", "Umbral Storm", "Sanguine Tide", "Holy Pulse", "Mend", "Lantern Ward", "Kindle", "Flame Pillar", "Judgment", "Sunburst", "Iron Vigil", "Daybreak", "Unbreakable", "Prism Ring", "Spectrum Volley", "Vivid Step", "Rainbow Pillar", "Vivid Grace", "Kaleidoscope", "Prism Burst", "Rainbow Rain" };
+        static readonly string[] SkillArtNames = { "Flame Ring", "Fire Barrage", "Flare", "Meteor", "Ember Shield", "Inferno", "Starfall", "Beacon", "Cataclysm", "Constellation", "Whirlwind", "Shadow Dash", "Frenzy", "Crescent Wave", "Second Wind", "Thousand Cuts", "Eclipse Rush", "Crimson Spiral", "Umbral Storm", "Sanguine Tide", "Holy Pulse", "Mend", "Lantern Ward", "Kindle", "Flame Pillar", "Judgment", "Sunburst", "Iron Vigil", "Daybreak", "Unbreakable", "Prism Ring", "Spectrum Volley", "Vivid Step", "Rainbow Pillar", "Vivid Grace", "Kaleidoscope", "Prism Twin", "Rainbow Rain" };
 
         /// <summary>そのスキルの職業（0 灯術師・1 影刃・2 灯番）。背景と縁の色を決める。</summary>
         static readonly int[] SkillArtClass = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3 };
@@ -1845,22 +1845,22 @@ namespace VividOfFade
                 "EBBBBBBBBBBBBBBE",
                 "EEEEEEEEEEEEEEEE",
             },
-            new[] // Rainbow Pillar（彩灯者）
+            new[] // Rainbow Pillar（彩灯者・虹の十字）
             {
                 "EEEEEEEEEEEEEEEE",
-                "EBBBBBwwwwBBBBBE",
-                "EBBBBBrrrrBBBBBE",
-                "EBBBBBrrrrBBBBBE",
-                "EBBBBBooooBBBBBE",
-                "EBBBBBooooBBBBBE",
-                "EBBBBByyyyBBBBBE",
-                "EBBBBByyyyBBBBBE",
-                "EBBBBBggggBBBBBE",
-                "EBBBBBggggBBBBBE",
-                "EBBBBBccccBBBBBE",
-                "EBBBBBbbbbBBBBBE",
-                "EBBBBpppppppBBBE",
-                "EBBwwwwwwwwwwBBE",
+                "EBBBBBBBBBBBBBBE",
+                "EBBBBBBbbBBBBBBE",
+                "EBBBBBBccBBBBBBE",
+                "EBBBBBBggBBBBBBE",
+                "EBBBBBByyBBBBBBE",
+                "EBBBBBBwwBBBBBBE",
+                "EBbcgywwwwygcbBE",
+                "EBbcgywwwwygcbBE",
+                "EBBBBBBwwBBBBBBE",
+                "EBBBBBByyBBBBBBE",
+                "EBBBBBBggBBBBBBE",
+                "EBBBBBBccBBBBBBE",
+                "EBBBBBBbbBBBBBBE",
                 "EBBBBBBBBBBBBBBE",
                 "EEEEEEEEEEEEEEEE",
             },
@@ -1902,22 +1902,22 @@ namespace VividOfFade
                 "EBBBBBBBBBBBBBBE",
                 "EEEEEEEEEEEEEEEE",
             },
-            new[] // Prism Burst（彩灯者）
+            new[] // Prism Twin（彩灯者・8つ目：分身）
             {
                 "EEEEEEEEEEEEEEEE",
                 "EBBBBBBBBBBBBBBE",
-                "EBBwBBBBBBBBwBBE",
-                "EBBBwBBccBBwBBBE",
-                "EBBBBBcwwcBBBBBE",
-                "EBBBBcwwwwcBBBBE",
-                "EBBBcwwpbwwcBBBE",
-                "EBBcwwpbcgwwcBBE",
-                "EBBBcwwyogwcBBBE",
-                "EBBBBcwwrwcBBBBE",
-                "EBBBBBcwwcBBBBBE",
-                "EBBBwBBccBBwBBBE",
-                "EBBwBBBBBBBBwBBE",
-                "EBBBBBBBBBBBBBBE",
+                "EBBBppBBBBBBBBBE",
+                "EBBBppBBBBwwBBBE",
+                "EBBBBBBBBBwwBBBE",
+                "EBBppppBBBBBBBBE",
+                "EBppppppBwwwwBBE",
+                "EBpBppBpwwwwwwBE",
+                "EBpBppBpwBwwBwBE",
+                "EBBBppBBwBwwBwBE",
+                "EBBpBBpBBBwwBBBE",
+                "EBBpBBpBBwBBwBBE",
+                "EBppBBppBwBBwBBE",
+                "EBBBBBBBwwBBwwBE",
                 "EBBBBBBBBBBBBBBE",
                 "EEEEEEEEEEEEEEEE",
             },

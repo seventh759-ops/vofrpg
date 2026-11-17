@@ -11,6 +11,7 @@ namespace VividOfFade
         Strike,   // 狙った場所に、少し遅れて落ちる
         Buff,     // 一定時間、能力を上げる
         Heal,     // 体力を回復する
+        Summon,   // 分身を呼び出す（彩灯者）
     }
 
     /// <summary>スキル1つの定義。数値はすべて仮で、遊んでから調整する。</summary>
@@ -33,6 +34,10 @@ namespace VividOfFade
         public bool AllAround;   // Barrage：全方向（false なら狙った方向に扇形）
         public float Delay;      // Strike：落ちるまでの時間
         public float Range = 6f; // 狙える距離・Dash の長さ
+        public bool Homing;      // Barrage：1体を狙って追いかける（倒したら近くの別の敵へ）
+        public bool Scatter;     // Strike：自分のまわり（Radius2 の中）のあちこちに、ばらばらに落ちる
+        public float Radius2;    // Scatter で落ちる範囲（マス）
+        public float MpPctOfMax; // 0 より大きければ、消費 MP は最大 MP のこの割合（Mp は使わない）
 
         // Buff / Heal
         public float Duration;
@@ -42,6 +47,7 @@ namespace VividOfFade
         public float BuffTaken = 1f;  // 受けるダメージの倍率
         public float BuffLight;
         public int BuffExtra;         // 弾・灯りの数など（職業ごとの「弾の数」の効果）
+        public float BuffMoveSpeed;   // 移動速度 +割合
         public float HealPct;         // 最大体力に対する割合
 
         public Color Color = new Color(1f, 0.7f, 0.3f, 0.9f);
@@ -107,18 +113,18 @@ namespace VividOfFade
             // 彩灯者（Vividbearer）：鮮やかな光の色で戦う、遠近両用の特別な職
             new[]
             {
-                new SkillSpec { Name = "Prism Ring", NameJa = "彩の輪", DescJa = "周りに七色の光を放つ。", Desc = "A ring of seven-colored light around you.", ReqLevel = 1, Mp = 8, Cooldown = 3f,
+                new SkillSpec { Name = "Spectrum Volley", NameJa = "七彩の矢", DescJa = "狙った敵1体へ光の矢を7本。倒したら近くの別の敵へ飛んでいく。", Desc = "7 light arrows chase one enemy; once it falls, they fly to the next.", ReqLevel = 1, Mp = 12, Cooldown = 4f,
+                    Effect = SkillEffect.Barrage, Mult = 2.5f, Count = 7, Homing = true, Range = 8f, Color = new Color(0.5f, 0.9f, 1f, 0.9f) },
+                new SkillSpec { Name = "Prism Ring", NameJa = "彩の輪", DescJa = "周りに七色の光を放つ。", Desc = "A ring of seven-colored light around you.", ReqLevel = 5, Mp = 8, Cooldown = 3f,
                     Effect = SkillEffect.Nova, Mult = 4f, Radius = 2.4f, Color = new Color(1f, 0.45f, 0.85f, 0.9f) },
-                new SkillSpec { Name = "Spectrum Volley", NameJa = "七彩の矢", DescJa = "敵へ7本の光の矢を放つ。", Desc = "7 light arrows at the enemy.", ReqLevel = 5, Mp = 12, Cooldown = 4f,
-                    Effect = SkillEffect.Barrage, Mult = 2.5f, Count = 7, Color = new Color(0.5f, 0.9f, 1f, 0.9f) },
-                new SkillSpec { Name = "Vivid Step", NameJa = "彩の歩み", DescJa = "光をまとって突進し、敵を切り裂く。", Desc = "Dash wrapped in light, cutting through enemies.", ReqLevel = 10, Mp = 12, Cooldown = 5f,
-                    Effect = SkillEffect.Dash, Mult = 6f, Radius = 1f, Range = 5f, Color = new Color(1f, 0.85f, 0.4f, 0.9f) },
-                new SkillSpec { Name = "Rainbow Pillar", NameJa = "虹の柱", DescJa = "一番近い敵に、虹の光の柱が落ちる。", Desc = "A pillar of rainbow light falls on the nearest enemy.", ReqLevel = 18, Mp = 20, Cooldown = 6f,
+                new SkillSpec { Name = "Vivid Step", NameJa = "彩の歩み", DescJa = "15秒、移動速度+20%。", Desc = "Move speed +20% for 15s.", ReqLevel = 10, Mp = 12, Cooldown = 5f,
+                    Effect = SkillEffect.Buff, Duration = 15f, BuffMoveSpeed = 0.2f, Color = new Color(1f, 0.85f, 0.4f, 0.9f) },
+                new SkillSpec { Name = "Rainbow Pillar", NameJa = "虹の柱", DescJa = "一番近い敵に、虹の光の十字が落ちる。", Desc = "A cross of rainbow light falls on the nearest enemy.", ReqLevel = 18, Mp = 20, Cooldown = 6f,
                     Effect = SkillEffect.Strike, Mult = 10f, Radius = 1.8f, Delay = 0.5f, Range = 8f, Color = new Color(0.7f, 0.5f, 1f, 0.9f) },
                 new SkillSpec { Name = "Vivid Grace", NameJa = "彩の加護", DescJa = "20秒、ダメージ+50%・防御+60。", Desc = "Damage +50%, armor +60 for 20s.", ReqLevel = 26, Mp = 25, Cooldown = 18f,
                     Effect = SkillEffect.Buff, Duration = 20f, BuffDamage = 0.5f, BuffArmor = 60f, Color = new Color(1f, 0.6f, 0.9f, 0.9f) },
-                new SkillSpec { Name = "Prism Burst", NameJa = "彩光", DescJa = "周りに鮮やかな光を放つ。HP10%回復。", Desc = "A burst of vivid light around you; heals 10%.", ReqLevel = 35, Mp = 40, Cooldown = 12f,
-                    Effect = SkillEffect.Nova, Mult = 8f, Radius = 4.5f, HealPct = 0.1f, Color = new Color(1f, 0.4f, 0.85f, 0.9f) },
+                new SkillSpec { Name = "Kaleidoscope", NameJa = "極彩", DescJa = "12秒、七色に輝く。攻撃速度+40%・弾+2・被ダメージ-20%。", Desc = "Shine in seven colors for 12s: attack speed +40%, +2 projectiles, damage taken -20%.", ReqLevel = 35, Mp = 50, Cooldown = 30f,
+                    Effect = SkillEffect.Buff, Duration = 12f, BuffAttackSpeed = 0.4f, BuffExtra = 2, BuffTaken = 0.8f, Color = new Color(0.95f, 0.5f, 1f, 0.9f) },
             },
         };
 
@@ -143,6 +149,10 @@ namespace VividOfFade
         /// <summary>
         /// 実際の消費 MP。レベルが上がるほど（最大 MP が増えるぶん）、後ろのスキルほど重くなる。
         /// </summary>
+        /// <summary>実際の消費 MP（最大 MP の割合で払うスキルにも対応）。</summary>
+        public static int MpCost(SkillSpec spec, int index, int level, int maxMp) =>
+            spec.MpPctOfMax > 0f ? Mathf.CeilToInt(maxMp * spec.MpPctOfMax) : MpCost(spec, index, level);
+
         public static int MpCost(SkillSpec spec, int index, int level) =>
             Mathf.RoundToInt(spec.Mp * (1f + GameConfig.SkillMpPerLevel * (Mathf.Max(1, level) - 1))
                 * (1f + GameConfig.SkillMpPerIndex * Mathf.Clamp(index, 0, AdvancedClasses.SkillIndex - 1) * (index >= AdvancedClasses.SkillIndex ? 0f : 1f)));

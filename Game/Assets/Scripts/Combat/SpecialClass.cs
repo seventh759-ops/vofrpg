@@ -18,23 +18,26 @@ namespace VividOfFade
             Desc = "Uses every class's weapons. Attacks at any range: cuts nearby enemies and shoots distant ones. Damage +35%, attack speed +15%, crit +8%, max HP +25%, light +2, +1 projectile.",
             DescJa = "どの職業の武器も使える。遠近両用：近くの敵は斬り、遠くの敵には弾を撃つ。ダメージ+35%、攻撃速度+15%、会心率+8%、最大HP+25%、明るさ+2、弾+1。",
             Passive = new BoonSpec { Damage = 0.35f, AttackSpeed = 0.15f, Crit = 0.08f, HpPct = 0.25f, Light = 2f, Extra = 1 },
-            // 8つ目（彩灯者になったときに覚える）：全身が七色に輝き、攻撃が速く・多くなる
+            // 8つ目（彩灯者になったときに覚える）：自分の半分の強さの分身を呼び出す。分身は同じ武器で攻撃し、付けているスキルも使う
             Skill = new SkillSpec
             {
-                Name = "Kaleidoscope", NameJa = "極彩", Desc = "Shine in seven colors for 12s: attack speed +40%, +2 projectiles, damage taken -20%.",
-                DescJa = "12秒、七色に輝く。攻撃速度+40%・弾+2・被ダメージ-20%。",
-                ReqLevel = 1, Mp = 50, Cooldown = 30f, Effect = SkillEffect.Buff, Duration = 12f, BuffAttackSpeed = 0.4f, BuffExtra = 2, BuffTaken = 0.8f,
-                Color = new Color(0.95f, 0.5f, 1f, 0.9f),
+                Name = "Prism Twin", NameJa = "彩の分身", Desc = "Summon a twin with half your strength for 60s. It attacks with your weapon and uses your skills. Costs half your max MP.",
+                DescJa = "60秒、自分の半分の強さの分身を呼ぶ。同じ武器で攻撃し、スキルも使う。最大MPの半分を使う。",
+                ReqLevel = 1, MpPctOfMax = 0.5f, Cooldown = 90f, Effect = SkillEffect.Summon, Duration = 60f, Range = 8f,
+                Color = new Color(1f, 0.55f, 0.9f, 0.9f),
             },
         };
 
-        /// <summary>7つ目（Lv50 で覚える）：近くの敵それぞれに、虹の柱が降りそそぐ。</summary>
+        /// <summary>7つ目（Lv50 で覚える）：自分のまわりのあちこちに、虹の柱が7本ばらばらに降る。</summary>
         public static readonly SkillSpec SeventhSkill = new SkillSpec
         {
-            Name = "Rainbow Rain", NameJa = "虹の雨", Desc = "Rainbow pillars fall on up to 5 nearby enemies.", DescJa = "近くの敵5体まで、それぞれに虹の柱が降る。",
-            ReqLevel = 50, Mp = 45, Cooldown = 9f, Effect = SkillEffect.Strike, Mult = 9f, Radius = 1.6f, Delay = 0.5f, Range = 8f, Count = 5,
-            Color = new Color(0.6f, 0.85f, 1f, 0.9f),
+            Name = "Rainbow Rain", NameJa = "虹の雨", Desc = "7 rainbow pillars rain down at random around you.", DescJa = "自分のまわりのあちこちに、虹の柱が7本降る。",
+            ReqLevel = 50, Mp = 70, Cooldown = 9f, Effect = SkillEffect.Strike, Mult = 9f, Radius = 1.6f, Delay = 0.5f, Range = 4.5f, Count = 7,
+            Scatter = true, Radius2 = 4.5f, Color = new Color(0.6f, 0.85f, 1f, 0.9f),
         };
+
+        /// <summary>分身の強さ（自分に対する割合）。</summary>
+        public const float TwinPower = 0.5f;
 
         /// <summary>見た目の光の縁の色（タイトルの「VIVID」の桃色）。</summary>
         public static readonly Color32 AuraColor = new Color32(255, 90, 215, 255);

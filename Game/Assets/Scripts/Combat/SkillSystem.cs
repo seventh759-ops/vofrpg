@@ -47,12 +47,20 @@ namespace VividOfFade
             this.fx = fx;
             this.sfx = sfx;
             this.room = room;
+            var go = new GameObject("Twin");
+            go.transform.SetParent(transform, false);
+            Twin = go.AddComponent<Phantom>();
+            Twin.Init(enemies, shots, fx, room, this);
         }
+
+        /// <summary>彩灯者の分身（呼んでいないときは Active が false）。</summary>
+        public Phantom Twin { get; private set; }
 
         public void ResetState()
         {
             for (int i = 0; i < cooldowns.Length; i++) cooldowns[i] = 0f;
             strikes.Clear();
+            if (Twin != null) Twin.Hide();
         }
 
         /// <summary>ボタンの待ち時間の残り（0〜1。0 で使える）。</summary>
@@ -71,6 +79,7 @@ namespace VividOfFade
             UpdateStrikes(dt);
 
             var ch = Profile.Current;
+            Twin.Tick(dt, player, ch);
             if (ch == null || player.IsDead) return;
 
             if (manualSlot >= 0 && manualSlot < SkillInfo.Slots) TryCast(manualSlot, player, ch, false);
@@ -97,7 +106,7 @@ namespace VividOfFade
             var spec = SkillInfo.Get(ClassInfo.Current, index);
             // オートは、使って意味のあるときだけ使う
             if (auto && !WorthUsing(spec, player)) return;
-            if (!player.SpendMp(SkillInfo.MpCost(spec, index, ch.Level))) return;
+            if (!player.SpendMp(SkillInfo.MpCost(spec, index, ch.Level, player.MaxMp))) return;
 
             int skillLevel = ch.SkillLv[index];
             Cast(spec, SkillInfo.Power(skillLevel), player);
@@ -112,6 +121,7 @@ namespace VividOfFade
                 case SkillEffect.Heal: return player.Hp < player.MaxHp * 0.6f;
                 case SkillEffect.Nova: return enemies.FindNearest(player.Pos, spec.Radius) != null;
                 case SkillEffect.Buff: return enemies.FindNearest(player.Pos, 5f) != null;
+                case SkillEffect.Summon: return !Twin.Active && enemies.FindNearest(player.Pos, 6f) != null;
                 default: return enemies.FindNearest(player.Pos, spec.Range) != null;
             }
         }
@@ -167,93 +177,10 @@ namespace VividOfFade
 
         void Cast(SkillSpec spec, float power, Player player)
         {
-            var st = player.Stats;
             Vector2 origin = player.Pos;
-            float damage = st.SkillBase * spec.Mult * power * (1f + st.SkillDamage) * MagicMult(spec, st);
-            float radius = spec.Radius * st.AreaMult;
-
+            float radius = spec.Radius * player.Stats.AreaMult;
             switch (spec.Effect)
             {
-                case SkillEffect.Nova:
-                    Area(origin, radius, damage, st);
-                    // スキルごとの演出。なければ：閃光・大小2重の輪・外へ飛ぶ火花
-                    if (!SkillVfx.Cast(fx, spec, player, origin, player.FacingLogical, radius, origin, origin))
-                    {
-                        fx.Disc(origin, radius, Fade(spec.Color, 0.55f), 0.3f);
-                        fx.Ring(origin, radius, spec.Color, 0.35f);
-                        fx.Ring(origin, radius * 0.6f, Color.white, 0.2f);
-                        fx.Sparks(origin, 14 + (int)(radius * 4f), spec.Color, radius * 2.5f, 0.45f);
-                    }
-                    Shake?.Invoke(0.08f, 0.15f);
-                    sfx.Boom();
-                    if (spec.HealPct > 0f) player.Heal(Mathf.RoundToInt(player.MaxHp * spec.HealPct * power));
-                    break;
-
-                case SkillEffect.Barrage:
-                {
-                    Vector2 aim = Aim(player, spec.Range);
-                    int n = spec.Count;
-                    for (int k = 0; k < n; k++)
-                    {
-                        float angle = spec.AllAround ? 360f * k / n : (k - (n - 1) * 0.5f) * 12f;
-                        Vector2 dir = Rotate(aim, angle);
-                        bool crit = UnityEngine.Random.value < st.EffectiveCrit;
-                        shots.Fire(origin + dir * 0.3f, dir, damage * (crit ? st.CritMult : 1f), crit, 2, spec.Range, SkillVfx.ShotLook(spec)); // スキルごとの弾の絵
-                    }
-                    if (!SkillVfx.Cast(fx, spec, player, origin, aim, radius, origin, origin))
-                    {
-                        fx.Disc(origin, 1.2f, Fade(spec.Color, 0.6f), 0.2f);
-                        fx.Sparks(origin, 10, spec.Color, 3f, 0.3f, 1.5f);
-                    }
-                    sfx.Fountain();
-                    break;
-                }
-
-                case SkillEffect.Dash:
-                {
-                    Vector2 aim = Aim(player, spec.Range);
-                    Vector2 start = origin;
-                    player.SkillDash(aim, spec.Range, room);
-                    Vector2 end = player.Pos;
-                    HitAlong(start, end, radius, damage, st);
-                    if (!SkillVfx.Cast(fx, spec, player, origin, aim, radius, start, end))
-                    {
-                        // 通り道に残る火花（残像）と、着いた所の閃光
-                        for (int k = 0; k <= 6; k++) fx.Sparks(Vector2.Lerp(start, end, k / 6f), 3, spec.Color, 0.8f, 0.35f, 1f);
-                        fx.Slash(end, aim, 1.8f, 160f, spec.Color);
-                        fx.Disc(end, 1.4f, Fade(spec.Color, 0.5f), 0.25f);
-                    }
-                    Shake?.Invoke(0.06f, 0.12f);
-                    sfx.Boom();
-                    break;
-                }
-
-                case SkillEffect.Strike when spec.Count > 1:
-                {
-                    // 近くの敵それぞれに1本ずつ（少しずつずらして落とす）。敵が少なければ、その数だけ
-                    var targets = enemies.FindNearestN(origin, spec.Range, spec.Count);
-                    if (targets.Count == 0) targets.Add(null);
-                    for (int k = 0; k < targets.Count; k++)
-                    {
-                        Vector2 at = targets[k] != null ? targets[k].Pos : origin + Aim(player, spec.Range) * 3f;
-                        float delay = spec.Delay + 0.08f * k;
-                        strikes.Add(new PendingStrike { Pos = at, Timer = delay, Damage = damage, Radius = radius, Color = spec.Color, Spec = spec });
-                        if (!SkillVfx.StrikeWarn(fx, spec, at, radius, delay))
-                            fx.Ring(at, radius, new Color(1f, 0.3f, 0.2f, 0.6f), delay);
-                    }
-                    break;
-                }
-
-                case SkillEffect.Strike:
-                {
-                    var target = enemies.FindNearest(origin, spec.Range);
-                    Vector2 at = target != null ? target.Pos : origin + Aim(player, spec.Range) * 3f;
-                    strikes.Add(new PendingStrike { Pos = at, Timer = spec.Delay, Damage = damage, Radius = radius, Color = spec.Color, Spec = spec });
-                    if (!SkillVfx.StrikeWarn(fx, spec, at, radius, spec.Delay))
-                        fx.Ring(at, radius, new Color(1f, 0.3f, 0.2f, 0.6f), spec.Delay); // 落ちる場所の予告
-                    break;
-                }
-
                 case SkillEffect.Buff:
                     player.AddBuff(spec, power);
                     if (!SkillVfx.Cast(fx, spec, player, origin, player.FacingLogical, radius, origin, origin))
@@ -276,8 +203,125 @@ namespace VividOfFade
                     }
                     sfx.Pickup();
                     break;
+
+                case SkillEffect.Summon:
+                    Twin.Summon(player, spec.Duration);
+                    player.PlayPose(Player.Pose.Cast, player.FacingLogical);
+                    sfx.Pickup();
+                    break;
+
+                default:
+                    CastAttack(spec, power, origin, player.FacingLogical, player.Stats, 1f, player, null);
+                    break;
             }
             Casted?.Invoke(spec);
+        }
+
+        /// <summary>分身がスキルを使う（分身の位置から、半分の威力で。MP は使わない）。</summary>
+        public void CastTwin(SkillSpec spec, float power, Phantom twin, PlayerStats st) =>
+            CastAttack(spec, power, twin.Pos, twin.Facing, st, SpecialClass.TwinPower, null, twin);
+
+        /// <summary>攻撃のスキル（周り・弾・突進・落とす）。自分（player）か分身（twin）のどちらかから撃つ。</summary>
+        void CastAttack(SkillSpec spec, float power, Vector2 origin, Vector2 facing, PlayerStats st, float scale, Player player, Phantom twin)
+        {
+            float damage = st.SkillBase * spec.Mult * power * (1f + st.SkillDamage) * MagicMult(spec, st) * scale;
+            float radius = spec.Radius * st.AreaMult;
+            bool mine = twin == null;
+
+            switch (spec.Effect)
+            {
+                case SkillEffect.Nova:
+                    Area(origin, radius, damage, st);
+                    // スキルごとの演出。なければ：閃光・大小2重の輪・外へ飛ぶ火花
+                    if (!SkillVfx.Cast(fx, spec, player, origin, facing, radius, origin, origin))
+                    {
+                        fx.Disc(origin, radius, Fade(spec.Color, 0.55f), 0.3f);
+                        fx.Ring(origin, radius, spec.Color, 0.35f);
+                        fx.Ring(origin, radius * 0.6f, Color.white, 0.2f);
+                        fx.Sparks(origin, 14 + (int)(radius * 4f), spec.Color, radius * 2.5f, 0.45f);
+                    }
+                    if (mine) Shake?.Invoke(0.08f, 0.15f);
+                    sfx.Boom();
+                    if (mine && spec.HealPct > 0f) player.Heal(Mathf.RoundToInt(player.MaxHp * spec.HealPct * power));
+                    break;
+
+                case SkillEffect.Barrage:
+                {
+                    var nearest = enemies.FindNearest(origin, spec.Range);
+                    Vector2 aim = nearest != null ? (nearest.Pos - origin).normalized : facing;
+                    int n = spec.Count;
+                    var look = SkillVfx.ShotLook(spec);
+                    for (int k = 0; k < n; k++)
+                    {
+                        bool crit = UnityEngine.Random.value < st.EffectiveCrit;
+                        if (spec.Homing)
+                        {
+                            // 1体を狙って、扇に広がってから曲がって追いかける（矢は1本ずつ虹の色）
+                            Vector2 hdir = Rotate(aim, (k - (n - 1) * 0.5f) * 14f);
+                            var c = SkillVfx.Rainbow[k % SkillVfx.Rainbow.Length];
+                            look.Tint = new Color(c.r, c.g, c.b, 1f);
+                            shots.FireHoming(origin + hdir * 0.3f, hdir, damage * (crit ? st.CritMult : 1f), crit, nearest, look);
+                            continue;
+                        }
+                        float angle = spec.AllAround ? 360f * k / n : (k - (n - 1) * 0.5f) * 12f;
+                        Vector2 dir = Rotate(aim, angle);
+                        shots.Fire(origin + dir * 0.3f, dir, damage * (crit ? st.CritMult : 1f), crit, 2, spec.Range, look); // スキルごとの弾の絵
+                    }
+                    if (!SkillVfx.Cast(fx, spec, player, origin, aim, radius, origin, origin))
+                    {
+                        fx.Disc(origin, 1.2f, Fade(spec.Color, 0.6f), 0.2f);
+                        fx.Sparks(origin, 10, spec.Color, 3f, 0.3f, 1.5f);
+                    }
+                    sfx.Fountain();
+                    break;
+                }
+
+                case SkillEffect.Dash:
+                {
+                    var nearest = enemies.FindNearest(origin, spec.Range);
+                    Vector2 aim = nearest != null ? (nearest.Pos - origin).normalized : facing;
+                    Vector2 start = origin;
+                    Vector2 end;
+                    if (mine) { player.SkillDash(aim, spec.Range, room); end = player.Pos; }
+                    else { twin.DashAlong(aim, spec.Range); end = twin.Pos; }
+                    HitAlong(start, end, radius, damage, st);
+                    if (!SkillVfx.Cast(fx, spec, player, origin, aim, radius, start, end))
+                    {
+                        // 通り道に残る火花（残像）と、着いた所の閃光
+                        for (int k = 0; k <= 6; k++) fx.Sparks(Vector2.Lerp(start, end, k / 6f), 3, spec.Color, 0.8f, 0.35f, 1f);
+                        fx.Slash(end, aim, 1.8f, 160f, spec.Color);
+                        fx.Disc(end, 1.4f, Fade(spec.Color, 0.5f), 0.25f);
+                    }
+                    if (mine) Shake?.Invoke(0.06f, 0.12f);
+                    sfx.Boom();
+                    break;
+                }
+
+                case SkillEffect.Strike when spec.Scatter:
+                {
+                    // 自分のまわりのあちこちに、ばらばらに落ちる
+                    float area = spec.Radius2 * st.AreaMult;
+                    for (int k = 0; k < Mathf.Max(1, spec.Count); k++)
+                    {
+                        Vector2 at = origin + UnityEngine.Random.insideUnitCircle * area;
+                        float delay = spec.Delay + 0.09f * k;
+                        strikes.Add(new PendingStrike { Pos = at, Timer = delay, Damage = damage, Radius = radius, Color = spec.Color, Spec = spec });
+                        if (!SkillVfx.StrikeWarn(fx, spec, at, radius, delay))
+                            fx.Ring(at, radius, new Color(1f, 0.3f, 0.2f, 0.6f), delay);
+                    }
+                    break;
+                }
+
+                case SkillEffect.Strike:
+                {
+                    var target = enemies.FindNearest(origin, spec.Range);
+                    Vector2 at = target != null ? target.Pos : origin + facing * 3f;
+                    strikes.Add(new PendingStrike { Pos = at, Timer = spec.Delay, Damage = damage, Radius = radius, Color = spec.Color, Spec = spec });
+                    if (!SkillVfx.StrikeWarn(fx, spec, at, radius, spec.Delay))
+                        fx.Ring(at, radius, new Color(1f, 0.3f, 0.2f, 0.6f), spec.Delay); // 落ちる場所の予告
+                    break;
+                }
+            }
         }
 
         static Color Fade(Color c, float a) => new Color(c.r, c.g, c.b, a);
@@ -335,12 +379,6 @@ namespace VividOfFade
                 bool crit = UnityEngine.Random.value < st.EffectiveCrit;
                 enemies.Damage(e, damage * (crit ? st.CritMult : 1f), ab.normalized, crit);
             }
-        }
-
-        Vector2 Aim(Player player, float range)
-        {
-            var target = enemies.FindNearest(player.Pos, range);
-            return target != null ? (target.Pos - player.Pos).normalized : player.FacingLogical;
         }
 
         static Vector2 Rotate(Vector2 v, float degrees)

@@ -11,6 +11,13 @@ namespace VividOfFade
     {
         static readonly Color White = Color.white;
 
+        /// <summary>虹の7色（彩灯者の演出）。</summary>
+        public static readonly Color[] Rainbow =
+        {
+            new Color(1f, 0.35f, 0.35f, 0.85f), new Color(1f, 0.6f, 0.25f, 0.85f), new Color(1f, 0.9f, 0.3f, 0.85f), new Color(0.45f, 0.9f, 0.45f, 0.85f),
+            new Color(0.45f, 0.85f, 1f, 0.85f), new Color(0.4f, 0.55f, 1f, 0.85f), new Color(0.75f, 0.45f, 1f, 0.85f),
+        };
+
         /// <summary>使った瞬間の演出。</summary>
         public static bool Cast(FxSystem fx, SkillSpec spec, Player player, Vector2 origin, Vector2 aim, float radius, Vector2 dashStart, Vector2 dashEnd)
         {
@@ -262,6 +269,8 @@ namespace VividOfFade
                     return new ProjectileSystem.Look { Sprite = PixelArt.Crescent, Tint = new Color(0.85f, 0.92f, 1f), AlignToDir = true, Scale = 1.2f };
                 case "Constellation": // 回る星
                     return new ProjectileSystem.Look { Sprite = PixelArt.Star, Tint = new Color(0.8f, 0.92f, 1f), Spin = 540f, Scale = 1.3f };
+                case "Spectrum Volley": // 光の矢（色は1本ずつ SkillSystem で変える）
+                    return new ProjectileSystem.Look { Sprite = PixelArt.LightArrow, Tint = Color.white, AlignToDir = true, Scale = 1.3f };
                 case "Umbral Storm": // 影の三日月
                     return new ProjectileSystem.Look { Sprite = PixelArt.Crescent, Tint = new Color(0.65f, 0.45f, 1f), AlignToDir = true, Scale = 1.4f };
                 default:
@@ -318,6 +327,29 @@ namespace VividOfFade
                     FlameColumn(fx, at, 4f, 14);
                     fx.Ring(at, radius, new Color(1f, 0.5f, 0.2f, 0.9f), 0.3f);
                     return true;
+                case "Rainbow Pillar": // 虹色の光の十字：真ん中に光の柱、画面の縦横へ七色の光が伸びる
+                case "Rainbow Rain":
+                {
+                    fx.Pillar(at, new Color(1f, 1f, 1f, 0.9f), radius * 0.45f, 6f, 0.4f);
+                    fx.Emit(at, 1.2f, PixelArt.HolyCross, new Color(1f, 0.85f, 1f, 1f), 0.6f, Vector2.zero, 0.6f, 0f, 2.4f, 3.4f);
+                    // 画面の横（論理 (1,-1)）と縦（論理 (1,1)）の向きに、虹の7色を並べて十字にする
+                    Vector2 h = new Vector2(1f, -1f).normalized, v = new Vector2(1f, 1f).normalized;
+                    for (int k = 1; k <= 7; k++)
+                    {
+                        float d = radius * 1.1f * k / 7f;
+                        var col = Rainbow[k - 1];
+                        fx.After(k * 0.025f, () =>
+                        {
+                            fx.Disc(at + h * d, 0.32f, col, 0.35f);
+                            fx.Disc(at - h * d, 0.32f, col, 0.35f);
+                            fx.Disc(at + v * d, 0.32f, col, 0.35f);
+                            fx.Disc(at - v * d, 0.32f, col, 0.35f);
+                        });
+                    }
+                    fx.Ring(at, radius, new Color(1f, 0.8f, 1f, 0.8f), 0.3f);
+                    fx.Sparks(at, 14, new Color(1f, 0.85f, 1f), radius * 2.5f, 0.45f, 3f);
+                    return true;
+                }
                 case "Starfall": // 星がはじけて、きらめきが散る
                     for (int k = 0; k < 10; k++)
                     {

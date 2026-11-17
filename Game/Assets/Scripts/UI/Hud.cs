@@ -239,7 +239,7 @@ namespace VividOfFade
                 }
 
                 var spec = SkillInfo.Get(ClassInfo.Current, index);
-                int mpCost = SkillInfo.MpCost(spec, index, ch.Level);
+                int mpCost = SkillInfo.MpCost(spec, index, ch.Level, player.MaxMp);
                 bool enoughMp = player.Mp >= mpCost;
                 Button(r, null, new Color(0f, 0f, 0f, 0.55f), centered, () => World.Skills.Press(slot, World.Player));
                 OrnateFrame(r, FrameGold, FrameT, false, false);
