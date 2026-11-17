@@ -344,7 +344,8 @@ namespace VividOfFade
             s.DamageTaken = cls.DamageTaken * (1f - Mathf.Min(0.6f, reduction)); // 被ダメージの軽減は 60% まで
             ApplyAbyssSets(s, equipped);
             s.DodgeCooldown = GameConfig.DodgeCooldown * cls.DodgeCooldownMult * (1f - Mathf.Min(0.5f, dodgeCdr));
-            s.CooldownMult = 1f - Mathf.Min(0.5f, cdr); // 待ち時間の短縮は 50% まで
+            cdr += dex * 0.002f; // DEX 1 ポイントでスキルの待ち時間 -0.2%（詠唱が速くなる）
+            s.CooldownMult = 1f - Mathf.Min(0.5f, cdr); // 待ち時間の短縮は 50% まで（装備と DEX を合わせて）
             s.FireInterval = w.Interval / (1f + atkSpd);
             s.MoveSpeed = cls.Speed * (1f + moveSpd);
             s.CritChance = Mathf.Min(s.CritChance + w.CritBonus, GameConfig.MaxCritChance); // 会心率の上限は 150%（敵の会心耐性で減るので、100% を超えても意味がある）
