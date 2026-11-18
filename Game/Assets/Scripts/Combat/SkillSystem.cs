@@ -205,7 +205,7 @@ namespace VividOfFade
                     break;
 
                 case SkillEffect.Summon:
-                    Twin.Summon(player, spec.Duration);
+                    Twin.Summon(player, spec.Duration, power); // 分身の強さに、スキルの威力（スキルレベル）が掛かる
                     player.PlayPose(Player.Pose.Cast, player.FacingLogical);
                     sfx.Pickup();
                     break;
@@ -219,7 +219,7 @@ namespace VividOfFade
 
         /// <summary>分身がスキルを使う（分身の位置から、半分の威力で。MP は使わない）。</summary>
         public void CastTwin(SkillSpec spec, float power, Phantom twin, PlayerStats st) =>
-            CastAttack(spec, power, twin.Pos, twin.Facing, st, SpecialClass.TwinPower, null, twin);
+            CastAttack(spec, power, twin.Pos, twin.Facing, st, twin.Strength, null, twin);
 
         /// <summary>攻撃のスキル（周り・弾・突進・落とす）。自分（player）か分身（twin）のどちらかから撃つ。</summary>
         void CastAttack(SkillSpec spec, float power, Vector2 origin, Vector2 facing, PlayerStats st, float scale, Player player, Phantom twin)

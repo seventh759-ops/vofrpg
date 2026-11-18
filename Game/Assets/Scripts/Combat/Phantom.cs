@@ -5,7 +5,7 @@ namespace VividOfFade
 {
     /// <summary>
     /// 彩灯者の分身（8つ目のスキル「彩の分身」で呼ぶ）。
-    /// 自分の半分の強さ（SpecialClass.TwinPower）で、持っている武器で攻撃し、ボタンに付けている攻撃のスキルも使う（MP は使わない）。
+    /// 自分の半分の強さ（SpecialClass.TwinPower。スキルの威力が掛かり、Lv20 でほぼ自分と同じ）で、持っている武器で攻撃し、ボタンに付けている攻撃のスキルも使う（MP は使わない）。
     /// 見た目は自分の絵を桃色に透かしたもの。敵からは狙われない（光の影なので）。時間が来るか、自分が倒れると消える。
     /// </summary>
     public sealed class Phantom : MonoBehaviour
@@ -29,6 +29,8 @@ namespace VividOfFade
         readonly List<Enemy> hits = new List<Enemy>();
 
         public bool Active => life > 0f;
+        /// <summary>分身の強さ（自分に対する割合）。半分 × スキルの威力（スキルレベル）。</summary>
+        public float Strength { get; private set; } = SpecialClass.TwinPower;
         public float Remaining => life;
         public Vector2 Pos => pos;
         public Vector2 Facing { get; private set; } = new Vector2(1f, 0f);
@@ -45,9 +47,10 @@ namespace VividOfFade
         }
 
         /// <summary>呼び出す（もういれば、時間を戻して呼び直す）。</summary>
-        public void Summon(Player player, float duration)
+        public void Summon(Player player, float duration, float power)
         {
             life = duration;
+            Strength = SpecialClass.TwinPower * power;
             atkTimer = 0.3f;
             for (int i = 0; i < skillCd.Length; i++) skillCd[i] = 1f + i * 0.7f; // 呼んですぐに全部のスキルを撃たないよう、少しずつずらす
             Vector2 side = new Vector2(-0.7f, 0.7f); // 画面の左隣
@@ -153,7 +156,7 @@ namespace VividOfFade
         /// <summary>遠近両用：近ければ斬る（周りを焼く武器なら焼く）、遠ければ弾を撃つ。攻撃したら true。</summary>
         bool WeaponAttack(PlayerStats st, Player player, Enemy target)
         {
-            float power = SpecialClass.TwinPower;
+            float power = Strength;
             Vector2 d = target.Pos - pos;
             float dist = d.magnitude;
             Vector2 dir = dist > 0.001f ? d / dist : Facing;

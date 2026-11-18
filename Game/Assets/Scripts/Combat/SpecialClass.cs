@@ -21,8 +21,8 @@ namespace VividOfFade
             // 8つ目（彩灯者になったときに覚える）：自分の半分の強さの分身を呼び出す。分身は同じ武器で攻撃し、付けているスキルも使う
             Skill = new SkillSpec
             {
-                Name = "Prism Twin", NameJa = "彩の分身", Desc = "Summon a twin with half your strength for 60s. It attacks with your weapon and uses your skills. Costs half your max MP.",
-                DescJa = "60秒、自分の半分の強さの分身を呼ぶ。同じ武器で攻撃し、スキルも使う。最大MPの半分を使う。",
+                Name = "Prism Twin", NameJa = "彩の分身", Desc = "Summon a twin with half your strength (x power) for 60s. It attacks with your weapon and uses your skills. Costs half your max MP.",
+                DescJa = "60秒、自分の半分×威力の強さの分身を呼ぶ。同じ武器で攻撃し、スキルも使う。最大MPの半分を使う。",
                 ReqLevel = 1, MpPctOfMax = 0.5f, Cooldown = 90f, Effect = SkillEffect.Summon, Duration = 60f, Range = 8f,
                 Color = new Color(1f, 0.55f, 0.9f, 0.9f),
             },
