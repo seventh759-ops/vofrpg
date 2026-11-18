@@ -202,7 +202,8 @@ namespace VividOfFade
                 points ? gold : row, centered, () => world.OpenTownPanel(true));
             hud.Button(new Rect(pad + (third + tgap) * 2f, y, third, sbh), Loc.T("SKILLS", "スキル"), row, centered, () => world.OpenTownPanel(false));
 
-            // 案内役（左下）
+            // 案内役（左下）。女神像に捧げたあとは、案内役はもういない（町にも現れず、何も言わない）
+            if (ch.Ascended) return;
             float gs = W * 0.2f;
             var gr = new Rect(W * 0.04f, H - gs - H * 0.02f, gs, gs);
             Hud.DrawSprite(gr, PixelArt.Guide);
