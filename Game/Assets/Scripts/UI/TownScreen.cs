@@ -729,7 +729,7 @@ namespace VividOfFade
         {
             float W = Screen.width, H = Screen.height;
             Hud.Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.82f));
-            var r = new Rect(W * 0.07f, H * 0.28f, W * 0.86f, H * 0.4f);
+            var r = new Rect(W * 0.07f, H * 0.24f, W * 0.86f, H * 0.48f); // 2段目の注意が長いので、少し高くする
             Hud.Fill(r, new Color(0.18f, 0.03f, 0.06f, 0.95f));
             Hud.OrnateFrame(r, new Color(0.8f, 0.2f, 0.25f, 1f), 1f, false, false);
             float inner = r.width * 0.05f;
@@ -744,8 +744,8 @@ namespace VividOfFade
                                  $"持っている火種をすべて（{ch.Embers}個）捧げます。捧げた火種は戻りません。よろしいですか？");
                     break;
                 case 2:
-                    text = Loc.T("The Abyss will close and you can never enter it again. The tower turns over, and you climb it again from floor 1 (your tower records stay). Your suspended run will be lost. Really?",
-                                 "捧げると深淵は閉じ、二度と入れなくなります。塔は反転し、1層から昇り直すことになります（塔の記録はそのまま残ります）。中断している挑戦も消えます。本当によろしいですか？");
+                    text = Loc.T("The Abyss will close and you can never enter it again. The tower turns over, and you climb it again from floor 1 (your tower records stay). Enemies there are as strong as Lv100 from the first floor, so rebirths and class changes afterwards (back to Lv1) will be very hard. Grow strong before you offer. Your suspended run will be lost. Really?",
+                                 "捧げると深淵は閉じ、二度と入れなくなります。塔は反転し、1層から昇り直すことになります（塔の記録はそのまま残ります）。昇る塔の敵は1層から Lv100 相当なので、捧げたあとに転生・転職して Lv1 に戻ると、とても厳しくなります。転生で十分に強くなってから捧げることをすすめます。中断している挑戦も消えます。本当によろしいですか？");
                     break;
                 default:
                     text = Loc.T("Last chance. This rite cannot be undone. Offer your embers?",
