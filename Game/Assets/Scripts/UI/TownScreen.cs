@@ -745,17 +745,17 @@ namespace VividOfFade
             {
                 var done = new GUIStyle(hud.CenteredStyle);
                 done.normal.textColor = new Color(1f, 0.6f, 0.6f);
-                Hud.FitLabel(btn, Loc.T("OFFERED  -  the tower now rises", "捧げた  -  塔は昇る塔になった"), done);
+                Hud.FitLabel(btn, Loc.T("Already offered. The tower now reaches for the sky.", "すでに捧げた――塔は、空へと向かっている"), done);
                 return;
             }
             if (Town.CanOffer(ch))
-                hud.Button(btn, Loc.T($"OFFER  -  all {ch.Embers} embers and your level", $"捧げる  -  火種 {ch.Embers} とレベル"), new Color(0.55f, 0.08f, 0.12f, 0.9f), hud.CenteredStyle, () => offerStep = 1);
+                hud.Button(btn, Loc.T($"Offer {ch.Embers} embers and the strength you built", $"火種 {ch.Embers} と、積み上げた力を捧げる"), new Color(0.55f, 0.08f, 0.12f, 0.9f), hud.CenteredStyle, () => offerStep = 1);
             else
             {
                 Hud.Fill(btn, dim);
                 var ng = new GUIStyle(hud.CenteredStyle);
                 ng.normal.textColor = new Color(0.6f, 0.6f, 0.6f);
-                GUI.Label(btn, Loc.T("You have no embers to offer", "捧げる火種がない"), ng);
+                GUI.Label(btn, Loc.T("You hold no embers to offer", "捧げるべき火種が、手元にない"), ng);
             }
         }
 
@@ -770,33 +770,47 @@ namespace VividOfFade
             float inner = r.width * 0.05f;
             var head = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
             head.normal.textColor = new Color(1f, 0.55f, 0.55f);
-            Hud.FitLabel(new Rect(r.x, r.y + inner, r.width, H * 0.05f), Loc.T($"CONFIRM  ({offerStep}/3)", $"確認（{offerStep}/3）"), head);
-            string text;
+            Hud.FitLabel(new Rect(r.x, r.y + inner, r.width, H * 0.05f), Loc.T($"THE GODDESS ASKS  ({offerStep}/3)", $"女神の問い（{offerStep}/3）"), head);
+            // 女神の問い（語り）と、その下に小さく、何が起きるか
+            string text, note;
             switch (offerStep)
             {
                 case 1:
-                    text = Loc.T($"You will offer ALL of your embers ({ch.Embers}) and your level (Lv {ch.Level} -> Lv 1). Your class, rebirths, gear and skills stay; gear you can no longer wear goes to storage. Are you sure?",
-                                 $"持っている火種をすべて（{ch.Embers}個）と、レベル（Lv{ch.Level} → Lv1）を捧げます。職業・転生・装備・スキルはそのままですが、付けられなくなった装備は倉庫へ送られます。よろしいですか？");
+                    text = Loc.T("Every ember you carry, down to the last. And the strength you have built, step by step, all this way... Even so, will you offer them to me?",
+                                 "あなたの火種を、ひとつ残らず。そして、ここまで一歩ずつ積み上げてきた力も――。それでも、私に捧げますか？");
+                    note = Loc.T($"(All {ch.Embers} embers / Lv {ch.Level} -> Lv 1. Class, rebirths, gear and skills remain. Gear you can no longer wear goes to storage.)",
+                                 $"（火種 {ch.Embers} をすべて／Lv{ch.Level} → Lv1。職・転生・装備・技は残る。身に付けられなくなった装備は倉庫へ）");
                     break;
                 case 2:
-                    text = Loc.T("The Abyss will close and you can never enter it again. The tower turns over, and you climb it again from floor 1 (your tower records stay). Your suspended run will be lost. Really?",
-                                 "捧げると深淵は閉じ、二度と入れなくなります。塔は反転し、1層から昇り直すことになります（塔の記録はそのまま残ります）。中断している挑戦も消えます。本当によろしいですか？");
+                    text = Loc.T("Once offered, the way to the Abyss will be sealed, never to open again. The tower will turn over, and you will climb toward the sky from the very first step... Are you truly certain?",
+                                 "捧げれば、深淵への道は閉ざされ、二度と開くことはありません。塔はさかさまになり、あなたは最初の一段から、空へ向かって昇ることになるでしょう。……本当に、よいのですね？");
+                    note = Loc.T("(The Abyss can never be entered again. You start from floor 1. Your tower records remain. A suspended run will be lost.)",
+                                 "（深淵には二度と入れない／1層から昇り直す／塔の記録は残る／中断中の挑戦は消える）");
                     break;
                 default:
-                    text = Loc.T("Last chance. This rite cannot be undone. Offer your embers?",
-                                 "最後の確認です。この儀は取り消せません。本当に捧げますか？");
+                    text = Loc.T("This is the last time I will ask. What is offered never returns.",
+                                 "これが最後の問いです。一度捧げたものは、もう二度と戻りません。");
+                    note = Loc.T("(This cannot be undone.)", "（取り消せません）");
                     break;
             }
             var wrap = new GUIStyle(hud.LabelStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };
-            GUI.Label(new Rect(r.x + inner, r.y + inner + H * 0.065f, r.width - inner * 2f, r.height * 0.55f), text, wrap);
+            wrap.fontStyle = FontStyle.Italic;
+            wrap.normal.textColor = new Color(1f, 0.82f, 0.75f);
+            string spoken = Loc.Ja ? "「" + text + "」" : "\"" + text + "\"";
+            float textY = r.y + inner + H * 0.065f;
+            float textH = wrap.CalcHeight(new GUIContent(spoken), r.width - inner * 2f);
+            GUI.Label(new Rect(r.x + inner, textY, r.width - inner * 2f, textH), spoken, wrap);
+            var noteStyle = new GUIStyle(hud.SmallStyle) { wordWrap = true };
+            noteStyle.normal.textColor = new Color(0.75f, 0.72f, 0.78f);
+            GUI.Label(new Rect(r.x + inner, textY + textH + H * 0.012f, r.width - inner * 2f, r.height * 0.3f), note, noteStyle);
             float btnH = H * 0.055f, gap = r.width * 0.04f;
             float bw = (r.width - inner * 2f - gap) * 0.5f;
             float by = r.yMax - inner - btnH;
             // 連打で通り抜けないよう、2段目だけ「捧げる」と「やめる」の左右を入れ替える
             bool flip = offerStep == 2;
             float cx = flip ? r.x + inner + bw + gap : r.x + inner, ox = flip ? r.x + inner : r.x + inner + bw + gap;
-            hud.Button(new Rect(cx, by, bw, btnH), Loc.T("CANCEL", "やめる"), new Color(1f, 1f, 1f, 0.15f), hud.CenteredStyle, () => offerStep = 0);
-            hud.Button(new Rect(ox, by, bw, btnH), offerStep < 3 ? Loc.T("OFFER", "捧げる") : Loc.T("OFFER ALL", "すべて捧げる"),
+            hud.Button(new Rect(cx, by, bw, btnH), Loc.T("NOT YET", "やめておく"), new Color(1f, 1f, 1f, 0.15f), hud.CenteredStyle, () => offerStep = 0);
+            hud.Button(new Rect(ox, by, bw, btnH), offerStep < 3 ? Loc.T("I WILL", "捧げます") : Loc.T("OFFER EVERYTHING", "すべてを捧げる"),
                 new Color(0.6f, 0.08f, 0.12f, 0.95f), hud.CenteredStyle, () =>
                 {
                     if (offerStep < 3) { offerStep++; return; }
