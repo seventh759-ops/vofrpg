@@ -123,8 +123,8 @@ namespace VividOfFade
                     Effect = SkillEffect.Strike, Mult = 10f, Radius = 1.8f, Delay = 0.5f, Range = 8f, Color = new Color(0.7f, 0.5f, 1f, 0.9f) },
                 new SkillSpec { Name = "Vivid Grace", NameJa = "彩の加護", DescJa = "20秒、ダメージ+50%・防御+60。", Desc = "Damage +50%, armor +60 for 20s.", ReqLevel = 26, Mp = 25, Cooldown = 18f,
                     Effect = SkillEffect.Buff, Duration = 20f, BuffDamage = 0.5f, BuffArmor = 60f, Color = new Color(1f, 0.6f, 0.9f, 0.9f) },
-                new SkillSpec { Name = "Kaleidoscope", NameJa = "極彩", DescJa = "12秒、七色に輝く。攻撃速度+40%・弾+2・被ダメージ-20%。", Desc = "Shine in seven colors for 12s: attack speed +40%, +2 projectiles, damage taken -20%.", ReqLevel = 35, Mp = 50, Cooldown = 30f,
-                    Effect = SkillEffect.Buff, Duration = 12f, BuffAttackSpeed = 0.4f, BuffExtra = 2, BuffTaken = 0.8f, Color = new Color(0.95f, 0.5f, 1f, 0.9f) },
+                new SkillSpec { Name = "Kaleidoscope", NameJa = "極彩", DescJa = "とても大きな七色の光の輪。", Desc = "A huge ring of seven-colored light.", ReqLevel = 35, Mp = 40, Cooldown = 12f,
+                    Effect = SkillEffect.Nova, Mult = 8f, Radius = 4.2f, Color = new Color(0.95f, 0.5f, 1f, 0.9f) },
             },
         };
 
