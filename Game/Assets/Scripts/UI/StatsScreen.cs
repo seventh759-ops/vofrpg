@@ -18,6 +18,10 @@ namespace VividOfFade
         int[] pending = new int[Attributes.Count];
         CharacterData pendingFor;
 
+        // 「すべての能力」の一覧（開いているか、スクロール量）
+        bool showAll;
+        float allScroll;
+
         // 2回押しで実行する確認（押してから数秒だけ有効）
         string armed;
         float armedUntil;
@@ -203,7 +207,19 @@ namespace VividOfFade
             var head = new GUIStyle(label) { fontStyle = FontStyle.Bold };
             head.normal.textColor = new Color(1f, 0.85f, 0.4f);
             GUI.Label(new Rect(pad, y, W, lineH), preview ? Loc.T("RESULT (after APPLY)", "最終的な能力（確定後）") : Loc.T("RESULT", "最終的な能力"), head);
+            {
+                // 「すべての能力」の切り替え（固有効果・セット効果まで、計算後の能力を全部並べる）
+                float tw = W * 0.3f;
+                hud.Button(new Rect(W - pad - tw, y - lineH * 0.1f, tw, lineH * 1.2f), showAll ? Loc.T("BACK", "もどる") : Loc.T("ALL STATS", "すべての能力"),
+                    showAll ? plusBack : buttonBack, centered, () => { showAll = !showAll; allScroll = 0f; });
+            }
             y += lineH * 1.1f;
+            if (showAll)
+            {
+                DrawAll(world, st, ch, shownHp, shownMp, shownLight, kind, new Rect(pad, y, W - pad * 2f, bottomY - y - H * 0.01f));
+                DrawResetButtons(world, W, pad, bottomY, btnH);
+                return;
+            }
             var key = new GUIStyle(small);
             key.normal.textColor = new Color(0.65f, 0.65f, 0.7f);
             var val = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
@@ -229,11 +245,150 @@ namespace VividOfFade
             y += lineH * 1.1f;
             DrawBoons(world.Player, new Rect(pad, y, W - pad * 2f, bottomY - y - H * 0.01f));
 
-            // 振り直しとレベルのリセット（2回押しで実行）
+            DrawResetButtons(world, W, pad, bottomY, btnH);
+        }
+
+        /// <summary>振り直しとレベルのリセット（2回押しで実行）。</summary>
+        void DrawResetButtons(GameWorld world, float W, float pad, float bottomY, float btnH)
+        {
             float gap = W * 0.03f;
             float half = (W - pad * 2f - gap) * 0.5f;
             ConfirmButton(new Rect(pad, bottomY, half, btnH), "points", Loc.T("RESET POINTS", "ポイントを振り直す"), world.ResetPoints);
             ConfirmButton(new Rect(pad + half + gap, bottomY, half, btnH), "level", Loc.T("RESET ALL", "すべてリセット"), world.ResetLevel);
+        }
+
+        /// <summary>
+        /// すべての能力：装備・能力値・加護・職の補正・セット効果をすべて計算したあとの値を、分類ごとに並べる。
+        /// 固有効果・セット効果は、持っているものだけ出す。入りきらなければスクロールする。
+        /// </summary>
+        void DrawAll(GameWorld world, PlayerStats st, CharacterData ch, int hp, int mp, float light, string kind, Rect area)
+        {
+            // (名前, 値)。値が null の行は見出し、名前が空の行は1行まるごとの説明
+            var rows = new System.Collections.Generic.List<(string k, string v, Color c)>();
+            Color white = Color.white, gold = new Color(1f, 0.85f, 0.4f);
+            void H(string t) => rows.Add((t, null, gold));
+            void R(string k, string v) => rows.Add((k, v, white));
+            void Line(string t, Color c) => rows.Add(("", t, c));
+            string Pct(float f) => $"{f * 100f:0.#}%";
+            int tier = world.Enemies.FloorTier;
+
+            H(Loc.T("Attack", "攻撃"));
+            R(Loc.T("Damage", "ダメージ"), $"{st.Damage:0}");
+            R(Loc.T("Attacks/s", "攻撃/秒"), $"{st.AttacksPerSecond:0.00}");
+            R("DPS", $"{st.Damage * st.AttacksPerSecond * (1f + st.EffectiveCrit * (st.CritMult - 1f)):0}");
+            R(Loc.T("Crit", "会心率"), GameConfig.CritResist > 0f ? $"{Pct(st.CritChance)}→{Pct(st.EffectiveCrit)}" : Pct(st.CritChance));
+            R(Loc.T("Crit dmg", "会心ダメージ"), $"x{st.CritMult:0.00}");
+            R("HIT", Loc.T($"{st.Hit} ({st.HitChance(tier) * 100f:0}%)", $"{st.Hit}（{st.HitChance(tier) * 100f:0}%）"));
+            R(Loc.T("Double strike", "連続攻撃の確率"), Pct(st.DoubleStrikeChance));
+            R(Loc.T("Elite/boss dmg", "精鋭・ボスへのダメージ"), "+" + Pct(st.EliteDamage));
+            Line(kind, new Color(0.8f, 0.8f, 0.85f));
+            if (st.Hybrid) Line(Loc.T("Any range: cuts near, shoots far", "遠近両用：近くは斬り、遠くは撃つ"), new Color(0.8f, 0.8f, 0.85f));
+
+            H(Loc.T("Skills", "スキル"));
+            R(Loc.T("Skill power base", "スキルの基準の攻撃力"), $"{st.SkillBase:0}");
+            R(Loc.T("Skill damage", "スキルのダメージ"), "+" + Pct(st.SkillDamage));
+            R(Loc.T("Cooldown", "待ち時間"), "-" + Pct(1f - st.CooldownMult));
+            R(Loc.T("Skill area", "スキルの範囲"), $"x{st.AreaMult:0.00}");
+
+            H(Loc.T("Defense", "守り"));
+            R("HP", $"{hp}");
+            R(Loc.T("HP regen", "HP回復"), Loc.T($"{st.HpRegen:0.0}/s", $"{st.HpRegen:0.0}/秒"));
+            R("MP", $"{mp}");
+            R(Loc.T("MP regen", "MP回復"), Loc.T($"{st.MpRegen:0.0}/s", $"{st.MpRegen:0.0}/秒"));
+            R(Loc.T("Armor", "防御"), $"{st.Armor:0}");
+            R(Loc.T("Damage taken", "受けるダメージ"), st.DamageTaken < 1f ? "-" + Pct(1f - st.DamageTaken) : st.DamageTaken > 1f ? "+" + Pct(st.DamageTaken - 1f) : "±0%");
+            R("EVA", Loc.T($"{st.Eva} ({st.EvadeChance(tier) * 100f:0}%)", $"{st.Eva}（{st.EvadeChance(tier) * 100f:0}%）"));
+            R(Loc.T("Dodge cooldown", "回避の待ち時間"), Loc.T($"{st.DodgeCooldown:0.0}s", $"{st.DodgeCooldown:0.0}秒"));
+            R(Loc.T("Life steal", "吸収"), Pct(st.LifeSteal));
+            R(Loc.T("HP on kill", "倒したときのHP回復"), $"{st.HealOnKill}");
+
+            H(Loc.T("Other", "そのほか"));
+            R(Loc.T("Speed", "速さ"), $"{st.MoveSpeed:0.0}");
+            R(Loc.T("Light", "明るさ"), $"{light:0.0}");
+            R(Loc.T("EXP gain", "経験値"), "+" + Pct(st.ExpGain));
+            R(Loc.T("Ember find", "拾う火種"), "+" + Pct(st.EmberFind));
+            R(Loc.T("Magic find", "珍しい品の出やすさ"), "+" + Pct(st.MagicFind));
+            R(Loc.T("MP next Lv", "次のLvのMP"), $"+{Progression.MpPerLevel(Progression.BaseWis(ch))}");
+
+            H(Loc.T("Unique effects", "固有効果"));
+            int before = rows.Count;
+            if (st.ExplodeMult > 0f) R(Loc.T("Explode on kill", "倒したときの爆発"), $"x{st.ExplodeMult:0.00}");
+            if (st.DodgeNovaMult > 0f) R(Loc.T("Flame on dodge", "回避したときの炎"), $"x{st.DodgeNovaMult:0.00}");
+            if (st.AbyssBlastChance > 0f) R(Loc.T("Abyss blast", "大爆発の確率"), Pct(st.AbyssBlastChance));
+            if (st.VoidRift > 0) R(Loc.T("Void rift", "裂け目"), $"x{st.VoidRift}");
+            if (st.StarfallChance > 0f) R(Loc.T("Starfall on crit", "会心で星が落ちる確率"), Pct(st.StarfallChance));
+            if (st.RetributionMult > 0f) R(Loc.T("Retribution", "受けたときの反撃"), $"x{st.RetributionMult:0.00}");
+            if (rows.Count == before) Line(Loc.T("None", "なし"), new Color(0.6f, 0.6f, 0.65f));
+
+            H(Loc.T("Abyss sets", "深淵のセット"));
+            before = rows.Count;
+            foreach (var set in AbyssSets.All)
+            {
+                int have = AbyssSets.Count(world.Inventory.Equipped, set);
+                if (have <= 0) continue;
+                var sc = AbyssSets.ColorOf(set);
+                R(Loc.T($"{AbyssSets.Name(set)} set", $"{AbyssSets.Name(set)}のセット"), $"{have}/5");
+                foreach (int t in AbyssSets.Tiers)
+                {
+                    bool on = have >= t;
+                    Line(Loc.T($"({t}) ", $"（{t}つ）") + AbyssSets.BonusText(set, t), on ? sc : new Color(0.45f, 0.45f, 0.5f));
+                }
+            }
+            if (rows.Count == before) Line(Loc.T("None", "なし"), new Color(0.6f, 0.6f, 0.65f));
+
+            // 描く（見えている範囲だけ。スクロールできる）
+            var small = hud.SmallStyle;
+            var label = hud.LabelStyle;
+            float rowH = label.fontSize * 1.45f;
+            float contentH = rows.Count * rowH;
+            float maxScroll = Mathf.Max(0f, contentH - area.height);
+            allScroll = Mathf.Clamp(allScroll + ScrollInput.Delta(), 0f, maxScroll);
+            var key = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+            key.normal.textColor = new Color(0.7f, 0.7f, 0.75f);
+            var val = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
+            var head = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            head.normal.textColor = gold;
+            var line = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+            GUI.BeginGroup(area);
+            float y = -allScroll;
+            int stripe = 0;
+            foreach (var (k, v, c) in rows)
+            {
+                if (y + rowH >= 0f && y <= area.height)
+                {
+                    var r = new Rect(0f, y, area.width, rowH);
+                    if (v == null)
+                    {
+                        Hud.Fill(new Rect(0f, y + rowH - 2f, area.width, 2f), new Color(1f, 0.85f, 0.4f, 0.35f));
+                        GUI.Label(r, k, head);
+                        stripe = 0;
+                    }
+                    else
+                    {
+                        Hud.Fill(r, new Color(1f, 1f, 1f, stripe % 2 == 0 ? 0.05f : 0.02f));
+                        if (k.Length == 0)
+                        {
+                            line.normal.textColor = c;
+                            Hud.FitLabel(new Rect(area.width * 0.02f, y, area.width * 0.96f, rowH), v, line);
+                        }
+                        else
+                        {
+                            Hud.FitLabel(new Rect(area.width * 0.02f, y, area.width * 0.6f, rowH), k, key);
+                            GUI.Label(new Rect(area.width * 0.4f, y, area.width * 0.58f, rowH), v, val);
+                        }
+                    }
+                }
+                if (v != null) stripe++;
+                y += rowH;
+            }
+            GUI.EndGroup();
+            // スクロールできるときは、右端に位置の目安
+            if (maxScroll > 0f)
+            {
+                float sbH = area.height * area.height / contentH;
+                float sbY = area.y + (area.height - sbH) * (allScroll / maxScroll);
+                Hud.Fill(new Rect(area.xMax + area.width * 0.005f, sbY, Mathf.Max(3f, area.width * 0.008f), sbH), new Color(1f, 1f, 1f, 0.3f));
+            }
         }
 
         int selectedBoon = -1;
