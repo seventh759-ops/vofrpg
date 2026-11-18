@@ -995,7 +995,7 @@ namespace VividOfFade
             if (zone.Key != currentZone)
             {
                 currentZone = zone.Key;
-                Hud.ShowBanner($"{GameConfig.FloorName(floor)}  -  {zone.Title}", zone.DisplaySubtitle, zone.Accent);
+                Hud.ShowBanner($"{GameConfig.FloorName(floor)}  -  {zone.Title}", zone.DisplaySubtitle, zone.Bright ? new Color(1f, 0.88f, 0.55f) : (Color)zone.Accent); // 反転した区画は模様の色が暗いので、名前は明るい金で
                 if (GameConfig.IsHeaven(floor))
                 {
                     // 天界の区画に入った：光の柱と、やわらかい輪（揺れはなし）
