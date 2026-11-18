@@ -1679,8 +1679,10 @@ namespace VividOfFade
             Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0f), centered, World.LeaveTitle);
 
             // 背景：ドットの大きさがそろうように整数倍で拡大し、画面を覆う（はみ出す分は切れる）
-            bool abyss = Profile.AbyssUnlocked; // 深淵へ行けるようになったら、深淵版の背景
-            var bgTex = abyss ? TitleScene.AbyssTexture : TitleScene.Texture;
+            // アビスを倒してエンディングを見たら、クリア後の世界（夜明けの塔）。その前に深淵へ行けるようになったら、深淵版の背景
+            bool cleared = Profile.AnyEndingSeen;
+            bool abyss = !cleared && Profile.AbyssUnlocked;
+            var bgTex = cleared ? TitleScene.DawnTexture : abyss ? TitleScene.AbyssTexture : TitleScene.Texture;
             float ps = Mathf.Ceil(Mathf.Max(W / TitleScene.W, H / TitleScene.H));
             var bg = new Rect((W - TitleScene.W * ps) * 0.5f, (H - TitleScene.H * ps) * 0.5f, TitleScene.W * ps, TitleScene.H * ps);
             GUI.DrawTexture(bg, bgTex);
@@ -1692,12 +1694,20 @@ namespace VividOfFade
                 float r = TitleScene.TowerRadius(w.y + 4);
                 float wx = bg.x + (TitleScene.TowerX + w.u * r) * ps, wy = bg.y + (w.y + 4) * ps;
                 float f = 0.6f + 0.4f * Mathf.PerlinNoise(t * 3f, w.y * 0.37f + w.u * 5f);
-                Glow(wx, wy, ps * 9f, abyss ? new Color(1f, 0.2f, 0.4f, 0.4f * f) : new Color(1f, 0.65f, 0.3f, 0.35f * f));
+                Glow(wx, wy, ps * 9f, abyss ? new Color(1f, 0.2f, 0.4f, 0.4f * f) : cleared ? new Color(1f, 0.85f, 0.5f, 0.3f * f) : new Color(1f, 0.65f, 0.3f, 0.35f * f));
             }
             // 最深部の灯り（尖塔の先）
             float flick = 0.55f + 0.45f * Mathf.PerlinNoise(t * 2.2f, 0.3f);
             float bx = bg.x + TitleScene.TowerX * ps, by = bg.y + (TitleScene.SpireTip - 1) * ps;
-            if (abyss)
+            if (cleared)
+            {
+                // クリア後：尖塔の先に朝日のような金色の光。下からは夜明けの光が差し込む
+                float rise = 0.85f + 0.15f * Mathf.Sin(t * 0.8f);
+                Glow(W * 0.5f, H * 1.05f, W * 0.9f, new Color(1f, 0.9f, 0.65f, 0.3f * rise));
+                Glow(bx, by, ps * 34f, new Color(1f, 0.85f, 0.55f, 0.45f * flick));
+                Glow(bx, by, ps * 8f, new Color(1f, 0.97f, 0.88f, 0.95f * flick));
+            }
+            else if (abyss)
             {
                 // 深淵の口が脈打つ
                 float beat = 0.6f + 0.4f * Mathf.Sin(t * 1.6f);
@@ -1718,7 +1728,9 @@ namespace VividOfFade
                 float ex = Hash01(i * 5 + 3) * W + Mathf.Sin(t * 0.5f + i) * W * 0.03f;
                 float ey = H * (0.95f - 0.8f * life);
                 float a = Mathf.Sin(life * Mathf.PI) * 0.5f;
-                Fill(new Rect(ex, ey, ps * 0.5f, ps * 0.5f), abyss ? new Color(1f, 0.35f, 0.55f, a) : new Color(0.85f, 0.88f, 0.95f, a)); // 深淵では、下から立ちのぼる赤い火の粉
+                Color dc = abyss ? new Color(1f, 0.35f, 0.55f, a) : new Color(0.85f, 0.88f, 0.95f, a); // 深淵では、下から立ちのぼる赤い火の粉
+                if (cleared) { var rc = SkillVfx.Rainbow[i % SkillVfx.Rainbow.Length]; dc = new Color(rc.r, rc.g, rc.b, a * 1.2f); } // クリア後は、七色の光の粒
+                Fill(new Rect(ex, ey, ps * 0.5f, ps * 0.5f), dc);
             }
 
             // 下側を暗くして文字を読みやすく
@@ -1730,7 +1742,7 @@ namespace VividOfFade
             float sc = Mathf.Max(1f, Mathf.Floor(W * 0.95f / logoTex.width));
             var logoRect = new Rect((W - logoTex.width * sc) * 0.5f, H * 0.3f, logoTex.width * sc, logoTex.height * sc);
             var old = GUI.color;
-            GUI.color = new Color(0.015f, 0.015f, 0.03f, 0.85f);
+            GUI.color = new Color(0.015f, 0.015f, 0.03f, cleared ? 0.6f : 0.85f); // 明るい背景でもロゴが読めるように
             float shw = W * 1.3f, shh = logoRect.height * 3.4f;
             GUI.DrawTexture(new Rect((W - shw) * 0.5f, logoRect.center.y + logoRect.height * 0.3f - shh * 0.5f, shw, shh), TitleArt.SoftGlow);
             GUI.color = new Color(1f, 1f, 1f, 0.75f + 0.25f * Mathf.Sin(t * 2f));
@@ -1742,6 +1754,17 @@ namespace VividOfFade
             {
                 float phase = Mathf.Repeat(t * 0.16f + Hash01(i * 31 + 3), 1f);
                 float ox = logoRect.x + crumbs[i].x * sc, oy = logoRect.y + crumbs[i].y * sc;
+                if (cleared)
+                {
+                    // クリア後：崩れていた粒が、七色に光りながら文字へ戻ってくる（崩れるのを逆に）
+                    float back = 1f - phase;
+                    float bxo = back * W * 0.12f * (0.5f + Hash01(i * 7 + 2));
+                    float byo = -(back * back * H * 0.1f + back * H * 0.01f);
+                    float ba = phase < 0.08f ? phase / 0.08f : back;
+                    var rc = SkillVfx.Rainbow[i % SkillVfx.Rainbow.Length];
+                    Fill(new Rect(ox - bxo, oy + byo, sc, sc), new Color(rc.r, rc.g, rc.b, ba));
+                    continue;
+                }
                 float dx = phase * W * 0.12f * (0.5f + Hash01(i * 7 + 2));
                 float dy = phase * phase * H * 0.1f + phase * H * 0.01f;
                 float a = phase < 0.08f ? phase / 0.08f : 1f - phase;
@@ -1754,7 +1777,7 @@ namespace VividOfFade
             Fill(new Rect(W * 0.5f + W * 0.24f, ly, lineW, 2f), new Color(0.85f, 0.8f, 0.9f, 0.6f));
             var sub = new GUIStyle(centered);
             sub.normal.textColor = new Color(0.92f, 0.88f, 0.96f, 0.95f);
-            FitLabel(new Rect(W * 0.26f, ly - H * 0.017f, W * 0.48f, H * 0.035f), (abyss ? Loc.T("Into the abyss no light can reach", "灯りの届かぬ深淵へ") : Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ")), sub);
+            FitLabel(new Rect(W * 0.26f, ly - H * 0.017f, W * 0.48f, H * 0.035f), (cleared ? Loc.T("Into a world where the light returned", "灯りの戻った世界へ") : abyss ? Loc.T("Into the abyss no light can reach", "灯りの届かぬ深淵へ") : Loc.T("Into the tower where light fades", "灯りの消えゆく塔へ")), sub);
 
             // 点滅する「タップで始める」
             var tap = new GUIStyle(centered) { fontStyle = FontStyle.Bold };
@@ -1795,7 +1818,7 @@ namespace VividOfFade
             float W = Screen.width;
             float H = Screen.height;
             // 背景：タイトルと同じ塔の絵（深淵へ行けるようになったら深淵版）を、文字が読めるように暗くして敷く
-            var bgTex = Profile.AbyssUnlocked ? TitleScene.AbyssTexture : TitleScene.Texture;
+            var bgTex = Profile.AnyEndingSeen ? TitleScene.DawnTexture : Profile.AbyssUnlocked ? TitleScene.AbyssTexture : TitleScene.Texture; // クリア後は夜明けの塔
             float ps = Mathf.Ceil(Mathf.Max(W / TitleScene.W, H / TitleScene.H));
             GUI.DrawTexture(new Rect((W - TitleScene.W * ps) * 0.5f, (H - TitleScene.H * ps) * 0.5f, TitleScene.W * ps, TitleScene.H * ps), bgTex);
             Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.02f, 0.62f));

@@ -67,8 +67,10 @@ namespace VividOfFade
         /// </summary>
         public static void DrawBackdrop(float W, float H)
         {
-            bool abyss = Profile.CurrentAbyssUnlocked; // そのキャラクターが深淵へ行けるようになったら、町も深淵版の絵（ほかのキャラクターは関係ない）
-            var tex = abyss ? TownScene.AbyssTexture : TownScene.Texture;
+            // アビスを倒してエンディングを見たら、夜明けの町（クリア後の世界）。その前に深淵へ行けるようになったら、深淵版の絵（ほかのキャラクターは関係ない）
+            bool dawn = Profile.CurrentEndingSeen;
+            bool abyss = !dawn && Profile.CurrentAbyssUnlocked;
+            var tex = dawn ? TownScene.DawnTexture : abyss ? TownScene.AbyssTexture : TownScene.Texture;
             float ps = Mathf.Ceil(Mathf.Max(W / TownScene.W, H / TownScene.H));
             var bg = new Rect((W - TownScene.W * ps) * 0.5f, (H - TownScene.H * ps) * 0.5f, TownScene.W * ps, TownScene.H * ps);
             GUI.DrawTexture(bg, tex);
@@ -82,10 +84,16 @@ namespace VividOfFade
             foreach (var l in TownScene.Lamps)
             {
                 float f = 0.7f + 0.3f * Mathf.PerlinNoise(t * 3f, l.x * 0.1f);
-                Hud.Glow(bg.x + l.x * ps, bg.y + l.y * ps, ps * 16f, abyss ? new Color(1f, 0.3f, 0.5f, 0.35f * f) : new Color(1f, 0.75f, 0.4f, 0.35f * f));
+                Hud.Glow(bg.x + l.x * ps, bg.y + l.y * ps, ps * 16f, abyss ? new Color(1f, 0.3f, 0.5f, 0.35f * f) : new Color(1f, 0.75f, 0.4f, (dawn ? 0.15f : 0.35f) * f)); // 朝は街灯を控えめに
             }
             float g = 0.75f + 0.25f * Mathf.PerlinNoise(t * 1.5f, 0.5f);
             Hud.Glow(bg.x + TownScene.GateX * ps, bg.y + (TownScene.GateY - 14) * ps, ps * 30f, abyss ? new Color(1f, 0.2f, 0.45f, 0.2f * g) : new Color(1f, 0.7f, 0.35f, 0.18f * g)); // 門の光は控えめに
+            // 夜明け版：朝日の光がゆっくり脈打つ
+            if (dawn)
+            {
+                float sun = 0.8f + 0.2f * Mathf.Sin(t * 0.7f);
+                Hud.Glow(bg.x + TownScene.MoonX * ps, bg.y + TownScene.MoonY * ps, ps * 60f, new Color(1f, 0.85f, 0.6f, 0.3f * sun));
+            }
             // 上の帯（題・名前・火種）と、タイルの並ぶあたりを少し暗く
             for (int b = 0; b < 10; b++)
                 Hud.Fill(new Rect(0, H * 0.02f * b, W, H * 0.02f + 1f), new Color(0f, 0f, 0.02f, 0.06f * (10 - b)));

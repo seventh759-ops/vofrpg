@@ -22,9 +22,10 @@ namespace VividOfFade
         /// <summary>灯った窓の位置（ゆらめきの光を重ねるため）。</summary>
         public static readonly System.Collections.Generic.List<Vector2Int> LitWindows = new System.Collections.Generic.List<Vector2Int>();
 
-        static Texture2D texture, abyssTexture;
+        static Texture2D texture, abyssTexture, dawnTexture;
         static Color32[] img;
         static bool abyss; // いま描いているのが深淵版か
+        static bool dawn;  // いま描いているのが夜明け版（クリア後の世界）か
 
         /// <summary>町の絵（ふつう）。</summary>
         public static Texture2D Texture
@@ -43,6 +44,16 @@ namespace VividOfFade
             {
                 if (abyssTexture == null) abyssTexture = Build(true);
                 return abyssTexture;
+            }
+        }
+
+        /// <summary>町の絵（夜明け版：アビスを倒したあとの世界。明けていく空と朝日、明るい色の家並み）。エンディングを見たら使う。</summary>
+        public static Texture2D DawnTexture
+        {
+            get
+            {
+                if (dawnTexture == null) dawnTexture = Build(false, true);
+                return dawnTexture;
             }
         }
 
@@ -118,15 +129,25 @@ namespace VividOfFade
         static readonly Color32[] CobbleA = Ramp(8, 4, 10, 14, 8, 18, 22, 12, 26, 32, 16, 34, 44, 22, 44, 58, 28, 54, 74, 34, 62, 92, 42, 70);
         static readonly Color32[] MoonA = Ramp(90, 10, 20, 160, 20, 40, 220, 50, 70, 255, 120, 130);
 
-        static Color32[] Sky => abyss ? SkyA : SkyN;
-        static Color32[] Hill => abyss ? HillA : HillN;
-        static Color32[] Stone => abyss ? StoneA : StoneN;
-        static Color32[] Plaster => abyss ? PlasterA : PlasterN;
-        static Color32[] Timber => abyss ? TimberA : TimberN;
-        static Color32[] Roof => abyss ? RoofA : RoofN;
+        // 夜明け版の色（クリア後の世界：上は澄んだ青、地平は桃色から金色へ。家並みも色が戻る）
+        static readonly Color32[] SkyD = Ramp(40, 58, 110, 58, 82, 140, 84, 110, 170, 118, 140, 196, 160, 168, 210, 208, 178, 196, 240, 190, 170, 255, 214, 160);
+        static readonly Color32[] HillD = Ramp(44, 50, 80, 62, 68, 98, 82, 86, 114, 104, 104, 130);
+        static readonly Color32[] StoneD = Ramp(40, 40, 58, 60, 58, 78, 84, 80, 100, 110, 104, 122, 138, 128, 144, 166, 154, 166, 196, 182, 186);
+        static readonly Color32[] PlasterD = Ramp(76, 64, 74, 106, 90, 98, 138, 118, 122, 170, 150, 146, 204, 182, 170, 232, 212, 192);
+        static readonly Color32[] TimberD = Ramp(52, 34, 30, 76, 50, 40, 102, 70, 52, 130, 92, 66);
+        static readonly Color32[] RoofD = Ramp(70, 40, 60, 98, 54, 74, 128, 70, 86, 160, 90, 98, 192, 114, 110);
+        static readonly Color32[] CobbleD = Ramp(38, 38, 52, 54, 52, 66, 74, 70, 82, 96, 88, 98, 120, 110, 114, 146, 132, 132, 172, 156, 150, 198, 180, 166);
+        static readonly Color32[] SunD = Ramp(255, 150, 60, 255, 186, 90, 255, 214, 130, 255, 236, 176);
+
+        static Color32[] Sky => abyss ? SkyA : dawn ? SkyD : SkyN;
+        static Color32[] Hill => abyss ? HillA : dawn ? HillD : HillN;
+        static Color32[] Stone => abyss ? StoneA : dawn ? StoneD : StoneN;
+        static Color32[] Plaster => abyss ? PlasterA : dawn ? PlasterD : PlasterN;
+        static Color32[] Timber => abyss ? TimberA : dawn ? TimberD : TimberN;
+        static Color32[] Roof => abyss ? RoofA : dawn ? RoofD : RoofN;
         static Color32[] Warm => abyss ? WarmA : WarmN;
-        static Color32[] Cobble => abyss ? CobbleA : CobbleN;
-        static Color32[] Moon => abyss ? MoonA : MoonN;
+        static Color32[] Cobble => abyss ? CobbleA : dawn ? CobbleD : CobbleN;
+        static Color32[] Moon => abyss ? MoonA : dawn ? SunD : MoonN;
 
         static Color32 Pick(Color32[] ramp, float v, int x, int y)
         {
@@ -166,9 +187,10 @@ namespace VividOfFade
 
         // ---- 組み立て ----
 
-        static Texture2D Build(bool abyssVersion)
+        static Texture2D Build(bool abyssVersion, bool dawnVersion = false)
         {
             abyss = abyssVersion;
+            dawn = dawnVersion;
             img = new Color32[W * H];
             LitWindows.Clear();
             SkyAndStars();
@@ -185,7 +207,7 @@ namespace VividOfFade
                     px[(H - 1 - y) * W + x] = img[y * W + x];
             var tex = new Texture2D(W, H, TextureFormat.RGBA32, false)
             {
-                name = abyss ? "TownSceneAbyss" : "TownScene",
+                name = abyss ? "TownSceneAbyss" : dawn ? "TownSceneDawn" : "TownScene",
                 filterMode = FilterMode.Point,
                 wrapMode = TextureWrapMode.Clamp,
             };
@@ -193,6 +215,7 @@ namespace VividOfFade
             tex.Apply(false, true);
             img = null;
             abyss = false;
+            dawn = false;
             return tex;
         }
 
@@ -202,9 +225,10 @@ namespace VividOfFade
                 for (int x = 0; x < W; x++)
                 {
                     float v = Mathf.Clamp01(y / 230f) * 0.85f + (Fbm(x / 30f, y / 14f, 3) - 0.5f) * 0.12f;
-                    float moon = Mathf.Exp(-(Sq((x - MoonX) / 40f) + Sq((y - MoonY) / 32f))) * 0.3f;
+                    float moon = Mathf.Exp(-(Sq((x - MoonX) / 40f) + Sq((y - MoonY) / 32f))) * (dawn ? 0.45f : 0.3f); // 夜明け版は朝日の光
                     Put(x, y, Sky, v + moon);
-                    if (y < 200 && Rnd(x, y, 5) > 0.992f) Put(x, y, Moon, 0.3f + Rnd(x, y, 6) * 0.7f * (1f - y / 210f));
+                    if (!dawn && y < 200 && Rnd(x, y, 5) > 0.992f) Put(x, y, Moon, 0.3f + Rnd(x, y, 6) * 0.7f * (1f - y / 210f)); // 星（夜明け版は消える）
+                    else if (dawn && y < 60 && Rnd(x, y, 5) > 0.997f) Put(x, y, SkyD, 0.75f); // 夜明け版：上の方に、消えのこりの星がわずかに
                 }
             // 月（左上に光が当たる、少し欠けた月）
             for (int y = MoonY - 11; y <= MoonY + 11; y++)
@@ -213,7 +237,7 @@ namespace VividOfFade
                     float d = Mathf.Sqrt(Sq(x - MoonX) + Sq(y - MoonY));
                     if (d > 9.5f) continue;
                     float cut = Mathf.Sqrt(Sq(x - MoonX - 5) + Sq(y - MoonY + 3));
-                    if (cut < 8.5f) continue;
+                    if (!dawn && cut < 8.5f) continue; // 夜明け版は欠けていない朝日
                     Put(x, y, Moon, 0.55f + 0.45f * (1f - d / 9.5f) + (Fbm(x / 3f, y / 3f, 8) - 0.5f) * 0.3f);
                 }
         }
@@ -404,7 +428,7 @@ namespace VividOfFade
 
         static void Vignette()
         {
-            var dark = new Color32(4, 4, 10, 255);
+            var dark = dawn ? new Color32(40, 30, 60, 255) : new Color32(4, 4, 10, 255); // 夜明け版は、すみをうっすら紫に
             for (int y = 0; y < H; y++)
                 for (int x = 0; x < W; x++)
                 {
