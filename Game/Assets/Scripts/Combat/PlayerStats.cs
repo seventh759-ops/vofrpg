@@ -63,6 +63,7 @@ namespace VividOfFade
         public int VoidRift;             // 裂け目（重ねるほど間隔が短い）
         public float StarfallChance;     // 会心で星が落ちる確率
         public float RetributionMult;    // 受けたときの反撃の倍率
+        public int Judgment;             // 天界：裁きの光の柱（重ねるほど間隔が短い）
         // 深淵のセット（AbyssSets）。そろえた数
         public int SetBlast, SetRift, SetStar, SetRetribution;
         public float BlastRadiusMult = 1f;  // 大爆発の範囲
@@ -321,6 +322,10 @@ namespace VividOfFade
                         case UniqueType.VoidRift: s.VoidRift++; break;
                         case UniqueType.Starfall: s.StarfallChance += 0.15f; break;
                         case UniqueType.Retribution: s.RetributionMult += 5f; break;
+                        case UniqueType.Judgment: s.Judgment++; break;
+                        case UniqueType.Sanctuary: reduction += 0.1f; hpRegen += 3f; break;
+                        case UniqueType.SeraphWings: moveSpd += 0.12f; dodgeCdr += 0.2f; break;
+                        case UniqueType.Radiance: extra += 1; s.Light += 1f; break;
                     }
                 }
             }

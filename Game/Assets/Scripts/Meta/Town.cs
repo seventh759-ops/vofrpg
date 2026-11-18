@@ -359,7 +359,7 @@ namespace VividOfFade
         }
 
         /// <summary>深淵の品の強化に要る深淵の欠片：1段ごとに1個、最後の +14→+15 だけ15個。</summary>
-        public static int ShardPrice(Item it) => !it.Abyss ? 0 : it.Enhance == Item.MaxEnhance - 1 ? 15 : 1;
+        public static int ShardPrice(Item it) => !it.Abyss && !it.Heaven ? 0 : it.Enhance == Item.MaxEnhance - 1 ? 15 : 1;
 
         public static bool EnhanceItem(CharacterData ch, Item it)
         {

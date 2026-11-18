@@ -318,6 +318,7 @@ namespace VividOfFade
             if (st.VoidRift > 0) R(Loc.T("Void rift", "裂け目"), $"x{st.VoidRift}");
             if (st.StarfallChance > 0f) R(Loc.T("Starfall on crit", "会心で星が落ちる確率"), Pct(st.StarfallChance));
             if (st.RetributionMult > 0f) R(Loc.T("Retribution", "受けたときの反撃"), $"x{st.RetributionMult:0.00}");
+            if (st.Judgment > 0) R(Loc.T("Pillar of judgment", "裁きの光の柱"), Loc.T($"every {6f / st.Judgment:0.0}s", $"{6f / st.Judgment:0.0}秒ごと"));
             if (rows.Count == before) Line(Loc.T("None", "なし"), new Color(0.6f, 0.6f, 0.65f));
 
             H(Loc.T("Abyss sets", "深淵のセット"));

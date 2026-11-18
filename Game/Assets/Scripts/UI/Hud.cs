@@ -2101,6 +2101,24 @@ namespace VividOfFade
         /// <summary>深淵の装備の枠：赤紫の二重の枠が、ゆっくり明滅する。</summary>
         public static void DrawAbyssFrame(Rect cell, Item item)
         {
+            if (item != null && item.Heaven)
+            {
+                // 天界の装備：白と金の二重の枠が、やわらかく明滅する
+                float ht = Mathf.Max(2f, cell.width * 0.05f);
+                float hp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 2.4f);
+                var ho = new Color(1f, 0.88f, 0.5f, 0.65f + 0.35f * hp);
+                var hi = new Color(1f, 1f, 0.95f, 0.85f);
+                void HFrame(Rect r, Color c, float w)
+                {
+                    Fill(new Rect(r.x, r.y, r.width, w), c);
+                    Fill(new Rect(r.x, r.yMax - w, r.width, w), c);
+                    Fill(new Rect(r.x, r.y, w, r.height), c);
+                    Fill(new Rect(r.xMax - w, r.y, w, r.height), c);
+                }
+                HFrame(cell, ho, ht);
+                HFrame(new Rect(cell.x + ht, cell.y + ht, cell.width - ht * 2f, cell.height - ht * 2f), hi, ht * 0.5f);
+                return;
+            }
             if (item == null || !item.Abyss) return;
             float t = Mathf.Max(2f, cell.width * 0.05f);
             float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3f);

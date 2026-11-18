@@ -28,6 +28,9 @@ namespace VividOfFade
         /// <summary>深淵で落ちた装備（Lv100以上）。数値が高く、深淵だけの固有効果が1つ付く。</summary>
         public bool Abyss;
 
+        /// <summary>天界で落ちた装備（Lv100以上）。深淵の装備よりさらに数値が高く、天界だけの固有効果が1つ付く。</summary>
+        public bool Heaven;
+
         /// <summary>ロック中は一括分解・自動分解の対象にしない。</summary>
         public bool Locked;
 
@@ -46,7 +49,7 @@ namespace VividOfFade
         public int Enhance;
         public const int MaxEnhance = 15;
         /// <summary>この品の強化の上限：灯宝（橙）は+10、神話（赤）と深淵の品は+15。それより下は強化できない。</summary>
-        public int EnhanceCap => Rarity < Rarity.Relic ? 0 : Abyss || Rarity == Rarity.Mythic ? MaxEnhance : 10;
+        public int EnhanceCap => Rarity < Rarity.Relic ? 0 : Abyss || Heaven || Rarity == Rarity.Mythic ? MaxEnhance : 10;
         public const float EnhanceStep = 0.06f;
         public float EnhanceMult => 1f + EnhanceStep * Enhance;
 
@@ -106,7 +109,7 @@ namespace VividOfFade
             }
         }
 
-        public string Name => (Abyss ? AbyssSets.Prefix(AbyssSets.SetOf(this)) : "") + (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
+        public string Name => (Abyss ? AbyssSets.Prefix(AbyssSets.SetOf(this)) : Heaven ? Loc.T("Celestial ", "天界・") : "") + (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
 
         public List<string> Describe()
         {
@@ -200,6 +203,10 @@ namespace VividOfFade
                 case UniqueType.VoidRift: return Loc.T("[Abyss] Every 5s, a rift drags enemies in and tears at them", "【深淵】5秒ごとに裂け目が開き、敵を吸い込んで切り裂く");
                 case UniqueType.Starfall: return Loc.T("[Abyss] Crits may call down a falling star (400%)", "【深淵】会心でときどき星が落ちる（400%）");
                 case UniqueType.Retribution: return Loc.T("[Abyss] When hit, unleash a wave of darkness (500%)", "【深淵】攻撃を受けると、闇の波動で反撃（500%）");
+                case UniqueType.Judgment: return Loc.T("[Heaven] Every 6s, a pillar of judgment strikes the nearest enemy (400%)", "【天界】6秒ごとに、一番近い敵へ裁きの光の柱が落ちる（400%）");
+                case UniqueType.Sanctuary: return Loc.T("[Heaven] Damage taken -10%, HP regen +3/s", "【天界】受けるダメージ -10%、HP回復 +3/秒");
+                case UniqueType.SeraphWings: return Loc.T("[Heaven] Move speed +12%, dodge cooldown -20%", "【天界】移動速度 +12%、回避の待ち時間 -20%");
+                case UniqueType.Radiance: return Loc.T("[Heaven] +1 projectile, light +1", "【天界】弾 +1、明るさ +1");
                 default: return "";
             }
         }

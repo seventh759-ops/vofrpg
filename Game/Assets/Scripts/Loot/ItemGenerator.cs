@@ -52,10 +52,34 @@ namespace VividOfFade
         static readonly UniqueType[] bossUniques = { UniqueType.DodgeNova, UniqueType.DoubleStrike, UniqueType.Vampiric };
         static readonly UniqueType[] abyssUniques = { UniqueType.AbyssBlast, UniqueType.VoidRift, UniqueType.Starfall, UniqueType.Retribution };
 
-        /// <summary>Lv100以上の装備を深淵の装備にする：印を付け、深淵だけの固有効果を1つ足す（数値の倍率は作るときに掛けてある）。</summary>
+        static readonly UniqueType[] heavenUniques = { UniqueType.Judgment, UniqueType.Sanctuary, UniqueType.SeraphWings, UniqueType.Radiance };
+
+        /// <summary>天界の中か（GameWorld が毎フレーム入れる）。天界で落ちる Lv100 以上の品は、天界の装備になる。</summary>
+        public static bool HeavenDrops;
+        /// <summary>天界の装備の数値の倍率（深淵の装備の倍率に、さらに掛ける）。</summary>
+        public const float HeavenGearMult = 1.15f;
+
+        /// <summary>天界の装備にする：印を付け、数値を上げ、天界だけの固有効果を1つ足す（深淵の固有効果は付かない）。</summary>
+        static void MakeHeaven(Item item)
+        {
+            item.Heaven = true;
+            item.Abyss = false;
+            if (item.Slot != ItemSlot.Lantern) item.BaseValue = Mathf.Round(item.BaseValue * HeavenGearMult);
+            for (int i = 0; i < item.Affixes.Count; i++)
+            {
+                var a = item.Affixes[i];
+                a.Value *= HeavenGearMult;
+                item.Affixes[i] = a;
+            }
+            item.Uniques.RemoveAll(u => System.Array.IndexOf(abyssUniques, u) >= 0 || System.Array.IndexOf(heavenUniques, u) >= 0);
+            item.Uniques.Add(heavenUniques[Random.Range(0, heavenUniques.Length)]);
+        }
+
+        /// <summary>Lv100以上の装備を深淵の装備にする：印を付け、深淵だけの固有効果を1つ足す（数値の倍率は作るときに掛けてある）。天界では天界の装備になる。</summary>
         static void MakeAbyss(Item item)
         {
             if (item.Level <= Progression.MaxLevel) return;
+            if (HeavenDrops) { MakeHeaven(item); return; }
             item.Abyss = true;
             item.Uniques.RemoveAll(u => System.Array.IndexOf(abyssUniques, u) >= 0);
             item.Uniques.Add(abyssUniques[Random.Range(0, abyssUniques.Length)]);

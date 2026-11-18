@@ -916,8 +916,8 @@ namespace VividOfFade
             var info = new GUIStyle(small);
             info.normal.textColor = new Color(1f, 0.85f, 0.5f);
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH),
-                Loc.T($"Enhance +{item.Enhance}/{item.EnhanceCap}   (values x{item.EnhanceMult:0.00})" + (item.Abyss ? $"   Shards {ch.AbyssShards}" : ""),
-                      $"強化 +{item.Enhance}/{item.EnhanceCap}   （値 x{item.EnhanceMult:0.00}）" + (item.Abyss ? $"   欠片 {ch.AbyssShards}個" : "")), info);
+                Loc.T($"Enhance +{item.Enhance}/{item.EnhanceCap}   (values x{item.EnhanceMult:0.00})" + (item.Abyss || item.Heaven ? $"   Shards {ch.AbyssShards}" : ""),
+                      $"強化 +{item.Enhance}/{item.EnhanceCap}   （値 x{item.EnhanceMult:0.00}）" + (item.Abyss || item.Heaven ? $"   欠片 {ch.AbyssShards}個" : "")), info);
             y += lineH;
 
             // 説明。効果の行には、再抽選のときに残す「ロック」の切り替えを付ける（最大3つ、全部はロックできない）

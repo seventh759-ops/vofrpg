@@ -625,6 +625,7 @@ namespace VividOfFade
             // 装備の効果のうち、ほかの仕組みが読むもの（町では効かせない）
             var fx = ChoosingClass ? null : Player.Stats;
             ItemGenerator.MagicFind = fx != null ? fx.MagicFind : 0f;
+            ItemGenerator.HeavenDrops = !InTown && !ChoosingClass && GameConfig.IsHeaven(Floors.Floor); // 天界で落ちる品は天界の装備
             // 敵の会心耐性：塔の中ではいまの層、町では最深層の値（装備の比べ方・能力値の表示に使う）
             var crCh = Profile.Current;
             GameConfig.Ascent = crCh != null && crCh.Ascended; // 昇る塔か（敵の強さ・層の名前・区画の並び）
@@ -1314,7 +1315,7 @@ namespace VividOfFade
         /// <summary>ボス装備の固有効果：回避した場所で炎が弾ける。</summary>
         // ---------------- 深淵の装備の固有効果 ----------------
         int abyssBlastDepth; // 大爆発の連鎖の深さ（連鎖しすぎないように）
-        float riftTimer, riftLife, riftTick, retributionCooldown;
+        float riftTimer, riftLife, riftTick, retributionCooldown, judgmentTimer;
         Vector2 riftPos;
         readonly List<Vector3> starfalls = new List<Vector3>(); // 落ちる星（x, y, 落ちるまでの秒）
         float starfallCooldown;
@@ -1354,6 +1355,30 @@ namespace VividOfFade
                         Fx.Ring(q, 0.9f, star, 0.25f);
                         Enemies.DamageArea(q, 0.9f, st.Damage * 1.5f);
                     }
+                }
+            }
+
+            // 天界：裁きの光の柱（6秒ごと。重ねるほど間隔が短い）。一番近い敵へ落ちる
+            if (st.Judgment > 0)
+            {
+                judgmentTimer -= dt;
+                if (judgmentTimer <= 0f)
+                {
+                    var judged = Enemies.FindNearest(Player.Pos, Player.EffectiveLight + 3f);
+                    if (judged != null)
+                    {
+                        judgmentTimer = 6f / st.Judgment;
+                        var p = judged.Pos;
+                        const float radius = 1.6f;
+                        var holy = new Color(1f, 0.92f, 0.6f, 0.95f);
+                        Fx.Pillar(p, holy, 0.8f, 8f, 0.4f);
+                        Fx.Emit(p, 1.2f, PixelArt.HolyCross, new Color(1f, 0.95f, 0.75f, 1f), 0.5f, Vector2.zero, 0.8f, 0f, 1.6f, 2.4f);
+                        Fx.Ring(p, radius, holy, 0.35f);
+                        Fx.Sparks(p, 12, holy, 4f, 0.5f, 3f);
+                        Sfx.Boom();
+                        Enemies.DamageArea(p, radius, st.Damage * 4f);
+                    }
+                    else judgmentTimer = 0.3f; // 敵がいなければ、少し待ってまた探す
                 }
             }
 
@@ -1689,6 +1714,12 @@ namespace VividOfFade
 
         void OnLootLanded(Item item, Vector2 pos)
         {
+            if (item != null && item.Heaven)
+            {
+                // 天界の装備：金の輪と、立ちのぼる光の粒
+                Fx.Ring(pos, 1.3f, new Color(RarityInfo.HeavenColor.r, RarityInfo.HeavenColor.g, RarityInfo.HeavenColor.b, 0.9f), 0.35f);
+                Fx.Sparks(pos, 12, RarityInfo.HeavenColor, 1.2f, 0.9f, 2f, true);
+            }
             if (item != null && item.Abyss)
             {
                 // 深淵の装備：赤紫の輪と、立ちのぼる闇の粒

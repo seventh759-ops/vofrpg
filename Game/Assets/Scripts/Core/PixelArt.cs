@@ -2036,13 +2036,15 @@ namespace VividOfFade
             }
             Color32 c = RarityInfo.ColorOf(item.Rarity);
             var abyssSet = AbyssSets.SetOf(item);
-            string key = $"ItemIcon32_{kind}_{item.Rarity}" + (item.Abyss ? "_Abyss" + abyssSet : "");
+            string key = $"ItemIcon32_{kind}_{item.Rarity}" + (item.Abyss ? "_Abyss" + abyssSet : "") + (item.Heaven ? "_Heaven" : "");
             if (item.Abyss) rows = AbyssMotif(rows, abyssSet); // 深淵の品は、セットごとの意匠を描き足す
             // m 金属・w 木・g 金・L と l 光・e 内側の線・A 珍しさの色（縁取りと陰影は Shaded が付ける）
             // 深淵の装備は、金属が黒ずみ、まわりに赤紫のもやがかかる
             var over = new Dictionary<char, Color32[]> { { 'A', RampFrom(c) } };
             if (item.Abyss) over['m'] = RampFrom((Color32)Color.Lerp(new Color32(70, 40, 80, 255), Color.Lerp(Color.black, AbyssSets.ColorOf(abyssSet), 0.6f), 0.45f)); // 黒ずんだ金属を、セットの色に少し寄せる
-            return Shaded(key, rows, over, item.Abyss ? (Color32?)(Color32)AbyssSets.ColorOf(abyssSet) : null, 64); // もやはセットの色（32 ドットで、地面では今までと同じ半マス）
+            if (item.Heaven) over['m'] = Ramp(255, 252, 240, 236, 226, 200, 206, 190, 150, 160, 140, 100); // 天界の装備は、白金の金属
+            Color32? haze = item.Abyss ? (Color32?)(Color32)AbyssSets.ColorOf(abyssSet) : item.Heaven ? (Color32?)(Color32)RarityInfo.HeavenColor : null;
+            return Shaded(key, rows, over, haze, 64); // もやはセットの色（天界は金）。32 ドットで、地面では今までと同じ半マス
         }
 
         /// <summary>
