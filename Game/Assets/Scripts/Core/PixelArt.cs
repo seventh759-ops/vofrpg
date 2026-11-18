@@ -2604,6 +2604,7 @@ namespace VividOfFade
         /// <summary>ボスの絵。塔の2周目からは、周の数だけ深淵に侵された姿。</summary>
         public static Sprite BossSprite(BossKind kind, int cycle)
         {
+            if (kind == BossKind.Goddess) return GoddessBleeding; // 昇る塔の100層：血の涙を流す女神像
             if (BossInfo.IsAbyss(kind)) return AbyssBossSprite(kind);
             int i = Mathf.Clamp((int)kind, 0, BossRows.Length - 1);
             if (cycle > 0) return Corrupted($"Boss32_{i}_c{cycle}", BossRows[i], BossColors[i], cycle);

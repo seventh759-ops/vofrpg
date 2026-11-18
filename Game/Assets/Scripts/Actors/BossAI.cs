@@ -6,7 +6,7 @@ namespace VividOfFade
 {
     /// <summary>区域ごとのボス（FloorPattern の順）。RiftWarden からは深淵のボス。</summary>
     // 【セーブの決まり】図鑑が名前で覚えているので、名前を変えない。足すときは最後に。
-    public enum BossKind { Golem, Mother, Forge, Frost, Librarian, Void, RiftWarden, StarEater, MoonPriest, AbyssKing }
+    public enum BossKind { Golem, Mother, Forge, Frost, Librarian, Void, RiftWarden, StarEater, MoonPriest, AbyssKing, Goddess } // Goddess：昇る塔の100層（血の涙を流す女神像）
 
     /// <summary>
     /// ボスの攻撃。どれも予告（Windup）のあとに判定する。
@@ -67,6 +67,7 @@ namespace VividOfFade
                 case BossKind.StarEater: return Loc.T("Star Eater", "星喰らい");
                 case BossKind.MoonPriest: return Loc.T("Inverted Moon Priest", "逆さ月の司祭");
                 case BossKind.AbyssKing: return Loc.T("Abyss", "アビス"); // 最奥のボス。案内役と同じ姿の、白い色違い
+                case BossKind.Goddess: return Loc.T("The Goddess Statue", "女神像"); // 昇る塔の最上（100層）。血の涙を流す女神像
                 default: return Loc.T("Ash Warden", "灰の番人");
             }
         }
@@ -88,6 +89,8 @@ namespace VividOfFade
             new[] { BossAttack.RoomWide, BossAttack.StunNova, BossAttack.BulletFan, BossAttack.Summon, BossAttack.Cone },
             // アビス（最奥）：ほとんど動かず、離れた所から撃ちながら、歴代のボスを順番に呼び出す
             new[] { BossAttack.SummonBoss, BossAttack.BulletRing, BossAttack.BulletFan, BossAttack.RoomWide, BossAttack.SummonBoss, BossAttack.BulletRing, BossAttack.StunNova, BossAttack.BulletFan },
+            // 女神像（昇る塔の100層）：動かない石像。裁きの光（全体攻撃）と祈りの波で縛り、光の弾を降らせ、昇る塔の敵を呼ぶ
+            new[] { BossAttack.RoomWide, BossAttack.BulletRing, BossAttack.StunNova, BossAttack.Summon, BossAttack.BulletFan, BossAttack.RoomWide, BossAttack.Cone, BossAttack.BulletRing },
         };
 
         /// <summary>そのボスが使う攻撃（重ならないように、使う順で）。図鑑に使う。</summary>
@@ -185,6 +188,7 @@ namespace VividOfFade
                 case BossKind.StarEater: return a == BossAttack.BulletFan ? DebuffKind.Slow : a == BossAttack.RoomWide ? DebuffKind.Blind : (DebuffKind?)null;
                 case BossKind.MoonPriest: return a == BossAttack.RoomWide ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
                 case BossKind.AbyssKing: return a == BossAttack.RoomWide ? DebuffKind.DefenseDown : a == BossAttack.Cone ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
+                case BossKind.Goddess: return a == BossAttack.RoomWide ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : a == BossAttack.Cone ? DebuffKind.DefenseDown : (DebuffKind?)null;
             }
             return null;
         }
@@ -271,7 +275,7 @@ namespace VividOfFade
                     Begin(e, atk, dir, room);
                     return true;
                 }
-                if (e.BossKind == BossKind.AbyssKing) e.AttackStep++; // アビスはほとんど動かないので、届かない技は飛ばして次へ
+                if (e.BossKind == BossKind.AbyssKing || e.BossKind == BossKind.Goddess) e.AttackStep++; // アビス・女神像はほとんど動かないので、届かない技は飛ばして次へ
             }
             return false;
         }

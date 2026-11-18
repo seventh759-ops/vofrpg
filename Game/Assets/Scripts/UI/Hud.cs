@@ -861,7 +861,7 @@ namespace VividOfFade
             Head(Loc.T("- The Abyss -", "― 深淵 ―"));
             foreach (var n in Zones.AbyssNames) l.Add((n, 1));
             Head(Loc.T("- Those Who Stood in the Way -", "― 立ちはだかった者たち ―"));
-            foreach (BossKind k in System.Enum.GetValues(typeof(BossKind))) l.Add((BossInfo.Name(k), 1));
+            foreach (BossKind k in System.Enum.GetValues(typeof(BossKind))) if (k <= BossKind.AbyssKing) l.Add((BossInfo.Name(k), 1)); // クリア後のボスは、エンドロールには出さない
             Head(Loc.T("- Those Who Carried the Light -", "― 灯りを運んだ者たち ―"));
             for (int c = 0; c < ClassInfo.PlayableCount; c++)
             {

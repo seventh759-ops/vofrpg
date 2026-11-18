@@ -50,9 +50,11 @@ namespace VividOfFade
                 }
                 if (area.IsBoss)
                 {
-                    bool final = Floor == GameConfig.AbyssLastFloor; // 深淵の最奥（アビス）は、ほかのボスより強い
+                    bool goddess = GameConfig.Ascent && Floor == GameConfig.MaxFloor; // 昇る塔の最上（100層）は女神像
+                    bool final = Floor == GameConfig.AbyssLastFloor || goddess; // 深淵の最奥（アビス）・女神像は、ほかのボスより強い
                     enemies.SpawnBoss(area.Center, GameConfig.EnemyHp(Tier) * GameConfig.BossHpMult * (final ? GameConfig.FinalBossHpMult : 1f),
-                        Mathf.RoundToInt(GameConfig.EnemyDamage(Tier) * GameConfig.BossDamageMult * (final ? GameConfig.FinalBossDamageMult : 1f)));
+                        Mathf.RoundToInt(GameConfig.EnemyDamage(Tier) * GameConfig.BossDamageMult * (final ? GameConfig.FinalBossDamageMult : 1f)),
+                        goddess ? BossKind.Goddess : (BossKind?)null);
                     Sleep(enemies, area);
                     count /= 2; // お供
                 }

@@ -320,7 +320,7 @@ namespace VividOfFade
         }
 
         /// <summary>ボス：大きく、硬く、遅い。数秒ごとに周りを叩きつける。</summary>
-        public void SpawnBoss(Vector2 pos, float hp, int contactDamage)
+        public void SpawnBoss(Vector2 pos, float hp, int contactDamage, BossKind? kind = null)
         {
             int before = Active.Count;
             Spawn(pos, hp, contactDamage);
@@ -333,7 +333,7 @@ namespace VividOfFade
             e.Radius = GameConfig.SlimeRadius * GameConfig.BossScale;
             e.Speed = GameConfig.BossSpeed;
             e.SlamTimer = BossInfo.Interval * 0.6f;
-            e.BossKind = BossInfo.For(zone);
+            e.BossKind = kind ?? BossInfo.For(zone);
             e.LoopCycle = zone != null ? zone.Cycle : 0;
             e.AttackStep = 0;
             e.BlinkCooldown = 0f;
@@ -346,6 +346,7 @@ namespace VividOfFade
             e.Sr.color = Color.white;
             e.Tint = Color.white;
             if (e.BossKind == BossKind.AbyssKing) e.Speed = GameConfig.BossSpeed * 0.25f; // アビスはほとんど動かず、離れた所から攻撃して歴代のボスを呼ぶ
+            if (e.BossKind == BossKind.Goddess) e.Speed = GameConfig.BossSpeed * 0.1f;    // 女神像は石像なので、ほとんど動かない
             ShowAura(e, new Color(1f, 0.25f, 0.2f));
         }
 
@@ -530,7 +531,7 @@ namespace VividOfFade
             {
                 e.Dying = true;
                 e.DyingTimer = e.IsBoss ? DeathTime * 4f : DeathTime;
-                if (e.BossKind == BossKind.AbyssKing && e.IsBoss && !e.Summoned)
+                if ((e.BossKind == BossKind.AbyssKing || e.BossKind == BossKind.Goddess) && e.IsBoss && !e.Summoned) // アビス・女神像は、ふるえながら崩れていく
                 {
                     e.DeathLength = GameConfig.FinalCollapseTime; // アビスは、ふるえながら崩れていく
                     e.DyingTimer = e.DeathLength;

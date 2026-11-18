@@ -138,6 +138,13 @@ namespace VividOfFade
                 foreach (BossKind b in System.Enum.GetValues(typeof(BossKind)))
                 {
                     var bb = b;
+                    if (bb > BossKind.AbyssKing)
+                    {
+                        // クリア後のボス（昇る塔の最上の女神像など）
+                        all.Add(new Entry { Id = "b:" + bb, Cat = Category.Bosses, Icon = () => PixelArt.BossSprite(bb), Name = () => BossInfo.Name(bb), Desc = () => Loc.T("Top of the rising tower", "昇る塔の最上"),
+                            Detail = () => BossDetail(bb), Hint = () => Loc.T("Waits at the very top of the rising tower.", "昇る塔のいちばん上で待っている。") });
+                        continue;
+                    }
                     all.Add(new Entry { Id = "b:" + bb, Cat = Category.Bosses, Icon = () => PixelArt.BossSprite(bb), Name = () => BossInfo.Name(bb), Desc = () => ZoneName(BossZone(bb)),
                         Detail = () => BossDetail(bb), Hint = () => Loc.T($"Waits at the end of {ZoneName(BossZone(bb))}.", $"{ZoneName(BossZone(bb))}の最後の層で待っている。") });
                 }

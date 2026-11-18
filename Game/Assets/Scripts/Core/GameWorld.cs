@@ -1268,6 +1268,9 @@ namespace VividOfFade
             }
             if (GameConfig.Ascent && Floors.Floor == GameConfig.MaxFloor)
             {
+                // 女神像が崩れていく（アビスと同じ演出。崩れきるまでは操作できない）
+                collapseTimer = GameConfig.FinalCollapseTime;
+                collapsePos = pos;
                 Hud.ShowBanner(Loc.T("THE TOWER IS CLIMBED", "塔を昇りきった"), Loc.T("The light has reached the very top.", "灯りが、塔のいちばん上まで届いた。"), new Color(1f, 0.9f, 0.6f));
                 Sfx.Landed(Rarity.Mythic);
             }
