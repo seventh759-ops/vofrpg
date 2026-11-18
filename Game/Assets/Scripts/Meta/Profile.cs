@@ -51,7 +51,7 @@ namespace VividOfFade
         public bool Special => ClassId == (int)ClassType.Vividbearer;
         public int HpPotions;                         // 回復薬（町の商人で買う）
         public int MpPotions;                         // 魔力の薬
-        // 昇る塔（クリア後、女神像に火種をすべて捧げると、塔が反転する。深淵は閉じ、1層から昇り直す）
+        // 昇る塔（クリア後、女神像に火種をすべて捧げると、塔が反転する。深淵は閉じ、1層から登り直す）
         public bool Ascended;                         // 捧げた（このキャラクターの塔は昇る塔）
         public int AscentBest;                        // 昇る塔でたどり着いた一番上の層
         public int AscentBossCleared;                 // 昇る塔で倒した一番上のボスの層

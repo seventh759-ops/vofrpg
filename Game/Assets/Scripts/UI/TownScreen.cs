@@ -786,7 +786,7 @@ namespace VividOfFade
                     text = Loc.T("Once offered, the way to the Abyss will be sealed, never to open again. The tower will turn over, and you will climb toward the sky from the very first step... Are you truly certain?",
                                  "捧げれば、深淵への道は閉ざされ、二度と開くことはありません。塔はさかさまになり、あなたは最初の一段から、空へ向かって昇ることになるでしょう。……本当に、よいのですね？");
                     note = Loc.T("(The Abyss can never be entered again. You start from floor 1. Your tower records remain. A suspended run will be lost.)",
-                                 "（深淵には二度と入れない／1層から昇り直す／塔の記録は残る／中断中の挑戦は消える）");
+                                 "（深淵には二度と入れない／1層から登り直す／塔の記録は残る／中断中の挑戦は消える）");
                     break;
                 default:
                     text = Loc.T("This is the last time I will ask. What is offered never returns.",

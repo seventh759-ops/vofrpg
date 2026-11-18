@@ -253,7 +253,7 @@ namespace VividOfFade
         {
             GameConfig.Ascent = true;
             SyncTownGear(); // レベルが Lv1 に戻ったので、付けられなくなった装備は倉庫へ送ってある
-            Hud.Toast(Loc.T("The tower has turned over. Now you climb.", "塔が反転した。これからは昇っていく。"), new Color(1f, 0.35f, 0.4f));
+            Hud.Toast(Loc.T("The tower has turned over. Now you climb.", "塔が反転した。これからは登っていく。"), new Color(1f, 0.35f, 0.4f));
             Hud.Toast(Loc.T("The Abyss has closed.", "深淵は閉じた。"), new Color(0.85f, 0.6f, 0.7f));
             Hud.Toast(Loc.T("A curse drains your strength... back to Lv 1", "呪いのように力が抜けていく……Lv1 から"), new Color(1f, 0.45f, 0.5f)); // 捧げたレベルは、女神の呪いのようなもの
             ToastStored();
@@ -1284,7 +1284,7 @@ namespace VividOfFade
                 // 女神像が崩れていく（アビスと同じ演出。崩れきるまでは操作できない）
                 collapseTimer = GameConfig.FinalCollapseTime;
                 collapsePos = pos;
-                Hud.ShowBanner(Loc.T("THE TOWER IS CLIMBED", "塔を昇りきった"), Loc.T("Above the top, Heaven opens.", "塔のさらに上に、天界がひらけた。"), new Color(1f, 0.9f, 0.6f));
+                Hud.ShowBanner(Loc.T("THE TOWER IS CLIMBED", "塔を登りきった"), Loc.T("Above the top, Heaven opens.", "塔のさらに上に、天界がひらけた。"), new Color(1f, 0.9f, 0.6f));
                 Sfx.Landed(Rarity.Mythic);
             }
             else if (GameConfig.IsHeaven(Floors.Floor) && Floors.Floor >= GameConfig.AbyssLastFloor)

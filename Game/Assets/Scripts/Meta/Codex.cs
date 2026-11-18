@@ -148,8 +148,8 @@ namespace VividOfFade
                                 Detail = () => BossDetail(bb), Hint = () => Loc.T($"Waits at the end of {ZoneName(hz)}.", $"{ZoneName(hz)}の最後の層で待っている。") });
                             continue;
                         }
-                        all.Add(new Entry { Id = "b:" + bb, Cat = Category.Bosses, Icon = () => PixelArt.BossSprite(bb), Name = () => BossInfo.Name(bb), Desc = () => Loc.T("Top of the rising tower", "昇る塔の最上"),
-                            Detail = () => BossDetail(bb), Hint = () => Loc.T("Waits at the very top of the rising tower.", "昇る塔のいちばん上で待っている。") });
+                        all.Add(new Entry { Id = "b:" + bb, Cat = Category.Bosses, Icon = () => PixelArt.BossSprite(bb), Name = () => BossInfo.Name(bb), Desc = () => Loc.T("Top of the rising tower", "登る塔の最上"),
+                            Detail = () => BossDetail(bb), Hint = () => Loc.T("Waits at the very top of the rising tower.", "登る塔のいちばん上で待っている。") });
                         continue;
                     }
                     all.Add(new Entry { Id = "b:" + bb, Cat = Category.Bosses, Icon = () => PixelArt.BossSprite(bb), Name = () => BossInfo.Name(bb), Desc = () => ZoneName(BossZone(bb)),
