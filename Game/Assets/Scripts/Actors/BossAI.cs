@@ -6,7 +6,7 @@ namespace VividOfFade
 {
     /// <summary>区域ごとのボス（FloorPattern の順）。RiftWarden からは深淵のボス。</summary>
     // 【セーブの決まり】図鑑が名前で覚えているので、名前を変えない。足すときは最後に。
-    public enum BossKind { Golem, Mother, Forge, Frost, Librarian, Void, RiftWarden, StarEater, MoonPriest, AbyssKing, Goddess } // Goddess：昇る塔の100層（血の涙を流す女神像）
+    public enum BossKind { Golem, Mother, Forge, Frost, Librarian, Void, RiftWarden, StarEater, MoonPriest, AbyssKing, Goddess, CloudWarden, GardenSaint, HymnConductor, SeraphKing } // Goddess：昇る塔の100層（血の涙を流す女神像）。CloudWarden〜：天界
 
     /// <summary>
     /// ボスの攻撃。どれも予告（Windup）のあとに判定する。
@@ -33,13 +33,18 @@ namespace VividOfFade
         public const float BlinkCooldown = 4f;       // 司書が近づかれて離れる瞬間移動の待ち時間
         public const float KeepAway = 5.5f;          // 司書が保とうとする距離
 
-        public static BossKind For(ZoneSpec z) => z == null ? BossKind.Golem : (BossKind)Mathf.Clamp((int)z.Pattern, 0, (int)BossKind.AbyssKing);
+        public static BossKind For(ZoneSpec z) => z == null ? BossKind.Golem
+            : Zones.IsHeavenPattern(z.Pattern) ? (BossKind)((int)BossKind.CloudWarden + Mathf.Clamp(z.Pattern - FloorPattern.Cloud, 0, 3)) // 天界の区画ごとのボス
+            : (BossKind)Mathf.Clamp((int)z.Pattern, 0, (int)BossKind.AbyssKing);
+
+        /// <summary>天界のボスか。</summary>
+        public static bool IsHeaven(BossKind k) => k >= BossKind.CloudWarden;
 
         /// <summary>深淵のボスか（攻撃の間隔が短く、弾が多い）。</summary>
         public static bool IsAbyss(BossKind k) => k >= BossKind.RiftWarden;
 
         /// <summary>距離を取って撃ち、近づかれると離れた場所へ瞬間移動するボス。</summary>
-        public static bool KeepsAway(BossKind k) => k == BossKind.Librarian || k == BossKind.StarEater;
+        public static bool KeepsAway(BossKind k) => k == BossKind.Librarian || k == BossKind.StarEater || k == BossKind.HymnConductor;
 
         /// <summary>その層でのボスの名前（塔の2周目からは、深淵に侵された強化版として頭に言葉が付く）。</summary>
         public static string NameAt(BossKind k, int floor)
@@ -68,6 +73,10 @@ namespace VividOfFade
                 case BossKind.MoonPriest: return Loc.T("Inverted Moon Priest", "逆さ月の司祭");
                 case BossKind.AbyssKing: return Loc.T("Abyss", "アビス"); // 最奥のボス。案内役と同じ姿の、白い色違い
                 case BossKind.Goddess: return Loc.T("The Goddess Statue", "女神像"); // 昇る塔の最上（100層）。血の涙を流す女神像
+                case BossKind.CloudWarden: return Loc.T("Cloud Warden", "雲の門衛");
+                case BossKind.GardenSaint: return Loc.T("Saint of the Garden", "花園の聖女");
+                case BossKind.HymnConductor: return Loc.T("Hymn Conductor", "聖歌の指揮者");
+                case BossKind.SeraphKing: return Loc.T("Seraph King", "熾天の王"); // 天界の最奥。3対の羽
                 default: return Loc.T("Ash Warden", "灰の番人");
             }
         }
@@ -91,6 +100,14 @@ namespace VividOfFade
             new[] { BossAttack.SummonBoss, BossAttack.BulletRing, BossAttack.BulletFan, BossAttack.RoomWide, BossAttack.SummonBoss, BossAttack.BulletRing, BossAttack.StunNova, BossAttack.BulletFan },
             // 女神像（昇る塔の100層）：動かない石像。裁きの光（全体攻撃）と祈りの波で縛り、光の弾を降らせ、昇る塔の敵を呼ぶ
             new[] { BossAttack.RoomWide, BossAttack.BulletRing, BossAttack.StunNova, BossAttack.Summon, BossAttack.BulletFan, BossAttack.RoomWide, BossAttack.Cone, BossAttack.BulletRing },
+            // 天界：槍で突進し、扇に薙ぐ雲の門衛
+            new[] { BossAttack.Charge, BossAttack.Cone, BossAttack.Charge, BossAttack.Slam, BossAttack.BulletFan },
+            // 天界：花びらの弾と祈りの波、小天使を呼ぶ聖女
+            new[] { BossAttack.BulletRing, BossAttack.Summon, BossAttack.StunNova, BossAttack.BulletFan, BossAttack.Summon },
+            // 天界：離れて歌い（全体攻撃・弾幕）、近づくと消える指揮者
+            new[] { BossAttack.RoomWide, BossAttack.BulletFan, BossAttack.BulletRing, BossAttack.Blink, BossAttack.BulletFan },
+            // 熾天の王（天界の最奥）：3対の羽で、すべての技を使う
+            new[] { BossAttack.RoomWide, BossAttack.Charge, BossAttack.BulletRing, BossAttack.Summon, BossAttack.Cone, BossAttack.StunNova, BossAttack.BulletFan, BossAttack.RoomWide, BossAttack.Slam },
         };
 
         /// <summary>そのボスが使う攻撃（重ならないように、使う順で）。図鑑に使う。</summary>
@@ -188,6 +205,10 @@ namespace VividOfFade
                 case BossKind.StarEater: return a == BossAttack.BulletFan ? DebuffKind.Slow : a == BossAttack.RoomWide ? DebuffKind.Blind : (DebuffKind?)null;
                 case BossKind.MoonPriest: return a == BossAttack.RoomWide ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
                 case BossKind.AbyssKing: return a == BossAttack.RoomWide ? DebuffKind.DefenseDown : a == BossAttack.Cone ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
+                case BossKind.CloudWarden: return a == BossAttack.Cone ? DebuffKind.DefenseDown : (DebuffKind?)null;
+                case BossKind.GardenSaint: return a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
+                case BossKind.HymnConductor: return a == BossAttack.RoomWide ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
+                case BossKind.SeraphKing: return a == BossAttack.RoomWide ? DebuffKind.Blind : a == BossAttack.Cone ? DebuffKind.DefenseDown : a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
                 case BossKind.Goddess: return a == BossAttack.RoomWide ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : a == BossAttack.Cone ? DebuffKind.DefenseDown : (DebuffKind?)null;
             }
             return null;

@@ -64,6 +64,7 @@ namespace VividOfFade
             y += lineH * 1.8f;
             bool last = world.Floors.Floor >= GameConfig.LastFloorFor(ch);
             string lead = last ? Loc.T("This is the last floor. Return home to keep your gear.", "ここが最後の層。帰還して装備を持ち帰ろう。")
+                : next == GameConfig.AbyssFirstFloor && GameConfig.Ascent ? Loc.T("Return home, or climb into HEAVEN.", "帰還するか、天界へ昇るか。")
                 : next == GameConfig.AbyssFirstFloor ? Loc.T("Return home, or descend into the ABYSS.", "帰還するか、深淵へ下りるか。")
                 : GameConfig.Ascent ? Loc.T($"Return home to keep your gear, or climb to {GameConfig.FloorName(next)}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), $"帰還して装備を持ち帰るか、{GameConfig.FloorName(next)}へ昇るか" + (GameConfig.IsBossFloor(next) ? "（ボス）。" : "。"))
                 : Loc.T($"Return home to keep your gear, or descend to {GameConfig.FloorName(next)}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), $"帰還して装備を持ち帰るか、{GameConfig.FloorName(next)}へ下りるか" + (GameConfig.IsBossFloor(next) ? "（ボス）。" : "。"));

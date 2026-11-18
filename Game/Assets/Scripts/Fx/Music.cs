@@ -168,6 +168,9 @@ namespace VividOfFade
         /// <summary>区画が変わった（「区画ごと」のときは曲を変える）。</summary>
         public void SetZone(FloorPattern pattern)
         {
+            // 天界は、まだ専用の曲がないので、塔の明るい曲を使う（雲の門＝凍てる墓所、光の花園＝苔むす底、聖歌の回廊＝沈んだ書庫、熾天の聖域＝灰の回廊）
+            if (Zones.IsHeavenPattern(pattern))
+                pattern = pattern == FloorPattern.Cloud ? FloorPattern.Ice : pattern == FloorPattern.Garden ? FloorPattern.Moss : pattern == FloorPattern.Choir ? FloorPattern.Gold : FloorPattern.Stone;
             int i = Mathf.Clamp((int)pattern, 0, ZoneSongs.Length - 1);
             if (i == zoneSong) return;
             zoneSong = i;

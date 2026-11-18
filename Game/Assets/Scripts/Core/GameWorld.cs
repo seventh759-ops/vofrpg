@@ -992,7 +992,15 @@ namespace VividOfFade
             {
                 currentZone = zone.Key;
                 Hud.ShowBanner($"{GameConfig.FloorName(floor)}  -  {zone.Title}", zone.DisplaySubtitle, zone.Accent);
-                if (GameConfig.IsAbyss(floor))
+                if (GameConfig.IsHeaven(floor))
+                {
+                    // 天界の区画に入った：光の柱と、やわらかい輪（揺れはなし）
+                    Fx.Pillar(Room.StartPos, new Color(1f, 0.95f, 0.8f, 0.9f), 1.2f, 8f, 0.9f);
+                    Fx.Ring(Room.StartPos, 4f, zone.Accent, 0.8f);
+                    Fx.Sparks(Room.StartPos, 24, new Color(1f, 0.95f, 0.8f), 3f, 1.2f, 2f, true);
+                    Sfx.Landed(Rarity.Mythic);
+                }
+                else if (GameConfig.IsAbyss(floor))
                 {
                     // 深淵の区画に入った：区画の色の衝撃の輪と、大きな揺れ
                     Fx.Ring(Room.StartPos, 3f, zone.Accent, 0.6f);
@@ -1253,7 +1261,7 @@ namespace VividOfFade
                 {
                     ch.AscentBossCleared = Floors.Floor;
                     Profile.Save();
-                    if (Floors.Floor < GameConfig.MaxFloor)
+                    if (Floors.Floor < GameConfig.AbyssLastFloor) // 昇る塔の100層（女神像）を倒すと、天界1層から始められる
                         Hud.Toast(Loc.T($"Checkpoint unlocked: {GameConfig.FloorName(Floors.Floor + 1)}", $"{GameConfig.FloorName(Floors.Floor + 1)}から始められるようになった"), new Color(0.7f, 1f, 0.7f));
                 }
             }
@@ -1271,7 +1279,15 @@ namespace VividOfFade
                 // 女神像が崩れていく（アビスと同じ演出。崩れきるまでは操作できない）
                 collapseTimer = GameConfig.FinalCollapseTime;
                 collapsePos = pos;
-                Hud.ShowBanner(Loc.T("THE TOWER IS CLIMBED", "塔を昇りきった"), Loc.T("The light has reached the very top.", "灯りが、塔のいちばん上まで届いた。"), new Color(1f, 0.9f, 0.6f));
+                Hud.ShowBanner(Loc.T("THE TOWER IS CLIMBED", "塔を昇りきった"), Loc.T("Above the top, Heaven opens.", "塔のさらに上に、天界がひらけた。"), new Color(1f, 0.9f, 0.6f));
+                Sfx.Landed(Rarity.Mythic);
+            }
+            else if (GameConfig.IsHeaven(Floors.Floor) && Floors.Floor >= GameConfig.AbyssLastFloor)
+            {
+                // 熾天の王（天界の最奥）が崩れていく
+                collapseTimer = GameConfig.FinalCollapseTime;
+                collapsePos = pos;
+                Hud.ShowBanner(Loc.T("HEAVEN CONQUERED", "天界を制覇した"), Loc.T("The highest light now belongs to you.", "いちばん高い光にまで、灯りが届いた。"), new Color(1f, 0.9f, 0.55f));
                 Sfx.Landed(Rarity.Mythic);
             }
             else if (Floors.Floor == GameConfig.MaxFloor)

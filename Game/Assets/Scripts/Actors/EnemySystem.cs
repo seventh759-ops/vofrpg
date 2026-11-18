@@ -89,7 +89,8 @@ namespace VividOfFade
         Sprite SpriteFor(EnemyKind kind, int tier)
         {
             if (kind == EnemyKind.Golden) return PixelArt.EnemySprite(kind, tier);
-            if (zone != null && zone.Pattern >= FloorPattern.Rift) return PixelArt.AbyssEnemy(kind, zone, tier);
+            if (zone != null && Zones.IsHeavenPattern(zone.Pattern)) return PixelArt.HeavenEnemy(kind, zone, tier); // 天界は天使の敵
+            if (zone != null && Zones.IsAbyssPattern(zone.Pattern)) return PixelArt.AbyssEnemy(kind, zone, tier);
             if (GameConfig.Ascent) return PixelArt.AscentEnemy(kind, tier); // 昇る塔は、明るい色の専用の敵
             if (kind == EnemyKind.Slime && zone != null) return PixelArt.SlimeFor(zone, tier);
             return PixelArt.EnemySprite(kind, tier, zone != null ? zone.Cycle : 0);
@@ -116,6 +117,10 @@ namespace VividOfFade
             new[] { 25, 30, 25, 10, 10 }, // 星喰いの淵
             new[] { 20, 15, 35, 15, 15 }, // 逆さ月の祭壇
             new[] { 20, 20, 20, 25, 15 }, // 深淵の玉座
+            new[] { 30, 30, 15, 15, 10 }, // 雲の門
+            new[] { 30, 20, 25, 10, 15 }, // 光の花園
+            new[] { 20, 20, 35, 15, 10 }, // 聖歌の回廊
+            new[] { 20, 20, 20, 25, 15 }, // 熾天の聖域
         };
 
         EnemyKind PickKind()
@@ -531,7 +536,7 @@ namespace VividOfFade
             {
                 e.Dying = true;
                 e.DyingTimer = e.IsBoss ? DeathTime * 4f : DeathTime;
-                if ((e.BossKind == BossKind.AbyssKing || e.BossKind == BossKind.Goddess) && e.IsBoss && !e.Summoned) // アビス・女神像は、ふるえながら崩れていく
+                if ((e.BossKind == BossKind.AbyssKing || e.BossKind == BossKind.Goddess || e.BossKind == BossKind.SeraphKing) && e.IsBoss && !e.Summoned) // アビス・女神像は、ふるえながら崩れていく
                 {
                     e.DeathLength = GameConfig.FinalCollapseTime; // アビスは、ふるえながら崩れていく
                     e.DyingTimer = e.DeathLength;

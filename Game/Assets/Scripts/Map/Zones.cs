@@ -3,7 +3,7 @@ using UnityEngine;
 namespace VividOfFade
 {
     /// <summary>床の模様の種類（区画ごとに変える）。</summary>
-    public enum FloorPattern { Stone, Moss, Lava, Ice, Gold, Void, Rift, Starless, Rune, Throne } // Rift 以降は深淵
+    public enum FloorPattern { Stone, Moss, Lava, Ice, Gold, Void, Rift, Starless, Rune, Throne, Cloud, Garden, Choir, Sanctum } // Rift〜Throne は深淵、Cloud〜Sanctum は天界
 
     /// <summary>塔の区画（5層ごと）の見た目。どれもこのゲーム用のオリジナルの名前と配色。</summary>
     public sealed class ZoneSpec
@@ -146,6 +146,58 @@ namespace VividOfFade
             },
         };
 
+        /// <summary>天界（捧げたあと、昇る塔の上の101〜120層）の区画。白い石と雲、金の光。</summary>
+        static readonly ZoneSpec[] heaven =
+        {
+            new ZoneSpec
+            {
+                Name = "Cloud Gate", NameJa = "雲の門", SubtitleJa = "雲を踏んで、光の門をくぐる", Subtitle = "Through a gate of light, upon the clouds", Pattern = FloorPattern.Cloud,
+                Floor = new Color32(206, 212, 228, 255), FloorAlt = new Color32(192, 200, 220, 255), Edge = new Color32(140, 150, 176, 255),
+                Accent = new Color32(255, 226, 140, 255),
+                WallTop = new Color32(232, 236, 246, 255), WallLeft = new Color32(196, 204, 224, 255), WallRight = new Color32(168, 178, 204, 255),
+                AmbientColor = new Color(1f, 0.97f, 0.9f), Ambient = 0.42f, Background = new Color(0.62f, 0.74f, 0.92f),
+                Slime = new Color32(250, 250, 255, 255), SlimeDark = new Color32(190, 200, 230, 255),
+            },
+            new ZoneSpec
+            {
+                Name = "Garden of Light", NameJa = "光の花園", SubtitleJa = "白い敷石に、花びらが舞う", Subtitle = "Petals drifting over white stone", Pattern = FloorPattern.Garden,
+                Floor = new Color32(214, 220, 206, 255), FloorAlt = new Color32(200, 210, 194, 255), Edge = new Color32(140, 158, 136, 255),
+                Accent = new Color32(255, 170, 210, 255),
+                WallTop = new Color32(236, 240, 228, 255), WallLeft = new Color32(204, 214, 196, 255), WallRight = new Color32(176, 190, 168, 255),
+                AmbientColor = new Color(1f, 0.95f, 0.95f), Ambient = 0.4f, Background = new Color(0.7f, 0.86f, 0.8f),
+                Slime = new Color32(255, 230, 240, 255), SlimeDark = new Color32(220, 170, 200, 255),
+            },
+            new ZoneSpec
+            {
+                Name = "Hall of Hymns", NameJa = "聖歌の回廊", SubtitleJa = "金の線を、歌が流れていく", Subtitle = "Song flowing along lines of gold", Pattern = FloorPattern.Choir,
+                Floor = new Color32(222, 214, 196, 255), FloorAlt = new Color32(210, 200, 180, 255), Edge = new Color32(160, 140, 104, 255),
+                Accent = new Color32(255, 200, 80, 255),
+                WallTop = new Color32(242, 236, 220, 255), WallLeft = new Color32(214, 204, 182, 255), WallRight = new Color32(186, 172, 146, 255),
+                AmbientColor = new Color(1f, 0.93f, 0.78f), Ambient = 0.4f, Background = new Color(0.86f, 0.78f, 0.6f),
+                Slime = new Color32(255, 244, 210, 255), SlimeDark = new Color32(220, 190, 130, 255),
+            },
+            new ZoneSpec
+            {
+                Name = "Seraphic Sanctum", NameJa = "熾天の聖域", SubtitleJa = "いちばん高い所に、光輪が重なる", Subtitle = "Halos overlapping at the very highest place", Pattern = FloorPattern.Sanctum,
+                Floor = new Color32(234, 230, 238, 255), FloorAlt = new Color32(222, 216, 230, 255), Edge = new Color32(170, 156, 186, 255),
+                Accent = new Color32(255, 240, 180, 255),
+                WallTop = new Color32(250, 248, 252, 255), WallLeft = new Color32(224, 218, 234, 255), WallRight = new Color32(196, 188, 212, 255),
+                AmbientColor = new Color(1f, 0.98f, 0.94f), Ambient = 0.46f, Background = new Color(0.9f, 0.88f, 0.96f),
+                Slime = new Color32(255, 252, 240, 255), SlimeDark = new Color32(230, 214, 170, 255),
+            },
+        };
+
+        public static bool IsAbyssPattern(FloorPattern p) => p >= FloorPattern.Rift && p <= FloorPattern.Throne;
+        public static bool IsHeavenPattern(FloorPattern p) => p >= FloorPattern.Cloud;
+        public static int HeavenCount => heaven.Length;
+        public static ZoneSpec HeavenZone(int i) => heaven[Mathf.Clamp(i, 0, heaven.Length - 1)];
+        public static int HeavenIndex(ZoneSpec z)
+        {
+            if (z == null) return -1;
+            for (int i = 0; i < heaven.Length; i++) if (heaven[i].Name == z.Name) return i;
+            return -1;
+        }
+
         public static int Count => table.Length;
         public static int AbyssCount => abyss.Length;
         public static ZoneSpec Tower(int i) => table[i];
@@ -175,6 +227,8 @@ namespace VividOfFade
         /// <summary>その層の区画。2周目以降は全体の光を少し暗くする。101層からは深淵の区画。</summary>
         public static ZoneSpec For(int floor)
         {
+            if (GameConfig.IsHeaven(floor))
+                return heaven[Mathf.Clamp((floor - GameConfig.AbyssFirstFloor) / GameConfig.BossFloorEvery, 0, heaven.Length - 1)];
             if (GameConfig.IsAbyss(floor))
                 return abyss[Mathf.Clamp((floor - GameConfig.AbyssFirstFloor) / GameConfig.BossFloorEvery, 0, abyss.Length - 1)];
             int index = Mathf.Max(0, floor - 1) / GameConfig.BossFloorEvery;

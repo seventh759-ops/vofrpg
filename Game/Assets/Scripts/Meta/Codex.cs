@@ -141,6 +141,13 @@ namespace VividOfFade
                     if (bb > BossKind.AbyssKing)
                     {
                         // クリア後のボス（昇る塔の最上の女神像など）
+                        if (BossInfo.IsHeaven(bb))
+                        {
+                            var hz = Zones.HeavenZone(bb - BossKind.CloudWarden);
+                            all.Add(new Entry { Id = "b:" + bb, Cat = Category.Bosses, Icon = () => PixelArt.BossSprite(bb), Name = () => BossInfo.Name(bb), Desc = () => ZoneName(hz),
+                                Detail = () => BossDetail(bb), Hint = () => Loc.T($"Waits at the end of {ZoneName(hz)}.", $"{ZoneName(hz)}の最後の層で待っている。") });
+                            continue;
+                        }
                         all.Add(new Entry { Id = "b:" + bb, Cat = Category.Bosses, Icon = () => PixelArt.BossSprite(bb), Name = () => BossInfo.Name(bb), Desc = () => Loc.T("Top of the rising tower", "昇る塔の最上"),
                             Detail = () => BossDetail(bb), Hint = () => Loc.T("Waits at the very top of the rising tower.", "昇る塔のいちばん上で待っている。") });
                         continue;
@@ -215,7 +222,7 @@ namespace VividOfFade
             if (e == null) return;
             if (e.IsBoss) { Mark("b:" + e.BossKind); return; }
             if (e.Kind == EnemyKind.Golden) { Mark("e:Golden"); return; }
-            if (zone != null && zone.Pattern >= FloorPattern.Rift)
+            if (zone != null && Zones.IsAbyssPattern(zone.Pattern))
             {
                 int ai = Zones.AbyssIndex(zone);
                 if (ai >= 0) Mark($"a:{e.Kind}:{ai}");

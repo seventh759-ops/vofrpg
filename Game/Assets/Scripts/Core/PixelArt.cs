@@ -2605,6 +2605,7 @@ namespace VividOfFade
         public static Sprite BossSprite(BossKind kind, int cycle)
         {
             if (kind == BossKind.Goddess) return GoddessBleeding; // 昇る塔の100層：血の涙を流す女神像
+            if (BossInfo.IsHeaven(kind)) return HeavenBossSprite(kind); // 天界のボス
             if (BossInfo.IsAbyss(kind)) return AbyssBossSprite(kind);
             int i = Mathf.Clamp((int)kind, 0, BossRows.Length - 1);
             if (cycle > 0) return Corrupted($"Boss32_{i}_c{cycle}", BossRows[i], BossColors[i], cycle);
@@ -5071,6 +5072,32 @@ namespace VividOfFade
                             float k = Mathf.Abs(TileNoise(x / 13f, sy / 6.5f, salt + 81) - 0.5f);
                             if (!joint && k < 0.005f) c = new Color32(220, 40, 50, 255);
                             else if (!joint && k < 0.011f) c = Mix(c, new Color32(220, 40, 50, 255), 0.35f);
+                            break;
+                        }
+                        // ---- 天界 ----
+                        case FloorPattern.Cloud: // 白い敷石に、雲のようなやわらかい明るみ。目地は淡い金
+                        {
+                            float k = TileNoise(x / 10f, sy / 5f, salt + 91);
+                            if (!joint && k > 0.62f) c = Mix(c, new Color32(255, 255, 255, 255), (k - 0.62f) * 1.6f);
+                            if (joint) c = Mix(mortar, accent, 0.35f);
+                            break;
+                        }
+                        case FloorPattern.Garden: // 散った花びら（区画の色）と、ところどころ若葉の色
+                            if (!joint && Hash(x + salt * 7, sy * 3) % 97 == 0) c = accent;
+                            else if (!joint && Hash(x * 3 + salt, sy + 5) % 211 == 0) c = new Color32(150, 220, 140, 255);
+                            if (joint) c = Mix(mortar, new Color32(150, 200, 140, 255), 0.25f);
+                            break;
+                        case FloorPattern.Choir: // 目地に金の線、敷石の中ほどに細い金の五線のような筋
+                            if (joint) c = Mix(accent, mortar, 0.25f);
+                            else if (Mathf.Abs(fb - 0.5f) < 0.03f && (Hash(stoneId, salt + 95) % 3) == 0) c = Mix(c, accent, 0.5f);
+                            break;
+                        case FloorPattern.Sanctum: // 敷石ごとに、淡い金の光輪
+                        {
+                            float ra = fa - 0.5f, rb = fb - 0.5f;
+                            float r = Mathf.Sqrt(ra * ra + rb * rb);
+                            bool halo = (Hash(stoneId, salt + 99) % 4) == 0;
+                            if (halo && !joint && Mathf.Abs(r - 0.3f) < 0.03f) c = Mix(c, accent, 0.6f);
+                            if (joint) c = Mix(mortar, accent, 0.4f);
                             break;
                         }
                     }
