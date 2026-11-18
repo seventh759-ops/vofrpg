@@ -56,6 +56,12 @@ namespace VividOfFade
         float collapseTimer = -1f;
         Vector2 collapsePos;
 
+        /// <summary>
+        /// アビスを倒したあとの崩壊の演出〜エンディングまでの間。操作（移動・攻撃・スキル・薬・階段・鞄など）を受け付けない
+        /// （階段に触れて帰還の画面が開くと、ゲームが止まって演出が途中のまま残ってしまうため）。
+        /// </summary>
+        public bool Finale => collapseTimer > 0f || endingDelay > 0f;
+
         /// <summary>アビスの崩壊の演出：まわりから光の粒が噴き上がり、輪が広がり、揺れがだんだん強くなる。最後に白い閃光。</summary>
         void TickCollapse(float dt)
         {
@@ -329,7 +335,7 @@ namespace VividOfFade
         public void UsePotion(bool hp)
         {
             var ch = Profile.Current;
-            if (ch == null || Player.IsDead || Paused || ChoosingClass || potionCooldown > 0f) return;
+            if (ch == null || Player.IsDead || Paused || ChoosingClass || Finale || potionCooldown > 0f) return;
             if (hp)
             {
                 if (ch.HpPotions <= 0 || Player.Hp >= Player.MaxHp) return;
@@ -663,7 +669,7 @@ namespace VividOfFade
             if (Input.BagPressed && !Player.IsDead) OpenPanel(!BagOpen, false, false);
             if (Input.StatsPressed && !Player.IsDead) OpenPanel(false, !StatsOpen, false);
             if (Input.SkillsPressed && !Player.IsDead) OpenPanel(false, false, !SkillsOpen);
-            if (Input.CancelPressed)
+            if (Input.CancelPressed && !Finale)
             {
                 // 何か開いていれば閉じる。何も開いていなければメニューを開く
                 if (BagOpen || StatsOpen || SkillsOpen || MenuOpen || AltarOpen) OpenPanel(false, false, false);
@@ -678,13 +684,17 @@ namespace VividOfFade
             }
             else if (!Paused)
             {
-                Player.Tick(dt, Input, Room);
+                bool finale = Finale; // アビスの崩壊〜エンディングの間は操作できない（敵はもう消えている）
+                if (!finale) Player.Tick(dt, Input, Room);
                 TickAuraMotes(dt);
                 TickCorruptionMotes(dt);
                 TickAbyssGear(dt);
                 TickCollapse(dt);
-                Attack.Tick(dt, Player, !Player.Stunned && (AutoAttack || Input.AttackHeld)); // 気絶中は攻撃しない
-                Skills.Tick(dt, Player, Input.NumberPressed);
+                if (!finale)
+                {
+                    Attack.Tick(dt, Player, !Player.Stunned && (AutoAttack || Input.AttackHeld)); // 気絶中は攻撃しない
+                    Skills.Tick(dt, Player, Input.NumberPressed);
+                }
                 Floors.Tick(dt, Enemies, Player, Room);
                 Room.UpdateFlow(Player.Pos);
                 Room.Reveal(Player.Pos, Player.EffectiveLight + 2f);
@@ -696,10 +706,13 @@ namespace VividOfFade
                 Fx.Anchor = Player.Pos;
                 Fx.Tick(dt);
                 CheckRoomCleared();
-                CheckStairs();
-                CheckAltar();
-                CheckChests();
-                CheckGuideNpc();
+                if (!finale)
+                {
+                    CheckStairs();
+                    CheckAltar();
+                    CheckChests();
+                    CheckGuideNpc();
+                }
                 CheckEliteTip();
             }
 
@@ -1452,6 +1465,7 @@ namespace VividOfFade
         /// <summary>メニューを開く。</summary>
         public void OpenMenu()
         {
+            if (Finale) return;
             OpenPanel(false, false, false);
             Hud.ResetMenu();
             MenuOpen = true;
@@ -1475,6 +1489,7 @@ namespace VividOfFade
         /// <summary>鞄・能力値・スキルの画面のどれか1つだけを開く（全部 false で閉じる）。</summary>
         public void OpenPanel(bool bag, bool stats, bool skills)
         {
+            if (Finale && (bag || stats || skills)) return; // アビスの崩壊〜エンディングの間は開かない（閉じるだけはできる）
             if (TownBag && !bag) CloseTownBag();
             MenuOpen = false;
             AltarOpen = false;
@@ -1798,6 +1813,8 @@ namespace VividOfFade
         void ClearField()
         {
             ReturnOpen = false;
+            collapseTimer = -1f; // アビスの崩壊の演出が途中なら止める（次にアビスへ入ったとき、音や揺れが残らないように）
+            endingDelay = -1f;
             Time.timeScale = 1f;
             slowMoTimer = 0f;
             OpenPanel(false, false, false);
