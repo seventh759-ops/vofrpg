@@ -1575,7 +1575,7 @@ namespace VividOfFade
 
             var title = new GUIStyle(centered) { fontSize = label.fontSize * 2, fontStyle = FontStyle.Bold };
             Hud.FitLabel(new Rect(0, H * 0.12f, W, H * 0.06f), Loc.T("Choose a starting floor", "始める層を選ぶ"), title);
-            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), $"{AdvancedClasses.NameOf(type)}   Lv {ch.Level}   " + Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor), centered);
+            GUI.Label(new Rect(0, H * 0.19f, W, H * 0.04f), $"{AdvancedClasses.NameOf(type)}   Lv {ch.Level}   " + (ch.Ascended ? Loc.T("Top ", "最上 ") + GameConfig.FloorName(Mathf.Max(1, ch.AscentBest), true) : Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor, false)), centered);
 
             var all = GameWorld.Checkpoints(ch);
             bool hasAbyss = all.Exists(GameConfig.IsAbyss);
@@ -1970,11 +1970,11 @@ namespace VividOfFade
                     // 状態は2行に分ける（1行に詰めると字が小さくなりすぎる）。職業の名前は上の名前と重なるので出さない
                     var info = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
                     float iy = r.y + inner + nameStyle.fontSize * 1.5f;
-                    FitLabel(new Rect(tx, iy, r.xMax - inner - tx, lh), $"Lv {ch.Level}   " + Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor), info);
+                    FitLabel(new Rect(tx, iy, r.xMax - inner - tx, lh), $"Lv {ch.Level}   " + (ch.Ascended ? Loc.T("Top ", "最上 ") + GameConfig.FloorName(Mathf.Max(1, ch.AscentBest), true) : Loc.T("Best ", "最深 ") + GameConfig.FloorName(ch.BestFloor, false)), info);
                     var sub = new GUIStyle(info);
                     sub.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
                     FitLabel(new Rect(tx, iy + lh, r.xMax - inner - tx, lh),
-                        Loc.T($"Embers {ch.Embers}", $"火種 {ch.Embers}") + (ch.Run.Active ? Loc.T("   (suspended: ", "   （中断中：") + GameConfig.FloorName(ch.Run.Floor) + Loc.T(")", "）") : ""), sub);
+                        Loc.T($"Embers {ch.Embers}", $"火種 {ch.Embers}") + (ch.Run.Active ? Loc.T("   (suspended: ", "   （中断中：") + GameConfig.FloorName(ch.Run.Floor, ch.Ascended) + Loc.T(")", "）") : ""), sub);
 
                     // 消す：右上の小さなごみ箱。押すと確認の窓が出る（消しても倉庫は残る）
                     float ds = r.height * 0.26f;

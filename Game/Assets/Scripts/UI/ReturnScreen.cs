@@ -65,6 +65,7 @@ namespace VividOfFade
             bool last = world.Floors.Floor >= GameConfig.LastFloorFor(ch);
             string lead = last ? Loc.T("This is the last floor. Return home to keep your gear.", "ここが最後の層。帰還して装備を持ち帰ろう。")
                 : next == GameConfig.AbyssFirstFloor ? Loc.T("Return home, or descend into the ABYSS.", "帰還するか、深淵へ下りるか。")
+                : GameConfig.Ascent ? Loc.T($"Return home to keep your gear, or climb to {GameConfig.FloorName(next)}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), $"帰還して装備を持ち帰るか、{GameConfig.FloorName(next)}へ昇るか" + (GameConfig.IsBossFloor(next) ? "（ボス）。" : "。"))
                 : Loc.T($"Return home to keep your gear, or descend to {GameConfig.FloorName(next)}" + (GameConfig.IsBossFloor(next) ? " (BOSS)." : "."), $"帰還して装備を持ち帰るか、{GameConfig.FloorName(next)}へ下りるか" + (GameConfig.IsBossFloor(next) ? "（ボス）。" : "。"));
             GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), lead, small);
             y += lineH;
@@ -140,7 +141,7 @@ namespace VividOfFade
                 Hud.Fill(new Rect(pad + third + gap, by, third, btnH), new Color(1f, 1f, 1f, 0.05f));
                 GUI.Label(new Rect(pad + third + gap, by, third, btnH), Loc.T("LAST FLOOR", "最後の層"), centered);
             }
-            else hud.Button(new Rect(pad + third + gap, by, third, btnH), Loc.T("DESCEND", "下りる"), new Color(0.5f, 0.35f, 0.15f, 0.85f), centered, () =>
+            else hud.Button(new Rect(pad + third + gap, by, third, btnH), (GameConfig.Ascent ? Loc.T("CLIMB", "昇る") : Loc.T("DESCEND", "下りる")), new Color(0.5f, 0.35f, 0.15f, 0.85f), centered, () =>
             {
                 Close();
                 world.Descend();

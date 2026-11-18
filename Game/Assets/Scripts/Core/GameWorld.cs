@@ -139,7 +139,8 @@ namespace VividOfFade
         {
             var list = new List<int> { 1 };
             int last = GameConfig.LastFloorFor(ch); // 深淵の層は、入れるときだけ（Lv100以上・100層制覇）
-            for (int boss = GameConfig.BossFloorEvery; boss <= ch.BossCleared && boss + 1 <= last; boss += GameConfig.BossFloorEvery) list.Add(boss + 1);
+            int cleared = ch.Ascended ? ch.AscentBossCleared : ch.BossCleared; // 昇る塔は、昇る塔の記録で
+            for (int boss = GameConfig.BossFloorEvery; boss <= cleared && boss + 1 <= last; boss += GameConfig.BossFloorEvery) list.Add(boss + 1);
             return list;
         }
 
@@ -616,7 +617,8 @@ namespace VividOfFade
             ItemGenerator.MagicFind = fx != null ? fx.MagicFind : 0f;
             // 敵の会心耐性：塔の中ではいまの層、町では最深層の値（装備の比べ方・能力値の表示に使う）
             var crCh = Profile.Current;
-            GameConfig.CritResist = GameConfig.EnemyCritResist(ChoosingClass ? GameConfig.Tier(crCh != null ? crCh.BestFloor : 0) : Floors.Tier);
+            GameConfig.Ascent = crCh != null && crCh.Ascended; // 昇る塔か（敵の強さ・層の名前・区画の並び）
+            GameConfig.CritResist = GameConfig.EnemyCritResist(ChoosingClass ? GameConfig.Tier(crCh != null ? (crCh.Ascended ? Mathf.Max(1, crCh.AscentBest) : crCh.BestFloor) : 0) : Floors.Tier);
             LootSystem.EmberMult = fx != null ? 1f + fx.EmberFind : 1f;
             Enemies.EliteDamageMult = fx != null ? 1f + fx.EliteDamage : 1f;
             Music.SetAbyssTown(Profile.CurrentAbyssUnlocked); // そのキャラクターが深淵へ行けるようになったら、町の曲も深淵版
@@ -779,7 +781,7 @@ namespace VividOfFade
                 GameConfig.EliteEmberOrbs, GameConfig.EmberAmount(Floors.Tier));
             // まれに神話（赤）の装備（ボスより低い確率）
             if (Random.value < GameConfig.EliteMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
-            if (GameConfig.IsAbyss(Floors.Floor) && Random.value < GameConfig.ShardChanceElite) GainShards(pos, GameConfig.RollShards());
+            if ((GameConfig.IsAbyss(Floors.Floor) || GameConfig.Ascent) && Random.value < GameConfig.ShardChanceElite) // 深淵が閉じたあとは、昇る塔で GainShards(pos, GameConfig.RollShards());
             Fx.Ring(pos, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.35f);
             Sfx.Fountain();
             GainExp(Progression.KillExp(Floors.Tier) * 5);
@@ -1052,7 +1054,11 @@ namespace VividOfFade
             SaveRun(); // 層の最初で、挑戦の状態を保存する
 
             var ch = Profile.Current;
-            if (ch != null && floor > ch.BestFloor)
+            if (ch != null && ch.Ascended)
+            {
+                if (floor > ch.AscentBest) { ch.AscentBest = floor; Profile.Save(); }
+            }
+            else if (ch != null && floor > ch.BestFloor)
             {
                 ch.BestFloor = floor;
                 Profile.Save();
@@ -1223,14 +1229,25 @@ namespace VividOfFade
             Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropLevel, GameConfig.BossRarityBonus,
                 GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * GameConfig.BossEmberMult);
             if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
-            if (GameConfig.IsAbyss(Floors.Floor) && Random.value < GameConfig.ShardChanceBoss) GainShards(pos, GameConfig.RollShards());
+            if ((GameConfig.IsAbyss(Floors.Floor) || GameConfig.Ascent) && Random.value < GameConfig.ShardChanceBoss) GainShards(pos, GameConfig.RollShards());
             Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
             cameraRig.Shake(0.3f, 0.5f);
             Hud.Toast(Loc.T("BOSS DEFEATED!", "ボスを倒した！"), new Color(1f, 0.5f, 0.4f));
             GainExp(Progression.KillExp(Floors.Tier) * 30);
             Floors.OpenStairs();
             var ch = Profile.Current;
-            if (ch != null && Floors.Floor > ch.BossCleared)
+            if (ch != null && ch.Ascended)
+            {
+                // 昇る塔：記録は別に持つ（塔の記録・レベルの上限はそのまま）
+                if (Floors.Floor > ch.AscentBossCleared)
+                {
+                    ch.AscentBossCleared = Floors.Floor;
+                    Profile.Save();
+                    if (Floors.Floor < GameConfig.MaxFloor)
+                        Hud.Toast(Loc.T($"Checkpoint unlocked: {GameConfig.FloorName(Floors.Floor + 1)}", $"{GameConfig.FloorName(Floors.Floor + 1)}から始められるようになった"), new Color(0.7f, 1f, 0.7f));
+                }
+            }
+            else if (ch != null && Floors.Floor > ch.BossCleared)
             {
                 ch.BossCleared = Floors.Floor;
                 Profile.Save();
@@ -1239,7 +1256,12 @@ namespace VividOfFade
                 else if (Floors.Floor == GameConfig.MaxFloor) // 100層を初めて制覇：レベルの上限が 120 に上がる（この戦いの経験値の後なので、上がるのは次に経験値を得てから）
                     Hud.Toast(Loc.T($"Level cap raised to {Progression.UnlockedMaxLevel}!", $"レベルの上限が {Progression.UnlockedMaxLevel} に上がった！"), new Color(1f, 0.85f, 0.4f));
             }
-            if (Floors.Floor == GameConfig.MaxFloor)
+            if (GameConfig.Ascent && Floors.Floor == GameConfig.MaxFloor)
+            {
+                Hud.ShowBanner(Loc.T("THE TOWER IS CLIMBED", "塔を昇りきった"), Loc.T("The light has reached the very top.", "灯りが、塔のいちばん上まで届いた。"), new Color(1f, 0.9f, 0.6f));
+                Sfx.Landed(Rarity.Mythic);
+            }
+            else if (Floors.Floor == GameConfig.MaxFloor)
             {
                 bool abyss = GameConfig.CanEnterAbyss(ch);
                 Hud.ShowBanner(Loc.T("TOWER CONQUERED", "塔を制覇した"),
@@ -1782,6 +1804,7 @@ namespace VividOfFade
             if (fresh) ClearRun(Profile.Get(type)); // 新しく始めると、中断した挑戦は消える
             ClassInfo.Current = type;
             Profile.Select(type);
+            GameConfig.Ascent = Profile.Current != null && Profile.Current.Ascended; // 層を作る前に、昇る塔かを決めておく
             ChoosingClass = false;
             ClearField();
             Player.SetClass(type);

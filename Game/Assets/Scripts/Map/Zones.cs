@@ -178,6 +178,12 @@ namespace VividOfFade
             if (GameConfig.IsAbyss(floor))
                 return abyss[Mathf.Clamp((floor - GameConfig.AbyssFirstFloor) / GameConfig.BossFloorEvery, 0, abyss.Length - 1)];
             int index = Mathf.Max(0, floor - 1) / GameConfig.BossFloorEvery;
+            if (GameConfig.Ascent)
+            {
+                // 昇る塔：塔をさかさまにたどる（1層は塔の底の区画、100層は塔のてっぺんの区画）。灯りが戻った世界なので、深淵には染まらない
+                int top = (GameConfig.MaxFloor - 1) / GameConfig.BossFloorEvery;
+                return table[Mathf.Clamp(top - index, 0, top) % table.Length];
+            }
             int cycle = index / table.Length;
             var b = table[index % table.Length];
             if (cycle == 0) return b;

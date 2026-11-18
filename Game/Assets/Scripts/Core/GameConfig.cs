@@ -22,20 +22,29 @@ namespace VividOfFade
         public const int AbyssReqLevel = 100;
         public static bool IsAbyss(int floor) => floor > MaxFloor;
         public static int AbyssDepth(int floor) => floor - MaxFloor;
-        public static bool CanEnterAbyss(CharacterData ch) => ch != null && ch.Level >= AbyssReqLevel && ch.BossCleared >= MaxFloor;
+        public static bool CanEnterAbyss(CharacterData ch) => ch != null && !ch.Ascended && ch.Level >= AbyssReqLevel && ch.BossCleared >= MaxFloor; // 捧げたら深淵は閉じる
+
+        // 昇る塔（クリア後）：女神像に火種を捧げたキャラクターは、同じ1〜100層を「昇る」。深淵は閉じる。
+        // 敵は1層から Lv100 相当（深淵1層と同じくらい）で、1層ごとに段階が1つ上がる（100層で段階300）。落ちる装備は Lv100〜120 のまま。
+        /// <summary>いまのキャラクターが昇る塔か（GameWorld が毎フレーム入れる）。</summary>
+        public static bool Ascent;
+        public const int AscentBaseTier = 200;
+        /// <summary>その層の「深さ」の目安（敵の数・段階の割合に使う）。昇る塔では 100 を足す。</summary>
+        public static int EffectiveFloor(int floor) => Ascent && !IsAbyss(floor) ? MaxFloor + floor : floor;
 
         /// <summary>層の名前（「74層」「深淵3層」）。</summary>
-        public static string FloorName(int floor) =>
-            IsAbyss(floor) ? Loc.T($"ABYSS {AbyssDepth(floor)}", $"深淵{AbyssDepth(floor)}層") : Loc.T($"FLOOR {floor}", $"{floor}層");
+        public static string FloorName(int floor) => FloorName(floor, Ascent);
+        public static string FloorName(int floor, bool ascent) =>
+            IsAbyss(floor) ? Loc.T($"ABYSS {AbyssDepth(floor)}", $"深淵{AbyssDepth(floor)}層") : ascent ? Loc.T($"ASCENT {floor}", $"昇り{floor}層") : Loc.T($"FLOOR {floor}", $"{floor}層");
 
         /// <summary>層の短い名前（HUD の層の行：「71F」「ABYSS 3F」）。言語に関係なく同じ。</summary>
-        public static string FloorNameEn(int floor) => IsAbyss(floor) ? $"ABYSS {AbyssDepth(floor)}F" : $"{floor}F";
+        public static string FloorNameEn(int floor) => IsAbyss(floor) ? $"ABYSS {AbyssDepth(floor)}F" : Ascent ? $"ASCENT {floor}F" : $"{floor}F";
 
         /// <summary>そのキャラクターが下りられる最後の層（深淵に入れなければ100層）。</summary>
         public static int LastFloorFor(CharacterData ch) => CanEnterAbyss(ch) ? AbyssLastFloor : MaxFloor;
         public static bool IsBossFloor(int floor) => floor > 0 && floor % BossFloorEvery == 0;
-        public static int Tier(int floor) => floor * 2;
-        public static int RoomEnemies(int floor, int roomArea) => Mathf.Min(5 + Mathf.RoundToInt(floor * 1.2f) + roomArea / 14, 45); // 前の約6割の密度
+        public static int Tier(int floor) => Ascent && !IsAbyss(floor) ? AscentBaseTier + floor : floor * 2;
+        public static int RoomEnemies(int floor, int roomArea) => Mathf.Min(5 + Mathf.RoundToInt(EffectiveFloor(floor) * 1.2f) + roomArea / 14, 45); // 前の約6割の密度
         public const float StairsRadius = 0.7f;
 
         // 縦画面で横に見える幅（ユニット。1ユニット = 16 ドット。14 なら内部解像度 224 ドット相当）
@@ -184,6 +193,7 @@ namespace VividOfFade
 
         public static int RollEnemyTier(int floor)
         {
+            floor = EffectiveFloor(floor);
             float lower = Mathf.Max(0f, 70f - floor);
             float mid = Mathf.Min(50f, 30f + floor * 0.3f);
             float upper = Mathf.Max(0f, floor - 25f);
@@ -271,6 +281,8 @@ namespace VividOfFade
 
         public static int DropLevel(int wave, int characterLevel)
         {
+            // 昇る塔：深淵と同じく Lv100〜120（5刻み）。1〜4層 Lv100 … 20層から Lv120
+            if (Ascent && wave > AscentBaseTier) return AbyssGearLevel(MaxFloor + Mathf.Clamp(wave - AscentBaseTier, 1, AbyssLastFloor - MaxFloor));
             int floor = wave / 2;
             if (IsAbyss(floor))
             {

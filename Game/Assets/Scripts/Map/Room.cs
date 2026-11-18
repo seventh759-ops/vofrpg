@@ -139,7 +139,7 @@ namespace VividOfFade
 
         void BuildNormalFloor(System.Random rng, int floor)
         {
-            int target = Mathf.Min(5 + floor / 4, 8);
+            int target = Mathf.Min(5 + GameConfig.EffectiveFloor(floor) / 4, 8); // 昇る塔は、1層から部屋が多い
             for (int attempt = 0; attempt < 300 && Areas.Count < target; attempt++)
             {
                 int w = rng.Next(9, 14);
