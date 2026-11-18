@@ -252,8 +252,11 @@ namespace VividOfFade
         public void OnOffered()
         {
             GameConfig.Ascent = true;
+            SyncTownGear(); // レベルが Lv1 に戻ったので、付けられなくなった装備は倉庫へ送ってある
             Hud.Toast(Loc.T("The tower has turned over. Now you climb.", "塔が反転した。これからは昇っていく。"), new Color(1f, 0.35f, 0.4f));
             Hud.Toast(Loc.T("The Abyss has closed.", "深淵は閉じた。"), new Color(0.85f, 0.6f, 0.7f));
+            Hud.Toast(Loc.T("Your level was offered: back to Lv 1", "レベルを捧げた：Lv1 から"), new Color(1f, 0.85f, 0.6f));
+            ToastStored();
             Hud.Flash(0.8f);
             Sfx.Landed(Rarity.Mythic);
         }

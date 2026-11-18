@@ -701,8 +701,8 @@ namespace VividOfFade
             string says = ch.Ascended
                 ? Loc.T("...I have received it. The tower no longer leads down. Climb... climb up to me.",
                         "……確かに、受け取りました。塔はもう、下へは続きません。上へ……私のもとへ、昇っておいでなさい。")
-                : Loc.T("...The light has returned. And yet, what flows from my eyes will not stop. The tower does not sleep. Offer me every ember you hold, and the tower will turn toward the sky.",
-                        "……灯りは戻りました。それなのに、この目から流れるものが止まらないのです。塔は、まだ眠ってはいません。あなたの火種を、すべて私に捧げなさい。そうすれば、塔は空へと向きを変えるでしょう。");
+                : Loc.T("...The light has returned. And yet, what flows from my eyes will not stop. The tower does not sleep. Offer me every ember you hold, and the strength you have grown. Then the tower will turn toward the sky.",
+                        "……灯りは戻りました。それなのに、この目から流れるものが止まらないのです。塔は、まだ眠ってはいません。あなたの火種をすべて、そして積み上げてきた力を、私に捧げなさい。そうすれば、塔は空へと向きを変えるでしょう。");
             float btnH = H * 0.045f;
             GoddessSays(new Rect(r.x + inner, r.y + inner, r.width - inner * 2f, r.height - btnH - inner * 3f), says);
             var btn = new Rect(r.x + inner, r.yMax - inner - btnH, r.width - inner * 2f, btnH);
@@ -714,7 +714,7 @@ namespace VividOfFade
                 return;
             }
             if (Town.CanOffer(ch))
-                hud.Button(btn, Loc.T($"OFFER  -  all {ch.Embers} embers", $"捧げる  -  火種 {ch.Embers} をすべて"), new Color(0.55f, 0.08f, 0.12f, 0.9f), hud.CenteredStyle, () => offerStep = 1);
+                hud.Button(btn, Loc.T($"OFFER  -  all {ch.Embers} embers and your level", $"捧げる  -  火種 {ch.Embers} とレベル"), new Color(0.55f, 0.08f, 0.12f, 0.9f), hud.CenteredStyle, () => offerStep = 1);
             else
             {
                 Hud.Fill(btn, dim);
@@ -740,12 +740,12 @@ namespace VividOfFade
             switch (offerStep)
             {
                 case 1:
-                    text = Loc.T($"You will offer ALL of your embers ({ch.Embers}). They will not come back. Are you sure?",
-                                 $"持っている火種をすべて（{ch.Embers}個）捧げます。捧げた火種は戻りません。よろしいですか？");
+                    text = Loc.T($"You will offer ALL of your embers ({ch.Embers}) and your level (Lv {ch.Level} -> Lv 1). Your class, rebirths, gear and skills stay; gear you can no longer wear goes to storage. Are you sure?",
+                                 $"持っている火種をすべて（{ch.Embers}個）と、レベル（Lv{ch.Level} → Lv1）を捧げます。職業・転生・装備・スキルはそのままですが、付けられなくなった装備は倉庫へ送られます。よろしいですか？");
                     break;
                 case 2:
-                    text = Loc.T("The Abyss will close and you can never enter it again. The tower turns over, and you climb it again from floor 1 (your tower records stay). Enemies there are as strong as Lv100 from the first floor, so rebirths and class changes afterwards (back to Lv1) will be very hard. Grow strong before you offer. Your suspended run will be lost. Really?",
-                                 "捧げると深淵は閉じ、二度と入れなくなります。塔は反転し、1層から昇り直すことになります（塔の記録はそのまま残ります）。昇る塔の敵は1層から Lv100 相当なので、捧げたあとに転生・転職して Lv1 に戻ると、とても厳しくなります。転生で十分に強くなってから捧げることをすすめます。中断している挑戦も消えます。本当によろしいですか？");
+                    text = Loc.T("The Abyss will close and you can never enter it again. The tower turns over, and you climb it again from floor 1 (your tower records stay). Your suspended run will be lost. Really?",
+                                 "捧げると深淵は閉じ、二度と入れなくなります。塔は反転し、1層から昇り直すことになります（塔の記録はそのまま残ります）。中断している挑戦も消えます。本当によろしいですか？");
                     break;
                 default:
                     text = Loc.T("Last chance. This rite cannot be undone. Offer your embers?",

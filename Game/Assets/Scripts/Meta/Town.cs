@@ -341,8 +341,8 @@ namespace VividOfFade
         public static bool Enhanceable(Item it) => it != null && it.EnhanceCap > 0;
 
         /// <summary>
-        /// 捧げる（クリア後の女神像）：持っている火種をすべて捧げると、塔が反転して「昇る塔」になる。
-        /// 深淵は閉じ、昇る塔は1層から（塔の記録・レベルの上限はそのまま）。中断した挑戦は消える。1回だけ。
+        /// 捧げる（クリア後の女神像）：持っている火種をすべてと、レベルを捧げる（Lv1 に戻る）と、塔が反転して「昇る塔」になる。
+        /// 深淵は閉じ、昇る塔は1層から（塔の記録・レベルの上限・職業・転生の回数はそのまま）。中断した挑戦は消える。1回だけ。
         /// </summary>
         public static bool CanOffer(CharacterData ch) => ch != null && ch.EndingSeen && !ch.Ascended && ch.Embers > 0;
 
@@ -350,6 +350,9 @@ namespace VividOfFade
         {
             if (!CanOffer(ch)) return false;
             ch.Embers = 0;
+            // レベルも捧げる：Lv1 に戻る（職業・転生の回数・装備・スキルはそのまま。付けられなくなった装備は倉庫へ）。
+            // 上位職・3次職の儀のボーナスのポイントは、職業を失わないので、もう一度もらえる
+            BackToLevel1(ch, ch.Third ? ThirdClasses.BonusPoints : ch.Advanced >= 0 ? AdvancedClasses.BonusPoints : 0);
             ch.Ascended = true;
             ch.AscentBest = 0;
             ch.AscentBossCleared = 0;
