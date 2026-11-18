@@ -25,8 +25,9 @@ namespace VividOfFade
         public Color32 Slime;       // その区画のスライムの色
         public Color32 SlimeDark;
         public int Cycle;           // 何周目か（周を重ねるほど深淵に侵され、名前の頭に言葉が付く）
+        public bool Bright;         // 昇る塔（クリア後）：光が差して明るくなった区画
 
-        public string Title => CyclePrefix(Cycle) + Loc.T(Name, NameJa);
+        public string Title => (Bright ? Loc.T("Sunlit ", "光差す") : CyclePrefix(Cycle)) + Loc.T(Name, NameJa);
 
         /// <summary>周ごとに区画の名前の頭に付ける言葉（深淵に近づいていく）。</summary>
         public static string CyclePrefix(int cycle)
@@ -40,7 +41,7 @@ namespace VividOfFade
             }
         }
         public string DisplaySubtitle => Loc.T(Subtitle, SubtitleJa);
-        public string Key => $"{Name}_{Cycle}";
+        public string Key => $"{Name}_{Cycle}" + (Bright ? "_bright" : ""); // 床・壁の絵は区画ごとに作って覚えておくので、明るい版は別の名前で
 
     }
 
@@ -236,7 +237,7 @@ namespace VividOfFade
             {
                 // 昇る塔：塔をさかさまにたどる（1層は塔の底の区画、100層は塔のてっぺんの区画）。灯りが戻った世界なので、深淵には染まらない
                 int top = (GameConfig.MaxFloor - 1) / GameConfig.BossFloorEvery;
-                return table[Mathf.Clamp(top - index, 0, top) % table.Length];
+                return Brighten(table[Mathf.Clamp(top - index, 0, top) % table.Length]);
             }
             int cycle = index / table.Length;
             var b = table[index % table.Length];
@@ -255,6 +256,31 @@ namespace VividOfFade
                 Background = Color.Lerp(b.Background, new Color(0.06f, 0.01f, 0.04f), k),
                 Slime = b.Slime, SlimeDark = b.SlimeDark, Cycle = cycle,
             };
+        }
+
+        static readonly System.Collections.Generic.Dictionary<string, ZoneSpec> brightCache = new System.Collections.Generic.Dictionary<string, ZoneSpec>();
+
+        /// <summary>
+        /// 昇る塔の区画：光が差して明るくなった版。床・壁は暖かい白へ寄せ、全体の光を強め、迷宮の外（背景）も明るい空の色にする。
+        /// </summary>
+        static ZoneSpec Brighten(ZoneSpec b)
+        {
+            if (brightCache.TryGetValue(b.Name, out var cached)) return cached;
+            var warm = new Color32(250, 240, 222, 255);
+            Color32 L(Color32 c, float m) => Color32.Lerp(c, warm, m);
+            var z = new ZoneSpec
+            {
+                Name = b.Name, Subtitle = b.Subtitle, NameJa = b.NameJa, SubtitleJa = b.SubtitleJa, Pattern = b.Pattern,
+                Floor = L(b.Floor, 0.38f), FloorAlt = L(b.FloorAlt, 0.34f), Edge = L(b.Edge, 0.25f),
+                Accent = Color32.Lerp(b.Accent, new Color32(255, 255, 255, 255), 0.15f),
+                WallTop = L(b.WallTop, 0.4f), WallLeft = L(b.WallLeft, 0.32f), WallRight = L(b.WallRight, 0.26f),
+                AmbientColor = Color.Lerp(b.AmbientColor, new Color(1f, 0.96f, 0.88f), 0.6f),
+                Ambient = Mathf.Max(b.Ambient + 0.16f, 0.38f),
+                Background = Color.Lerp(b.Background, new Color(0.72f, 0.8f, 0.92f), 0.85f), // 迷宮の外は、明るい空の色
+                Slime = b.Slime, SlimeDark = b.SlimeDark, Cycle = 0, Bright = true,
+            };
+            brightCache[b.Name] = z;
+            return z;
         }
 
         /// <summary>層が変わったとき、区画も変わったか（その層が区画の最初の層か）。</summary>
