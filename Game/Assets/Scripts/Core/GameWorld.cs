@@ -1063,9 +1063,10 @@ namespace VividOfFade
             altar.enabled = Room.HasAltar;
             PlaceChests();
 
-            // 1層目だけ、はじめの部屋に案内役が立っている
-            guideNpc.enabled = floor == 1;
-            if (floor == 1)
+            // 1層目だけ、はじめの部屋に案内役が立っている（女神像に捧げたあとは、案内役はもういない）
+            bool guideHere = floor == 1 && !(Profile.Current != null && Profile.Current.Ascended);
+            guideNpc.enabled = guideHere;
+            if (guideHere)
             {
                 Vector2 gp = Room.Clamp(Room.StartPos + new Vector2(1.4f, 1.4f), 0.5f);
                 guideNpc.transform.position = Iso.ToScreen(gp) + new Vector2(0f, 0.15f);
@@ -1820,7 +1821,11 @@ namespace VividOfFade
         }
 
         /// <summary>案内役の説明（その場面が初めてのときだけ）。</summary>
-        void Guide(string id, params string[] lines) => Hud.Guide.Show(id, lines);
+        void Guide(string id, params string[] lines)
+        {
+            if (Profile.Current != null && Profile.Current.Ascended) return; // 捧げたあとは、案内役は消えて、もう話しかけてこない
+            Hud.Guide.Show(id, lines);
+        }
 
         void OnItemPickedUp(Item item)
         {
