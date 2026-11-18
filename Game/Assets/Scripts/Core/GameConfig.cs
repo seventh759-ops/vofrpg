@@ -42,10 +42,10 @@ namespace VividOfFade
         public static string FloorName(int floor) => FloorName(floor, Ascent);
         public static string FloorName(int floor, bool ascent) =>
             floor > MaxFloor ? (ascent ? Loc.T($"HEAVEN {AbyssDepth(floor)}", $"天界{AbyssDepth(floor)}層") : Loc.T($"ABYSS {AbyssDepth(floor)}", $"深淵{AbyssDepth(floor)}層"))
-            : ascent ? Loc.T($"ASCENT {floor}", $"昇り{floor}層") : Loc.T($"FLOOR {floor}", $"{floor}層");
+            : Loc.T($"FLOOR {floor}", $"{floor}層"); // 昇る塔も、層の名前は塔と同じ
 
         /// <summary>層の短い名前（HUD の層の行：「71F」「ABYSS 3F」）。言語に関係なく同じ。</summary>
-        public static string FloorNameEn(int floor) => IsHeaven(floor) ? $"HEAVEN {AbyssDepth(floor)}F" : IsAbyss(floor) ? $"ABYSS {AbyssDepth(floor)}F" : Ascent ? $"ASCENT {floor}F" : $"{floor}F";
+        public static string FloorNameEn(int floor) => IsHeaven(floor) ? $"HEAVEN {AbyssDepth(floor)}F" : IsAbyss(floor) ? $"ABYSS {AbyssDepth(floor)}F" : $"{floor}F";
 
         /// <summary>そのキャラクターが下りられる最後の層（深淵に入れなければ100層）。</summary>
         public static int LastFloorFor(CharacterData ch) => CanEnterAbyss(ch) || CanEnterHeaven(ch) ? AbyssLastFloor : MaxFloor;
