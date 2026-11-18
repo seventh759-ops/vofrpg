@@ -25,9 +25,9 @@ namespace VividOfFade
         public Color32 Slime;       // その区画のスライムの色
         public Color32 SlimeDark;
         public int Cycle;           // 何周目か（周を重ねるほど深淵に侵され、名前の頭に言葉が付く）
-        public bool Bright;         // 昇る塔（クリア後）：光が差して明るくなった区画
+        public bool Bright;         // 昇る塔（クリア後）：明暗が反転した区画
 
-        public string Title => (Bright ? Loc.T("Sunlit ", "光差す") : CyclePrefix(Cycle)) + Loc.T(Name, NameJa);
+        public string Title => (Bright ? Loc.T("Inverted ", "反転した") : CyclePrefix(Cycle)) + Loc.T(Name, NameJa);
 
         /// <summary>周ごとに区画の名前の頭に付ける言葉（深淵に近づいていく）。</summary>
         public static string CyclePrefix(int cycle)
@@ -261,22 +261,33 @@ namespace VividOfFade
         static readonly System.Collections.Generic.Dictionary<string, ZoneSpec> brightCache = new System.Collections.Generic.Dictionary<string, ZoneSpec>();
 
         /// <summary>
-        /// 昇る塔の区画：光が差して明るくなった版。床・壁は暖かい白へ寄せ、全体の光を強め、迷宮の外（背景）も明るい空の色にする。
+        /// 昇る塔の区画：世界が反転した版。色味はそのままで明暗だけをひっくり返す（暗い石は明るく、光っていた模様は暗く沈む）。
+        /// 壁は上の面がいちばん明るくなるように並べ直す。迷宮の外（背景）も明るい色になる。
         /// </summary>
         static ZoneSpec Brighten(ZoneSpec b)
         {
             if (brightCache.TryGetValue(b.Name, out var cached)) return cached;
-            var warm = new Color32(250, 240, 222, 255);
-            Color32 L(Color32 c, float m) => Color32.Lerp(c, warm, m);
+            // 明暗の反転：色相と（少し抑えた）彩度はそのまま、明るさ v を 1 - v へ
+            Color32 Inv(Color32 c, float vScale = 1f, float satScale = 0.7f)
+            {
+                // いちばん明るい成分を v とし、各成分の v からの差（色味）を保ったまま、v だけを反転させる
+                float r = c.r / 255f, g = c.g / 255f, bl = c.b / 255f;
+                float v = Mathf.Max(r, Mathf.Max(g, bl));
+                float nv = Mathf.Clamp01((0.97f - v * 0.9f) * vScale);
+                float k = satScale * (v > 0.001f ? Mathf.Min(1.5f, nv / Mathf.Max(v, 0.25f)) : 1f); // 明るくなった分だけ色味も少し広げる
+                return new Color32((byte)(Mathf.Clamp01(nv - (v - r) * k) * 255f), (byte)(Mathf.Clamp01(nv - (v - g) * k) * 255f), (byte)(Mathf.Clamp01(nv - (v - bl) * k) * 255f), 255);
+            }
+            var top = Inv(b.WallTop);
+            var floor = Inv(b.Floor);
             var z = new ZoneSpec
             {
                 Name = b.Name, Subtitle = b.Subtitle, NameJa = b.NameJa, SubtitleJa = b.SubtitleJa, Pattern = b.Pattern,
-                Floor = L(b.Floor, 0.38f), FloorAlt = L(b.FloorAlt, 0.34f), Edge = L(b.Edge, 0.25f),
-                Accent = Color32.Lerp(b.Accent, new Color32(255, 255, 255, 255), 0.15f),
-                WallTop = L(b.WallTop, 0.4f), WallLeft = L(b.WallLeft, 0.32f), WallRight = L(b.WallRight, 0.26f),
-                AmbientColor = Color.Lerp(b.AmbientColor, new Color(1f, 0.96f, 0.88f), 0.6f),
+                Floor = floor, FloorAlt = Inv(b.FloorAlt, 0.97f), Edge = Inv(b.Floor, 0.8f), // 縁は床より少しだけ暗く（敷石の境目が見えるように）
+                Accent = Inv(b.Accent, 1f, 1f), // 光っていた模様は、暗く沈んだ色に
+                WallTop = top, WallLeft = Inv(b.WallTop, 0.86f), WallRight = Inv(b.WallTop, 0.74f),
+                AmbientColor = new Color(1f, 0.97f, 0.92f),
                 Ambient = Mathf.Max(b.Ambient + 0.16f, 0.38f),
-                Background = Color.Lerp(b.Background, new Color(0.72f, 0.8f, 0.92f), 0.85f), // 迷宮の外は、明るい空の色
+                Background = Color.Lerp((Color)Inv(Color32.Lerp(new Color32(0, 0, 0, 255), (Color32)b.Background, 1f)), new Color(0.85f, 0.86f, 0.9f), 0.4f), // 迷宮の外も反転して明るい色に
                 Slime = b.Slime, SlimeDark = b.SlimeDark, Cycle = 0, Bright = true,
             };
             brightCache[b.Name] = z;
