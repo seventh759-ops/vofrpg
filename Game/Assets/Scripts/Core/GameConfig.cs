@@ -289,6 +289,18 @@ namespace VividOfFade
             return Mathf.Min(Progression.UnlockedMaxLevel, 100 + 5 * (depth / 5));
         }
 
+        /// <summary>
+        /// 1つずつの品のレベルに幅を持たせる：上限（DropLevel）から、自分のレベル −1 までのどれか。
+        /// 上限で止まっても（Lv98 など）、いろいろなレベルの品が落ちるように。深淵・天界（Lv100〜）は決まったレベルのまま。
+        /// </summary>
+        public static int JitterDropLevel(int top)
+        {
+            if (top > Progression.MaxLevel) return top;
+            int ch = Profile.Current != null ? Profile.Current.Level : 1;
+            int lo = Mathf.Max(1, Mathf.Min(top, ch - 1));
+            return Random.Range(lo, top + 1);
+        }
+
         public static int DropLevel(int wave, int characterLevel)
         {
             int floor = wave / 2;

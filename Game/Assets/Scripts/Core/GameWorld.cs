@@ -494,7 +494,7 @@ namespace VividOfFade
             };
             Enemies.GoldenKilled += pos =>
             {
-                Loot.Fountain(pos, Room, GameConfig.GoldenFountainItems, DropLevel, GameConfig.GoldenRarityBonus,
+                Loot.Fountain(pos, Room, GameConfig.GoldenFountainItems, DropTop, GameConfig.GoldenRarityBonus,
                     GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * GameConfig.GoldenEmberMult);
                 if (Random.value < GameConfig.GoldenMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
                 Fx.Ring(pos, 2.5f, new Color(1f, 0.85f, 0.3f, 0.9f), 0.5f);
@@ -791,7 +791,7 @@ namespace VividOfFade
         /// <summary>精鋭を倒した：小さなドロップの噴水。</summary>
         void OnEliteKilled(Vector2 pos)
         {
-            Loot.Fountain(pos, Room, GameConfig.EliteFountainItems, DropLevel, GameConfig.EliteRarityBonus,
+            Loot.Fountain(pos, Room, GameConfig.EliteFountainItems, DropTop, GameConfig.EliteRarityBonus,
                 GameConfig.EliteEmberOrbs, GameConfig.EmberAmount(Floors.Tier));
             // まれに神話（赤）の装備（ボスより低い確率）
             if (Random.value < GameConfig.EliteMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
@@ -807,7 +807,7 @@ namespace VividOfFade
             if (!roomRewardPending || Enemies.AliveIn(Floors.CurrentArea) > 0) return;
             roomRewardPending = false;
             int tier = Floors.Tier;
-            Loot.Fountain(lastKillPos, Room, Mathf.Max(1, GameConfig.FountainItems(tier) / 2), DropLevel,
+            Loot.Fountain(lastKillPos, Room, Mathf.Max(1, GameConfig.FountainItems(tier) / 2), DropTop,
                 GameConfig.FountainRarityBonus, GameConfig.FountainEmberOrbs(tier) / 2, GameConfig.EmberAmount(tier));
             Fx.Ring(lastKillPos, 2.5f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.4f);
             Sfx.Fountain();
@@ -1248,7 +1248,7 @@ namespace VividOfFade
                 Fx.Ring(p, 0.8f, new Color(0.85f, 0.8f, 0.95f, 0.8f), 0.35f);
                 Fx.Sparks(p, 6, new Color(0.75f, 0.7f, 0.85f, 1f), 1.2f, 0.6f, 2f, true);
             }
-            Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropLevel, GameConfig.BossRarityBonus,
+            Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropTop, GameConfig.BossRarityBonus,
                 GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * GameConfig.BossEmberMult);
             if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
             if ((GameConfig.IsAbyss(Floors.Floor) || GameConfig.Ascent) && Random.value < GameConfig.ShardChanceBoss) GainShards(pos, GameConfig.RollShards());
@@ -1675,7 +1675,10 @@ namespace VividOfFade
             return true;
         }
 
-        int DropLevel => GameConfig.DropLevel(Floors.Tier, Profile.Current != null ? Profile.Current.Level : 1);
+        /// <summary>落ちる品のレベルの上限。</summary>
+        int DropTop => GameConfig.DropLevel(Floors.Tier, Profile.Current != null ? Profile.Current.Level : 1);
+        /// <summary>1つの品のレベル（上限から、自分のレベル −1 までのどれか）。噴水は品ごとに LootSystem が決める。</summary>
+        int DropLevel => GameConfig.JitterDropLevel(DropTop);
 
         /// <summary>
         /// スキルレベルが上がった。キャラのレベルアップ（翼と光の柱）とは別の演出：
@@ -1796,7 +1799,7 @@ namespace VividOfFade
                 if ((Player.Pos - p).sqrMagnitude > 0.9f * 0.9f) continue;
                 chestOpened[i] = true;
                 chests[i].sprite = PixelArt.Chest(true);
-                Loot.Fountain(p, Room, GameConfig.ChestItems, DropLevel, GameConfig.ChestRarityBonus,
+                Loot.Fountain(p, Room, GameConfig.ChestItems, DropTop, GameConfig.ChestRarityBonus,
                     GameConfig.FountainEmberOrbs(Floors.Tier) / 2, GameConfig.EmberAmount(Floors.Tier) * GameConfig.ChestEmberMult);
                 Fx.Ring(p, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.4f);
                 Sfx.Fountain();

@@ -109,7 +109,7 @@ namespace VividOfFade
             // 装備の数は全体の倍率をかける（端数は確率で。1つは必ず落ちる）
             float scaled = items * GameConfig.ItemDropMult;
             int n = Mathf.Max(items > 0 ? 1 : 0, Mathf.FloorToInt(scaled) + (UnityEngine.Random.value < scaled - Mathf.Floor(scaled) ? 1 : 0));
-            for (int i = 0; i < n; i++) DropItem(at, ItemGenerator.Roll(level, rarityBonus), room, 2.2f);
+            for (int i = 0; i < n; i++) DropItem(at, ItemGenerator.Roll(GameConfig.JitterDropLevel(level), rarityBonus), room, 2.2f); // 品ごとにレベルに幅
         }
 
         GroundLoot Spawn(Vector2 from, Room room, float spread)
