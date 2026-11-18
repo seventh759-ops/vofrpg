@@ -235,8 +235,8 @@ namespace VividOfFade
         {
             if (p == Panel.Storage && worldRef != null) worldRef.SyncTownGear(); // 比べるために、今の装備を読み直す
             panel = p;
-            offerPage = false; // 捧げる画面・確認は、開き直したら閉じる
-            offerStep = 0;
+            offerStep = 0; // 捧げる確認は、開き直したら閉じる
+            if (p == Panel.Master) masterTab = MasterTab.Class;
             selected = null;
             lastBought = null;
             armed = null;
@@ -532,20 +532,39 @@ namespace VividOfFade
             float lineH = small.fontSize * 1.4f;
             // 捧げる確認（何度も聞く）の間は、ほかのボタンを出さない（押し間違えないように）
             if (offerStep > 0) { DrawOfferConfirm(world, ch); return; }
-            if (offerPage) { DrawOfferPage(world, ch); return; }
             Header(Loc.T("GODDESS STATUE", "女神像"), ch.Embers, W, pad, out float y);
 
-            // 転生は、Lv99 になるまで明かさない（一度転生したら、ずっと見せる）。下に細い欄で出す
+            // 転職・転生・奉納のタブ。転生は Lv99 になるまで明かさない（一度転生したら、ずっと見せる）。奉納はクリア後だけ
             bool showRebirth = ThirdClasses.MeetsRequirements(ch) || ch.Rebirths > 0;
-            float rebirthH = showRebirth ? H * 0.17f : 0f;
-            float bottom = H - pad - rebirthH - (showRebirth ? H * 0.015f : 0f);
-            if (showRebirth) DrawRebirthBar(world, ch, new Rect(pad, H - pad - rebirthH, W - pad * 2f, rebirthH));
-            // クリア後：女神像は血の涙を流し、「捧げる」の欄が出る（転生の欄の上）
-            if (ch.EndingSeen)
+            bool showOffer = ch.EndingSeen;
+            if (masterTab == MasterTab.Rebirth && !showRebirth) masterTab = MasterTab.Class;
+            if (masterTab == MasterTab.Offer && !showOffer) masterTab = MasterTab.Class;
+            float bottom = H - pad;
+            if (showRebirth || showOffer)
             {
-                float offerH = H * 0.06f; // ボタン1本だけ（押すと捧げる画面が開く）。転職のカードを押しつぶさないように
-                DrawOfferBar(world, ch, new Rect(pad, bottom - offerH, W - pad * 2f, offerH));
-                bottom -= offerH + H * 0.015f;
+                var tabs = new System.Collections.Generic.List<(MasterTab tab, string name, Color color)> { (MasterTab.Class, Loc.T("CLASS", "転職"), new Color(0.5f, 0.4f, 0.1f, 0.85f)) };
+                if (showRebirth) tabs.Add((MasterTab.Rebirth, Loc.T("REBIRTH", "転生"), new Color(0.4f, 0.25f, 0.55f, 0.85f)));
+                if (showOffer) tabs.Add((MasterTab.Offer, Loc.T("OFFERING", "奉納"), new Color(0.55f, 0.08f, 0.12f, 0.9f)));
+                float gap = W * 0.02f, th = H * 0.05f;
+                float tw = (W - pad * 2f - gap * (tabs.Count - 1)) / tabs.Count;
+                for (int i = 0; i < tabs.Count; i++)
+                {
+                    var t = tabs[i];
+                    bool on = masterTab == t.tab;
+                    hud.Button(new Rect(pad + i * (tw + gap), y, tw, th), t.name, on ? t.color : new Color(1f, 1f, 1f, 0.07f), hud.CenteredStyle, () => masterTab = t.tab);
+                    if (on) Hud.OrnateFrame(new Rect(pad + i * (tw + gap), y, tw, th), new Color(1f, 0.85f, 0.45f, 1f), 1f, false, false);
+                }
+                y += th + H * 0.015f;
+            }
+            if (masterTab == MasterTab.Rebirth)
+            {
+                DrawRebirthBar(world, ch, new Rect(pad, y, W - pad * 2f, H * 0.2f));
+                return;
+            }
+            if (masterTab == MasterTab.Offer)
+            {
+                DrawOfferPage(world, ch, y);
+                return;
             }
 
             if (ch.Special)
@@ -695,29 +714,15 @@ namespace VividOfFade
         int offerStep; // 0：閉じている／1〜3：確認の段（くどいほど聞く）
 
         /// <summary>クリア後の女神像：血の涙を流す女神の言葉と、「捧げる」のボタン。</summary>
-        void DrawOfferBar(GameWorld world, CharacterData ch, Rect r)
-        {
-            // 血の涙を流す女神像の小さな絵と、捧げる画面を開くボタン
-            float icon = r.height;
-            Hud.DrawSprite(new Rect(r.x, r.y, icon, icon), PixelArt.GoddessBleeding);
-            var btn = new Rect(r.x + icon * 1.1f, r.y, r.width - icon * 1.1f, r.height);
-            string text = ch.Ascended ? Loc.T("THE GODDESS  -  offered", "女神の声  -  捧げた") : Loc.T("THE GODDESS IS WEEPING  -  listen", "女神が涙を流している  -  声を聞く");
-            hud.Button(btn, text, new Color(0.55f, 0.08f, 0.12f, ch.Ascended ? 0.55f : 0.9f), hud.CenteredStyle, () => offerPage = true);
-            Hud.OrnateFrame(btn, new Color(0.8f, 0.25f, 0.3f, 1f), 1f, false, false);
-        }
+        enum MasterTab { Class, Rebirth, Offer }
+        MasterTab masterTab; // 女神像の画面で選んでいるタブ（転職・転生・奉納）
 
-        bool offerPage; // 捧げる画面を開いているか
-
-        /// <summary>捧げる画面：血の涙を流す女神の言葉と、「捧げる」のボタン（押すと確認が3回出る）。</summary>
-        void DrawOfferPage(GameWorld world, CharacterData ch)
+        /// <summary>奉納のタブ：血の涙を流す女神の言葉と、「捧げる」のボタン（押すと確認が3回出る）。</summary>
+        void DrawOfferPage(GameWorld world, CharacterData ch, float y)
         {
             float W = Screen.width, H = Screen.height;
             float pad = W * 0.05f;
-            var title = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
-            float btnH = H * 0.045f, btnW = W * 0.22f;
-            Hud.FitLabel(new Rect(pad, pad, W - pad * 2f - btnW, btnH), Loc.T("GODDESS STATUE", "女神像"), title);
-            hud.Button(new Rect(W - pad - btnW, pad, btnW, btnH), Loc.T("BACK", "戻る"), row, hud.CenteredStyle, () => offerPage = false);
-            float y = pad + btnH + H * 0.03f;
+            y += H * 0.01f;
             // 大きな女神像
             float big = W * 0.42f;
             Hud.DrawSprite(new Rect((W - big) * 0.5f, y, big, big), PixelArt.GoddessBleeding);
