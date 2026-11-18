@@ -90,6 +90,7 @@ namespace VividOfFade
         {
             if (kind == EnemyKind.Golden) return PixelArt.EnemySprite(kind, tier);
             if (zone != null && zone.Pattern >= FloorPattern.Rift) return PixelArt.AbyssEnemy(kind, zone, tier);
+            if (GameConfig.Ascent) return PixelArt.AscentEnemy(kind, tier); // 昇る塔は、明るい色の専用の敵
             if (kind == EnemyKind.Slime && zone != null) return PixelArt.SlimeFor(zone, tier);
             return PixelArt.EnemySprite(kind, tier, zone != null ? zone.Cycle : 0);
         }
