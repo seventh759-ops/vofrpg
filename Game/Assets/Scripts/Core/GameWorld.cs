@@ -766,7 +766,7 @@ namespace VividOfFade
                 GameConfig.EliteEmberOrbs, GameConfig.EmberAmount(Floors.Tier));
             // まれに神話（赤）の装備（ボスより低い確率）
             if (Random.value < GameConfig.EliteMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
-            if (GameConfig.IsAbyss(Floors.Floor) && Random.value < GameConfig.ShardChanceElite) GainShards(pos, 1);
+            if (GameConfig.IsAbyss(Floors.Floor) && Random.value < GameConfig.ShardChanceElite) GainShards(pos, GameConfig.RollShards());
             Fx.Ring(pos, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.35f);
             Sfx.Fountain();
             GainExp(Progression.KillExp(Floors.Tier) * 5);
@@ -1210,7 +1210,7 @@ namespace VividOfFade
             Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropLevel, GameConfig.BossRarityBonus,
                 GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * GameConfig.BossEmberMult);
             if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
-            if (GameConfig.IsAbyss(Floors.Floor) && Random.value < GameConfig.ShardChanceBoss) GainShards(pos, 1);
+            if (GameConfig.IsAbyss(Floors.Floor) && Random.value < GameConfig.ShardChanceBoss) GainShards(pos, GameConfig.RollShards());
             Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
             cameraRig.Shake(0.3f, 0.5f);
             Hud.Toast(Loc.T("BOSS DEFEATED!", "ボスを倒した！"), new Color(1f, 0.5f, 0.4f));

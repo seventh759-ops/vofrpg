@@ -232,9 +232,11 @@ namespace VividOfFade
 
         // ドロップ
         // 深淵の欠片（深淵の装備の強化に使う。深淵の精鋭とボスからだけ手に入る）
-        // 落ちる確率は神話（赤）の装備と同じ（1回に1個）
-        public const float ShardChanceBoss = MythicChance;       // 深淵のボス（アビスも）
-        public const float ShardChanceElite = EliteMythicChance; // 深淵の精鋭
+        // 落ちると 1〜3 個（ランダム）
+        public const float ShardChanceBoss = 0.6f;    // 深淵のボス（アビスも）
+        public const float ShardChanceElite = 0.1f;   // 深淵の精鋭
+        public const int ShardMin = 1, ShardMax = 3;
+        public static int RollShards() => UnityEngine.Random.Range(ShardMin, ShardMax + 1);
 
         public const float ItemDropMult = 0.6f;      // 装備の落ちる量の全体の倍率（多すぎたので減らし、その分火種を増やした）
         public const float ItemDropChance = 0.04f * ItemDropMult;   // 雑魚1体あたり
