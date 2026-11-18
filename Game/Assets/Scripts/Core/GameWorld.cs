@@ -248,6 +248,16 @@ namespace VividOfFade
             Sfx.Landed(Rarity.Legendary);
         }
 
+        /// <summary>女神像に火種を捧げた：塔が反転して、昇る塔になる。</summary>
+        public void OnOffered()
+        {
+            GameConfig.Ascent = true;
+            Hud.Toast(Loc.T("The tower has turned over. Now you climb.", "塔が反転した。これからは昇っていく。"), new Color(1f, 0.35f, 0.4f));
+            Hud.Toast(Loc.T("The Abyss has closed.", "深淵は閉じた。"), new Color(0.85f, 0.6f, 0.7f));
+            Hud.Flash(0.8f);
+            Sfx.Landed(Rarity.Mythic);
+        }
+
         /// <summary>3次職になった：8つ目のスキルを覚えて、空いているボタンに付ける。</summary>
         public void OnThird()
         {

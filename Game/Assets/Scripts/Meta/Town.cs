@@ -340,6 +340,24 @@ namespace VividOfFade
         /// <summary>強化できるのは灯宝（橙）以上（橙は+10、赤と深淵の品は+15まで）。</summary>
         public static bool Enhanceable(Item it) => it != null && it.EnhanceCap > 0;
 
+        /// <summary>
+        /// 捧げる（クリア後の女神像）：持っている火種をすべて捧げると、塔が反転して「昇る塔」になる。
+        /// 深淵は閉じ、昇る塔は1層から（塔の記録・レベルの上限はそのまま）。中断した挑戦は消える。1回だけ。
+        /// </summary>
+        public static bool CanOffer(CharacterData ch) => ch != null && ch.EndingSeen && !ch.Ascended && ch.Embers > 0;
+
+        public static bool Offer(CharacterData ch)
+        {
+            if (!CanOffer(ch)) return false;
+            ch.Embers = 0;
+            ch.Ascended = true;
+            ch.AscentBest = 0;
+            ch.AscentBossCleared = 0;
+            ch.Run = new RunSave();
+            Profile.Save();
+            return true;
+        }
+
         /// <summary>深淵の品の強化に要る深淵の欠片：1段ごとに1個、最後の +14→+15 だけ15個。</summary>
         public static int ShardPrice(Item it) => !it.Abyss ? 0 : it.Enhance == Item.MaxEnhance - 1 ? 15 : 1;
 

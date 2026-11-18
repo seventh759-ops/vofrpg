@@ -4471,6 +4471,31 @@ namespace VividOfFade
             return Shaded("Town32_" + index, TownIconRows[index], index == 2 ? MarbleOver : null);
         }
 
+        /// <summary>
+        /// 血の涙を流す女神像（クリア後）。閉じた両目の下から、紅い筋が頬を伝って落ちる。
+        /// </summary>
+        public static Sprite GoddessBleeding
+        {
+            get
+            {
+                if (cache.TryGetValue("Town32_2_blood", out var c)) return c;
+                var rows = (string[])TownIconRows[2].Clone();
+                void Tear(int col, int from, int to)
+                {
+                    for (int y = from; y <= to; y++)
+                    {
+                        var a = rows[y].ToCharArray();
+                        if (a[col] != '.') a[col] = 'R';
+                        rows[y] = new string(a);
+                    }
+                }
+                Tear(12, 8, 12); // 左目の下から
+                Tear(19, 8, 11); // 右目の下から（少し短く）
+                var over = new Dictionary<char, Color32[]>(MarbleOver) { { 'R', Ramp(170, 16, 26, 134, 10, 20, 98, 6, 14, 66, 4, 10) } };
+                return Shaded("Town32_2_blood", rows, over);
+            }
+        }
+
 
 
         /// <summary>加護のアイコン（16ドット、陰影つき。Boons の表と同じ順）。</summary>

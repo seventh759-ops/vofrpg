@@ -186,7 +186,7 @@ namespace VividOfFade
                 q.normal.textColor = new Color(0.55f, 0.55f, 0.6f);
                 GUI.Label(r2, "？？？", q);
             }
-            else Tile(2, PixelArt.TownIcon(2), Loc.T("Goddess", "女神像"), masterLine, () => Open(Panel.Master), masterNotice);
+            else Tile(2, ch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2), Loc.T("Goddess", "女神像"), masterLine, () => Open(Panel.Master), masterNotice); // クリア後は血の涙を流している
             Tile(3, PixelArt.TownIcon(3), Loc.T("Porter", "荷運び"), Loc.T($"Carry {ch.CarrySlots}/{Town.MaxCarrySlots}", $"持ち帰り {ch.CarrySlots}/{Town.MaxCarrySlots}"), () => Open(Panel.Porter));
             Tile(4, PixelArt.TownIcon(4), Loc.T("Blacksmith", "鍛冶屋"), Loc.T("Mythic only", "神話（赤）だけ"), () => Open(Panel.Smith));
             Tile(5, PixelArt.PlayerFor(ch), Loc.T("Characters", "キャラ選択"), Loc.T("Switch", "切り替え"), world.ShowClassSelect);
@@ -528,6 +528,8 @@ namespace VividOfFade
             var type = ClassInfo.Current;
             var small = hud.SmallStyle;
             float lineH = small.fontSize * 1.4f;
+            // 捧げる確認（何度も聞く）の間は、ほかのボタンを出さない（押し間違えないように）
+            if (offerStep > 0) { DrawOfferConfirm(world, ch); return; }
             Header(Loc.T("GODDESS STATUE", "女神像"), ch.Embers, W, pad, out float y);
 
             // 転生は、Lv99 になるまで明かさない（一度転生したら、ずっと見せる）。下に細い欄で出す
@@ -535,6 +537,13 @@ namespace VividOfFade
             float rebirthH = showRebirth ? H * 0.17f : 0f;
             float bottom = H - pad - rebirthH - (showRebirth ? H * 0.015f : 0f);
             if (showRebirth) DrawRebirthBar(world, ch, new Rect(pad, H - pad - rebirthH, W - pad * 2f, rebirthH));
+            // クリア後：女神像は血の涙を流し、「捧げる」の欄が出る（転生の欄の上）
+            if (ch.EndingSeen)
+            {
+                float offerH = ch.Ascended ? H * 0.11f : H * 0.17f; // 捧げたあとは短く
+                DrawOfferBar(world, ch, new Rect(pad, bottom - offerH, W - pad * 2f, offerH));
+                bottom -= offerH + H * 0.015f;
+            }
 
             if (ch.Special)
             {
@@ -678,11 +687,95 @@ namespace VividOfFade
             }
         }
 
+        // ================= 捧げる（クリア後） =================
+
+        int offerStep; // 0：閉じている／1〜3：確認の段（くどいほど聞く）
+
+        /// <summary>クリア後の女神像：血の涙を流す女神の言葉と、「捧げる」のボタン。</summary>
+        void DrawOfferBar(GameWorld world, CharacterData ch, Rect r)
+        {
+            float H = Screen.height;
+            Hud.Fill(r, new Color(0.35f, 0.04f, 0.08f, 0.45f));
+            Hud.OrnateFrame(r, new Color(0.75f, 0.2f, 0.25f, 1f), 1f, false, false);
+            float inner = r.width * 0.03f;
+            string says = ch.Ascended
+                ? Loc.T("...I have received it. The tower no longer leads down. Climb... climb up to me.",
+                        "……確かに、受け取りました。塔はもう、下へは続きません。上へ……私のもとへ、昇っておいでなさい。")
+                : Loc.T("...The light has returned. And yet, what flows from my eyes will not stop. The tower does not sleep. Offer me every ember you hold, and the tower will turn toward the sky.",
+                        "……灯りは戻りました。それなのに、この目から流れるものが止まらないのです。塔は、まだ眠ってはいません。あなたの火種を、すべて私に捧げなさい。そうすれば、塔は空へと向きを変えるでしょう。");
+            float btnH = H * 0.045f;
+            GoddessSays(new Rect(r.x + inner, r.y + inner, r.width - inner * 2f, r.height - btnH - inner * 3f), says);
+            var btn = new Rect(r.x + inner, r.yMax - inner - btnH, r.width - inner * 2f, btnH);
+            if (ch.Ascended)
+            {
+                var st = new GUIStyle(hud.CenteredStyle);
+                st.normal.textColor = new Color(1f, 0.6f, 0.6f);
+                Hud.FitLabel(btn, Loc.T("OFFERED  -  the tower now rises", "捧げた  -  塔は昇る塔になった"), st);
+                return;
+            }
+            if (Town.CanOffer(ch))
+                hud.Button(btn, Loc.T($"OFFER  -  all {ch.Embers} embers", $"捧げる  -  火種 {ch.Embers} をすべて"), new Color(0.55f, 0.08f, 0.12f, 0.9f), hud.CenteredStyle, () => offerStep = 1);
+            else
+            {
+                Hud.Fill(btn, dim);
+                var st = new GUIStyle(hud.CenteredStyle);
+                st.normal.textColor = new Color(0.6f, 0.6f, 0.6f);
+                GUI.Label(btn, Loc.T("You have no embers to offer", "捧げる火種がない"), st);
+            }
+        }
+
+        /// <summary>捧げる確認：3回聞く。どの段でも「やめる」で閉じる。最後に押したときだけ捧げる。</summary>
+        void DrawOfferConfirm(GameWorld world, CharacterData ch)
+        {
+            float W = Screen.width, H = Screen.height;
+            Hud.Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.82f));
+            var r = new Rect(W * 0.07f, H * 0.28f, W * 0.86f, H * 0.4f);
+            Hud.Fill(r, new Color(0.18f, 0.03f, 0.06f, 0.95f));
+            Hud.OrnateFrame(r, new Color(0.8f, 0.2f, 0.25f, 1f), 1f, false, false);
+            float inner = r.width * 0.05f;
+            var head = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            head.normal.textColor = new Color(1f, 0.55f, 0.55f);
+            Hud.FitLabel(new Rect(r.x, r.y + inner, r.width, H * 0.05f), Loc.T($"CONFIRM  ({offerStep}/3)", $"確認（{offerStep}/3）"), head);
+            string text;
+            switch (offerStep)
+            {
+                case 1:
+                    text = Loc.T($"You will offer ALL of your embers ({ch.Embers}). They will not come back. Are you sure?",
+                                 $"持っている火種をすべて（{ch.Embers}個）捧げます。捧げた火種は戻りません。よろしいですか？");
+                    break;
+                case 2:
+                    text = Loc.T("The Abyss will close and you can never enter it again. The tower turns over, and you climb it again from floor 1 (your tower records stay). Your suspended run will be lost. Really?",
+                                 "捧げると深淵は閉じ、二度と入れなくなります。塔は反転し、1層から昇り直すことになります（塔の記録はそのまま残ります）。中断している挑戦も消えます。本当によろしいですか？");
+                    break;
+                default:
+                    text = Loc.T("Last chance. This rite cannot be undone. Offer your embers?",
+                                 "最後の確認です。この儀は取り消せません。本当に捧げますか？");
+                    break;
+            }
+            var wrap = new GUIStyle(hud.LabelStyle) { wordWrap = true, alignment = TextAnchor.UpperLeft };
+            GUI.Label(new Rect(r.x + inner, r.y + inner + H * 0.065f, r.width - inner * 2f, r.height * 0.55f), text, wrap);
+            float btnH = H * 0.055f, gap = r.width * 0.04f;
+            float bw = (r.width - inner * 2f - gap) * 0.5f;
+            float by = r.yMax - inner - btnH;
+            // 連打で通り抜けないよう、2段目だけ「捧げる」と「やめる」の左右を入れ替える
+            bool flip = offerStep == 2;
+            float cx = flip ? r.x + inner + bw + gap : r.x + inner, ox = flip ? r.x + inner : r.x + inner + bw + gap;
+            hud.Button(new Rect(cx, by, bw, btnH), Loc.T("CANCEL", "やめる"), new Color(1f, 1f, 1f, 0.15f), hud.CenteredStyle, () => offerStep = 0);
+            hud.Button(new Rect(ox, by, bw, btnH), offerStep < 3 ? Loc.T("OFFER", "捧げる") : Loc.T("OFFER ALL", "すべて捧げる"),
+                new Color(0.6f, 0.08f, 0.12f, 0.95f), hud.CenteredStyle, () =>
+                {
+                    if (offerStep < 3) { offerStep++; return; }
+                    offerStep = 0;
+                    if (Town.Offer(ch)) world.OnOffered();
+                });
+        }
+
         /// <summary>女神像の言葉（左に女神像の絵、右にかぎかっこの言葉）。使った高さを返す。</summary>
         float GoddessSays(Rect area, string text)
         {
             float icon = Mathf.Min(area.height, Screen.width * 0.13f);
-            Hud.DrawSprite(new Rect(area.x, area.y, icon, icon), PixelArt.TownIcon(2));
+            var gch = Profile.Current;
+            Hud.DrawSprite(new Rect(area.x, area.y, icon, icon), gch != null && gch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2));
             var st = new GUIStyle(hud.SmallStyle) { wordWrap = true, fontStyle = FontStyle.Italic };
             st.normal.textColor = new Color(1f, 0.9f, 0.65f);
             string line = Loc.Ja ? "「" + text + "」" : "\"" + text + "\"";
