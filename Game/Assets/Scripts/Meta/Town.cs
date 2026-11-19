@@ -200,6 +200,7 @@ namespace VividOfFade
             ch.Embers -= AdvancedClasses.Cost;
             ch.Advanced = Mathf.Clamp(index, 0, 1);
             ch.Third = false;
+            ch.EverAdvanced = true; // 一度でも転職したら、もう彩灯者にはなれない
             BackToLevel1(ch, AdvancedClasses.BonusPoints);
             Profile.Save();
             return true;

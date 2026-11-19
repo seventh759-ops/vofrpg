@@ -4,7 +4,7 @@ namespace VividOfFade
 {
     /// <summary>
     /// 特別な職「彩灯者」（どの基本職でも共通の1つ）。
-    /// 基本職のまま（転職せずに）Lv99 まで育てて転生すると、基本職に戻らずに、この職の Lv1 になる。
+    /// 一度も転職せずに（ずっと基本職のまま）Lv99 まで育てて転生すると、基本職に戻らずに、この職の Lv1 になる。一度でも転職したキャラクターはなれない。
     /// 強さは3次職と同じくらい（補正＋7つ目（Lv50 で覚える）・8つ目のスキル、経験値は1.2倍）。ここから先の転職はなく、Lv99 でまた転生しても彩灯者のまま（一度なったら、ずっと彩灯者）。
     /// どの職業の武器も使える（落ちる武器も全職業のもの）。遠近両用：武器の攻撃に加えて、近くの敵は斬り、遠くの敵には弾を撃つ。
     /// 見た目は、もとの職業の絵を白と鮮やかな色に塗り替え、桃色の光の縁を付ける。
@@ -46,6 +46,7 @@ namespace VividOfFade
         public static AdvancedSpec Of(CharacterData ch) => ch != null && ch.Special ? Spec : null;
 
         /// <summary>転生したら彩灯者になるか（基本職のまま、まだ彩灯者でない）。</summary>
-        public static bool RebirthBecomesSpecial(CharacterData ch) => ch != null && ch.Advanced < 0 && ch.ClassId < ClassInfo.PlayableCount;
+        // 一度も転職したことがない（ずっと基本職のまま）ときだけ。転職してから転生で基本職に戻っても、彩灯者にはなれない
+        public static bool RebirthBecomesSpecial(CharacterData ch) => ch != null && ch.Advanced < 0 && !ch.EverAdvanced && ch.ClassId < ClassInfo.PlayableCount;
     }
 }

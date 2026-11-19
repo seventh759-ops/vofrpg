@@ -55,6 +55,7 @@ namespace VividOfFade
         public bool Ascended;                         // 捧げた（このキャラクターの塔は昇る塔）
         public int AscentBest;                        // 昇る塔でたどり着いた一番上の層
         public int AscentBossCleared;                 // 昇る塔で倒した一番上のボスの層
+        public bool EverAdvanced;                     // 一度でも転職した（上位職になった）。そうなると、もう彩灯者にはなれない
 
         public void Repair()
         {
@@ -71,6 +72,7 @@ namespace VividOfFade
             if (ClassId < 0 || ClassId >= ClassInfo.Count) ClassId = 0;
             if (Special) { Advanced = -1; Third = false; if (OriginClassId < 0 || OriginClassId >= ClassInfo.PlayableCount) OriginClassId = 0; } // 彩灯者は、上位職・3次職とは別の道
             if (Rebirths < 0) Rebirths = 0;
+            if (Advanced >= 0 || Third) EverAdvanced = true; // 前の版のセーブ：今が上位職なら、転職したことがある
             HpPotions = Mathf.Clamp(HpPotions, 0, Town.MaxPotions);
             MpPotions = Mathf.Clamp(MpPotions, 0, Town.MaxPotions);
             foreach (var it in Loadout) it?.Repair();
