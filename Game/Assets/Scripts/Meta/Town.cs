@@ -225,19 +225,16 @@ namespace VividOfFade
             if (!ThirdClasses.CanRebirth(ch)) return false;
             ch.Embers -= ThirdClasses.Cost(ch);
             ch.Rebirths++;
+            LastRebirthBecameSpecial = false;
             if (SpecialClass.RebirthBecomesSpecial(ch))
             {
                 // 基本職のまま転生した：彩灯者になる（職業そのものが変わる。スキルも別）
                 ch.OriginClassId = ch.ClassId;
                 ch.ClassId = (int)ClassType.Vividbearer;
                 SwapSkills(ch);
+                LastRebirthBecameSpecial = true;
             }
-            else if (ch.Special)
-            {
-                // 彩灯者から転生した：もとの基本職へ戻る
-                ch.ClassId = Mathf.Clamp(ch.OriginClassId, 0, ClassInfo.PlayableCount - 1);
-                SwapSkills(ch);
-            }
+            // 彩灯者から転生したときは、彩灯者のまま Lv1 から（一度なったら、ずっと彩灯者）
             ch.Advanced = -1;
             ch.Third = false;
             for (int i = 0; i < ch.Slots.Length; i++)
@@ -246,6 +243,9 @@ namespace VividOfFade
             Profile.Save();
             return true;
         }
+
+        /// <summary>最後の転生で彩灯者になったか（知らせの出し分けに使う）。</summary>
+        public static bool LastRebirthBecameSpecial;
 
         /// <summary>
         /// もとの職業と彩灯者を行き来するとき：スキルの熟練度を入れ替え（使っていない方は取っておく）、ボタンは1つ目のスキルだけにする。

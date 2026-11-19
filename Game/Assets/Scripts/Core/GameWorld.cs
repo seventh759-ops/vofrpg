@@ -290,7 +290,10 @@ namespace VividOfFade
                 Skills.Learn(ch, ThirdClasses.SkillIndex);
                 Profile.Save();
                 // 知らせは短く2行に分ける（長い1行は縮んで読めなくなるので）
-                Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: became a {SpecialClass.Spec.DisplayName}!", $"転生{ch.Rebirths}回目：{SpecialClass.Spec.DisplayName}になった！"), (Color)SpecialClass.AuraColor);
+                if (Town.LastRebirthBecameSpecial)
+                    Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: became a {SpecialClass.Spec.DisplayName}!", $"転生{ch.Rebirths}回目：{SpecialClass.Spec.DisplayName}になった！"), (Color)SpecialClass.AuraColor);
+                else
+                    Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: still a {SpecialClass.Spec.DisplayName}", $"転生{ch.Rebirths}回目：{SpecialClass.Spec.DisplayName}のまま"), (Color)SpecialClass.AuraColor);
                 Hud.Toast(Loc.T($"All stats +{ThirdClasses.BonusStats(ch)}", $"全能力値 +{ThirdClasses.BonusStats(ch)}"), (Color)SpecialClass.AuraColor);
                 ToastStored();
                 Sfx.Landed(Rarity.Mythic);
