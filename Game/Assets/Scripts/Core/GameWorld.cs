@@ -552,7 +552,9 @@ namespace VividOfFade
 
             Input = new PlayerInputReader
             {
-                IsReserved = p => Paused || ChoosingClass || Hud.IsOverButton(p),
+                // スティックにしない所：止まっている間・ボタンの上（とそのすぐまわり）・ダンジョンの外（上の帯と下の帯）
+                IsReserved = p => Paused || ChoosingClass || Hud.IsOverButton(p)
+                    || (!InTown && !OnTitle && (!Hud.IsInDungeonView(p) || Hud.IsNearButton(p, Screen.width * 0.03f))),
                 IsAttackArea = p => !Paused && !AutoAttack && Hud.AttackRect.Contains(p),
             };
             Input.Tapped += OnTapped;

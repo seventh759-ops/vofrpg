@@ -361,6 +361,26 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>
+        /// ダンジョンが映っている所（上の帯と下の帯の間）か。画面座標（左下原点）。
+        /// 仮想スティックは、ここで押したときだけ動く（帯の上のボタンを少し外して押しても、移動にならないように）。
+        /// </summary>
+        public bool IsInDungeonView(Vector2 screenPos)
+        {
+            float guiY = Screen.height - screenPos.y;
+            return guiY > TopBandBottom && guiY < BottomBandTop;
+        }
+
+        /// <summary>ボタンの近く（ボタンのまわり margin ピクセルまで）か。ダンジョンの中のボタン（地図など）を少し外して押したときに、移動にしないため。</summary>
+        public bool IsNearButton(Vector2 screenPos, float margin)
+        {
+            foreach (var r in buttonRects)
+            {
+                if (new Rect(r.x - margin, r.y - margin, r.width + margin * 2f, r.height + margin * 2f).Contains(screenPos)) return true;
+            }
+            return false;
+        }
+
         public bool IsOverButton(Vector2 screenPos)
         {
             foreach (var r in buttonRects)
