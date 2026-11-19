@@ -90,7 +90,14 @@ namespace VividOfFade
             float half = (W - pad * 2f - gap) * 0.5f;
             hud.Button(new Rect(pad, bottomY, half, btnH), Loc.T("BULK SALVAGE", "まとめて分解"), bulkOpen ? new Color(1f, 1f, 1f, 0.3f) : buttonBack, centered,
                 () => bulkOpen = !bulkOpen);
-            hud.Button(new Rect(pad + half + gap, bottomY, half, btnH), AutoLabel(inv.AutoSalvageMax), buttonBack, centered,
+            // 自動分解のボタンは、まとめて分解の選択肢と同じく、分解する上限の珍しさの色にする（なしのときはふつうの色）
+            var autoBack = buttonBack;
+            if (inv.AutoSalvageMax >= 0)
+            {
+                var ac = RarityInfo.ColorOf((Rarity)inv.AutoSalvageMax);
+                autoBack = new Color(ac.r, ac.g, ac.b, 0.3f);
+            }
+            hud.Button(new Rect(pad + half + gap, bottomY, half, btnH), AutoLabel(inv.AutoSalvageMax), autoBack, centered,
                 () => inv.CycleAutoSalvage());
 
             // 選んだ品の詳細と操作（一括分解の選択欄を開いているときは、そちらを出す）
