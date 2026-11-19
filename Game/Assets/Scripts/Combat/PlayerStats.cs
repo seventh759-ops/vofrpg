@@ -64,6 +64,10 @@ namespace VividOfFade
         public float StarfallChance;     // 会心で星が落ちる確率
         public float RetributionMult;    // 受けたときの反撃の倍率
         public int Judgment;             // 天界：裁きの光の柱（重ねるほど間隔が短い）
+        // ボスのセット（BossSets）。そろえた数と、5つそろえたときの技
+        public readonly int[] BossSetCount = new int[BossSets.Count6];
+        public bool BossQuake, BossFlame, BossFrost; // 灰守・炉心・霜冠の5つ：まわりを揺らす・炎を吐く・霜の波
+        public float HealOnKillPct;                  // 苔母の5つ：倒すと最大HPのこの割合を回復
         // 深淵のセット（AbyssSets）。そろえた数
         public int SetBlast, SetRift, SetStar, SetRetribution;
         public float BlastRadiusMult = 1f;  // 大爆発の範囲
@@ -217,6 +221,31 @@ namespace VividOfFade
             if (s.SetRetribution >= 2) s.DamageTaken *= 0.9f;
             if (s.SetRetribution >= 3) s.RetributionRadiusMult = 1.5f;
             if (s.SetRetribution >= 5) s.RetributionHeal = 0.08f;
+        }
+
+        /// <summary>ボスのセット（同じボスの品を 2・3・5 つ）。ほかの計算が終わったあとに掛ける。</summary>
+        static void ApplyBossSets(PlayerStats s, Item[] equipped)
+        {
+            for (int k = 0; k < BossSets.Count6; k++) s.BossSetCount[k] = BossSets.Count(equipped, k);
+            int n(BossKind b) => s.BossSetCount[(int)b];
+            if (n(BossKind.Golem) >= 2) s.Armor *= 1.2f;
+            if (n(BossKind.Golem) >= 3) s.DamageTaken *= 0.9f;
+            if (n(BossKind.Golem) >= 5) s.BossQuake = true;
+            if (n(BossKind.Mother) >= 2) s.HpRegen += s.MaxHp * 0.01f;
+            if (n(BossKind.Mother) >= 3) s.LifeSteal += 0.01f;
+            if (n(BossKind.Mother) >= 5) s.HealOnKillPct += 0.02f;
+            if (n(BossKind.Forge) >= 2) s.Damage *= 1.15f;
+            if (n(BossKind.Forge) >= 3) s.CritMult += 0.3f;
+            if (n(BossKind.Forge) >= 5) s.BossFlame = true;
+            if (n(BossKind.Frost) >= 2) s.MoveSpeed *= 1.1f;
+            if (n(BossKind.Frost) >= 3) s.CooldownMult *= 0.9f;
+            if (n(BossKind.Frost) >= 5) s.BossFrost = true;
+            if (n(BossKind.Librarian) >= 2) s.SkillDamage += 0.2f;
+            if (n(BossKind.Librarian) >= 3) s.MpRegen += 3f;
+            if (n(BossKind.Librarian) >= 5) { s.AreaMult *= 1.3f; s.SkillDamage += 0.3f; }
+            if (n(BossKind.Void) >= 2) s.CritChance = Mathf.Min(s.CritChance + 0.08f, GameConfig.MaxCritChance);
+            if (n(BossKind.Void) >= 3) s.Eva += 40;
+            if (n(BossKind.Void) >= 5) s.DodgeNovaMult += 3f;
         }
 
         public static PlayerStats From(Item[] equipped) => From(equipped, ClassInfo.Current);
@@ -417,6 +446,7 @@ namespace VividOfFade
                 }
             }
             s.Shots = Mathf.Max(1, s.Shots);
+            ApplyBossSets(s, equipped);
 
             // 上位職の補正（加護と同じ形で、ずっと効く）
             var adv = AdvancedClasses.Of(type, ch);

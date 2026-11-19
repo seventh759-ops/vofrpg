@@ -359,7 +359,7 @@ namespace VividOfFade
         public static bool IsSpare(CharacterData ch, Item it) => it != null && (ch.Stash.Contains(it) || Profile.Storage.Contains(it));
 
         /// <summary>部位の変換・合成ができる珍しさ（素材になる橙・赤。合成は紫から）。</summary>
-        public static bool Convertible(Item it) => it != null && it.Rarity >= Rarity.Relic;
+        public static bool Convertible(Item it) => it != null && (it.Rarity == Rarity.Relic || it.Rarity == Rarity.Mythic); // ボスのセットの品は部位を変えない
         public static int ConvertPrice(Item it) => Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * 1.5f);
 
         static readonly ItemSlot[] slotOrder = { ItemSlot.Weapon, ItemSlot.Lantern, ItemSlot.Armor, ItemSlot.Ring };
@@ -433,7 +433,7 @@ namespace VividOfFade
         public const int MaxRerollLocks = 3;
 
         /// <summary>効果の再抽選ができるのは神話（赤）の装備だけ。</summary>
-        public static bool Smithable(Item it) => it != null && it.Rarity == Rarity.Mythic;
+        public static bool Smithable(Item it) => it != null && (it.Rarity == Rarity.Mythic || it.Rarity == Rarity.Boss); // ボスのセットの品も再抽選できる
 
         /// <summary>強化できるのは灯宝（橙）以上（橙は+10、赤と深淵の品は+15まで）。</summary>
         public static bool Enhanceable(Item it) => it != null && it.EnhanceCap > 0;

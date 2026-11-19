@@ -277,7 +277,7 @@ namespace VividOfFade
             var back = selected ? new Color(1f, 1f, 1f, 0.45f) : cellBack;
             if (item != null && !selected)
             {
-                var c = RarityInfo.ColorOf(item.Rarity);
+                var c = item.DisplayColor;
                 back = new Color(c.r, c.g, c.b, 0.25f);
             }
             if (onTap != null) hud.Button(r, null, back, hud.CenteredStyle, onTap);
@@ -340,6 +340,34 @@ namespace VividOfFade
                 y += h;
             }
 
+            // ボスのセット：深淵のセットと同じ形で
+            int bset = BossSets.SetOf(item);
+            if (bset >= 0 && world != null)
+            {
+                int bhave = BossSets.Count(world.Inventory.Equipped, bset);
+                var bsc = BossSets.ColorOf(bset);
+                var bhead = new GUIStyle(text) { fontStyle = FontStyle.Bold };
+                bhead.normal.textColor = bsc;
+                string btitle = Loc.T($"{BossSets.Name(bset)} set  {bhave}/5 equipped", $"{BossSets.Name(bset)}のセット　装備中 {bhave}/5");
+                float bth = bhead.CalcHeight(new GUIContent(btitle), area.width);
+                if (y + bth > area.yMax) return;
+                y += lineH * 0.3f;
+                GUI.Label(new Rect(area.x, y, area.width, bth), btitle, bhead);
+                y += bth;
+                foreach (int tier in BossSets.Tiers)
+                {
+                    bool on = bhave >= tier;
+                    var ts = new GUIStyle(text);
+                    ts.normal.textColor = on ? Color.Lerp(bsc, Color.white, 0.5f) : new Color(0.55f, 0.55f, 0.6f);
+                    string l = Loc.T($"({tier}) ", $"（{tier}つ）") + BossSets.BonusText(bset, tier);
+                    float h = ts.CalcHeight(new GUIContent(l), area.width);
+                    if (y + h > area.yMax) break;
+                    GUI.Label(new Rect(area.x, y, area.width, h), l, ts);
+                    y += h;
+                }
+                return;
+            }
+
             // 深淵のセット：そろえた数（今の装備）と、2・3・5つの効果（効いているものは明るく）
             var set = AbyssSets.SetOf(item);
             if (set == UniqueType.None || world == null) return;
@@ -380,7 +408,7 @@ namespace VividOfFade
         void DrawName(Item item, Rect r)
         {
             var title = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
-            title.normal.textColor = RarityInfo.ColorOf(item.Rarity);
+            title.normal.textColor = item.DisplayColor;
             Hud.FitLabel(r, item.Name, title); // 長い名前は小さくして、右の判定と重ならないように
         }
 

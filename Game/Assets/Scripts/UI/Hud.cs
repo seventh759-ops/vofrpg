@@ -2164,6 +2164,19 @@ namespace VividOfFade
         /// <summary>深淵の装備の枠：赤紫の二重の枠が、ゆっくり明滅する。</summary>
         public static void DrawAbyssFrame(Rect cell, Item item)
         {
+            if (item != null && item.IsBossGear)
+            {
+                // ボスのセットの品：セットの色の太い枠が、ゆっくり明滅する
+                float bt = Mathf.Max(2f, cell.width * 0.055f);
+                float bp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 2.8f);
+                var bo = BossSets.ColorOf(item.BossSet);
+                bo.a = 0.65f + 0.35f * bp;
+                Fill(new Rect(cell.x, cell.y, cell.width, bt), bo);
+                Fill(new Rect(cell.x, cell.yMax - bt, cell.width, bt), bo);
+                Fill(new Rect(cell.x, cell.y, bt, cell.height), bo);
+                Fill(new Rect(cell.xMax - bt, cell.y, bt, cell.height), bo);
+                return;
+            }
             if (item != null && item.Heaven)
             {
                 // 天界の装備：白と金の二重の枠が、やわらかく明滅する

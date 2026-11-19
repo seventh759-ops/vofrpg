@@ -13,7 +13,7 @@ namespace VividOfFade
     public enum EquipSlot { Weapon = 0, Lantern = 1, Armor = 2, Ring1 = 3, Ring2 = 4 }
 
     /// <summary>珍しさ。白・青・黄・紫・橙。赤（Mythic）はボスからしか落ちない。</summary>
-    public enum Rarity { Common, Magic, Rare, Legendary, Relic, Mythic }
+    public enum Rarity { Common, Magic, Rare, Legendary, Relic, Mythic, Boss } // Boss：ボスのセットの品（ボスごとの名前・見た目・セット効果）
 
     /// <summary>武器の種類で通常攻撃の形が変わる。職業ごとに3種類（ClassInfo）。</summary>
     public enum WeaponKind { None, Wand, Repeater, Fan, Sword, Dagger, Greatblade, Censer, Chain, Brazier }
@@ -44,11 +44,12 @@ namespace VividOfFade
             new Color(0.78f, 0.42f, 1f),   // Legendary：紫
             new Color(1f, 0.55f, 0.15f),   // Relic：橙（光り方が一番派手なので、紫より上）
             new Color(1f, 0.25f, 0.3f),
+            new Color(0.25f, 0.95f, 0.8f),  // Boss：翡翠（ボスのセットの品。品ごとの色はセットの色）
         };
 
-        static readonly string[] labels = { "Common", "Magic", "Rare", "Legendary", "Relic", "Mythic" };
-        static readonly string[] labelsJa = { "並", "良", "稀", "伝承", "灯宝", "神話" };
-        static readonly int[] salvage = { 2, 6, 16, 40, 100, 200 }; // 前の2倍。さらにレベルで増える（Town.SalvageValue）
+        static readonly string[] labels = { "Common", "Magic", "Rare", "Legendary", "Relic", "Mythic", "Boss" };
+        static readonly string[] labelsJa = { "並", "良", "稀", "伝承", "灯宝", "神話", "覇者" };
+        static readonly int[] salvage = { 2, 6, 16, 40, 100, 200, 250 }; // 前の2倍。さらにレベルで増える（Town.SalvageValue）
 
         public static Color ColorOf(Rarity r) => colors[(int)r];
 

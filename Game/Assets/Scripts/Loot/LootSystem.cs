@@ -177,7 +177,7 @@ namespace VividOfFade
                             c.a = 0.55f;
                             g.Beam.color = c;
                             g.Beam.sortingOrder = g.Sr.sortingOrder - 1;
-                            if (g.Item.Rarity == Rarity.Mythic || ((g.Item.Abyss || g.Item.Heaven) && g.Item.Rarity >= Rarity.Legendary)) g.Beam.transform.localScale = MythicBeamScale; // 神話は太く高い柱
+                            if (g.Item.Rarity >= Rarity.Mythic || ((g.Item.Abyss || g.Item.Heaven) && g.Item.Rarity >= Rarity.Legendary)) g.Beam.transform.localScale = MythicBeamScale; // 神話は太く高い柱
                         }
                         Landed?.Invoke(g.Item, g.To);
                     }
@@ -205,7 +205,15 @@ namespace VividOfFade
 
                 // 神話の柱は赤く脈打つ
                 // 深淵の柱は、珍しさの色と深淵の色（赤紫）を行き来しながら揺らめく
-                if (g.Beam.enabled && g.Item != null && g.Item.Heaven && g.Item.Rarity != Rarity.Mythic)
+                if (g.Beam.enabled && g.Item != null && g.Item.IsBossGear)
+                {
+                    // ボスのセットの柱は、セットの色で脈打つ
+                    float wave = 0.5f + 0.5f * Mathf.Sin(g.Age * 3.5f);
+                    var c = BossSets.ColorOf(g.Item.BossSet);
+                    c.a = 0.55f + 0.3f * wave;
+                    g.Beam.color = c;
+                }
+                else if (g.Beam.enabled && g.Item != null && g.Item.Heaven && g.Item.Rarity != Rarity.Mythic)
                 {
                     // 天界の柱は、珍しさの色と金を行き来する
                     float wave = 0.5f + 0.5f * Mathf.Sin(g.Age * 3f);

@@ -34,13 +34,19 @@ namespace VividOfFade
         /// <summary>ロック中は一括分解・自動分解の対象にしない。</summary>
         public bool Locked;
 
+        /// <summary>ボスのセットの品なら、そのボス（BossKind の番号）。ちがえば -1。珍しさは Boss。</summary>
+        public int BossSet = -1;
+        public bool IsBossGear => Rarity == Rarity.Boss && BossSet >= 0;
+        /// <summary>名前・枠などに使う色（ボスのセットの品はセットの色、ほかは珍しさの色）。</summary>
+        public UnityEngine.Color DisplayColor => IsBossGear ? BossSets.ColorOf(BossSet) : RarityInfo.ColorOf(Rarity);
+
         /// <summary>装備に必要なレベル。</summary>
         public int ReqLevel = 1;
         /// <summary>武器に必要な能力値（職業の主能力）。0 なら条件なし。</summary>
         public Attr ReqAttr;
         public int ReqValue;
         /// <summary>能力値の条件が要るか（神話の武器だけ。前の版で付いた、ほかの装備の条件は数えない）。</summary>
-        public bool NeedsAttr => ReqValue > 0 && Slot == ItemSlot.Weapon && Rarity == Rarity.Mythic;
+        public bool NeedsAttr => ReqValue > 0 && Slot == ItemSlot.Weapon && (Rarity == Rarity.Mythic || Rarity == Rarity.Boss);
 
         /// <summary>武器：基本ダメージ／ランタン：明るさ（マス）／防具：最大体力。指輪は0。</summary>
         public float BaseValue;
@@ -49,7 +55,7 @@ namespace VividOfFade
         public int Enhance;
         public const int MaxEnhance = 15;
         /// <summary>この品の強化の上限：灯宝（橙）は+10、神話（赤）と深淵の品は+15。それより下は強化できない。</summary>
-        public int EnhanceCap => Rarity < Rarity.Relic ? 0 : Abyss || Heaven || Rarity == Rarity.Mythic ? MaxEnhance : 10;
+        public int EnhanceCap => Rarity < Rarity.Relic ? 0 : Abyss || Heaven || Rarity >= Rarity.Mythic ? MaxEnhance : 10;
         public const float EnhanceStep = 0.06f;
         public float EnhanceMult => 1f + EnhanceStep * Enhance;
 
@@ -109,7 +115,9 @@ namespace VividOfFade
             }
         }
 
-        public string Name => (Abyss ? AbyssSets.Prefix(AbyssSets.SetOf(this)) : Heaven ? Loc.T("Celestial ", "天界・") : "") + (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
+        public string Name => IsBossGear
+            ? (Loc.Ja ? $"{BossSets.Name(BossSet)}の{BaseName}" : $"{BossSets.Name(BossSet)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "")
+            : (Abyss ? AbyssSets.Prefix(AbyssSets.SetOf(this)) : Heaven ? Loc.T("Celestial ", "天界・") : "") + (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
 
         public List<string> Describe()
         {

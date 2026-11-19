@@ -2036,6 +2036,7 @@ namespace VividOfFade
             }
             Color32 c = RarityInfo.ColorOf(item.Rarity);
             var abyssSet = AbyssSets.SetOf(item);
+            if (item.IsBossGear) return BossGearIcon(rows, kind, item.BossSet);
             string key = $"ItemIcon32_{kind}_{item.Rarity}" + (item.Abyss ? "_Abyss" + abyssSet : "") + (item.Heaven ? "_Heaven" : "");
             if (item.Abyss) rows = AbyssMotif(rows, abyssSet); // 深淵の品は、セットごとの意匠を描き足す
             // m 金属・w 木・g 金・L と l 光・e 内側の線・A 珍しさの色（縁取りと陰影は Shaded が付ける）
@@ -2045,6 +2046,122 @@ namespace VividOfFade
             if (item.Heaven) over['m'] = Ramp(255, 252, 240, 236, 226, 200, 206, 190, 150, 160, 140, 100); // 天界の装備は、白金の金属
             Color32? haze = item.Abyss ? (Color32?)(Color32)AbyssSets.ColorOf(abyssSet) : item.Heaven ? (Color32?)(Color32)RarityInfo.HeavenColor : null;
             return Shaded(key, rows, over, haze, 64); // もやはセットの色（天界は金）。32 ドットで、地面では今までと同じ半マス
+        }
+
+        /// <summary>
+        /// ボスのセットの品のアイコン：そのボスの素材の色に塗り替え（金属・木・金）、ボスのモチーフを描き足し、セットの色のもやをかける。
+        /// 灰守＝灰色の石とひび、浮かぶ小石／苔母＝苔の緑と、垂れる苔と胞子／炉心＝黒鉄に溶けた鉄の筋と火の粉／
+        /// 霜冠＝青白い氷と、突き出す氷柱／書守＝古い紙と金の文字、まわりに浮かぶ頁／虚影＝紫の影と、まわりに漂う光る目。
+        /// </summary>
+        static Sprite BossGearIcon(string[] src, string kind, int set)
+        {
+            string key = $"BossGear32_{kind}_{set}";
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            var rows = BossMotif(src, (BossKind)set);
+            var over = new Dictionary<char, Color32[]> { { 'A', RampFrom((Color32)BossSets.ColorOf(set)) } };
+            switch ((BossKind)set)
+            {
+                case BossKind.Golem:
+                    over['m'] = Ramp(196, 190, 176, 156, 150, 138, 116, 110, 100, 80, 76, 70);
+                    over['w'] = Ramp(150, 140, 124, 116, 108, 94, 86, 80, 70, 60, 56, 50);
+                    break;
+                case BossKind.Mother:
+                    over['m'] = Ramp(150, 200, 120, 110, 160, 86, 76, 120, 60, 50, 84, 40);
+                    over['w'] = Ramp(130, 100, 70, 100, 76, 52, 74, 54, 36, 50, 36, 24);
+                    break;
+                case BossKind.Forge:
+                    over['m'] = Ramp(110, 96, 92, 80, 68, 66, 56, 46, 46, 36, 28, 30);
+                    over['g'] = Ramp(255, 200, 90, 255, 140, 40, 220, 90, 20, 160, 50, 10);
+                    break;
+                case BossKind.Frost:
+                    over['m'] = Ramp(230, 248, 255, 180, 220, 245, 130, 180, 220, 90, 130, 180);
+                    over['g'] = Ramp(220, 240, 255, 170, 210, 240, 120, 170, 220, 80, 120, 170);
+                    break;
+                case BossKind.Librarian:
+                    over['m'] = Ramp(236, 222, 186, 206, 188, 146, 170, 150, 108, 130, 112, 78);
+                    over['w'] = Ramp(130, 70, 60, 100, 50, 44, 74, 36, 32, 50, 24, 22);
+                    break;
+                case BossKind.Void:
+                    over['m'] = Ramp(120, 90, 160, 90, 64, 126, 64, 44, 96, 42, 28, 66);
+                    over['w'] = Ramp(80, 60, 110, 60, 44, 86, 44, 30, 64, 30, 20, 44);
+                    break;
+            }
+            return Shaded(key, rows, over, (Color32)BossSets.ColorOf(set), 64);
+        }
+
+        /// <summary>ボスのモチーフを描き足す（形から自動で付けるので、どの装備の絵にも使える）。</summary>
+        static string[] BossMotif(string[] src, BossKind boss)
+        {
+            int h = src.Length, w = src[0].Length;
+            var g = new char[h][];
+            for (int y = 0; y < h; y++) g[y] = src[y].PadRight(w, '.').ToCharArray();
+            bool Solid(int x, int y) => x >= 0 && y >= 0 && x < w && y < h && src[y].Length > x && src[y][x] != '.';
+            void Put(int x, int y, char c) { if (x >= 0 && y >= 0 && x < w && y < h && g[y][x] == '.') g[y][x] = c; }
+            void Over(int x, int y, char c) { if (Solid(x, y)) g[y][x] = c; }
+            int k = Mathf.Max(1, w / 16);
+            switch (boss)
+            {
+                case BossKind.Golem:
+                    // 品の上を走る石のひび（暗い線）と、まわりに浮かぶ小石
+                    for (int t = 0; t < w; t++) { Over(t, h / 2 + ((t / 3) % 2 == 0 ? 0 : k), 'n'); Over(w / 3 + ((t / 4) % 2) * k, t, 'n'); }
+                    void Rock(int cx, int cy) { for (int a = 0; a < k + 1; a++) for (int b = 0; b < k + 1; b++) Put(cx + a, cy + b, 'q'); }
+                    Rock(k, 2 * k); Rock(w - 3 * k, h - 4 * k); Rock(w - 2 * k, k * 2);
+                    break;
+                case BossKind.Mother:
+                    // 上の縁から垂れる苔と、まわりの胞子（明るい緑の点）
+                    for (int x = 0; x < w; x++)
+                    {
+                        int top = -1;
+                        for (int y = 0; y < h; y++) if (Solid(x, y)) { top = y; break; }
+                        if (top < 0) continue;
+                        Over(x, top, 'W');
+                        if ((x * 7) % 5 == 0) for (int d = 1; d <= k + (x % 3); d++) Over(x, top + d, 'W');
+                    }
+                    Put(k, 3 * k, 'W'); Put(w - 2 * k, 2 * k, 'W'); Put(2 * k, h - 3 * k, 'W'); Put(w - 3 * k, h - 2 * k, 'W');
+                    break;
+                case BossKind.Forge:
+                    // 黒鉄の上を走る溶けた鉄の筋（橙に光る）と、立ちのぼる火の粉
+                    for (int y = 0; y < h; y++)
+                        for (int x = 0; x < w; x++)
+                            if ((g[y][x] == 'm' || g[y][x] == 'w') && (x + y * 2) % (5 + k) == 0) g[y][x] = 'L';
+                    Put(k, k * 2, 'L'); Put(w - 2 * k, k, 'l'); Put(w / 2, 1, 'l'); Put(2 * k, k * 4, 'l');
+                    break;
+                case BossKind.Frost:
+                    // 下の縁から垂れる氷柱（白く光る先）と、まわりのきらめき
+                    for (int x = 0; x < w; x++)
+                    {
+                        int bottom = -1;
+                        for (int y = h - 1; y >= 0; y--) if (Solid(x, y)) { bottom = y; break; }
+                        if (bottom < 0 || (x * 5) % 4 != 0) continue;
+                        int len = k + (x % 3);
+                        for (int d = 1; d <= len; d++) Put(x, bottom + d, d == len ? 'o' : 'B');
+                    }
+                    Put(k, 2 * k, 'o'); Put(w - 2 * k, 3 * k, 'B'); Put(w - 3 * k, k, 'o');
+                    break;
+                case BossKind.Librarian:
+                    // 品の上に金の文字（短い線）と、まわりに浮かぶ頁（白い四角）
+                    for (int y = 0; y < h; y += 3)
+                        for (int x = 0; x < w; x++)
+                            if ((g[y][x] == 'm' || g[y][x] == 'w') && (x / 2 + y) % 3 == 0) g[y][x] = 'g';
+                    void Page(int cx, int cy) { for (int a = 0; a < k + 2; a++) for (int b = 0; b < k + 1; b++) Put(cx + a, cy + b, 'x'); }
+                    Page(k, k * 2); Page(w - 4 * k, h - 4 * k);
+                    break;
+                case BossKind.Void:
+                    // まわりに漂う光る目（2つの点）と、品から立ちのぼる影
+                    void Eyes(int cx, int cy) { Put(cx, cy, 'p'); Put(cx + k + 1, cy, 'p'); }
+                    Eyes(k, k * 2); Eyes(w - 4 * k, h - 3 * k); Eyes(w - 3 * k, k);
+                    for (int x = 0; x < w; x++)
+                    {
+                        int top = -1;
+                        for (int y = 0; y < h; y++) if (Solid(x, y)) { top = y; break; }
+                        if (top < 1 || (x * 3) % 4 != 0) continue;
+                        for (int d = 1; d <= k; d++) Put(x, top - d, 'M');
+                    }
+                    break;
+            }
+            var outRows = new string[h];
+            for (int y = 0; y < h; y++) outRows[y] = new string(g[y]);
+            return outRows;
         }
 
         /// <summary>

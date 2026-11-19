@@ -91,7 +91,7 @@ namespace VividOfFade
                 var item = candidates[i];
                 var r = new Rect(pad + (i % cols) * (cell + gap), y + (i / cols) * (cell + gap), cell, cell);
                 bool on = chosen.Contains(item);
-                var c = RarityInfo.ColorOf(item.Rarity);
+                var c = item.DisplayColor;
                 var back = on ? new Color(0.3f, 0.8f, 0.3f, 0.6f) : new Color(c.r, c.g, c.b, 0.22f);
                 hud.Button(r, null, back, centered, () =>
                 {

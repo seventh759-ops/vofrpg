@@ -255,7 +255,8 @@ namespace VividOfFade
                 case Rarity.Rare: Play(chime); break;                     // 黄色はたくさん落ちるので、上限の対象
                 case Rarity.Legendary: Play(fanfare, 1f, true); break;   // 紫以上は聞き逃さないように、いつも鳴らす
                 case Rarity.Relic:
-                case Rarity.Mythic: Play(relic, 1f, true); break;
+                case Rarity.Mythic:
+                case Rarity.Boss: Play(relic, 1f, true); break;
             }
         }
 

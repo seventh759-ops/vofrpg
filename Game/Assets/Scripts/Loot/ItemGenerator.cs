@@ -172,6 +172,24 @@ namespace VividOfFade
             return item;
         }
 
+        /// <summary>
+        /// ボスのセットの品（ボスが約30%で落とす）。神話と同じ作り方（効果4つ・固有効果2つ）に、珍しさを「ボス」、セットをそのボスにする。
+        /// 部位は5つの欄（武器・ランタン・外套・指輪・指輪）から同じ割合で選ぶ。
+        /// </summary>
+        public static Item RollBoss(int level, BossKind boss)
+        {
+            int k = Random.Range(0, 5);
+            forceSlot = k == 0 ? ItemSlot.Weapon : k == 1 ? ItemSlot.Lantern : k == 2 ? ItemSlot.Armor : ItemSlot.Ring;
+            Item item;
+            try { item = RollMythic(level); }
+            finally { forceSlot = null; }
+            item.Rarity = Rarity.Boss;
+            item.BossSet = (int)boss;
+            if (item.Slot == ItemSlot.Weapon) item.BaseValue = WeaponDamage(item.Weapon, item.Level, Rarity.Boss);
+            else if (item.Slot == ItemSlot.Armor) item.BaseValue = Mathf.Round((20f + 5f * item.Level) * RarityMult(Rarity.Boss) * GameConfig.GearLevelMult(item.Level));
+            return item;
+        }
+
         public static Item StarterWeapon(ClassType type)
         {
             var spec = ClassInfo.Weapon(ClassInfo.Get(type).Starter);

@@ -321,6 +321,19 @@ namespace VividOfFade
             if (st.Judgment > 0) R(Loc.T("Pillar of judgment", "裁きの光の柱"), Loc.T($"every {6f / st.Judgment:0.0}s", $"{6f / st.Judgment:0.0}秒ごと"));
             if (rows.Count == before) Line(Loc.T("None", "なし"), new Color(0.6f, 0.6f, 0.65f));
 
+            H(Loc.T("Boss sets", "ボスのセット"));
+            int beforeB = rows.Count;
+            for (int k = 0; k < BossSets.Count6; k++)
+            {
+                int have = BossSets.Count(world.Inventory.Equipped, k);
+                if (have <= 0) continue;
+                var bc = BossSets.ColorOf(k);
+                R(Loc.T($"{BossSets.Name(k)} set", $"{BossSets.Name(k)}のセット"), $"{have}/5");
+                foreach (int t in BossSets.Tiers)
+                    Line(Loc.T($"({t}) ", $"（{t}つ）") + BossSets.BonusText(k, t), have >= t ? bc : new Color(0.45f, 0.45f, 0.5f));
+            }
+            if (rows.Count == beforeB) Line(Loc.T("None", "なし"), new Color(0.6f, 0.6f, 0.65f));
+
             H(Loc.T("Abyss sets", "深淵のセット"));
             before = rows.Count;
             foreach (var set in AbyssSets.All)

@@ -413,7 +413,7 @@ namespace VividOfFade
                     continue;
                 }
                 var item = items[i];
-                var c = RarityInfo.ColorOf(item.Rarity);
+                var c = item.DisplayColor;
                 var bg = item == selected ? new Color(1f, 1f, 1f, 0.45f) : new Color(c.r, c.g, c.b, 0.22f);
                 hud.Button(r, null, bg, hud.CenteredStyle, () => { selected = item; armed = null; });
                 float inset = r.width * 0.15f;
@@ -960,7 +960,7 @@ namespace VividOfFade
             // 強化の段は名前の「+N」と、アイコンの枠の飾りで分かる（印は出さない）
             var nameRect = new Rect(pad, y, W - pad * 2f - emblem, lineH * 1.2f);
             var name = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
-            name.normal.textColor = RarityInfo.ColorOf(item.Rarity);
+            name.normal.textColor = item.DisplayColor;
             Hud.FitLabel(nameRect, item.Name, name);
             y += lineH * 1.2f;
             var info = new GUIStyle(small);

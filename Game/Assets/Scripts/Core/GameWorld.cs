@@ -1254,6 +1254,12 @@ namespace VividOfFade
             Loot.Fountain(pos, Room, GameConfig.BossFountainItems, DropTop, GameConfig.BossRarityBonus,
                 GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * GameConfig.BossEmberMult);
             if (Random.value < GameConfig.MythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
+            // ボスのセットの品（塔のボス6体。昇る塔のボスも同じ6体）：約30%で、そのボスのセットのどれか1品
+            if (!GameConfig.IsBeyond(Floors.Floor) && !(GameConfig.Ascent && Floors.Floor == GameConfig.MaxFloor))
+            {
+                var bk = BossInfo.For(Zones.For(Floors.Floor));
+                if (BossSets.HasSet(bk) && Random.value < BossSets.DropChance) Loot.DropItem(pos, ItemGenerator.RollBoss(DropLevel, bk), Room, 1.4f);
+            }
             if ((GameConfig.IsAbyss(Floors.Floor) || GameConfig.Ascent) && Random.value < GameConfig.ShardChanceBoss) GainShards(pos, GameConfig.RollShards());
             Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
             cameraRig.Shake(0.3f, 0.5f);
@@ -1321,7 +1327,7 @@ namespace VividOfFade
         /// <summary>ボス装備の固有効果：回避した場所で炎が弾ける。</summary>
         // ---------------- 深淵の装備の固有効果 ----------------
         int abyssBlastDepth; // 大爆発の連鎖の深さ（連鎖しすぎないように）
-        float riftTimer, riftLife, riftTick, retributionCooldown, judgmentTimer;
+        float riftTimer, riftLife, riftTick, retributionCooldown, judgmentTimer, quakeTimer, flameTimer, frostTimer;
         Vector2 riftPos;
         readonly List<Vector3> starfalls = new List<Vector3>(); // 落ちる星（x, y, 落ちるまでの秒）
         float starfallCooldown;
@@ -1362,6 +1368,63 @@ namespace VividOfFade
                         Enemies.DamageArea(q, 0.9f, st.Damage * 1.5f);
                     }
                 }
+            }
+
+            // ボスのセットの5つ：灰守（まわりを揺らす）・炉心（扇状の炎）・霜冠（霜の波）
+            if (st.BossQuake && (quakeTimer -= dt) <= 0f)
+            {
+                quakeTimer = 6f;
+                if (Enemies.FindNearest(Player.Pos, 3f) != null)
+                {
+                    const float r = 2.6f;
+                    var stone = new Color(0.8f, 0.75f, 0.65f, 0.9f);
+                    Fx.Ring(Player.Pos, r, stone, 0.4f);
+                    Fx.Disc(Player.Pos, r, new Color(0.6f, 0.55f, 0.45f, 0.4f), 0.3f);
+                    Fx.Sparks(Player.Pos, 18, new Color(0.6f, 0.55f, 0.5f), r * 2f, 0.5f, 3f);
+                    cameraRig.Shake(0.15f, 0.25f);
+                    Sfx.Boom();
+                    Enemies.DamageArea(Player.Pos, r, st.Damage * 3f);
+                }
+                else quakeTimer = 0.3f;
+            }
+            if (st.BossFlame && (flameTimer -= dt) <= 0f)
+            {
+                var flameTarget = Enemies.FindNearest(Player.Pos, 5f);
+                if (flameTarget != null)
+                {
+                    flameTimer = 5f;
+                    Vector2 dir = (flameTarget.Pos - Player.Pos).normalized;
+                    const float range = 5f, half = 35f;
+                    var fire = new Color(1f, 0.5f, 0.15f, 0.9f);
+                    Fx.Fan(Player.Pos, dir, range, half * 2f, new Color(1f, 0.45f, 0.1f, 0.5f), 0.35f, false);
+                    for (int k = 0; k < 8; k++) Fx.Sparks(Player.Pos + dir * (range * (k + 1) / 9f), 3, fire, 1.2f, 0.4f, 2f);
+                    Sfx.Boom();
+                    float cosHalf = Mathf.Cos(half * Mathf.Deg2Rad);
+                    foreach (var e in Enemies.Active)
+                    {
+                        if (e.Dying || e.Dormant) continue;
+                        Vector2 d = e.Pos - Player.Pos;
+                        float dist = d.magnitude;
+                        if (dist > range + e.Radius || (dist > 0.2f && Vector2.Dot(d / dist, dir) < cosHalf)) continue;
+                        Enemies.Damage(e, st.Damage * 3f, dist > 0.001f ? d / dist : dir, false);
+                    }
+                }
+                else flameTimer = 0.3f;
+            }
+            if (st.BossFrost && (frostTimer -= dt) <= 0f)
+            {
+                frostTimer = 6f;
+                if (Enemies.FindNearest(Player.Pos, 3.5f) != null)
+                {
+                    const float r = 3.2f;
+                    var ice = new Color(0.6f, 0.9f, 1f, 0.9f);
+                    Fx.Ring(Player.Pos, r, ice, 0.4f);
+                    Fx.Ring(Player.Pos, r * 0.6f, new Color(1f, 1f, 1f, 0.8f), 0.3f);
+                    Fx.Sparks(Player.Pos, 22, ice, r * 2.2f, 0.6f, 2.5f);
+                    Sfx.Boom();
+                    Enemies.DamageArea(Player.Pos, r, st.Damage * 2.5f);
+                }
+                else frostTimer = 0.3f;
             }
 
             // 天界：裁きの光の柱（6秒ごと。重ねるほど間隔が短い）。一番近い敵へ落ちる
@@ -1502,6 +1565,7 @@ namespace VividOfFade
             if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(DropLevel, 0f), Room);
             if (Random.value < GameConfig.EmberDropChance) Loot.DropEmbers(pos, GameConfig.EmberAmount(Floors.Tier), Room, 0.6f);
             if (stats.HealOnKill > 0) Player.Heal(stats.HealOnKill);
+            if (stats.HealOnKillPct > 0f) Player.Heal(Mathf.Max(1, Mathf.RoundToInt(Player.MaxHp * stats.HealOnKillPct))); // 苔母のセット
 
             // 深淵の業火：倒した場所で大爆発（業火で倒した敵からは、さらに起きない）
             if (stats.AbyssBlastChance > 0f && abyssBlastDepth < (stats.BlastChain ? 2 : 1) && Random.value < stats.AbyssBlastChance)
@@ -1740,6 +1804,19 @@ namespace VividOfFade
             if (item.Rarity == Rarity.Legendary)
             {
                 cameraRig.Shake(0.15f, 0.3f);
+            }
+            else if (item.Rarity == Rarity.Boss)
+            {
+                // ボスのセットの品：セットの色の衝撃の輪と光の柱、強めの揺れ
+                var bc = BossSets.ColorOf(item.BossSet);
+                Fx.Ring(pos, 1.6f, new Color(bc.r, bc.g, bc.b, 0.95f), 0.35f);
+                Fx.Ring(pos, 3.2f, new Color(bc.r, bc.g, bc.b, 0.8f), 0.7f);
+                Fx.SoftPillar(pos, new Color(bc.r, bc.g, bc.b, 0.8f), 1.3f, 4.5f, 1.1f);
+                Fx.Sparks(pos, 24, bc, 4f, 0.9f, 3.5f);
+                Fx.Sparks(pos, 18, new Color(1f, 1f, 1f), 2f, 1.4f, 3f, true);
+                Hud.Flash(0.4f, new Color(bc.r, bc.g, bc.b, 0.4f));
+                Sfx.Fountain();
+                cameraRig.Shake(0.3f, 0.6f);
             }
             else if (item.Rarity == Rarity.Mythic)
             {
