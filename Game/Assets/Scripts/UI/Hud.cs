@@ -1163,6 +1163,10 @@ namespace VividOfFade
             var lvBox = new Rect(panel.x + pp, rowY, lvW, rowH + expGap + ExpRowH);
             float lvGlow = LevelGlow;
             if (lvGlow > 0f) Fill(lvBox, new Color(1f, 0.8f, 0.3f, 0.45f * lvGlow)); // レベルアップの直後は光る
+            // LV を押すと能力値の画面が開く。ポイントが余っていれば、LV の欄がゆっくり金色に明滅する
+            if (ch != null && ch.Points > 0) Fill(lvBox, new Color(1f, 0.78f, 0.25f, 0.18f + 0.14f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f))));
+            if (!World.Paused && !player.IsDead && !World.ChoosingClass)
+                Button(lvBox, null, new Color(0f, 0f, 0f, 0f), centered, () => World.OpenPanel(false, true, false));
             int level = ch != null ? ch.Level : 1;
             string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
             NumberFont.DrawIn(lvBox, lvText, lvGlow > 0f ? Color.Lerp(Color.white, new Color(1f, 0.9f, 0.5f), lvGlow) : Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx + 1f); // ほかより一回り大きく
