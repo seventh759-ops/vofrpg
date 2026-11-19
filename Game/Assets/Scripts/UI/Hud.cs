@@ -318,11 +318,26 @@ namespace VividOfFade
                 GUI.color = old;
                 NumberFont.DrawIn(new Rect(br.x, br.yMax - bs * 0.2f, br.width, bs * 0.45f), $"{Mathf.CeilToInt(left)}", new Color(1f, 1f, 1f, alpha), TextAnchor.MiddleRight, 1f);
             }
+            // 彩灯者の分身：出ている間は、強化と同じく分身のスキルのアイコンと残り秒数
+            int extraIcons = 0;
+            var twin = World.Skills.Twin;
+            if (twin != null && twin.Active)
+            {
+                float left = twin.Remaining;
+                var br = new Rect(BandMargin * 2f + player.BuffCount * (bs + bgap), TopBandBottom + BandMargin * 1.5f, bs, bs);
+                float alpha = left < 2f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)) : 1f;
+                var old = GUI.color;
+                GUI.color = new Color(1f, 1f, 1f, alpha);
+                DrawSprite(br, PixelArt.SkillIcon(SpecialClass.Spec.Skill));
+                GUI.color = old;
+                NumberFont.DrawIn(new Rect(br.x, br.yMax - bs * 0.2f, br.width, bs * 0.45f), $"{Mathf.CeilToInt(left)}", new Color(1f, 1f, 1f, alpha), TextAnchor.MiddleRight, 1f);
+                extraIcons = 1;
+            }
             // 弱体効果：強化のアイコンの右に続けて（赤い縁のアイコン）。残り2秒を切ると点滅
             for (int d = 0; d < player.DebuffCount; d++)
             {
                 float left = player.DebuffRemaining(d);
-                var br = new Rect(BandMargin * 2f + (player.BuffCount + d) * (bs + bgap), TopBandBottom + BandMargin * 1.5f, bs, bs);
+                var br = new Rect(BandMargin * 2f + (player.BuffCount + extraIcons + d) * (bs + bgap), TopBandBottom + BandMargin * 1.5f, bs, bs);
                 float alpha = left < 2f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)) : 1f;
                 var old = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
