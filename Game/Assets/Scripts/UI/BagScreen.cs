@@ -111,24 +111,6 @@ namespace VividOfFade
 
         void DrawBagItem(GameWorld world, Inventory inv, Item item, Rect area, float actionY, float btnH, float gap, float pad)
         {
-            if (item.Fragment)
-            {
-                // 欠片：説明と、ロック・分解だけ（装備や比べる表は出さない）
-                float hh = hud.LabelStyle.fontSize * 1.6f;
-                DrawName(item, new Rect(area.x, area.y, area.width, hh));
-                var wrapS = new GUIStyle(hud.SmallStyle) { wordWrap = true };
-                float yy = area.y + hh;
-                foreach (var line in item.Describe())
-                {
-                    float lh = wrapS.CalcHeight(new GUIContent(line), area.width);
-                    GUI.Label(new Rect(area.x, yy, area.width, lh), line, wrapS);
-                    yy += lh;
-                }
-                float fw = (Screen.width - pad * 2f - gap) / 2f;
-                hud.Button(new Rect(pad, actionY, fw, btnH), item.Locked ? Loc.T("UNLOCK", "ロック解除") : Loc.T("LOCK", "ロック"), buttonBack, hud.CenteredStyle, () => item.Locked = !item.Locked);
-                DrawSalvageButton(inv, item, new Rect(pad + fw + gap, actionY, fw, btnH));
-                return;
-            }
             bool canEquip = world.CanEquip(item, out var reason);
             var candidate = BestCandidate(inv, item, out var slot);
             var now = world.Player.BaseStats;
@@ -243,9 +225,9 @@ namespace VividOfFade
             {
                 int max = r;
                 var c = RarityInfo.ColorOf((Rarity)r);
-                Option(r == 0 ? Loc.T("White", "白だけ") : Loc.T($"White to {Short((Rarity)r).ToLower()}", $"白〜{Short((Rarity)r)}"), new Color(c.r, c.g, c.b, 0.3f), it => !it.Fragment && (int)it.Rarity <= max); // 欠片はまとめて分解しない
+                Option(r == 0 ? Loc.T("White", "白だけ") : Loc.T($"White to {Short((Rarity)r).ToLower()}", $"白〜{Short((Rarity)r)}"), new Color(c.r, c.g, c.b, 0.3f), it => (int)it.Rarity <= max);
             }
-            Option(Loc.T("Everything that is not an upgrade (up to orange)", "今より強くならない物すべて（橙まで）"), buttonBack, it => !it.Fragment && it.Rarity <= Rarity.Relic && !IsUpgrade(inv, it, current));
+            Option(Loc.T("Everything that is not an upgrade (up to orange)", "今より強くならない物すべて（橙まで）"), buttonBack, it => it.Rarity <= Rarity.Relic && !IsUpgrade(inv, it, current));
         }
 
         void SalvageBulk(Inventory inv, System.Func<Item, bool> match)
@@ -257,7 +239,6 @@ namespace VividOfFade
 
         static bool IsUpgrade(Inventory inv, Item item, PlayerStats current)
         {
-            if (item.Fragment) return false;
             return BestCandidate(inv, item, out _).Power > current.Power * 1.01f;
         }
 
@@ -308,19 +289,6 @@ namespace VividOfFade
             Hud.DrawEnhance(r, item);
             Hud.DrawItemLevel(r, item);
             Hud.DrawAbyssFrame(r, item);
-            if (item.Fragment)
-            {
-                // 欠片：左上に種類（A〜D）、右下に重なっている数
-                var tag = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.UpperLeft };
-                tag.normal.textColor = new Color(1f, 0.92f, 0.7f);
-                GUI.Label(new Rect(r.x + r.width * 0.06f, r.y + r.height * 0.02f, r.width * 0.5f, r.height * 0.45f), item.PartLetter, tag);
-                if (item.Count > 1)
-                {
-                    var cnt = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.LowerRight };
-                    cnt.normal.textColor = Color.white;
-                    GUI.Label(new Rect(r.x, r.y, r.width - r.width * 0.06f, r.height - r.height * 0.02f), $"x{item.Count}", cnt);
-                }
-            }
             if (item.Locked)
             {
                 var lockStyle = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };

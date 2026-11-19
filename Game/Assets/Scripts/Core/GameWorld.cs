@@ -631,7 +631,6 @@ namespace VividOfFade
             var fx = ChoosingClass ? null : Player.Stats;
             ItemGenerator.MagicFind = fx != null ? fx.MagicFind : 0f;
             ItemGenerator.HeavenDrops = !InTown && !ChoosingClass && GameConfig.IsHeaven(Floors.Floor); // 天界で落ちる品は天界の装備
-            ItemGenerator.FragmentDrops = !InTown && !ChoosingClass && GameConfig.IsBeyond(Floors.Floor); // 深淵・天界では、装備の代わりに欠片が落ちる
             // 敵の会心耐性：塔の中ではいまの層、町では最深層の値（装備の比べ方・能力値の表示に使う）
             var crCh = Profile.Current;
             GameConfig.Ascent = crCh != null && crCh.Ascended; // 昇る塔か（敵の強さ・層の名前・区画の並び）
@@ -1660,11 +1659,6 @@ namespace VividOfFade
         public bool CanEquip(Item item, out string reason)
         {
             var st = Player.Stats;
-            if (item.Fragment)
-            {
-                reason = Loc.T("Shards can't be equipped", "欠片は装備できない");
-                return false;
-            }
             if (Town.OtherClassWeapon(item, ClassInfo.Current))
             {
                 reason = Loc.T("Other class", "ほかの職業の武器");

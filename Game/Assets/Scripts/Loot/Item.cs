@@ -34,21 +34,6 @@ namespace VividOfFade
         /// <summary>ロック中は一括分解・自動分解の対象にしない。</summary>
         public bool Locked;
 
-        /// <summary>
-        /// 装備の欠片（深淵・天界で、装備の代わりに落ちる）。部位（Slot）× 種類（A〜D）× 珍しさ。装備はできない。
-        /// 同じ部位・同じ種類・同じ珍しさ（深淵か天界かも同じ）なら、鞄の1マスに重なる（Count）。
-        /// 同じ部位・同じ珍しさの A・B・C・D をそろえると、鍛冶屋でその部位の装備になる。
-        /// </summary>
-        public bool Fragment;
-        public int Part;      // 欠片の種類（0〜3 = A〜D）
-        public int Count = 1; // 重なっている数（欠片だけ）
-
-        public static readonly string[] PartLetters = { "A", "B", "C", "D" };
-        public string PartLetter => PartLetters[UnityEngine.Mathf.Clamp(Part, 0, 3)];
-
-        /// <summary>同じマスに重ねられるか（欠片どうしで、部位・種類・珍しさ・深淵か天界かが同じ）。</summary>
-        public bool StacksWith(Item o) => o != null && Fragment && o.Fragment && Slot == o.Slot && Part == o.Part && Rarity == o.Rarity && Heaven == o.Heaven;
-
         /// <summary>装備に必要なレベル。</summary>
         public int ReqLevel = 1;
         /// <summary>武器に必要な能力値（職業の主能力）。0 なら条件なし。</summary>
@@ -64,7 +49,7 @@ namespace VividOfFade
         public int Enhance;
         public const int MaxEnhance = 15;
         /// <summary>この品の強化の上限：灯宝（橙）は+10、神話（赤）と深淵の品は+15。それより下は強化できない。</summary>
-        public int EnhanceCap => Fragment || Rarity < Rarity.Relic ? 0 : Abyss || Heaven || Rarity == Rarity.Mythic ? MaxEnhance : 10;
+        public int EnhanceCap => Rarity < Rarity.Relic ? 0 : Abyss || Heaven || Rarity == Rarity.Mythic ? MaxEnhance : 10;
         public const float EnhanceStep = 0.06f;
         public float EnhanceMult => 1f + EnhanceStep * Enhance;
 
@@ -89,7 +74,6 @@ namespace VividOfFade
             if (Affixes == null) Affixes = new List<Affix>();
             if (Uniques == null) Uniques = new List<UniqueType>();
             if (Enhance < 0) Enhance = 0;
-            if (Count < 1) Count = 1;
             // 前の版の「経験値・拾う火種・珍しい品」は「幸運」1つにまとめる（いちばん大きい値を残す）
             int luckAt = -1;
             for (int i = 0; i < Affixes.Count; i++)
@@ -125,36 +109,11 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>部位の名前（欠片の名前に使う）。</summary>
-        public string SlotName
-        {
-            get
-            {
-                switch (Slot)
-                {
-                    case ItemSlot.Weapon: return Loc.T("Weapon", "武器");
-                    case ItemSlot.Lantern: return Loc.T("Lantern", "ランタン");
-                    case ItemSlot.Armor: return Loc.T("Coat", "外套");
-                    default: return Loc.T("Ring", "指輪");
-                }
-            }
-        }
-
-        public string Name => Fragment
-            ? (Loc.Ja ? $"{(Heaven ? "天界" : "深淵")}・{RarityInfo.LabelOf(Rarity)}の{SlotName}の欠片{PartLetter}" : $"{(Heaven ? "Celestial" : "Abyssal")} {RarityInfo.LabelOf(Rarity)} {SlotName} Shard {PartLetter}") + (Count > 1 ? $" x{Count}" : "")
-            : (Abyss ? AbyssSets.Prefix(AbyssSets.SetOf(this)) : Heaven ? Loc.T("Celestial ", "天界・") : "") + (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
+        public string Name => (Abyss ? AbyssSets.Prefix(AbyssSets.SetOf(this)) : Heaven ? Loc.T("Celestial ", "天界・") : "") + (Loc.Ja ? $"{RarityInfo.LabelOf(Rarity)}の{BaseName}" : $"{RarityInfo.LabelOf(Rarity)} {BaseName}") + (Enhance > 0 ? $" +{Enhance}" : "");
 
         public List<string> Describe()
         {
             var lines = new List<string>();
-            if (Fragment)
-            {
-                lines.Add(Loc.T($"Gear shard (Lv {Level})   x{Count}", $"装備の欠片（Lv{Level}）　{Count}個"));
-                lines.Add(Loc.T($"Gather {SlotName} shards A, B, C and D of the same rarity,", $"同じ珍しさの{SlotName}の欠片 A・B・C・D をそろえて"));
-                lines.Add(Loc.T("and the blacksmith in town will forge them into gear.", "町の鍛冶屋へ持ち帰ると、装備にしてもらえる。"));
-                lines.Add(Loc.T("Shards can't be equipped.", "欠片は装備できない。"));
-                return lines;
-            }
             switch (Slot)
             {
                 case ItemSlot.Weapon:
