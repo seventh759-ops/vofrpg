@@ -20,11 +20,17 @@ namespace VividOfFade
             public float StartTime;
             public bool Reserved; // ボタン類の上で押された
             public bool Attack;   // 攻撃ボタンの上で押された
+            // 押したまま弾いたかを見るための、少し前までの指の位置（時刻・位置）
+            public readonly List<(float t, Vector2 p)> Trail = new List<(float, Vector2)>();
+            public float FlickReadyAt;  // 次に「押したまま弾く」回避ができる時刻
         }
 
         const int NoId = int.MinValue;
         const int MouseId = -1;
         const float FlickMaxTime = 0.25f;
+        // 押したまま（移動中に）弾く回避：押し始めてから HoldFlickAfter 秒たってから、HoldFlickWindow 秒の間に
+        // スティックの半径の HoldFlickDist 倍より速く指が動いたら、その向きへ回避する
+        const float HoldFlickAfter = 0.2f, HoldFlickWindow = 0.12f, HoldFlickDist = 1.1f, HoldFlickCooldown = 0.4f;
         const float TapMaxTime = 0.3f;
 
         public Vector2 Move { get; private set; }
@@ -121,6 +127,21 @@ namespace VividOfFade
             }
             if (StickActive && pointers.TryGetValue(stickId, out var sp))
             {
+                // 移動中に弾いた：指の動きの向きへ回避。そのあとも押したままなら、弾いた向きへ歩き続ける
+                sp.Trail.Add((now, sp.Pos));
+                while (sp.Trail.Count > 0 && now - sp.Trail[0].t > HoldFlickWindow) sp.Trail.RemoveAt(0);
+                if (sp.Trail.Count > 1 && now - sp.StartTime > HoldFlickAfter && now >= sp.FlickReadyAt)
+                {
+                    Vector2 flick = sp.Pos - sp.Trail[0].p;
+                    if (flick.magnitude > StickRadius * HoldFlickDist)
+                    {
+                        dodgeQueued = true;
+                        dodgeDir = flick.normalized;
+                        sp.FlickReadyAt = now + HoldFlickCooldown;
+                        sp.Trail.Clear();
+                        sp.Start = sp.Pos - dodgeDir * StickRadius * 0.6f; // スティックの中心を指の近くへ寄せる
+                    }
+                }
                 Vector2 d = sp.Pos - sp.Start;
                 if (d.magnitude > StickRadius * 0.15f)
                 {

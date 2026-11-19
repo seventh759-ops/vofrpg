@@ -1319,7 +1319,7 @@ namespace VividOfFade
         static readonly string[] helpLines =
         {
             "Move ........ WASD / arrows (phone: drag)",
-            "Dodge ....... Space (phone: flick)",
+            "Dodge ....... Space (phone: flick, also while moving)",
             "Skills ...... 1 / 2 / 3",
             "Attack mode . T  (HOLD: J or right click)",
             "Bag ......... B      Stats ... C",
@@ -1332,7 +1332,7 @@ namespace VividOfFade
         static readonly string[] helpLinesJa =
         {
             "移動 ........ WASD / 矢印（スマホ：押してずらす）",
-            "回避 ........ Space（スマホ：はじく）",
+            "回避 ........ Space（スマホ：はじく。移動中も）",
             "スキル ...... 1 / 2 / 3",
             "攻撃モード .. T（押す間：J か右クリック）",
             "鞄 .......... B      能力値 ... C",
