@@ -110,7 +110,7 @@ namespace VividOfFade
             var item = new Item
             {
                 Level = Mathf.Max(1, level),
-                Rarity = RollRarity(bonus),
+                Rarity = forceRarity ?? RollRarity(bonus),
                 Slot = RollSlot(),
             };
 
@@ -214,8 +214,29 @@ namespace VividOfFade
             item.ReqValue = 8 + item.Level;
         }
 
+        // 鍛冶屋の「部位の変換」「合成」で、部位と珍しさを決めて作るとき（null なら普通に決める）
+        static ItemSlot? forceSlot;
+        static Rarity? forceRarity;
+
+        /// <summary>
+        /// 部位・珍しさ・レベルを決めて品を作る（鍛冶屋の部位の変換・合成）。神話は神話の作り方で。
+        /// Lv100 以上は深淵の品に、heaven なら天界の品にする。
+        /// </summary>
+        public static Item RollExact(int level, Rarity rarity, ItemSlot slot, bool heaven)
+        {
+            bool oldHeaven = HeavenDrops;
+            float oldFind = MagicFind;
+            HeavenDrops = heaven;
+            MagicFind = 0f;
+            forceSlot = slot;
+            forceRarity = rarity == Rarity.Mythic ? (Rarity?)null : rarity;
+            try { return rarity == Rarity.Mythic ? RollMythic(level) : Roll(level, 0f); }
+            finally { forceSlot = null; forceRarity = null; HeavenDrops = oldHeaven; MagicFind = oldFind; }
+        }
+
         static ItemSlot RollSlot()
         {
+            if (forceSlot.HasValue) return forceSlot.Value;
             float r = Random.value;
             if (r < 0.35f) return ItemSlot.Weapon;
             if (r < 0.55f) return ItemSlot.Lantern;

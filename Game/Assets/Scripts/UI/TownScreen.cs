@@ -943,8 +943,8 @@ namespace VividOfFade
             {
                 selected = null;
                 var wrap = new GUIStyle(small) { wordWrap = true };
-                string help = Loc.T($"Tap an item. Enhancing (Relic/orange up to +10, Mythic/red and Abyssal up to +{Item.MaxEnhance}) raises its base value and effects by {Item.EnhanceStep * 100f:0}% per level. Abyssal gear also needs Abyss Shards (1 per level, 15 for +15). Rerolling (Mythic only) draws new effects at the item's level.   Abyss Shards: {ch.AbyssShards}",
-                    $"品をタップ。強化（灯宝＝橙は+10、神話＝赤と深淵の品は+{Item.MaxEnhance}まで）すると、1段ごとに基本の数値と効果の値が{Item.EnhanceStep * 100f:0}%上がる。深淵の品は深淵の欠片も要る（1段ごとに1個、+15だけ15個）。再抽選（神話だけ）すると、その品のレベルで効果を引き直す。　深淵の欠片：{ch.AbyssShards}個");
+                string help = Loc.T($"Tap an item. Enhancing (Relic/orange up to +10, Mythic/red and Abyssal up to +{Item.MaxEnhance}) raises its base value and effects by {Item.EnhanceStep * 100f:0}% per level. Reaching +10 and +15 also uses one brought-home item of the same slot and rarity. Abyssal gear also needs Abyss Shards (1 per level, 15 for +15). Rerolling (Mythic only) draws new effects at the item's level. Brought-home items can be reforged into another slot, or three of a rarity fused into one of the next.   Abyss Shards: {ch.AbyssShards}",
+                    $"品をタップ。強化（灯宝＝橙は+10、神話＝赤と深淵の品は+{Item.MaxEnhance}まで）すると、1段ごとに基本の数値と効果の値が{Item.EnhanceStep * 100f:0}%上がる。+10・+15 にするときは、持ち帰った同じ部位・同じ珍しさの品も1つ使う。深淵の品は深淵の欠片も要る（1段ごとに1個、+15だけ15個）。再抽選（神話だけ）すると、その品のレベルで効果を引き直す。持ち帰った品は、別の部位に作り直したり、同じ珍しさ3つを1つ上の珍しさに合成できる。　深淵の欠片：{ch.AbyssShards}個");
                 GUI.Label(new Rect(pad, y, W - pad * 2f, wrap.CalcHeight(new GUIContent(help), W - pad * 2f)), help, wrap);
                 return;
             }
@@ -970,6 +970,9 @@ namespace VividOfFade
                       $"強化 +{item.Enhance}/{item.EnhanceCap}   （値 x{item.EnhanceMult:0.00}）" + (item.Abyss || item.Heaven ? $"   欠片 {ch.AbyssShards}個" : "")), info);
             y += lineH;
 
+            // 持ち帰った品（装備していない品）は、部位の変換・合成ができる（その分、ボタンの段を1つ増やす）
+            bool spareActions = Town.IsSpare(ch, item) && (Town.Convertible(item) || Town.Synthesizable(item));
+            float extraRow = spareActions ? btnH + W * 0.03f * 0.5f : 0f;
             // 説明。効果の行には、再抽選のときに残す「ロック」の切り替えを付ける（最大3つ、全部はロックできない）
             bool smithable = Town.Smithable(item);
             var lines = item.Describe();
@@ -981,7 +984,7 @@ namespace VividOfFade
                 int ai0 = li - baseLines;
                 bool affixRow = smithable && ai0 >= 0 && ai0 < item.Affixes.Count;
                 float rowLine = affixRow ? lineH * 1.35f : lineH; // 固定ボタンの行は少し高く
-                if (y + rowLine > by - btnH - H * 0.02f) break;
+                if (y + rowLine > by - btnH - extraRow - H * 0.02f) break;
                 int ai = li - baseLines;
                 bool isAffix = smithable && ai >= 0 && ai < item.Affixes.Count;
                 if (isAffix)
@@ -1019,6 +1022,8 @@ namespace VividOfFade
 
             DrawSmithFx(nameRect);
 
+            if (spareActions) DrawSpareActions(ch, item, new Rect(pad, by - btnH * 2f - W * 0.03f, W - pad * 2f, btnH));
+
             bool enhanceable = Town.Enhanceable(item);
             if (!enhanceable)
             {
@@ -1047,9 +1052,12 @@ namespace VividOfFade
             {
                 int price = Town.EnhancePrice(item);
                 int shards = Town.ShardPrice(item);
-                bool can = ch.Embers >= price && ch.AbyssShards >= shards;
+                bool needMat = Town.NeedsMaterial(item);
+                int mats = needMat ? Town.MaterialCount(ch, item) : 0;
+                bool can = ch.Embers >= price && ch.AbyssShards >= shards && (!needMat || mats > 0);
                 string shardNote = shards > 0 ? Loc.T($", {shards} shard" + (shards > 1 ? "s" : ""), $"・欠片 {shards}") : "";
-                string label = Loc.T($"ENHANCE  +{item.Enhance} → +{item.Enhance + 1}   ({price} embers{shardNote})", $"強化  +{item.Enhance} → +{item.Enhance + 1}   （火種 {price}{shardNote}）");
+                string matNote = needMat ? Loc.T($", 1 same-slot {RarityInfo.LabelOf(item.Rarity)} (have {mats})", $"・同じ部位の{RarityInfo.LabelOf(item.Rarity)} 1（持っている {mats}）") : "";
+                string label = Loc.T($"ENHANCE  +{item.Enhance} → +{item.Enhance + 1}   ({price} embers{shardNote}{matNote})", $"強化  +{item.Enhance} → +{item.Enhance + 1}   （火種 {price}{shardNote}{matNote}）");
                 if (can) hud.Button(enhanceRect, label, gold, hud.CenteredStyle, () =>
                 {
                     if (!Town.EnhanceItem(ch, item)) return;
@@ -1086,6 +1094,61 @@ namespace VividOfFade
                     Hud.Fill(rr, dim);
                     Hud.FitLabel(rr, label, hud.CenteredStyle);
                 }
+            }
+        }
+
+        /// <summary>持ち帰った品の「部位を変える」「合成」のボタン（左右に半分ずつ）。</summary>
+        void DrawSpareActions(CharacterData ch, Item item, Rect row)
+        {
+            float gap = Screen.width * 0.03f;
+            float half = (row.width - gap) * 0.5f;
+            var left = new Rect(row.x, row.y, half, row.height);
+            var right = new Rect(row.x + half + gap, row.y, half, row.height);
+            // 部位の変換：武器→ランタン→鎧→指輪→武器 の順に、次の部位へ作り直す（中身は引き直し）
+            if (Town.Convertible(item))
+            {
+                int cp = Town.ConvertPrice(item);
+                string label = Loc.T($"REFORGE SLOT  ({cp} embers)", $"部位を変える（火種 {cp}）");
+                if (ch.Embers >= cp) Confirm(left, "convert", label, () =>
+                {
+                    var made = Town.Convert(ch, item);
+                    if (made == null) return;
+                    selected = made;
+                    smithFxTime = Time.unscaledTime;
+                    smithFxText = SlotNameOf(made.Slot);
+                    hud.World.Sfx.Anvil();
+                });
+                else { Hud.Fill(left, dim); Hud.FitLabel(left, label, hud.CenteredStyle); }
+            }
+            else { Hud.Fill(left, dim); Hud.FitLabel(left, Loc.T("Reforge: orange or better", "部位の変換は橙から"), hud.CenteredStyle); }
+            // 合成：同じ珍しさ3つ（部位は問わない）で、1つ上の珍しさに
+            if (Town.Synthesizable(item))
+            {
+                int sp = Town.SynthPrice(item);
+                int have = Town.SynthPartners(ch, item).Count;
+                string label = Loc.T($"FUSE 3 → {RarityInfo.LabelOf(item.Rarity + 1)}  ({sp} embers, {have}/2)", $"3つで合成→{RarityInfo.LabelOf(item.Rarity + 1)}（火種 {sp}・相手 {have}/2）");
+                if (ch.Embers >= sp && have >= 2) Confirm(right, "synth", label, () =>
+                {
+                    var made = Town.Synthesize(ch, item);
+                    if (made == null) return;
+                    selected = made;
+                    smithFxTime = Time.unscaledTime;
+                    smithFxText = RarityInfo.LabelOf(made.Rarity);
+                    hud.World.Sfx.Anvil();
+                });
+                else { Hud.Fill(right, dim); Hud.FitLabel(right, label, hud.CenteredStyle); }
+            }
+            else { Hud.Fill(right, dim); Hud.FitLabel(right, Loc.T("Fusing: purple or orange", "合成は紫・橙"), hud.CenteredStyle); }
+        }
+
+        static string SlotNameOf(ItemSlot s)
+        {
+            switch (s)
+            {
+                case ItemSlot.Weapon: return Loc.T("Weapon", "武器");
+                case ItemSlot.Lantern: return Loc.T("Lantern", "ランタン");
+                case ItemSlot.Armor: return Loc.T("Armor", "鎧");
+                default: return Loc.T("Ring", "指輪");
             }
         }
 

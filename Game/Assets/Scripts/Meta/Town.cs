@@ -310,8 +310,106 @@ namespace VividOfFade
         /// <summary>次の強化の値段（高いレベル・珍しい品・強化が進んだ品ほど高い）。</summary>
         public static int EnhancePrice(Item it) => EnhancePriceAt(it, it.Enhance);
 
+        /// <summary>強化の火種の倍率（+10・+15 に素材の品が要るようにした分、軽くした）。</summary>
+        public const float EnhanceEmberMult = 0.6f;
+
         static int EnhancePriceAt(Item it, int enhance) =>
-            Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * Mathf.Pow(enhance + 1, 1.4f));
+            Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * Mathf.Pow(enhance + 1, 1.4f) * EnhanceEmberMult);
+
+        // ---------------- 持ち帰った品を素材にする（鍛冶屋） ----------------
+        // ・強化の節目（+10・+15 に上げるとき）には、同じ部位・同じ珍しさ（深淵・天界の品は同じ種類）の品が1つ要る
+        // ・部位の変換：持ち帰った品を、同じ珍しさ・同じレベルの別の部位の品に作り直す
+        // ・合成：同じ珍しさの品を3つで、1つ上の珍しさの品1つにする（紫→橙、橙→赤）
+        // 素材にできるのは、持ち込む品（前回持ち帰った品）と倉庫の品。装備中の品・ロック中の品は使わない。
+
+        /// <summary>次の強化で素材が要るか（+9→+10、+14→+15）。</summary>
+        public static bool NeedsMaterial(Item it) => it != null && (it.Enhance + 1) % 10 == 0 || it != null && it.Enhance + 1 == 15;
+
+        static bool SameKind(Item a, Item b) => a.Rarity == b.Rarity && a.Abyss == b.Abyss && a.Heaven == b.Heaven;
+
+        /// <summary>素材にしてよい品（持ち込む品と倉庫。装備中・ロック中・target 自身は除く）。</summary>
+        static IEnumerable<(List<Item> list, Item item)> Spare(CharacterData ch, Item target)
+        {
+            foreach (var it in ch.Stash) if (it != null && it != target && !it.Locked && !it.IsEmptyMarker) yield return (ch.Stash, it);
+            foreach (var it in Profile.Storage) if (it != null && it != target && !it.Locked && !it.IsEmptyMarker) yield return (Profile.Storage, it);
+        }
+
+        /// <summary>強化の素材にする品（同じ部位・同じ珍しさで、いちばんレベルの低いもの）。なければ null。</summary>
+        public static Item MaterialFor(CharacterData ch, Item target)
+        {
+            Item best = null;
+            foreach (var (_, it) in Spare(ch, target))
+                if (it.Slot == target.Slot && SameKind(it, target) && (best == null || it.Level < best.Level)) best = it;
+            return best;
+        }
+
+        public static int MaterialCount(CharacterData ch, Item target)
+        {
+            int n = 0;
+            foreach (var (_, it) in Spare(ch, target)) if (it.Slot == target.Slot && SameKind(it, target)) n++;
+            return n;
+        }
+
+        static void RemoveSpare(CharacterData ch, Item it)
+        {
+            if (!ch.Stash.Remove(it)) Profile.Storage.Remove(it);
+        }
+
+        /// <summary>品が持ち込む品か倉庫にあるか（部位の変換・合成ができるのは、装備していない品だけ）。</summary>
+        public static bool IsSpare(CharacterData ch, Item it) => it != null && (ch.Stash.Contains(it) || Profile.Storage.Contains(it));
+
+        /// <summary>部位の変換・合成ができる珍しさ（素材になる橙・赤。合成は紫から）。</summary>
+        public static bool Convertible(Item it) => it != null && it.Rarity >= Rarity.Relic;
+        public static int ConvertPrice(Item it) => Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * 1.5f);
+
+        static readonly ItemSlot[] slotOrder = { ItemSlot.Weapon, ItemSlot.Lantern, ItemSlot.Armor, ItemSlot.Ring };
+
+        /// <summary>部位の変換：次の部位（武器→ランタン→鎧→指輪→武器）の、同じ珍しさ・同じレベルの品に作り直す。</summary>
+        public static Item Convert(CharacterData ch, Item it)
+        {
+            if (!Convertible(it) || !IsSpare(ch, it) || !Pay(ch, ConvertPrice(it))) return null;
+            int si = System.Array.IndexOf(slotOrder, it.Slot);
+            var next = slotOrder[(si + 1) % slotOrder.Length];
+            var made = ItemGenerator.RollExact(it.Level, it.Rarity, next, it.Heaven);
+            Replace(ch, it, made);
+            Profile.Save();
+            return made;
+        }
+
+        static void Replace(CharacterData ch, Item old, Item made)
+        {
+            int i = ch.Stash.IndexOf(old);
+            if (i >= 0) { ch.Stash[i] = made; return; }
+            i = Profile.Storage.IndexOf(old);
+            if (i >= 0) Profile.Storage[i] = made;
+        }
+
+        /// <summary>合成できるか：紫・橙の品で、同じ種類の品があと2つある。</summary>
+        public static bool Synthesizable(Item it) => it != null && (it.Rarity == Rarity.Legendary || it.Rarity == Rarity.Relic);
+        public static int SynthPrice(Item it) => Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * 3f);
+
+        /// <summary>合成の相手（同じ珍しさ・同じ種類で、レベルの低い順に2つ）。部位は問わない。</summary>
+        public static List<Item> SynthPartners(CharacterData ch, Item it)
+        {
+            var list = new List<Item>();
+            foreach (var (_, o) in Spare(ch, it)) if (SameKind(o, it)) list.Add(o);
+            list.Sort((a, b) => a.Level.CompareTo(b.Level));
+            if (list.Count > 2) list.RemoveRange(2, list.Count - 2);
+            return list;
+        }
+
+        /// <summary>合成：選んだ品と、同じ種類の品2つを使い、選んだ品と同じ部位・同じレベルで1つ上の珍しさの品を作る。</summary>
+        public static Item Synthesize(CharacterData ch, Item it)
+        {
+            if (!Synthesizable(it) || !IsSpare(ch, it)) return null;
+            var partners = SynthPartners(ch, it);
+            if (partners.Count < 2 || !Pay(ch, SynthPrice(it))) return null;
+            var made = ItemGenerator.RollExact(it.Level, it.Rarity + 1, it.Slot, it.Heaven);
+            Replace(ch, it, made);
+            foreach (var p in partners) RemoveSpare(ch, p);
+            Profile.Save();
+            return made;
+        }
 
         /// <summary>分解・売却で戻る、強化に使った火種の割合。</summary>
         public const float EnhanceRefund = 0.5f;
@@ -369,8 +467,15 @@ namespace VividOfFade
             if (!Enhanceable(it) || it.Enhance >= it.EnhanceCap) return false;
             int shards = ShardPrice(it);
             if (ch.AbyssShards < shards || ch.Embers < EnhancePrice(it)) return false;
+            Item material = null;
+            if (NeedsMaterial(it))
+            {
+                material = MaterialFor(ch, it);
+                if (material == null) return false; // 節目の強化には、同じ部位・同じ珍しさの品が要る
+            }
             if (!Pay(ch, EnhancePrice(it))) return false;
             ch.AbyssShards -= shards;
+            if (material != null) RemoveSpare(ch, material);
             it.Enhance++;
             Profile.Save();
             return true;
