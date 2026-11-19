@@ -2022,6 +2022,7 @@ namespace VividOfFade
         public static Sprite ItemIcon(Item item)
         {
             if (item == null) return null;
+            if (item.Fragment) return FragmentIcon(item);
             string[] rows;
             string kind;
             switch (item.Slot)
@@ -2045,6 +2046,55 @@ namespace VividOfFade
             if (item.Heaven) over['m'] = Ramp(255, 252, 240, 236, 226, 200, 206, 190, 150, 160, 140, 100); // 天界の装備は、白金の金属
             Color32? haze = item.Abyss ? (Color32?)(Color32)AbyssSets.ColorOf(abyssSet) : item.Heaven ? (Color32?)(Color32)RarityInfo.HeavenColor : null;
             return Shaded(key, rows, over, haze, 64); // もやはセットの色（天界は金）。32 ドットで、地面では今までと同じ半マス
+        }
+
+        /// <summary>
+        /// 装備の欠片のアイコン：その部位の絵を4つに割った1切れ（A 左上・B 右上・C 左下・D 右下）。割れ口はぎざぎざ。
+        /// 4つそろうと絵が1枚になる。深淵の欠片は赤紫、天界の欠片は金のもや。武器は剣の絵（どの職業の武器になるかは、作るときに決まる）。
+        /// </summary>
+        static Sprite FragmentIcon(Item item)
+        {
+            string[] src;
+            switch (item.Slot)
+            {
+                case ItemSlot.Lantern: src = Icon32_Lantern; break;
+                case ItemSlot.Armor: src = Icon32_Armor; break;
+                case ItemSlot.Ring: src = Icon32_Ring; break;
+                default: if (!WeaponIcons32.TryGetValue(WeaponKind.Sword, out src)) src = Icon32_Ring; break;
+            }
+            int part = Mathf.Clamp(item.Part, 0, 3);
+            string key = $"Frag32_{item.Slot}_{part}_{item.Rarity}_{(item.Heaven ? "H" : "A")}";
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            int h = src.Length, w = src[0].Length;
+            bool right = part == 1 || part == 3, bottom = part >= 2;
+            // 絵のある範囲の真ん中で4つに分ける（どの切れにも絵が入るように）
+            int x0 = w, x1 = -1, y0 = h, y1 = -1;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < src[y].Length; x++)
+                    if (src[y][x] != '.') { x0 = Mathf.Min(x0, x); x1 = Mathf.Max(x1, x); y0 = Mathf.Min(y0, y); y1 = Mathf.Max(y1, y); }
+            int mx = (x0 + x1 + 1) / 2, my = (y0 + y1 + 1) / 2;
+            var rows = new string[h];
+            for (int y = 0; y < h; y++)
+            {
+                var row = src[y].PadRight(w, '.').ToCharArray();
+                for (int x = 0; x < w; x++)
+                {
+                    if (row[x] == '.') continue;
+                    // 割れ目：真ん中の線を、ぎざぎざにずらす
+                    int jx = mx + ((y / 2) % 2 == 0 ? 1 : 0);
+                    int jy = my + ((x / 2) % 2 == 0 ? 1 : 0);
+                    bool inX = right ? x >= jx : x < jx;
+                    bool inY = bottom ? y >= jy : y < jy;
+                    if (!(inX && inY)) row[x] = 'Q'; // ほかの切れは、暗い影で形だけ見せる
+                }
+                rows[y] = new string(row);
+            }
+            Color32 c = RarityInfo.ColorOf(item.Rarity);
+            var over = new Dictionary<char, Color32[]> { { 'A', RampFrom(c) } };
+            over['m'] = item.Heaven ? Ramp(255, 252, 240, 236, 226, 200, 206, 190, 150, 160, 140, 100) : RampFrom(new Color32(96, 60, 110, 255));
+            over['Q'] = Ramp(52, 46, 62, 44, 38, 54, 36, 30, 46, 28, 24, 36); // まだそろっていない切れ（影）
+            Color32 haze = item.Heaven ? (Color32)RarityInfo.HeavenColor : (Color32)RarityInfo.AbyssColor;
+            return Shaded(key, rows, over, haze, 64);
         }
 
         /// <summary>

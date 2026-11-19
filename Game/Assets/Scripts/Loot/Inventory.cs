@@ -68,7 +68,12 @@ namespace VividOfFade
             ch.Stash.Clear();
             foreach (var it in Bag)
             {
-                if (it.Carried || chosen.Contains(it)) ch.Stash.Add(it);
+                if (!it.Carried && !chosen.Contains(it)) continue;
+                // 欠片は、持ち帰った同じ欠片と1つに重ねる
+                Item same = null;
+                if (it.Fragment) foreach (var s in ch.Stash) if (s.StacksWith(it)) { same = s; break; }
+                if (same != null) { same.Count += it.Count; same.Level = Math.Max(same.Level, it.Level); }
+                else ch.Stash.Add(it);
             }
             ch.Embers += Embers;
         }
@@ -130,15 +135,30 @@ namespace VividOfFade
                 Embers += Town.SalvageValue(item);
                 return true;
             }
+            // 欠片は、今回拾った同じ欠片に重ねる（持ち込んだ欠片には重ねない：倒れたときに失う分と分けるため）
+            var stack = StackFor(item);
+            if (stack != null)
+            {
+                stack.Count += item.Count;
+                stack.Level = Math.Max(stack.Level, item.Level);
+                return true;
+            }
             if (BagFull) return false;
             Bag.Add(item);
             return true;
         }
 
-        /// <summary>鞄が満杯でも、拾えるものか（自動分解される白など）。</summary>
-        public bool CanTake(Item item) => !BagFull || AutoSalvages(item);
+        Item StackFor(Item item)
+        {
+            if (!item.Fragment) return null;
+            foreach (var it in Bag) if (!it.Carried && it.StacksWith(item)) return it;
+            return null;
+        }
 
-        bool AutoSalvages(Item item) => (int)item.Rarity <= AutoSalvageMax;
+        /// <summary>鞄が満杯でも、拾えるものか（自動分解される白・重ねられる欠片など）。</summary>
+        public bool CanTake(Item item) => !BagFull || AutoSalvages(item) || StackFor(item) != null;
+
+        bool AutoSalvages(Item item) => !item.Fragment && (int)item.Rarity <= AutoSalvageMax; // 欠片は自動分解しない
 
         /// <summary>自動分解の段階を 切 → 白 → 青まで → 黄まで → 紫まで → 切 の順に切り替える。</summary>
         public void CycleAutoSalvage()
@@ -148,6 +168,7 @@ namespace VividOfFade
 
         public static bool Fits(Item item, EquipSlot slot)
         {
+            if (item.Fragment) return false; // 欠片は装備できない
             switch (item.Slot)
             {
                 case ItemSlot.Weapon: return slot == EquipSlot.Weapon;

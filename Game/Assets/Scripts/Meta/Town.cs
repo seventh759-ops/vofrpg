@@ -334,32 +334,74 @@ namespace VividOfFade
             foreach (var it in Profile.Storage) if (it != null && it != target && !it.Locked && !it.IsEmptyMarker) yield return (Profile.Storage, it);
         }
 
-        /// <summary>強化の素材にする品（同じ部位・同じ珍しさで、いちばんレベルの低いもの）。なければ null。</summary>
+        /// <summary>
+        /// 強化の素材になるか。ふつうの品：同じ部位・同じ珍しさの品。深淵・天界の品：同じ部位・同じ珍しさの欠片（種類は問わない）。
+        /// </summary>
+        static bool IsMaterial(Item m, Item target) =>
+            m.Slot == target.Slot && m.Rarity == target.Rarity && m.Heaven == target.Heaven
+            && ((target.Abyss || target.Heaven) ? m.Fragment : !m.Fragment && !m.Abyss && !m.Heaven);
+
+        /// <summary>強化の素材にする品（レベルの低いもの）。なければ null。</summary>
         public static Item MaterialFor(CharacterData ch, Item target)
         {
             Item best = null;
             foreach (var (_, it) in Spare(ch, target))
-                if (it.Slot == target.Slot && SameKind(it, target) && (best == null || it.Level < best.Level)) best = it;
+                if (IsMaterial(it, target) && (best == null || it.Level < best.Level)) best = it;
             return best;
         }
 
         public static int MaterialCount(CharacterData ch, Item target)
         {
             int n = 0;
-            foreach (var (_, it) in Spare(ch, target)) if (it.Slot == target.Slot && SameKind(it, target)) n++;
+            foreach (var (_, it) in Spare(ch, target)) if (IsMaterial(it, target)) n += it.Fragment ? it.Count : 1;
             return n;
         }
 
+        /// <summary>素材を1つ使う（欠片は重なっている数を1つ減らし、0 になったら消す）。</summary>
         static void RemoveSpare(CharacterData ch, Item it)
         {
+            if (it.Fragment && it.Count > 1) { it.Count--; return; }
             if (!ch.Stash.Remove(it)) Profile.Storage.Remove(it);
+        }
+
+        // ---------------- 欠片から装備を作る（鍛冶屋） ----------------
+
+        /// <summary>その欠片と同じ部位・同じ珍しさ（深淵か天界かも同じ）の A〜D を探す（持ち込む品と倉庫から）。足りない種類は null。</summary>
+        public static Item[] FragmentSet(CharacterData ch, Item frag)
+        {
+            var set = new Item[4];
+            foreach (var (_, it) in Spare(ch, null))
+            {
+                if (!it.Fragment || it.Slot != frag.Slot || it.Rarity != frag.Rarity || it.Heaven != frag.Heaven) continue;
+                int p = Mathf.Clamp(it.Part, 0, 3);
+                if (set[p] == null || it.Level < set[p].Level) set[p] = it;
+            }
+            return set;
+        }
+
+        public static int FusePrice(Item frag) => Mathf.RoundToInt((20f + frag.Level * 3f) * RarityCost(frag.Rarity) * 2f);
+
+        /// <summary>A〜D を1つずつ使って、その部位・その珍しさの深淵（天界）の装備を作る。レベルは4つの欠片のうち低いもの。</summary>
+        public static Item FuseFragments(CharacterData ch, Item frag)
+        {
+            var set = FragmentSet(ch, frag);
+            int level = int.MaxValue;
+            foreach (var p in set) { if (p == null) return null; level = Mathf.Min(level, p.Level); }
+            if (!Pay(ch, FusePrice(frag))) return null;
+            var made = ItemGenerator.RollExact(level, frag.Rarity, frag.Slot, frag.Heaven);
+            foreach (var p in set) RemoveSpare(ch, p);
+            // できた品は持ち込む品へ（いっぱいなら倉庫へ）
+            if (ch.Stash.Count < Inventory.BagCapacity) ch.Stash.Add(made);
+            else Profile.Storage.Add(made);
+            Profile.Save();
+            return made;
         }
 
         /// <summary>品が持ち込む品か倉庫にあるか（部位の変換・合成ができるのは、装備していない品だけ）。</summary>
         public static bool IsSpare(CharacterData ch, Item it) => it != null && (ch.Stash.Contains(it) || Profile.Storage.Contains(it));
 
         /// <summary>部位の変換・合成ができる珍しさ（素材になる橙・赤。合成は紫から）。</summary>
-        public static bool Convertible(Item it) => it != null && it.Rarity >= Rarity.Relic;
+        public static bool Convertible(Item it) => it != null && !it.Fragment && it.Rarity >= Rarity.Relic;
         public static int ConvertPrice(Item it) => Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * 1.5f);
 
         static readonly ItemSlot[] slotOrder = { ItemSlot.Weapon, ItemSlot.Lantern, ItemSlot.Armor, ItemSlot.Ring };
@@ -385,14 +427,14 @@ namespace VividOfFade
         }
 
         /// <summary>合成できるか：紫・橙の品で、同じ種類の品があと2つある。</summary>
-        public static bool Synthesizable(Item it) => it != null && (it.Rarity == Rarity.Legendary || it.Rarity == Rarity.Relic);
+        public static bool Synthesizable(Item it) => it != null && !it.Fragment && (it.Rarity == Rarity.Legendary || it.Rarity == Rarity.Relic);
         public static int SynthPrice(Item it) => Mathf.RoundToInt((20f + it.Level * 3f) * RarityCost(it.Rarity) * 3f);
 
         /// <summary>合成の相手（同じ珍しさ・同じ種類で、レベルの低い順に2つ）。部位は問わない。</summary>
         public static List<Item> SynthPartners(CharacterData ch, Item it)
         {
             var list = new List<Item>();
-            foreach (var (_, o) in Spare(ch, it)) if (SameKind(o, it)) list.Add(o);
+            foreach (var (_, o) in Spare(ch, it)) if (!o.Fragment && SameKind(o, it)) list.Add(o);
             list.Sort((a, b) => a.Level.CompareTo(b.Level));
             if (list.Count > 2) list.RemoveRange(2, list.Count - 2);
             return list;
@@ -423,8 +465,9 @@ namespace VividOfFade
         }
 
         /// <summary>分解・売却で得る火種。珍しさの分（レベルが高いほど多い：Lv1 で1倍、Lv50 で2倍、Lv100 で3倍）に、強化に使った火種の半分を足す。</summary>
-        public static int SalvageValue(Item it) =>
-            Mathf.RoundToInt(RarityInfo.SalvageOf(it.Rarity) * (1f + Mathf.Max(0, it.Level - 1) / 49.5f)) + (it.Enhance > 0 ? Mathf.RoundToInt(EnhanceSpent(it) * EnhanceRefund) : 0);
+        public static int SalvageValue(Item it) => it.Fragment
+            ? Mathf.RoundToInt(RarityInfo.SalvageOf(it.Rarity) * (1f + Mathf.Max(0, it.Level - 1) / 49.5f) * 0.3f) * Mathf.Max(1, it.Count) // 欠片は装備の3割ずつ
+            : Mathf.RoundToInt(RarityInfo.SalvageOf(it.Rarity) * (1f + Mathf.Max(0, it.Level - 1) / 49.5f)) + (it.Enhance > 0 ? Mathf.RoundToInt(EnhanceSpent(it) * EnhanceRefund) : 0);
 
         /// <summary>効果の再抽選の値段。</summary>
         /// <summary>再抽選の値段。ロックした効果が1つ増えるごとに倍になる（0:x1 1:x2 2:x4 3:x8）。</summary>

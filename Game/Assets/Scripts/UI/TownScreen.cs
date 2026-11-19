@@ -972,7 +972,7 @@ namespace VividOfFade
 
             // 持ち帰った品（装備していない品）は、部位の変換・合成ができる（その分、ボタンの段を1つ増やす）
             bool spareActions = Town.IsSpare(ch, item) && (Town.Convertible(item) || Town.Synthesizable(item));
-            float extraRow = spareActions ? btnH + W * 0.03f * 0.5f : 0f;
+            float extraRow = spareActions || item.Fragment ? btnH + W * 0.03f * 0.5f : 0f; // 欠片は A〜D のそろい具合の段
             // 説明。効果の行には、再抽選のときに残す「ロック」の切り替えを付ける（最大3つ、全部はロックできない）
             bool smithable = Town.Smithable(item);
             var lines = item.Describe();
@@ -1023,6 +1023,12 @@ namespace VividOfFade
             DrawSmithFx(nameRect);
 
             if (spareActions) DrawSpareActions(ch, item, new Rect(pad, by - btnH * 2f - W * 0.03f, W - pad * 2f, btnH));
+
+            if (item.Fragment)
+            {
+                DrawFragmentFuse(ch, item, pad, by, btnH);
+                return;
+            }
 
             bool enhanceable = Town.Enhanceable(item);
             if (!enhanceable)
@@ -1094,6 +1100,46 @@ namespace VividOfFade
                     Hud.Fill(rr, dim);
                     Hud.FitLabel(rr, label, hud.CenteredStyle);
                 }
+            }
+        }
+
+        /// <summary>欠片を選んだとき：同じ部位・同じ珍しさの A〜D がそろっているかと、装備にするボタン。</summary>
+        void DrawFragmentFuse(CharacterData ch, Item frag, float pad, float by, float btnH)
+        {
+            float W = Screen.width;
+            var set = Town.FragmentSet(ch, frag);
+            // A〜D のそろい具合（そろっている種類は明るく、持っている数も）
+            float gap = W * 0.02f;
+            float cw = (W - pad * 2f - gap * 3f) / 4f;
+            float ry = by - btnH * 2f - W * 0.03f;
+            bool all = true;
+            for (int p = 0; p < 4; p++)
+            {
+                var r = new Rect(pad + p * (cw + gap), ry, cw, btnH);
+                bool have = set[p] != null;
+                all &= have;
+                Hud.Fill(r, have ? new Color(0.3f, 0.5f, 0.3f, 0.6f) : new Color(1f, 1f, 1f, 0.06f));
+                var st = new GUIStyle(hud.CenteredStyle) { fontStyle = FontStyle.Bold };
+                st.normal.textColor = have ? Color.white : new Color(0.55f, 0.55f, 0.6f);
+                Hud.FitLabel(r, have ? $"{Item.PartLetters[p]}  x{set[p].Count}" : $"{Item.PartLetters[p]}  --", st);
+            }
+            var btn = new Rect(pad, by, W - pad * 2f, btnH);
+            int price = Town.FusePrice(frag);
+            string label = Loc.T($"FORGE {frag.SlotName.ToUpper()} FROM A-D  ({price} embers)", $"A〜D から{frag.SlotName}を作る（火種 {price}）");
+            if (all && ch.Embers >= price)
+                Confirm(btn, "fuse", label, () =>
+                {
+                    var made = Town.FuseFragments(ch, frag);
+                    if (made == null) return;
+                    selected = made;
+                    smithFxTime = Time.unscaledTime;
+                    smithFxText = RarityInfo.LabelOf(made.Rarity);
+                    hud.World.Sfx.Anvil();
+                });
+            else
+            {
+                Hud.Fill(btn, dim);
+                Hud.FitLabel(btn, all ? label : Loc.T("Gather A, B, C and D of the same rarity", "同じ珍しさの A・B・C・D がそろっていない"), hud.CenteredStyle);
             }
         }
 

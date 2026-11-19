@@ -56,6 +56,27 @@ namespace VividOfFade
 
         /// <summary>天界の中か（GameWorld が毎フレーム入れる）。天界で落ちる Lv100 以上の品は、天界の装備になる。</summary>
         public static bool HeavenDrops;
+
+        /// <summary>深淵・天界の中か（GameWorld が毎フレーム入れる）。ここでは装備の代わりに、装備の欠片が落ちる。</summary>
+        public static bool FragmentDrops;
+
+        /// <summary>深淵・天界で落ちる品を、装備の欠片にする（部位と珍しさはそのまま。種類 A〜D は等しい確率）。</summary>
+        static Item AsFragment(Item item)
+        {
+            if (!FragmentDrops || item.Level <= Progression.MaxLevel) return item;
+            return new Item
+            {
+                Fragment = true,
+                Slot = item.Slot,
+                Rarity = item.Rarity,
+                Level = item.Level,
+                ReqLevel = item.Level,
+                Part = Random.Range(0, 4),
+                Count = 1,
+                Abyss = !HeavenDrops,
+                Heaven = HeavenDrops,
+            };
+        }
         /// <summary>天界の装備の数値の倍率（深淵の装備の倍率に、さらに掛ける）。</summary>
         public const float HeavenGearMult = 1.15f;
 
@@ -150,7 +171,7 @@ namespace VividOfFade
                 }
             }
             MakeAbyss(item);
-            return item;
+            return AsFragment(item);
         }
 
         /// <summary>
@@ -169,7 +190,7 @@ namespace VividOfFade
             item.Uniques.Add(bossUniques[Random.Range(0, bossUniques.Length)]);
             SetMythicRequirement(item);
             MakeAbyss(item);
-            return item;
+            return AsFragment(item);
         }
 
         public static Item StarterWeapon(ClassType type)
@@ -224,14 +245,15 @@ namespace VividOfFade
         /// </summary>
         public static Item RollExact(int level, Rarity rarity, ItemSlot slot, bool heaven)
         {
-            bool oldHeaven = HeavenDrops;
+            bool oldHeaven = HeavenDrops, oldFrag = FragmentDrops;
             float oldFind = MagicFind;
             HeavenDrops = heaven;
+            FragmentDrops = false; // 作るのは完成品
             MagicFind = 0f;
             forceSlot = slot;
             forceRarity = rarity == Rarity.Mythic ? (Rarity?)null : rarity;
             try { return rarity == Rarity.Mythic ? RollMythic(level) : Roll(level, 0f); }
-            finally { forceSlot = null; forceRarity = null; HeavenDrops = oldHeaven; MagicFind = oldFind; }
+            finally { forceSlot = null; forceRarity = null; HeavenDrops = oldHeaven; FragmentDrops = oldFrag; MagicFind = oldFind; }
         }
 
         static ItemSlot RollSlot()
