@@ -126,6 +126,18 @@ namespace VividOfFade
             }
         }
 
+        /// <summary>
+        /// 鞄・能力値・スキルをすぐ開くボタン（GUI 座標）。メッセージウィンドウの右端に縦に3つ（スマホで MENU を経由しなくてよいように）。
+        /// </summary>
+        Rect QuickRect(int i)
+        {
+            var m = MessageWindow;
+            float pad = BandMargin * 0.7f, gap = BandMargin * 0.4f;
+            float w = Screen.width * 0.2f;
+            float h = (m.height - pad * 2f - gap * 2f) / 3f;
+            return new Rect(m.xMax - pad - w, m.y + pad + i * (h + gap), w, h);
+        }
+
         /// <summary>下の帯の上端（GUI 座標）。メッセージウィンドウとショートカットの2つの区画を含む。</summary>
         float BottomBandTop => MessageWindow.y - BandMargin;
 
@@ -322,6 +334,31 @@ namespace VividOfFade
 
         /// <summary>薬のボタン（スキルの右に並ぶ。0 回復薬・1 魔力の薬）。画面座標（左下原点）。</summary>
         Rect PotionRect(int i) => SkillRect(SkillInfo.Slots + i);
+
+        /// <summary>鞄・能力値・スキルのボタン。ポイントが余っていれば能力値を金色に、鞄が満杯なら鞄を赤くする。</summary>
+        void DrawQuickButtons(CharacterData ch, bool pointsLeft, bool bagFull)
+        {
+            string[] names = { Loc.T("BAG", "鞄"), Loc.T("STATS", "能力値"), Loc.T("SKILLS", "スキル") };
+            for (int i = 0; i < 3; i++)
+            {
+                var r = QuickRect(i);
+                bool hot = (i == 0 && bagFull) || (i == 1 && pointsLeft);
+                var back = i == 0 && bagFull ? new Color(0.55f, 0.12f, 0.12f, 1f) : i == 1 && pointsLeft ? new Color(0.5f, 0.38f, 0.08f, 1f) : new Color(0.08f, 0.075f, 0.11f, 1f);
+                if (hot) back = Color.Lerp(back, Color.white, 0.12f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f))); // お知らせがあるボタンはゆっくり明滅
+                Fill(r, back);
+                int k = i;
+                Button(r, null, new Color(0f, 0f, 0f, 0f), centered, () =>
+                {
+                    if (k == 0) World.OpenPanel(true, false, false);
+                    else if (k == 1) World.OpenPanel(false, true, false);
+                    else World.OpenPanel(false, false, true);
+                });
+                var st = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+                st.normal.textColor = Color.white;
+                FitLabel(r, i == 1 && pointsLeft && ch != null ? names[i] + $" +{ch.Points}" : names[i], st);
+                OrnateFrame(r, FrameGold, Mathf.Max(1f, FrameT * 0.7f));
+            }
+        }
 
         /// <summary>薬のボタン。スキルと同じ形で、瓶のアイコン・右下に残りの数・PC は左上にキー。</summary>
         void DrawPotions(CharacterData ch)
@@ -1203,9 +1240,10 @@ namespace VividOfFade
                     c.a = t.T < ToastLife ? 1f : 0.55f;
                     var style = new GUIStyle(small);
                     style.normal.textColor = c;
-                    // 収まらない文は縮めて1行に収める（切らない）。「H：操作」は上の段へ移したので、窓の端まで使う
+                    // 収まらない文は縮めて1行に収める（切らない）。右端は鞄・能力・スキルのボタンの分あける
                     int row = k - start;
-                    FitLabel(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + row * logH, msgR.width - mm * 2f, logH), "+ " + t.Text, style);
+                    float textW = QuickRect(0).x - msgR.x - mm * 2f;
+                    FitLabel(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + row * logH, textW, logH), "+ " + t.Text, style);
                 }
             }
 
@@ -1243,6 +1281,7 @@ namespace VividOfFade
 
             DrawSkillButtons(ch);
             DrawPotions(ch);
+            DrawQuickButtons(ch, points > 0, inv.BagFull);
 
             // 攻撃ボタン（押している間だけ、のとき）
             if (!World.AutoAttack)
