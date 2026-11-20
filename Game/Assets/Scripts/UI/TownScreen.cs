@@ -122,14 +122,39 @@ namespace VividOfFade
                 float ip = gearS * 0.14f;
                 Hud.DrawSprite(new Rect(gearR.x + ip, gearR.y + ip, gearS - ip * 2f, gearS - ip * 2f), PixelArt.GearIcon); // 歯車：押すと設定
             }
-            GUI.Label(new Rect(0, H * 0.11f, W, H * 0.035f), $"{ClassTitle(type, ch)}   Lv {ch.Level}" + (ch.Rebirths > 0 ? Loc.T($"   Reborn x{ch.Rebirths}", $"   転生 {ch.Rebirths}回") : ""), centered);
+            // 自分のキャラクターの札：絵・職業・レベル・経験値・主な強さ（町に戻るたびに育ったのが分かるように）
+            {
+                var card = new Rect(pad, H * 0.105f, W - pad * 2f, H * 0.095f);
+                Hud.Fill(card, new Color(0.02f, 0.02f, 0.05f, 0.7f));
+                Hud.OrnateFrame(card, Hud.FrameGold, Mathf.Max(1f, Mathf.Round(H * 0.0009f)), false, false);
+                float ps = card.height * 0.92f;
+                Hud.DrawSprite(new Rect(card.x + card.height * 0.06f, card.y + card.height * 0.04f, ps, ps), PixelArt.PlayerFor(ch));
+                float tx = card.x + ps + card.height * 0.2f, tw0 = card.xMax - tx - card.height * 0.15f;
+                float lh0 = card.height / 3.3f;
+                var nameSt = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+                nameSt.normal.textColor = new Color(1f, 0.9f, 0.6f);
+                Hud.FitLabel(new Rect(tx, card.y + lh0 * 0.15f, tw0, lh0), $"{ClassTitle(type, ch)}   Lv {ch.Level}" + (ch.Rebirths > 0 ? Loc.T($"   Reborn x{ch.Rebirths}", $"   転生 {ch.Rebirths}回") : ""), nameSt);
+                var st = world.Player.BaseStats ?? world.Player.Stats;
+                if (st != null)
+                {
+                    float dps = st.Damage * st.AttacksPerSecond * (1f + st.EffectiveCrit * (st.CritMult - 1f));
+                    var statSt = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
+                    statSt.normal.textColor = Color.white;
+                    Hud.FitLabel(new Rect(tx, card.y + lh0 * 1.15f, tw0, lh0), Loc.T($"ATK {st.Damage:0}   DPS {dps:0}   HP {st.MaxHp}   ARM {st.Armor:0}", $"攻撃 {st.Damage:0}   DPS {dps:0}   HP {st.MaxHp}   防御 {st.Armor:0}"), statSt);
+                }
+                // 経験値のバー
+                int need = Progression.ExpToNext(ch, ch.Level);
+                var bar = new Rect(tx, card.y + lh0 * 2.3f, tw0, lh0 * 0.45f);
+                Hud.Fill(bar, new Color(1f, 1f, 1f, 0.12f));
+                Hud.Fill(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(need > 0 ? (float)ch.Exp / need : 0f), bar.height), new Color(0.2f, 0.9f, 0.72f, 1f));
+            }
             var info = new GUIStyle(centered) { fontSize = small.fontSize };
             info.normal.textColor = new Color(1f, 0.85f, 0.5f);
-            GUI.Label(new Rect(0, H * 0.145f, W, H * 0.03f),
+            GUI.Label(new Rect(0, H * 0.205f, W, H * 0.03f),
                 Loc.T($"Embers {ch.Embers}   HP potions {ch.HpPotions}   MP potions {ch.MpPotions}", $"火種 {ch.Embers}   回復薬 {ch.HpPotions}   魔力の薬 {ch.MpPotions}")
                     + (ch.AbyssShards > 0 || GameConfig.CanEnterAbyss(ch) ? Loc.T($"   Shards {ch.AbyssShards}", $"   欠片 {ch.AbyssShards}") : ""), info);
 
-            float y = H * 0.19f;
+            float y = H * 0.24f;
             float bh = H * 0.075f;
             float gap = H * 0.012f;
             var bw = W - pad * 2f;
@@ -176,17 +201,8 @@ namespace VividOfFade
             }
             Tile(0, PixelArt.TownIcon(0), Loc.T("Storage", "倉庫番"), $"{Profile.Storage.Count}/{Town.StorageCapacity}", () => Open(Panel.Storage));
             Tile(1, PixelArt.TownIcon(1), Loc.T("Merchant", "商人"), Loc.T("Potions / gear", "薬・装備"), () => Open(Panel.Merchant));
-            // 女神像は、転職できるようになるまで「？？？」（転職・転生は条件を満たしたら明かす）
-            if (adv == null && ch.Level < AdvancedClasses.ReqLevel && ch.Rebirths == 0) // 転生したことがあれば、女神像はずっと見せる
-            {
-                var r2 = new Rect(pad + (2 % cols) * (tw + tgap), y, tw, th);
-                Hud.Fill(r2, new Color(0.02f, 0.02f, 0.05f, 0.62f));
-                Hud.Fill(r2, dim);
-                var q = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-                q.normal.textColor = new Color(0.55f, 0.55f, 0.6f);
-                GUI.Label(r2, "？？？", q);
-            }
-            else Tile(2, ch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2), Loc.T("Goddess", "女神像"), masterLine, () => Open(Panel.Master), masterNotice); // クリア後は血の涙を流している
+            // 女神像は最初から見せる（転職・転生という先の目標を、早めに見せるため）
+            Tile(2, ch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2), Loc.T("Goddess", "女神像"), masterLine, () => Open(Panel.Master), masterNotice); // クリア後は血の涙を流している
             Tile(3, PixelArt.TownIcon(3), Loc.T("Porter", "荷運び"), Loc.T($"Carry {ch.CarrySlots}/{Town.MaxCarrySlots}", $"持ち帰り {ch.CarrySlots}/{Town.MaxCarrySlots}"), () => Open(Panel.Porter));
             Tile(4, PixelArt.TownIcon(4), Loc.T("Blacksmith", "鍛冶屋"), Loc.T("Mythic only", "神話（赤）だけ"), () => Open(Panel.Smith));
             Tile(5, PixelArt.PlayerFor(ch), Loc.T("Characters", "キャラ選択"), Loc.T("Switch", "切り替え"), world.ShowClassSelect);
@@ -535,8 +551,8 @@ namespace VividOfFade
             if (offerStep > 0) { DrawOfferConfirm(world, ch); return; }
             Header(Loc.T("GODDESS STATUE", "女神像"), ch.Embers, W, pad, out float y);
 
-            // 転職・転生・奉納のタブ。転生は Lv99 になるまで明かさない（一度転生したら、ずっと見せる）。奉納はクリア後だけ
-            bool showRebirth = ThirdClasses.MeetsRequirements(ch) || ch.Rebirths > 0;
+            // 転職・転生・奉納のタブ。転生は最初から見せる（条件の Lv99 も見えるように）。奉納はクリア後だけ
+            bool showRebirth = true;
             bool showOffer = ch.EndingSeen;
             if (masterTab == MasterTab.Rebirth && !showRebirth) masterTab = MasterTab.Class;
             if (masterTab == MasterTab.Offer && !showOffer) masterTab = MasterTab.Class;
