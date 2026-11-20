@@ -1546,10 +1546,8 @@ namespace VividOfFade
             var frameColor = FrameGold;
             float frameT = Mathf.Max(2f, Mathf.Round(H * 0.0012f));
             var msgR = MessageWindow;
-            Fill(msgR, new Color(0.03f, 0.03f, 0.05f, 0.5f));                 // 半透明：下のダンジョンが透けて見える
-            OrnateFrame(msgR, new Color(frameColor.r, frameColor.g, frameColor.b, 0.55f), frameT, false, false);
-            var scR = ShortcutPanel;
-            Fill(scR, new Color(0.08f, 0.075f, 0.11f, 1f));
+            // メッセージは枠なし（縁取りした文字だけを、ダンジョンの上に）
+            var scR = ShortcutPanel; // ショートカットの区画は枠なし（帯の上に、ボタンだけを置く）
             {
                 // 透かしのロゴ（ボタンの後ろにうっすら）
                 var logo = TitleArt.Logo;
@@ -1560,7 +1558,6 @@ namespace VividOfFade
                 GUI.DrawTexture(new Rect(scR.center.x - lw2 * 0.5f, scR.center.y - lh * 0.5f, lw2, lh), logo);
                 GUI.color = oldL;
             }
-            OrnateFrame(scR, frameColor, frameT);
 
             // メッセージ：直近の行を残す（新しいものほど下）。来たばかりの行は明るく、古い行は少し暗い
             {
@@ -1620,7 +1617,7 @@ namespace VividOfFade
                 // 操作の案内（PC・エディタ向け）：鞄・能力値・スキルのボタンの下の空きに
                 var q0 = QuickRect(0); var q2 = QuickRect(2);
                 float qx = Mathf.Min(q0.x, q2.x), qw = Mathf.Max(q0.xMax, q2.xMax) - qx;
-                var hint = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+                var hint = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft }; // 左寄せ
                 hint.normal.textColor = new Color(1f, 1f, 1f, 0.5f);
                 GUI.Label(new Rect(qx, q0.yMax + q0.height * 0.08f, qw, q0.height * 0.5f), Loc.T("H: Controls", "H：操作"), hint);
             }
