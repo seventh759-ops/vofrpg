@@ -158,8 +158,8 @@ namespace VividOfFade
             float x = from + i * (w + gap);
             if (!LeftHanded) x = Screen.width - x - w;
             float full = s * 1.21f;                                                // スキルのボタンとオートの帯を合わせた高さ
-            float h = full * 0.62f;                                                // ボタンは低め。下の空きに「H：操作」
-            return new Rect(x, Screen.height - (first.y + full), w, h);
+            float h = full * 0.62f;                                                // ボタンは低めで下にそろえる。上の空きに「H：操作」
+            return new Rect(x, Screen.height - (first.y + h), w, h);
         }
 
         /// <summary>下の帯の上端（GUI 座標）。ショートカットの区画（スキルと、鞄・能力値・スキルのボタン）を含む。</summary>
@@ -1554,7 +1554,7 @@ namespace VividOfFade
                 float lh = scR.height * 0.55f, lw2 = logo.width * lh / logo.height;
                 if (lw2 > scR.width * 0.9f) { lw2 = scR.width * 0.9f; lh = logo.height * lw2 / logo.width; }
                 var oldL = GUI.color;
-                GUI.color = new Color(1f, 1f, 1f, 0.1f);
+                GUI.color = new Color(1f, 1f, 1f, 0.22f);
                 GUI.DrawTexture(new Rect(scR.center.x - lw2 * 0.5f, scR.center.y - lh * 0.5f, lw2, lh), logo);
                 GUI.color = oldL;
             }
@@ -1619,7 +1619,8 @@ namespace VividOfFade
                 float qx = Mathf.Min(q0.x, q2.x), qw = Mathf.Max(q0.xMax, q2.xMax) - qx;
                 var hint = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft }; // 左寄せ
                 hint.normal.textColor = new Color(1f, 1f, 1f, 0.5f);
-                GUI.Label(new Rect(qx, q0.yMax + q0.height * 0.08f, qw, q0.height * 0.5f), Loc.T("H: Controls", "H：操作"), hint);
+                float topY = Screen.height - (SkillAutoRect(0).yMax);              // スキルのオートの帯の上端にそろえる
+                GUI.Label(new Rect(qx, topY, qw, q0.y - topY), Loc.T("H: Controls", "H：操作"), hint);
             }
 
             // 攻撃ボタン（押している間だけ、のとき）
