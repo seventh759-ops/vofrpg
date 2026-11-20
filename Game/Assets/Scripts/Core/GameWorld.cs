@@ -171,6 +171,7 @@ namespace VividOfFade
             ClassInfo.Current = (ClassType)ch.ClassId;
             InTown = true;
             PendingClass = null;
+            SyncTownGear(); // 町の画面の能力値（HP・MP など）を、選んだキャラクターの装備とレベルで計算し直す
             Guide("town", Loc.T("This is the town. Get ready here before heading into the tower.", "ここは町。塔へ出る前に、ここで支度をしな。"),
                 Loc.T("The storage keeper holds gear for every class. The merchant sells potions and gear. Pay with embers.", "倉庫番は全職業で使える倉庫。商人は薬と装備を売ってる。支払いは火種だよ。"));
         }
@@ -217,6 +218,7 @@ namespace VividOfFade
         {
             var type = ClassInfo.Current;
             Inventory.Reset(type, Profile.Current);
+            Player.SetClass(type);
             Player.ResetState(PlayerStats.From(Inventory.Equipped, type));
         }
 
