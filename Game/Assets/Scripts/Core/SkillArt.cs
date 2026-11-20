@@ -199,6 +199,27 @@ namespace VividOfFade
             "f........g..",
         }, WhitePal);
 
+        static readonly Dictionary<char, Color32> CrystalPal = new Dictionary<char, Color32>
+        {
+            { 'w', new Color32(255, 255, 255, 255) },
+            { 'l', new Color32(232, 234, 245, 255) },
+            { 'm', new Color32(180, 182, 200, 255) },
+            { 'd', new Color32(125, 125, 150, 255) },
+            { 'g', new Color32(255, 255, 255, 90) },
+        };
+
+        /// <summary>結晶のかけら（12×7。右を向いた、面のある結晶）。色を掛けて使う（彩灯者の通常攻撃）。</summary>
+        public static Sprite Crystal => FromArt("FxCrystal", new[]
+        {
+            "...gllw.....",
+            ".gllllwwl...",
+            "glllllwwwwl.",
+            "mmmmmmmmmmmw",
+            "gddddmmmmmd.",
+            ".gdddmmmd...",
+            "...gddm.....",
+        }, CrystalPal);
+
         /// <summary>光の十字（7×10）。</summary>
         public static Sprite HolyCross => FromArt("FxCross", new[]
         {

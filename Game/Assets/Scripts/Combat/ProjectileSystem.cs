@@ -38,10 +38,21 @@ namespace VividOfFade
             public float Scale;
         }
 
+        static readonly Color[] VividShotColors =
+        {
+            new Color(0.45f, 0.9f, 1f), new Color(0.75f, 0.6f, 1f), new Color(1f, 0.5f, 0.9f), new Color(1f, 0.7f, 0.35f), new Color(1f, 0.92f, 0.45f), new Color(0.55f, 1f, 0.65f),
+        };
+        int vividShot;
+
         public void Fire(Vector2 pos, Vector2 dir, float damage, bool crit, int pierce, float range) => Fire(pos, dir, damage, crit, pierce, range, default);
 
         public void Fire(Vector2 pos, Vector2 dir, float damage, bool crit, int pierce, float range, Look look)
         {
+            if (look.Sprite == null && ClassInfo.Current == ClassType.Vividbearer)
+            {
+                // 彩灯者の通常攻撃：色とりどりの結晶（1発ごとに色が変わる）
+                look = new Look { Sprite = PixelArt.Crystal, Tint = VividShotColors[vividShot++ % VividShotColors.Length], AlignToDir = true, Scale = 1.15f };
+            }
             var p = pool.Get();
             p.Sr.sprite = look.Sprite != null ? look.Sprite : PixelArt.Fireball;
             p.Sr.color = look.Sprite != null ? look.Tint : Color.white;
