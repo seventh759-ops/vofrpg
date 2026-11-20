@@ -215,8 +215,11 @@ namespace VividOfFade
             else Frame(r, new Color(0f, 0f, 0f, 0.6f), 1f);     // 1枚の枠の中では、暗い細い線だけ
         }
 
-        /// <summary>カメラのずれ（CameraRig.CenterShift）。上下の帯の高さの差の半分。</summary>
-        public float ViewCenterShift => ((Screen.height - BottomBandTop) - TopBandBottom) / (2f * Screen.height);
+        /// <summary>カメラのずれ（CameraRig.CenterShift）。上下の帯の高さの差の半分に、少し上げる分（ViewRaise）を足す。</summary>
+        public float ViewCenterShift => ((Screen.height - BottomBandTop) - TopBandBottom) / (2f * Screen.height) + ViewRaise;
+
+        /// <summary>ダンジョンの見える所を、帯の間の真ん中より少し上に（画面の高さに対する割合）。右下の薬・攻撃ボタンと重なりにくくするため。</summary>
+        const float ViewRaise = 0.03f;
 
         /// <summary>
         /// スキルのボタン（0〜2）。下の段の、親指の側の端から スキル1・2・3（右手なら右端がスキル1、左手なら左端）。画面座標（左下原点）。
