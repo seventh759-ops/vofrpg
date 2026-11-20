@@ -27,8 +27,21 @@ def mage_extra(T,M):
     poly_tone(T,M,[(108,150),(114,152),(128,238),(120,238)],3,'c')
     poly_tone(T,M,[(64,150),(68,150),(56,224),(51,224)],0,'c')
     poly_tone(T,M,[(96,100),(106,98),(100,140),(94,140)],2,'c')
-    poly_tone(T,M,[(58,140),(66,140),(64,180),(54,180)],2,'c')
-    poly_tone(T,M,[(112,150),(136,150),(136,180),(116,180)],2,'c')
+    poly_tone(T,M,[(58,140),(66,140),(64,180),(54,180)],2,'C')
+    poly_tone(T,M,[(114,140),(130,140),(128,160),(114,160)],2,'C')
+    # 袖と長衣の境目に強弱：袖の左のふちは照り、袖の下と右に隠れる長衣は影
+    H=len(M); W=len(M[0])
+    for y in range(H):
+        for x in range(W):
+            if not isinstance(T[y][x],float): continue
+            if M[y][x]=='C':
+                T[y][x]=max(0.0,T[y][x]-0.8)                                 # 袖は前に出ているので少し明るく
+                if x>0 and M[y][x-1] not in 'C' and M[y][x-1]!='.': T[y][x]=max(0.0,T[y][x]-1.4)   # 左のふちの照り
+            if M[y][x]=='c':
+                d4=min([k for k in range(1,9) for (dx,dy) in ((k,0),(-k,0),(0,-k),(0,k)) if 0<=x+dx<W and 0<=y+dy<H and M[y+dy][x+dx]=='C'] or [99])
+                if d4==1: T[y][x]=7.0                                         # 袖のふちに接する所は、いちばん暗い線
+                elif d4<=4: T[y][x]=min(7.0,T[y][x]+2.6)
+                elif d4<=8: T[y][x]=min(7.0,T[y][x]+1.2)
     poly_tone(T,M,[(60,96),(76,86),(80,88),(64,104)],0,'c')
     # すそのひだ：影の筋と、その左の照りの筋
     for (x0,x1) in [(74,62),(84,82),(94,104)]:
@@ -37,7 +50,9 @@ def mage_extra(T,M):
 
 def mage_hd(kind,pal,aura=None):
     c=lamp_hd(kind)
-    return flatten(c.rows(),{**DEF,**pal},aura,mage_extra)
+    p={**DEF,**pal}
+    p.setdefault('C',p.get('c',(110,132,214,70,92,170,48,62,124,32,40,86)))   # 袖は長衣と同じ色
+    return flatten(c.rows(),p,aura,mage_extra)
 
 def scaled(c,pal,iris='I',hair='h',aura=None,fix=None):
     M=scale2x(c.rows())
