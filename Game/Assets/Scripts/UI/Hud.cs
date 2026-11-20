@@ -129,20 +129,25 @@ namespace VividOfFade
         }
 
         /// <summary>
-        /// 鞄・能力値・スキルをすぐ開くボタン（GUI 座標）。下の帯の、スキルの段のすぐ上に横に3つ（親指が届く所。MENU を経由しなくてよいように）。
+        /// 鞄・能力値・スキルをすぐ開くボタン（GUI 座標）。スキルと同じ段の、スキルの反対側の空いた所に3つ並べる（スキルに近い方から 鞄・能力値・スキル）。
         /// </summary>
         Rect QuickRect(int i)
         {
-            var sc = ShortcutPanel;
+            var first = SkillRect(0);
+            float s = first.width;
             float gap = BandMargin * 0.8f;
-            float h = Screen.height * 0.034f;
-            float w = (sc.width - gap * 2f) / 3f;
-            int pos = LeftHanded ? i : 2 - i; // 右手なら右から 鞄・能力値・スキル
-            return new Rect(sc.x + pos * (w + gap), sc.y - BandMargin * 0.8f - h, w, h);
+            float left = BandMargin * 2.8f;                                         // 左手のときの並び（スキルが左、ボタンが右）で計算して、右手なら左右を入れかえる
+            float from = left + SkillInfo.Slots * s * (1f + SkillGapK) - s * SkillGapK + gap * 1.5f;
+            float to = Screen.width - left;
+            float w = (to - from - gap * 2f) / 3f;
+            float x = from + i * (w + gap);
+            if (!LeftHanded) x = Screen.width - x - w;
+            float h = s * 1.21f;                                                   // スキルのボタンとオートの帯を合わせた高さ
+            return new Rect(x, Screen.height - (first.y + h), w, h);
         }
 
-        /// <summary>下の帯の上端（GUI 座標）。鞄・能力値・スキルのボタンの段と、ショートカットの区画を含む。</summary>
-        float BottomBandTop => QuickRect(0).y - BandMargin;
+        /// <summary>下の帯の上端（GUI 座標）。ショートカットの区画（スキルと、鞄・能力値・スキルのボタン）を含む。</summary>
+        float BottomBandTop => ShortcutPanel.y - BandMargin * 0.8f;
 
         /// <summary>枠線を描く。</summary>
         public static void Frame(Rect r, Color c, float t = 1f)
@@ -214,22 +219,20 @@ namespace VividOfFade
         public float ViewCenterShift => ((Screen.height - BottomBandTop) - TopBandBottom) / (2f * Screen.height);
 
         /// <summary>
-        /// 下の段のボタン（左からスキル3つ、少しあけて薬2つ）。0〜2 がスキル、3・4 が回復薬・魔力の薬。画面座標（左下原点）。
+        /// スキルのボタン（0〜2）。下の段の、親指の側の端から スキル1・2・3（右手なら右端がスキル1、左手なら左端）。画面座標（左下原点）。
         /// </summary>
         Rect SkillRect(int slot)
         {
-            // ショートカットの区画の幅いっぱいに、スキル3つと薬2つを中央そろえで並べる
-            const float gapK = 0.12f, extraK = 0.35f;     // ボタンどうしの間・スキルと薬の間（ボタンの大きさに対する割合）
+            // 大きさは前の並び（スキル3つと薬2つを横に並べた形）と同じ
             int n = SkillInfo.Slots + 2;
             float avail = Screen.width - BandMargin * 7f;
-            float s = Mathf.Min(avail / (n + (n - 1) * gapK + extraK), Screen.height * 0.09f);
-            float total = s * (n + (n - 1) * gapK + extraK);
-            float x0 = (Screen.width - total) * 0.5f;
-            float extra = slot >= SkillInfo.Slots ? s * extraK : 0f;
-            float x = x0 + slot * s * (1f + gapK) + extra;
-            if (!LeftHanded) x = Screen.width - x - s; // 右手：左右を入れかえる（スキル1が右端＝親指の側、薬が左端）
+            float s = Mathf.Min(avail / (n + (n - 1) * SkillGapK + 0.35f), Screen.height * 0.09f);
+            float x = BandMargin * 2.8f + slot * s * (1f + SkillGapK);
+            if (!LeftHanded) x = Screen.width - x - s;
             return new Rect(x, BandMargin * 2.5f, s, s);
         }
+
+        const float SkillGapK = 0.12f; // スキルのボタンどうしの間（ボタンの大きさに対する割合）
 
         /// <summary>スキルのボタンの上の細い帯（タップでオート／手動を切り替え。緑ならオート）。</summary>
         Rect SkillAutoRect(int slot)
@@ -352,8 +355,20 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>薬のボタン（スキルの右に並ぶ。0 回復薬・1 魔力の薬）。画面座標（左下原点）。</summary>
-        Rect PotionRect(int i) => SkillRect(SkillInfo.Slots + i);
+        /// <summary>
+        /// 薬のボタン（0 回復薬・1 魔力の薬）。画面座標（左下原点）。親指の側の、下の帯のすぐ上（回復薬が外側）。
+        /// 攻撃が「押す間」のときは、攻撃ボタンのすぐ上に置く。
+        /// </summary>
+        Rect PotionRect(int i)
+        {
+            float s = SkillRect(0).width;
+            float m = Screen.height * 0.03f;
+            float gap = BandMargin * 0.8f;
+            float x = m + i * (s + gap);
+            if (!LeftHanded) x = Screen.width - x - s;
+            float y = World != null && !World.AutoAttack ? AttackRect.yMax + gap * 1.5f : Screen.height - BottomBandTop + m;
+            return new Rect(x, y, s, s);
+        }
 
         /// <summary>鞄・能力値・スキルのボタン。ポイントが余っていれば能力値を金色に、鞄が満杯なら鞄を赤くする。</summary>
         void DrawQuickButtons(CharacterData ch, bool pointsLeft, bool bagFull)
@@ -375,7 +390,7 @@ namespace VividOfFade
                 });
                 var st = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
                 st.normal.textColor = Color.white;
-                FitLabel(r, i == 1 && pointsLeft && ch != null ? names[i] + $" +{ch.Points}" : names[i], st);
+                FitLabel(r, i == 1 && pointsLeft && ch != null ? names[i] + $"\n+{ch.Points}" : names[i], st); // ボタンが縦長なので、ポイントは2行目に
                 OrnateFrame(r, FrameGold, Mathf.Max(1f, FrameT * 0.7f));
             }
         }
