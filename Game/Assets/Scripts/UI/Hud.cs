@@ -96,8 +96,10 @@ namespace VividOfFade
 
         /// <summary>まとめた1枚の枠（LV・HP・MP・経験値・層）の下端（GUI 座標）。</summary>
         static float StatusBottom => BandMargin * 2.6f + TitleRowH + StatusPanelH;
-        /// <summary>上の帯の下端（GUI 座標、上が 0）。ロゴの段と、まとめた1枚の枠と、メッセージウィンドウ。</summary>
-        public float TopBandBottom => MessageWindow.yMax + BandMargin;
+        /// <summary>上の帯の下端（GUI 座標、上が 0）。ロゴの段と、まとめた1枚の枠まで（メッセージウィンドウは、その下のダンジョンに半透明で重ねる）。</summary>
+        public float TopBandBottom => StatusBottom + BandMargin * 0.6f;
+        /// <summary>メッセージウィンドウの下端（GUI 座標）。強化のアイコン・地図・画面の外を指す矢印は、ここより下に置く。自分もここと下の帯の間の真ん中に映す。</summary>
+        float ViewTop => MessageWindow.yMax + BandMargin;
         static float PanelPad => BandMargin * 0.6f;
         /// <summary>LV・HP・MP・経験値・層をまとめた枠の高さ。</summary>
         static float DividerT => Mathf.Max(4f, FrameT * 2f); // 枠の2倍の太さ（縮小表示でも見えるように）
@@ -124,7 +126,7 @@ namespace VividOfFade
             {
                 float h = LogLines * LogLineH + BandMargin * 1.6f;
                 float x = BandMargin * 1.5f;
-                return new Rect(x, StatusBottom - BandMargin * 0.4f, Screen.width - x * 2f, h);
+                return new Rect(x, TopBandBottom + BandMargin * 0.5f, Screen.width - x * 2f, h);
             }
         }
 
@@ -216,7 +218,7 @@ namespace VividOfFade
         }
 
         /// <summary>カメラのずれ（CameraRig.CenterShift）。上下の帯の高さの差の半分に、少し上げる分（ViewRaise）を足す。</summary>
-        public float ViewCenterShift => ((Screen.height - BottomBandTop) - TopBandBottom) / (2f * Screen.height) + ViewRaise;
+        public float ViewCenterShift => ((Screen.height - BottomBandTop) - ViewTop) / (2f * Screen.height) + ViewRaise;
 
         /// <summary>ダンジョンの見える所を、帯の間の真ん中より少し上に（画面の高さに対する割合）。右下の薬・攻撃ボタンと重なりにくくするため。</summary>
         const float ViewRaise = 0.03f;
@@ -321,7 +323,7 @@ namespace VividOfFade
             for (int b = 0; b < player.BuffCount; b++)
             {
                 float left = player.BuffRemaining(b);
-                var br = new Rect(BandMargin * 2f + b * (bs + bgap), TopBandBottom + BandMargin * 1.5f, bs, bs);
+                var br = new Rect(BandMargin * 2f + b * (bs + bgap), ViewTop + BandMargin * 1.5f, bs, bs);
                 float alpha = left < 2f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)) : 1f;
                 var old = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
@@ -335,7 +337,7 @@ namespace VividOfFade
             if (twin != null && twin.Active)
             {
                 float left = twin.Remaining;
-                var br = new Rect(BandMargin * 2f + player.BuffCount * (bs + bgap), TopBandBottom + BandMargin * 1.5f, bs, bs);
+                var br = new Rect(BandMargin * 2f + player.BuffCount * (bs + bgap), ViewTop + BandMargin * 1.5f, bs, bs);
                 float alpha = left < 2f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)) : 1f;
                 var old = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
@@ -348,7 +350,7 @@ namespace VividOfFade
             for (int d = 0; d < player.DebuffCount; d++)
             {
                 float left = player.DebuffRemaining(d);
-                var br = new Rect(BandMargin * 2f + (player.BuffCount + extraIcons + d) * (bs + bgap), TopBandBottom + BandMargin * 1.5f, bs, bs);
+                var br = new Rect(BandMargin * 2f + (player.BuffCount + extraIcons + d) * (bs + bgap), ViewTop + BandMargin * 1.5f, bs, bs);
                 float alpha = left < 2f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)) : 1f;
                 var old = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
@@ -1440,8 +1442,8 @@ namespace VividOfFade
             var frameColor = FrameGold;
             float frameT = Mathf.Max(2f, Mathf.Round(H * 0.0012f));
             var msgR = MessageWindow;
-            Fill(msgR, new Color(0.03f, 0.03f, 0.05f, 1f));
-            OrnateFrame(msgR, frameColor, frameT);
+            Fill(msgR, new Color(0.03f, 0.03f, 0.05f, 0.5f));                 // 半透明：下のダンジョンが透けて見える
+            OrnateFrame(msgR, new Color(frameColor.r, frameColor.g, frameColor.b, 0.55f), frameT, false, false);
             var scR = ShortcutPanel;
             Fill(scR, new Color(0.08f, 0.075f, 0.11f, 1f));
             OrnateFrame(scR, frameColor, frameT);
@@ -1457,10 +1459,10 @@ namespace VividOfFade
                     c.a = t.T < ToastLife ? 1f : 0.55f;
                     var style = new GUIStyle(small);
                     style.normal.textColor = c;
-                    // 収まらない文は縮めて1行に収める（切らない）。右端は鞄・能力・スキルのボタンの分あける
+                    // 収まらない文は縮めて1行に収める（切らない）
                     int row = k - start;
                     float textW = msgR.width - mm * 2f;
-                    FitLabel(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + row * logH, textW, logH), "+ " + t.Text, style);
+                    OutlinedLabel(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + row * logH, textW, logH), "+ " + t.Text, style, new Color(0f, 0f, 0f, 0.9f)); // 透けた床の上でも読めるよう縁取り
                 }
             }
 
@@ -1593,7 +1595,7 @@ namespace VividOfFade
         {
             var room = World.Room;
             if (room.Minimap == null) return;
-            var below = new Rect(0, 0, Screen.width, TopBandBottom); // 上の帯の下から
+            var below = new Rect(0, 0, Screen.width, ViewTop); // メッセージウィンドウの下から
             float w = Screen.width * 0.38f;
             float h = w * Room.MiniH / Room.MiniW;
             var r = new Rect(Screen.width - w - Screen.height * 0.015f, below.yMax + Screen.height * 0.01f, w, h);
@@ -1660,7 +1662,7 @@ namespace VividOfFade
             Vector3 sp = cam.WorldToScreenPoint(new Vector3(world.x, world.y, 0f));
             var p = new Vector2(sp.x, Screen.height - sp.y); // GUI 座標
             float size = Screen.height * 0.022f;
-            float top = TopBandBottom + size * 1.5f, bottom = BottomBandTop - size * 1.5f;
+            float top = ViewTop + size * 1.5f, bottom = BottomBandTop - size * 1.5f;
             float leftX = size * 1.5f, rightX = Screen.width - size * 1.5f;
             var gold = new Color(1f, 0.85f, 0.3f, 1f);
             var dark = new Color(0.1f, 0.06f, 0f, 0.9f);
@@ -1674,7 +1676,7 @@ namespace VividOfFade
                 return;
             }
             // 画面の外：ダンジョンの領域の中心から、スライムの方向へ伸ばして、端で止める
-            var center = new Vector2(Screen.width * 0.5f, (TopBandBottom + BottomBandTop) * 0.5f - ViewRaise * Screen.height); // 自分のいる所（ダンジョンを少し上げた分）
+            var center = new Vector2(Screen.width * 0.5f, (ViewTop + BottomBandTop) * 0.5f - ViewRaise * Screen.height); // 自分のいる所（ダンジョンを少し上げた分）
             Vector2 d = p - center;
             if (d.sqrMagnitude < 1f) return;
             float tx = d.x > 0 ? (rightX - center.x) / d.x : d.x < 0 ? (leftX - center.x) / d.x : float.MaxValue;
