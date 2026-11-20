@@ -443,7 +443,7 @@ namespace VividOfFade
         public void MakeElite(Enemy e, EliteKind kind)
         {
             e.Elite = kind;
-            e.Hp *= GameConfig.EliteHpMult;
+            e.Hp *= GameConfig.EliteHpMult * (1f + GameConfig.EarlyEliteHp * GameConfig.EarlyBiteFromTier(FloorTier)); // 序盤（5〜20層）の精鋭は少し硬い
             e.Radius *= GameConfig.EliteScale; // 種類ごとの大きさに対して大きくする
             e.BaseScale *= GameConfig.EliteScale;
             switch (kind)

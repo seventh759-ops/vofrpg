@@ -104,7 +104,7 @@ namespace VividOfFade
         // 基準は極振りではなく、バランス型（VIT に2割振り・その段階の装備）。そのキャラが体当たり1回で HP の何％を削られるかで決める。
         // 極振りで VIT を捨てればこれより多く削られ、守りを固めればこれより少なく済む（極振りもスタイルとして残す）。
         public const float RefVitShare = 0.2f;         // 基準のキャラが VIT に振る割合
-        public const float RefHitPctStart = 0.045f;    // 序盤：体当たり1回で HP の 4.5%
+        public const float RefHitPctStart = 0.055f;    // 序盤：体当たり1回で HP の 5.5%（前は 4.5%。序盤から守りの装備・VIT が効くように）
         public const float RefHitPctEnd = 0.08f;       // 段階40（20層）以降：8%
         public const float RefHitPctRamp = 40f;
         public const float RefPastCapGrowth = 0.015f;  // Lv上限の後（段階99〜）は、強化・3次職などで1段階ごとに 1.5% ずつ強くなる想定
@@ -155,6 +155,20 @@ namespace VividOfFade
         // ボス（10波ごと）
         public static bool IsBossWave(int wave) => wave > 0 && wave % 10 == 0;
         public const float BossHpMult = 120f;          // 同じ波の雑魚の何倍か
+
+        /// <summary>
+        /// 序盤の手ごたえ（0〜1）：塔の5〜20層を山に、ボスと精鋭を少し硬く・痛くする（1〜4層で上がり、20〜30層で元に戻る）。
+        /// 能力値の振り方や装備の選び方で、序盤から差が出るように。昇る塔・深淵・天界には掛けない。
+        /// </summary>
+        public static float EarlyBite(int floor)
+        {
+            if (Ascent || floor > 30 || floor < 1) return 0f;
+            if (floor < 5) return floor / 5f;
+            if (floor <= 20) return 1f;
+            return (30 - floor) / 10f;
+        }
+        public static float EarlyBiteFromTier(int tier) => EarlyBite(tier / 2);
+        public const float EarlyBossHp = 0.4f, EarlyBossDamage = 0.25f, EarlyEliteHp = 0.35f;
         public const float BossDamageMult = 2.5f;
         public const float BossScale = 3f;
         public const float BossSpeed = 1.25f;
