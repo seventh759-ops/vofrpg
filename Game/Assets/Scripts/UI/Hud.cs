@@ -985,18 +985,33 @@ namespace VividOfFade
             GUI.DrawTexture(bg, TitleScene.Texture);
             GUI.color = old;
             Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.03f, 0.45f));
-            var st = new GUIStyle(centered) { wordWrap = true, fontSize = Mathf.RoundToInt(label.fontSize * 1.05f) };
-            float lh = H * 0.075f;
-            float y0 = H * 0.5f - lines.Length * lh * 0.5f;
-            for (int i = 0; i < prologueShown; i++)
+            // 文字は同じ大きさのまま、長い行は折り返す（縮めない）。行の高さは折り返した分だけ伸ばす
+            var st = new GUIStyle(centered) { wordWrap = true, clipping = TextClipping.Overflow, fontSize = Mathf.RoundToInt(label.fontSize * 1.05f) };
+            float tw = W * 0.84f, tx = (W - tw) * 0.5f;
+            float gap = H * 0.022f;
+            var heights = new float[lines.Length];
+            float total = 0f;
+            for (int i = 0; i < lines.Length; i++) { heights[i] = st.CalcHeight(new GUIContent(lines[i]), tw); total += heights[i] + (i > 0 ? gap : 0f); }
+            float y = H * 0.5f - total * 0.5f;
+            var shadow = new GUIStyle(st);
+            float o = Mathf.Max(1f, Mathf.Round(st.fontSize * 0.08f));
+            for (int i = 0; i < lines.Length; i++)
             {
-                float since = t - i * PrologueLineGap;
-                float a = Mathf.Clamp01(since / 1.2f);
-                if (i >= Mathf.FloorToInt(t / PrologueLineGap) + 1) a = 1f; // タップで出した行はすぐに
-                bool last = i == lines.Length - 1;
-                var col = last ? new Color(1f, 0.88f, 0.6f, a) : new Color(0.95f, 0.92f, 1f, a);
-                st.normal.textColor = col;
-                OutlinedLabel(new Rect(W * 0.07f, y0 + i * lh, W * 0.86f, lh), lines[i], st, new Color(0f, 0f, 0f, 0.8f * a));
+                if (i < prologueShown)
+                {
+                    float since = t - i * PrologueLineGap;
+                    float a = Mathf.Clamp01(since / 1.2f);
+                    if (i >= Mathf.FloorToInt(t / PrologueLineGap) + 1) a = 1f; // タップで出した行はすぐに
+                    bool last = i == lines.Length - 1;
+                    st.normal.textColor = last ? new Color(1f, 0.88f, 0.6f, a) : new Color(0.95f, 0.92f, 1f, a);
+                    shadow.normal.textColor = new Color(0f, 0f, 0f, 0.8f * a);
+                    var r = new Rect(tx, y, tw, heights[i]);
+                    for (int dx = -1; dx <= 1; dx++)
+                        for (int dy = -1; dy <= 1; dy++)
+                            if (dx != 0 || dy != 0) GUI.Label(new Rect(r.x + dx * o, r.y + dy * o, r.width, r.height), lines[i], shadow);
+                    GUI.Label(r, lines[i], st);
+                }
+                y += heights[i] + gap;
             }
             if (prologueShown >= lines.Length)
             {
