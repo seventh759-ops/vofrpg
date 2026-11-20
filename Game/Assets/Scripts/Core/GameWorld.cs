@@ -343,7 +343,11 @@ namespace VividOfFade
         void ToastStored()
         {
             if (Town.LastStored > 0)
-                Hud.Toast(Loc.T($"{Town.LastStored} item(s) sent to storage", $"使えなくなった品 {Town.LastStored} 個を倉庫へ"), new Color(0.8f, 0.8f, 0.85f));
+            {
+                int toBag = Town.LastStored - Town.LastToStorage;
+                if (toBag > 0) Hud.Toast(Loc.T($"{toBag} item(s) you can't wear yet were moved to your bag", $"付けられなくなった装備 {toBag} 個を鞄（持ち込む品）へ"), new Color(1f, 0.9f, 0.6f));
+                if (Town.LastToStorage > 0) Hud.Toast(Loc.T($"{Town.LastToStorage} item(s) sent to storage", $"入りきらない装備 {Town.LastToStorage} 個を倉庫へ"), new Color(1f, 0.9f, 0.6f));
+            }
         }
 
         float potionCooldown;

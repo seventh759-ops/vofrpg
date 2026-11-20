@@ -270,24 +270,27 @@ namespace VividOfFade
             return a;
         }
 
-        /// <summary>直前の転職・転生で倉庫へ送った品の数（知らせるため）。</summary>
+        /// <summary>直前の転職・転生で外した品の数（知らせるため）。LastStored は持ち込む品へ、LastToStorage はそのうち倉庫へ送った数。</summary>
         public static int LastStored { get; private set; }
+        public static int LastToStorage { get; private set; }
 
         /// <summary>
-        /// 転職・転生で Lv1 に戻ったとき、必要レベルに届かなくなった装備を外して倉庫へ送る。
-        /// 鞄に入れると「持ち込んだ品」として毎回ついて回ってしまうため。倉庫がいっぱいなら付けたままにする
-        /// （次の挑戦の始めに鞄へ移る）。
+        /// 転職・転生で Lv1 に戻ったとき、必要レベルに届かなくなった装備を外す。
+        /// まず「持ち込む品」（次の挑戦で鞄に入る。倒れても失わない）へ入れ、入りきらない分を倉庫へ送る。
+        /// 前は全部倉庫へ送っていたが、挑戦中に見えず「装備が消えた」と思われやすかったので変えた。どちらにも入らなければ付けたままにする。
         /// </summary>
         static void StoreUnusableGear(CharacterData ch)
         {
             LastStored = 0;
+            LastToStorage = 0;
             for (int i = 0; i < ch.Loadout.Count; i++)
             {
                 var it = ch.Loadout[i];
                 if (it == null || it.IsEmptyMarker || (it.ReqLevel <= ch.Level && !OtherClassWeapon(it, (ClassType)ch.ClassId))) continue; // レベルが足りない品と、使えなくなった職業の武器
-                if (Profile.Storage.Count >= StorageCapacity) break;
                 it.Carried = false;
-                Profile.Storage.Add(it);
+                if (ch.Stash.Count < Inventory.BagCapacity) ch.Stash.Add(it);
+                else if (Profile.Storage.Count < StorageCapacity) { Profile.Storage.Add(it); LastToStorage++; }
+                else continue;
                 ch.Loadout[i] = Item.EmptyMarker();
                 LastStored++;
             }
