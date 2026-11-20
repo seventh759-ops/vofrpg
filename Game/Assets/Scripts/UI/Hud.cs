@@ -1731,7 +1731,8 @@ namespace VividOfFade
             if (boss == null) return;
             float w = Screen.width * 0.8f;
             float h = Screen.height * 0.018f;
-            var r = new Rect((Screen.width - w) * 0.5f, Screen.height * 0.72f, w, h);
+            float mapBottom = ViewTop + Screen.height * 0.01f + Screen.width * 0.38f * Room.MiniH / Room.MiniW; // 地図（右上）のすぐ下。右下の薬・攻撃ボタンと重ならないように
+            var r = new Rect((Screen.width - w) * 0.5f, mapBottom + small.fontSize * 2f, w, h);
             Fill(r, new Color(0f, 0f, 0f, 0.7f));
             Fill(new Rect(r.x, r.y, r.width * Mathf.Clamp01(boss.Hp / boss.MaxHp), r.height), new Color(0.9f, 0.2f, 0.25f, 0.95f));
             GUI.Label(new Rect(r.x, r.y - small.fontSize * 1.5f, r.width, small.fontSize * 1.4f), $"{BossInfo.NameAt(boss.BossKind, World.Floors.Floor)}  -  " + GameConfig.FloorName(World.Floors.Floor), small);
