@@ -54,7 +54,7 @@ def lamp_hd(kind='base'):
             r=math.radians(a); c.set(x+4+2.6*math.cos(r),236+3*math.sin(r),'d')
         c.set(x+4,232,'d')
     if kind in ('flare','pyre'):
-        top = 170 if kind=='pyre' else 190
+        top = 160 if kind=='pyre' else 172
         for k,x in enumerate(range(52,120,8)):
             hgt = top + (k%2)*14
             c.poly([(x-4,226),(x+5,226),(x+2,hgt),(x-1,hgt+10)],'F',only='cd')
@@ -126,6 +126,8 @@ def lamp_hd(kind='base'):
 
     else:
         c.line(66,46,102,46,'g',2.4); c.ell(84,45,3,3,'L')       # 額の金の輪と灯りの石
+        for a in range(0,360,3):
+            r=math.radians(a); c.ell(84+18*math.cos(r),20+5*math.sin(r),1.1,1.1,'l')   # 頭の上の光の輪
     if kind=='star':
         c.poly([(66,30),(102,30),(104,16),(96,24),(90,12),(84,22),(78,12),(72,24),(64,16)],'g')
         for (x,y) in ((90,14),(78,14),(84,24)): c.ell(x,y,1.6,1.6,'R')
