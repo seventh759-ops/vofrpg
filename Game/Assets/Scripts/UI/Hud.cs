@@ -317,13 +317,13 @@ namespace VividOfFade
                 OrnateFrame(autoR, FrameGold, Mathf.Max(1f, FrameT * 0.5f), !auto, false); // 入っているときは出っぱり、切れているときはへこみ
             }
 
-            // かかっている強化：ダンジョンの左上（上の帯のすぐ下）に、スキルのアイコンと残り秒数。残り2秒を切ると点滅して、切れたら消える
-            float bs = Screen.height * 0.045f, bgap = bs * 0.15f;
+            // かかっている強化：下の帯のすぐ上（薬と反対の側）に、スキルのアイコンと残り秒数。残り2秒を切ると点滅して、切れたら消える
+            float bs = BadgeRect(0).width;
             var secStyle = new GUIStyle(small) { alignment = TextAnchor.LowerRight, fontStyle = FontStyle.Bold, fontSize = Mathf.Max(9, Mathf.RoundToInt(small.fontSize * 0.85f)) };
             for (int b = 0; b < player.BuffCount; b++)
             {
                 float left = player.BuffRemaining(b);
-                var br = new Rect(BandMargin * 2f + b * (bs + bgap), ViewTop + BandMargin * 1.5f, bs, bs);
+                var br = BadgeRect(b);
                 float alpha = left < 2f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)) : 1f;
                 var old = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
@@ -337,7 +337,7 @@ namespace VividOfFade
             if (twin != null && twin.Active)
             {
                 float left = twin.Remaining;
-                var br = new Rect(BandMargin * 2f + player.BuffCount * (bs + bgap), ViewTop + BandMargin * 1.5f, bs, bs);
+                var br = BadgeRect(player.BuffCount);
                 float alpha = left < 2f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)) : 1f;
                 var old = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
@@ -350,7 +350,7 @@ namespace VividOfFade
             for (int d = 0; d < player.DebuffCount; d++)
             {
                 float left = player.DebuffRemaining(d);
-                var br = new Rect(BandMargin * 2f + (player.BuffCount + extraIcons + d) * (bs + bgap), ViewTop + BandMargin * 1.5f, bs, bs);
+                var br = BadgeRect(player.BuffCount + extraIcons + d);
                 float alpha = left < 2f ? 0.35f + 0.65f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 8f)) : 1f;
                 var old = GUI.color;
                 GUI.color = new Color(1f, 1f, 1f, alpha);
@@ -358,6 +358,17 @@ namespace VividOfFade
                 GUI.color = old;
                 NumberFont.DrawIn(new Rect(br.x, br.yMax - bs * 0.2f, br.width, bs * 0.45f), $"{Mathf.CeilToInt(left)}", new Color(1f, 0.75f, 0.75f, alpha), TextAnchor.MiddleRight, 1f);
             }
+        }
+
+        /// <summary>
+        /// 強化・弱体のアイコンの k 番目（GUI 座標）。下の帯のすぐ上に、薬と反対の側の端から並べる（右手なら左端から右へ）。
+        /// </summary>
+        Rect BadgeRect(int k)
+        {
+            float bs = Screen.height * 0.036f, gap = bs * 0.15f;
+            float x = BandMargin * 2f + k * (bs + gap);
+            if (LeftHanded) x = Screen.width - x - bs;
+            return new Rect(x, BottomBandTop - BandMargin * 1.2f - bs, bs, bs);
         }
 
         /// <summary>
@@ -1436,7 +1447,7 @@ namespace VividOfFade
 
             // FPS（ダンジョンの左下。右上はミニマップ、右下は攻撃ボタンがあるので）
             if (ShowFps)
-                NumberFont.DrawIn(new Rect(mm * 2f, BottomBandTop - lineH - mm, W * 0.4f, lineH), $"FPS:{fps:0}", new Color(1f, 1f, 1f, 0.75f), TextAnchor.MiddleLeft);
+                NumberFont.DrawIn(new Rect(mm * 2f, ViewTop + mm, W * 0.4f, lineH), $"FPS:{fps:0}", new Color(1f, 1f, 1f, 0.75f), TextAnchor.MiddleLeft);
 
             // 下の帯の2つの区画：メッセージウィンドウ（上）とショートカット（下）。それぞれ背景と枠で仕切る
             var frameColor = FrameGold;
