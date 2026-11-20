@@ -15,6 +15,7 @@ def eyes_hd(c, iris='I', brow='h', pupil=True):
         c.line(ex-4,50+(1 if side<0 else 0),ex+3,50+(0 if side<0 else 1),brow,1.4)
     c.line(85,60,85,64,'S',1); c.set(84,65,'S'); c.set(86,65,'S')
     c.line(82,69,87,69,'K',1)
+    c.rect(73,62,76,63,'Q'); c.rect(92,62,95,63,'Q')   # 頬の赤み
 def neck_hd(c,col='s'): c.rect(79,72,89,88,col)
 def hood_hd(c,col,trim=None,horns=False,hcol=None):
     """顔のまわりを輪のように覆う頭巾（あごの下は開く）。"""

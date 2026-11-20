@@ -15,16 +15,19 @@ BASE=_ramps('static readonly Dictionary<char, Color32[]> ramps')
 VIVID=_ramps('static readonly Dictionary<char, Color32[]> VividOver')
 GLOW={'l':(255,230,130),'L':(255,170,60),'o':(255,250,220),'p':(200,130,255),'R':(255,70,80),'B':(150,210,255),'W':(150,255,200),
       '1':(255,250,220),'2':(200,130,255),'3':(150,210,255),'4':(150,255,200),'5':(255,170,60),'6':(255,70,80)}
-SHINY=set('mgxHuiq')       # 上を明るく下を暗くする素材（金属・金・白・銀）
+SHINY=set('mgxHuq')        # 上を明るく下を暗くする素材（金属・金・白・銀）
+HAIR=set('hHqD')
+MAIL=set()                  # 鎖かたびらの編み目を付ける素材（絵ごとに flatten の mail で指定）
 POOL=[ch for ch in 'ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!#$%&*+-=?@^_~:;<>/|']
 
 def ramp(pal,ch):
     if ch in pal: v=pal[ch]; return [tuple(v[k:k+3]) for k in range(0,12,3)]
     return BASE.get(ch)
 
-def flatten(M, pal, aura=None, extra=None):
+def flatten(M, pal, aura=None, extra=None, mail=''):
     """M: 素材の行（文字のリスト）。pal: その絵だけの色 {文字:(12個の数)}。aura: 光の縁の色 (r,g,b)。
     extra(T,M) で、その絵だけの影・照りを足せる（T は段の番号 0〜3 か、('G',色) の表）。"""
+    global MAIL; MAIL=set(mail)
     H=len(M); W=len(M[0])
     def m(x,y): return M[y][x] if 0<=x<W and 0<=y<H else '.'
     T=[[None]*W for _ in range(H)]
@@ -41,6 +44,7 @@ def flatten(M, pal, aura=None, extra=None):
             if ch in GLOW: T[y][x]=('G',GLOW[ch]); continue
             dl,dr,wid=run(x,y)
             t=1
+            if ch=='Q': T[y][x]=1; continue
             if ch in SHINY:
                 if m(x,y-1)!=ch: t=0
                 elif m(x,y+1)!=ch: t=2
@@ -60,7 +64,18 @@ def flatten(M, pal, aura=None, extra=None):
                     up=m(x,y-k)
                     if up!='.' and up!=ch and up not in GLOW and up not in 'sS':
                         t=max(t,3 if k==1 else 2); break
-            if ch in 'hHq' and (m(x+1,y)!=ch or m(x,y+1)!=ch): t=2
+            if ch in HAIR:
+                k=(x - y//3) % 7
+                if k==0 and m(x,y-1)==ch: t=0                      # 毛束の照り
+                elif k==4: t=max(t,2)                               # 毛束の影
+                if m(x+1,y)!=ch or m(x,y+1)!=ch: t=3 if t>=2 else 2
+            if ch in MAIL:
+                t = 1 if (x//2+y//2)%2==0 else 2                    # 鎖の編み目
+                if (x%4==0 and y%4==0): t=0
+            # 素材の境目：右と下でほかの素材に接するところは一段暗く（線で描いたように見せる）
+            rb=(m(x+1,y),m(x,y+1))
+            if not (ch in 'sSxeIpRBKQ') and any(n!='.' and n!=ch and n not in GLOW and n not in 'xeIKQ' for n in rb): t=min(3,t+1)
+            if ch in SHINY and t==0 and dl<=3 and m(x,y-1)!=ch: t='hi'      # 金属のふちの白い照り
             T[y][x]=t
     if extra: extra(T,M)
     # 色の表に直す
@@ -76,6 +91,8 @@ def flatten(M, pal, aura=None, extra=None):
             if t is None: continue
             if isinstance(t,tuple): out[y][x]=code(t[1]+(255,)); continue
             r=ramp(pal,ch) or BASE['c']
+            if t=='hi':
+                c0=r[0]; out[y][x]=code(tuple(min(255,int(v+(255-v)*0.6)) for v in c0)+(255,)); continue
             out[y][x]=code(r[t]+(255,))
     # 輪郭（きらめきの数字は輪郭を付けない）
     def solid(x,y): return 0<=x<W and 0<=y<H and out[y][x] not in '.' and M[y][x] not in '123456' and out[y][x]!=key.get((22,16,30,255))
@@ -83,7 +100,15 @@ def flatten(M, pal, aura=None, extra=None):
     o2=[r[:] for r in out]
     for y in range(H):
         for x in range(W):
-            if out[y][x]=='.' and any(solid(x+dx,y+dy) for dx,dy in ((1,0),(-1,0),(0,1),(0,-1))): o2[y][x]=oc
+            if out[y][x]!='.': continue
+            nb=[(x+dx,y+dy) for dx,dy in ((1,0),(-1,0),(0,1),(0,-1)) if solid(x+dx,y+dy)]
+            if not nb: continue
+            # 輪郭は、接している素材のいちばん暗い色をさらに暗くした色（黒一色より、なじむ）
+            nx,ny=nb[0]; mch=M[ny][nx]
+            r=ramp(pal,mch)
+            if r and mch not in GLOW:
+                d=r[3]; o2[y][x]=code((int(d[0]*0.45+22*0.55),int(d[1]*0.45+16*0.55),int(d[2]*0.45+30*0.55),255))
+            else: o2[y][x]=oc
     out=o2
     if aura:
         for ring,a in ((0,200),(1,110)):
