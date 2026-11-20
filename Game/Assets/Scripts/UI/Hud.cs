@@ -2273,6 +2273,10 @@ namespace VividOfFade
                 FitLabel(new Rect(tx, r.y + inner, tw, nameStyle.fontSize * 1.3f), key + spec.DisplayName, nameStyle);
                 FitLabel(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.4f, tw, lh), spec.DisplayLine1, small);
                 FitLabel(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.4f + lh, tw, lh), spec.DisplayLine2 + $"   {Attributes.ShortName(spec.MainAttr)}/{Attributes.ShortName(spec.SubAttr)}", small);
+                // 灯りの適性（職業ごとの、灯りとの関わり方）
+                var apt = new GUIStyle(small) { fontStyle = FontStyle.Italic };
+                apt.normal.textColor = new Color(1f, 0.85f, 0.55f);
+                FitLabel(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.4f + lh * 2.1f, tw, lh), spec.DisplayAptitude, apt);
                 y += bh + gap;
             }
             Button(new Rect(pad, y, W - pad * 2f, H * 0.045f), Loc.T("BACK", "戻る"), new Color(1f, 1f, 1f, 0.08f), centered, () => newSlot = -1);

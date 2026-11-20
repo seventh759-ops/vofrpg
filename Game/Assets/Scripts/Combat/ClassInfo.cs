@@ -22,6 +22,9 @@ namespace VividOfFade
         public string DisplayName => Loc.T(Name, NameJa);
         public string DisplayLine1 => Loc.T(Line1, Line1Ja);
         public string DisplayLine2 => Loc.T(Line2, Line2Ja);
+        /// <summary>灯りの適性（職業ごとの、灯りとの関わり方。フレーバーの文）。</summary>
+        public string Aptitude, AptitudeJa;
+        public string DisplayAptitude => Loc.T(Aptitude, AptitudeJa);
         public int BaseHp;              // 体力の土台（VIT とレベルで増える）
         public int[] BaseStats;         // 能力値の初期値（STR, DEX, INT, VIT, WIS）
         public Attr MainAttr;           // 攻撃力が伸びる能力値（1ポイントで +2%）。武器の必要条件にも使う
@@ -96,6 +99,8 @@ namespace VividOfFade
                 Type = ClassType.Lampwright, Name = "Lampwright", NameJa = "灯術師", Line1Ja = "遠くから火を放つ。", Line2Ja = "灯りが広いほど強い。",
                 Line1 = "Hurls fire from afar.",
                 Line2 = "Stronger with wide light.",
+                AptitudeJa = "灯りを炎に変え、遠くへ放つ適性。灯りが広いほど、その炎は遠くまで届く。",
+                Aptitude = "An aptitude for turning light into flame and casting it afar. The wider the light, the farther the flame reaches.",
                 BaseHp = 50, BaseStats = new[] { 4, 6, 12, 6, 8 }, MainAttr = Attr.Int, SubAttr = Attr.Wis, DefenseWeight = 0.35f,
                 Speed = 4.5f, BaseLight = 3f, Crit = 0.05f, Armor = 0f,
                 Starter = WeaponKind.Wand,
@@ -106,6 +111,8 @@ namespace VividOfFade
                 Type = ClassType.Shadeblade, Name = "Shadeblade", NameJa = "影刃", Line1Ja = "近くの群れをまとめて斬る。", Line2Ja = "速く鋭いが、打たれ弱い。",
                 Line1 = "Cuts down crowds up close.",
                 Line2 = "Fast, sharp, fragile.",
+                AptitudeJa = "灯りが落とす影をまとい、刃に変える適性。灯りのそばで、影はもっとも鋭くなる。",
+                Aptitude = "An aptitude for wearing the shadow that light casts, and turning it into a blade. Beside the light, the shadow is sharpest.",
                 BaseHp = 60, BaseStats = new[] { 12, 10, 3, 7, 4 }, MainAttr = Attr.Str, SubAttr = Attr.Dex, DefenseWeight = 0.45f,
                 DamageTaken = 0.8f, DodgeCooldownMult = 0.7f, // 近接で張り付く分、打たれ強く、よく避けられる
                 Speed = 5.2f, BaseLight = 2.5f, Crit = 0.1f, Armor = 0f,
@@ -117,6 +124,8 @@ namespace VividOfFade
                 Type = ClassType.Warden, Name = "Warden", NameJa = "灯番", Line1Ja = "周りを回る灯りで焼き払う。", Line2Ja = "足は遅いが、とても頑丈。",
                 Line1 = "Circling lights burn all near.",
                 Line2 = "Slow but very tough.",
+                AptitudeJa = "灯りを身のまわりに留め、守り続ける適性。その灯りは、近づくものを焼き払う。",
+                Aptitude = "An aptitude for keeping light close and guarding it. That light burns away whatever draws near.",
                 BaseHp = 80, BaseStats = new[] { 6, 4, 6, 12, 10 }, MainAttr = Attr.Wis, SubAttr = Attr.Vit, DefenseWeight = 0.6f,
                 Speed = 4.4f, BaseLight = 3f, Crit = 0.05f, Armor = 15f,
                 Starter = WeaponKind.Censer,
@@ -128,6 +137,8 @@ namespace VividOfFade
                 Type = ClassType.Vividbearer, Name = "Vividbearer", NameJa = "彩灯者", Line1Ja = "どの武器も使い、遠くも近くも戦う。", Line2Ja = "転職せずに転生した者だけがなれる。",
                 Line1 = "Wields any weapon, near or far.",
                 Line2 = "Only the reborn who never changed class.",
+                AptitudeJa = "あらゆる色の灯りを受け入れる適性。どの灯りにも染まらなかった者だけが持つ。",
+                Aptitude = "An aptitude for accepting light of every color. Only one never dyed by any single light holds it.",
                 BaseHp = 65, BaseStats = new[] { 8, 9, 8, 9, 8 }, MainAttr = Attr.Dex, SubAttr = Attr.Wis, DefenseWeight = 0.45f,
                 DodgeCooldownMult = 0.85f,
                 Speed = 4.8f, BaseLight = 3.2f, Crit = 0.07f, Armor = 5f,

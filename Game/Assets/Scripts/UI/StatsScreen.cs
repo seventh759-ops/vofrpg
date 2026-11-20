@@ -383,6 +383,7 @@ namespace VividOfFade
 
             H(AdvancedClasses.NameFor(ch));
             L(cls.DisplayName + Loc.T(": ", "：") + Loc.T(cls.Line1, cls.Line1Ja) + " " + Loc.T(cls.Line2, cls.Line2Ja), soft);
+            L(Loc.T("Light aptitude: ", "灯りの適性：") + cls.DisplayAptitude, new Color(1f, 0.85f, 0.55f));
             if (special != null) L(special.DisplayDesc, soft);
             if (adv != null) L(adv.DisplayName + Loc.T(": ", "：") + adv.DisplayDesc, soft);
             if (third != null) L(third.DisplayName + Loc.T(": ", "：") + third.DisplayDesc, soft);
@@ -448,7 +449,16 @@ namespace VividOfFade
             var small = hud.SmallStyle;
             var label = hud.LabelStyle;
             float rowH = label.fontSize * 1.45f;
-            float contentH = rows.Count * rowH;
+            // 1行まるごとの文は折り返す（長い説明が縮んで読めなくならないように）。行ごとの高さを先に決める
+            var line = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, wordWrap = true };
+            var heights = new float[rows.Count];
+            float contentH = 0f;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var (k0, v0, _) = rows[i];
+                heights[i] = v0 != null && k0.Length == 0 ? Mathf.Max(rowH, line.CalcHeight(new GUIContent(v0), area.width * 0.96f) + rowH * 0.3f) : rowH;
+                contentH += heights[i];
+            }
             float maxScroll = Mathf.Max(0f, contentH - area.height);
             scroll = Mathf.Clamp(scroll + ScrollInput.Delta(), 0f, maxScroll);
             var key = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
@@ -456,15 +466,16 @@ namespace VividOfFade
             var val = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
             var head = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
             head.normal.textColor = gold;
-            var line = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
             GUI.BeginGroup(area);
             float y = -scroll;
             int stripe = 0;
-            foreach (var (k, v, c) in rows)
+            for (int ri = 0; ri < rows.Count; ri++)
             {
-                if (y + rowH >= 0f && y <= area.height)
+                var (k, v, c) = rows[ri];
+                float h = heights[ri];
+                if (y + h >= 0f && y <= area.height)
                 {
-                    var r = new Rect(0f, y, area.width, rowH);
+                    var r = new Rect(0f, y, area.width, h);
                     if (v == null)
                     {
                         Hud.Fill(new Rect(0f, y + rowH - 2f, area.width, 2f), new Color(1f, 0.85f, 0.4f, 0.35f));
@@ -477,7 +488,7 @@ namespace VividOfFade
                         if (k.Length == 0)
                         {
                             line.normal.textColor = c;
-                            Hud.FitLabel(new Rect(area.width * 0.02f, y, area.width * 0.96f, rowH), v, line);
+                            GUI.Label(new Rect(area.width * 0.02f, y, area.width * 0.96f, h), v, line);
                         }
                         else
                         {
@@ -487,7 +498,7 @@ namespace VividOfFade
                     }
                 }
                 if (v != null) stripe++;
-                y += rowH;
+                y += h;
             }
             GUI.EndGroup();
             // スクロールできるときは、右端に位置の目安
