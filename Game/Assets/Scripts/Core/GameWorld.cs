@@ -90,7 +90,6 @@ namespace VividOfFade
             {
                 var p = collapsePos + Random.insideUnitCircle * 1.6f;
                 Fx.Sparks(p, 6 + Mathf.RoundToInt(10 * tc), Color.Lerp(new Color(1f, 0.4f, 0.6f, 1f), Color.white, tc), 2f + 3f * tc, 0.8f, 2.5f, true);
-                Fx.Ring(collapsePos, 1.5f + 3f * tc, new Color(1f, 0.85f, 0.95f, 0.7f), 0.35f);
                 cameraRig.Shake(0.05f + 0.25f * tc, 0.2f);
                 Sfx.Boom();
             }
@@ -98,7 +97,6 @@ namespace VividOfFade
             {
                 // 崩れきった：白い閃光と、大きな光の柱
                 Fx.Pillar(collapsePos, Color.white, 3f, 14f, 1.2f);
-                Fx.Ring(collapsePos, 9f, new Color(1f, 1f, 1f, 0.9f), 1f);
                 Fx.Disc(collapsePos, 6f, new Color(1f, 1f, 1f, 0.8f), 0.8f);
                 cameraRig.Shake(0.5f, 0.8f);
                 Sfx.Landed(Rarity.Mythic);
@@ -396,14 +394,14 @@ namespace VividOfFade
                 if (ch.HpPotions <= 0 || Player.Hp >= Player.MaxHp) return;
                 ch.HpPotions--;
                 Player.Heal(Mathf.RoundToInt(Player.MaxHp * Town.HpPotionHeal));
-                Fx.Ring(Player.Pos, 1.2f, new Color(1f, 0.4f, 0.4f, 0.9f), 0.4f);
+                Fx.Sparks(Player.Pos, 12, new Color(1f, 0.45f, 0.45f), 0.8f, 0.8f, 2f, true); // 赤い粒がのぼる
             }
             else
             {
                 if (ch.MpPotions <= 0 || Player.Mp >= Player.MaxMp) return;
                 ch.MpPotions--;
                 Player.RestoreMp(Player.MaxMp * Town.MpPotionRestore);
-                Fx.Ring(Player.Pos, 1.2f, new Color(0.4f, 0.6f, 1f, 0.9f), 0.4f);
+                Fx.Sparks(Player.Pos, 12, new Color(0.45f, 0.65f, 1f), 0.8f, 0.8f, 2f, true); // 青い粒がのぼる
             }
             Sfx.Pickup();
             potionCooldown = Town.PotionCooldown;
@@ -538,7 +536,7 @@ namespace VividOfFade
                 Loot.Fountain(pos, Room, GameConfig.GoldenFountainItems, DropTop, GameConfig.GoldenRarityBonus,
                     GameConfig.FountainEmberOrbs(Floors.Tier), GameConfig.EmberAmount(Floors.Tier) * GameConfig.GoldenEmberMult);
                 if (Random.value < GameConfig.GoldenMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
-                Fx.Ring(pos, 2.5f, new Color(1f, 0.85f, 0.3f, 0.9f), 0.5f);
+                Fx.Sparks(pos, 24, new Color(1f, 0.85f, 0.3f), 4f, 0.8f, 3f);
                 Sfx.Fountain();
                 cameraRig.Shake(0.2f, 0.4f);
                 GainExp(Progression.KillExp(Floors.Tier) * 10);
@@ -827,7 +825,6 @@ namespace VividOfFade
             ch.AbyssShards += n;
             Profile.Save();
             var c = RarityInfo.AbyssColor;
-            Fx.Ring(pos, 1.2f, new Color(c.r, c.g, c.b, 0.9f), 0.45f);
             Fx.Sparks(pos, 10, c, 2.5f, 0.7f, 2f, true);
             Hud.Toast(Loc.T($"Abyss Shard +{n}  (have {ch.AbyssShards})", $"深淵の欠片 +{n}（{ch.AbyssShards}個）"), new Color(1f, 0.45f, 0.75f));
         }
@@ -840,7 +837,7 @@ namespace VividOfFade
             // まれに神話（赤）の装備（ボスより低い確率）
             if (Random.value < GameConfig.EliteMythicChance) Loot.DropItem(pos, ItemGenerator.RollMythic(DropLevel), Room, 1.2f);
             if ((GameConfig.IsAbyss(Floors.Floor) || GameConfig.Ascent) && Random.value < GameConfig.ShardChanceElite) // 深淵が閉じたあとは、昇る塔で GainShards(pos, GameConfig.RollShards());
-            Fx.Ring(pos, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.35f);
+            Fx.Sparks(pos, 14, new Color(1f, 0.85f, 0.4f), 3f, 0.7f, 2.5f);
             Sfx.Fountain();
             GainExp(Progression.KillExp(Floors.Tier) * 5);
         }
@@ -853,7 +850,7 @@ namespace VividOfFade
             int tier = Floors.Tier;
             Loot.Fountain(lastKillPos, Room, Mathf.Max(1, GameConfig.FountainItems(tier) / 2), DropTop,
                 GameConfig.FountainRarityBonus, GameConfig.FountainEmberOrbs(tier) / 2, GameConfig.EmberAmount(tier));
-            Fx.Ring(lastKillPos, 2.5f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.4f);
+            Fx.Sparks(lastKillPos, 20, new Color(1f, 0.85f, 0.4f), 3.5f, 0.8f, 3f);
             Sfx.Fountain();
             cameraRig.Shake(0.12f, 0.25f);
             Loot.VacuumAfter(GameConfig.VacuumDelay);
@@ -865,7 +862,8 @@ namespace VividOfFade
             // 普通の層：敵を全部倒すと封印が解ける（青い炎がともる）
             if (Floors.TryUnsealStairs(Enemies, Room))
             {
-                Fx.Ring(Room.StairsPos, 2f, new Color(0.4f, 0.7f, 1f, 0.9f), 0.5f);
+                Fx.SoftPillar(Room.StairsPos, new Color(0.4f, 0.7f, 1f, 0.6f), 0.6f, 3f, 0.7f);
+                Fx.Sparks(Room.StairsPos, 12, new Color(0.5f, 0.75f, 1f), 1f, 1f, 2f, true);
                 // 紅い封印の縁がはじけて消える
                 Fx.Sparks(Room.StairsPos, 16, new Color(0.9f, 0.2f, 0.3f), 2.5f, 0.5f, 2f);
                 Fx.Disc(Room.StairsPos, 1.6f, new Color(0.4f, 0.7f, 1f, 0.5f), 0.5f);
@@ -983,7 +981,7 @@ namespace VividOfFade
             spring.sprite = PixelArt.Spring(true);
             Player.Heal(Player.MaxHp);
             Player.RestoreMp(Player.MaxMp);
-            Fx.Ring(Room.SpringPos, 1.6f, new Color(0.5f, 1f, 0.7f, 0.9f), 0.5f);
+            Fx.SoftPillar(Room.SpringPos, new Color(0.5f, 1f, 0.7f, 0.55f), 0.7f, 3f, 0.7f);
             Fx.Sparks(Player.Pos, 18, new Color(0.6f, 1f, 0.8f), 1f, 1f, 2.2f, true);
             Sfx.Pickup();
             Hud.Toast(Loc.T("The spring restored your HP and MP", "癒やしの泉で、HP と MP が回復した"), new Color(0.6f, 1f, 0.75f));
@@ -1002,8 +1000,7 @@ namespace VividOfFade
             // 祭壇の火が消える：煙がのぼり、光がしぼむ
             Fx.Sparks(Room.AltarPos, 14, new Color(0.55f, 0.55f, 0.6f), 0.5f, 1.4f, 1.4f, true);
             Fx.Disc(Room.AltarPos, 1.2f, new Color(1f, 0.6f, 0.25f, 0.5f), 0.5f);
-            Fx.Ring(Room.AltarPos, 1f, new Color(0.6f, 0.6f, 0.65f, 0.7f), 0.5f);
-            Fx.Ring(Player.Pos, 2f, new Color(1f, 0.8f, 0.4f, 0.9f), 0.5f);
+            Fx.Sparks(Player.Pos, 16, new Color(1f, 0.8f, 0.4f), 1.2f, 1f, 2.2f, true);
             Sfx.Landed(Rarity.Legendary);
             int stacks = 0;
             foreach (int b in Player.Boons) if (b == boon) stacks++;
@@ -1042,17 +1039,15 @@ namespace VividOfFade
                 Hud.ShowBanner($"{GameConfig.FloorName(floor)}  -  {zone.Title}", zone.DisplaySubtitle, zone.Bright ? new Color(1f, 0.88f, 0.55f) : (Color)zone.Accent); // 反転した区画は模様の色が暗いので、名前は明るい金で
                 if (GameConfig.IsHeaven(floor))
                 {
-                    // 天界の区画に入った：光の柱と、やわらかい輪（揺れはなし）
+                    // 天界の区画に入った：光の柱と光の粒（揺れはなし）
                     Fx.Pillar(Room.StartPos, new Color(1f, 0.95f, 0.8f, 0.9f), 1.2f, 8f, 0.9f);
-                    Fx.Ring(Room.StartPos, 4f, zone.Accent, 0.8f);
                     Fx.Sparks(Room.StartPos, 24, new Color(1f, 0.95f, 0.8f), 3f, 1.2f, 2f, true);
                     Sfx.Landed(Rarity.Mythic);
                 }
                 else if (GameConfig.IsAbyss(floor))
                 {
-                    // 深淵の区画に入った：区画の色の衝撃の輪と、大きな揺れ
-                    Fx.Ring(Room.StartPos, 3f, zone.Accent, 0.6f);
-                    Fx.Ring(Room.StartPos, 6f, new Color(zone.Accent.r / 255f, zone.Accent.g / 255f, zone.Accent.b / 255f, 0.6f), 1f);
+                    // 深淵の区画に入った：区画の色の柱と、大きな揺れ
+                    Fx.SoftPillar(Room.StartPos, new Color(zone.Accent.r / 255f, zone.Accent.g / 255f, zone.Accent.b / 255f, 0.7f), 1.2f, 6f, 1f);
                     Fx.Sparks(Room.StartPos, 24, zone.Accent, 4f, 1.2f, 2.5f, true);
                     cameraRig.Shake(0.3f, 0.6f);
                     Sfx.Landed(Rarity.Mythic);
@@ -1215,13 +1210,12 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>アビスが歴代のボスを呼び出した：呼び出した場所に光の柱と輪、名前を知らせる。</summary>
+        /// <summary>アビスが歴代のボスを呼び出した：呼び出した場所に光の柱、名前を知らせる。</summary>
         void OnPastBossSummoned(Enemy master, BossKind kind)
         {
             var summoned = Enemies.Active[Enemies.Active.Count - 1];
             var white = new Color(1f, 0.9f, 0.95f, 0.95f);
             Fx.Pillar(summoned.Pos, white, 1.4f, 7f, 0.5f);
-            Fx.Ring(summoned.Pos, 2.5f, white, 0.4f);
             Fx.Sparks(summoned.Pos, 20, new Color(1f, 0.4f, 0.6f, 1f), 4f, 0.7f, 3f, true);
             cameraRig.Shake(0.15f, 0.3f);
             Sfx.Landed(Rarity.Mythic);
@@ -1703,9 +1697,7 @@ namespace VividOfFade
             Fx.Sparks(Player.Pos, 8, new Color(1f, 1f, 0.97f), 1f, 0.9f, 2.2f, true);
             Fx.Anchor = Player.Pos;
             Fx.LevelUp();
-            // 派手に：足元から金の輪が2重に広がり、光の粒が大きく弾け、画面が一瞬金色に光る
-            Fx.Ring(Player.Pos, 2.2f, new Color(1f, 0.9f, 0.45f, 0.9f), 0.5f);
-            Fx.Ring(Player.Pos, 4f, new Color(1f, 0.95f, 0.7f, 0.6f), 0.8f);
+            // 派手に：光の粒が大きく弾け、画面が一瞬金色に光る
             Fx.Sparks(Player.Pos, 30, new Color(1f, 0.9f, 0.5f), 4.5f, 0.9f, 3.5f);
             Hud.Flash(0.35f, new Color(1f, 0.9f, 0.5f, 0.3f));
             cameraRig.Shake(0.12f, 0.25f);
@@ -1797,14 +1789,12 @@ namespace VividOfFade
 
         /// <summary>
         /// スキルレベルが上がった。キャラのレベルアップ（翼と光の柱）とは別の演出：
-        /// 頭の上に「SKILL UP」（スキルの色のドット文字）が出て浮かび、足元にスキルの色の輪、色の粒が渦を巻いてのぼる。下のボタンも光り、「LV n」が浮かぶ。
+        /// 頭の上に「SKILL UP」（スキルの色のドット文字）が出て浮かび、色の粒が渦を巻いてのぼる。下のボタンも光り、「LV n」が浮かぶ。
         /// </summary>
         void OnSkillLeveled(SkillSpec spec, int lv, int index)
         {
             var c = spec.Color; c.a = 1f;
             Vector2 p = Player.Pos;
-            Fx.Ring(p, 1.1f, c, 0.35f);
-            Fx.After(0.12f, () => Fx.Ring(Player.Pos, 1.7f, new Color(c.r, c.g, c.b, 0.6f), 0.4f));
             for (int k = 0; k < 10; k++)
             {
                 float a = k / 10f * Mathf.PI * 2f;
@@ -1923,7 +1913,7 @@ namespace VividOfFade
                 chests[i].sprite = PixelArt.Chest(true);
                 Loot.Fountain(p, Room, GameConfig.ChestItems, DropTop, GameConfig.ChestRarityBonus,
                     GameConfig.FountainEmberOrbs(Floors.Tier) / 2, GameConfig.EmberAmount(Floors.Tier) * GameConfig.ChestEmberMult);
-                Fx.Ring(p, 1.6f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.4f);
+                Fx.Sparks(p, 18, new Color(1f, 0.85f, 0.4f), 3f, 0.8f, 3f);
                 Sfx.Fountain();
             }
         }

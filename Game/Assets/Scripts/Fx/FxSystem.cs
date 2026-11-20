@@ -262,7 +262,6 @@ namespace VividOfFade
             {
                 wingBurst = true;
                 WingsOpened?.Invoke();
-                Ring(Anchor, 1.6f, new Color(1f, 0.95f, 0.8f, 0.3f), 0.3f); // ごく弱い波紋
                 // タイトルの「VIVID」と同じ虹の色で、光の粒がはじける
                 foreach (var burst in VividColors) Sparks(Anchor, 4, burst, 2.2f, 0.6f, 1.1f, false, WingHeight);
                 Sparks(Anchor, 6, white, 2.2f, 0.9f, 1.5f, true, WingHeight - 0.2f);
