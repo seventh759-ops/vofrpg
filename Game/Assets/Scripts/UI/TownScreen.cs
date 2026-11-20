@@ -237,9 +237,13 @@ namespace VividOfFade
             // ---- 出撃の門と、左右の能力値・スキル ----
             float gateH = H * 0.13f, gateW = gateH * 48f / 52f;
             var gate = new Rect((W - gateW) * 0.5f, tabBar.y - H * 0.012f - gateH, gateW, gateH);
-            float sideH = H * 0.06f, sideW = (W - pad * 2f - gateW) * 0.5f - W * 0.03f;
-            var statsR = new Rect(pad, gate.y + gateH * 0.55f - sideH * 0.5f, sideW, sideH);
-            var dock = new Rect(0, gate.y + gateH * 0.3f, W, H - (gate.y + gateH * 0.3f)); // 下の台（門の下半分からタブまで）
+            // 門の左右に2段ずつ：左 能力値／キャラ選択、右 スキル／荷運び
+            float sideH = H * 0.046f, sideW = (W - pad * 2f - gateW) * 0.5f - W * 0.03f, sideGap = H * 0.01f;
+            float sideTop = gate.y + gateH * 0.55f - sideH - sideGap * 0.5f;
+            var statsR = new Rect(pad, sideTop, sideW, sideH);
+            var charR = new Rect(pad, sideTop + sideH + sideGap, sideW, sideH);
+            var porterR = new Rect(W - pad - sideW, charR.y, sideW, sideH);
+            var dock = new Rect(0, sideTop - H * 0.012f, W, H - (sideTop - H * 0.012f)); // 下の台（左右のボタンの上からタブまで）
             var skillR = new Rect(W - pad - sideW, statsR.y, sideW, sideH);
 
             // ---- 真ん中：台座の上の自分 ----
@@ -265,11 +269,11 @@ namespace VividOfFade
             {
                 float d = W * 0.13f, x = W - pad - d;
                 float y = below + H * 0.02f;
-                var labels = new[] { Loc.T("Settings", "設定"), Loc.T("Chars", "キャラ"), Loc.T($"Porter {ch.CarrySlots}/{Town.MaxCarrySlots}", $"荷運び\n{ch.CarrySlots}/{Town.MaxCarrySlots}") };
-                System.Action[] taps = { world.OpenSettings, world.ShowClassSelect, () => Open(Panel.Porter) };
+                var labels = new[] { Loc.T("Settings", "設定") };
+                System.Action[] taps = { world.OpenSettings };
                 var lab = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
                 lab.normal.textColor = new Color(0.95f, 0.92f, 0.85f);
-                for (int k = 0; k < 3; k++)
+                for (int k = 0; k < taps.Length; k++)
                 {
                     var r = new Rect(x, y + k * (d + H * 0.012f), d, d);
                     DrawDisk(new Rect(r.x - frameT * 2f, r.y - frameT * 2f, d + frameT * 4f, d + frameT * 4f), Hud.FrameGold);
@@ -303,6 +307,12 @@ namespace VividOfFade
                 Hud.Fill(skillR, new Color(0.02f, 0.02f, 0.05f, 0.85f));
                 hud.Button(skillR, Loc.T("SKILLS", "スキル"), row, centered, () => world.OpenTownPanel(false));
                 Hud.OrnateFrame(skillR, Hud.FrameGold, frameT);
+                Hud.Fill(charR, new Color(0.02f, 0.02f, 0.05f, 0.85f));
+                hud.Button(charR, Loc.T("Characters", "キャラ選択"), row, centered, world.ShowClassSelect);
+                Hud.OrnateFrame(charR, Hud.FrameGold, frameT);
+                Hud.Fill(porterR, new Color(0.02f, 0.02f, 0.05f, 0.85f));
+                hud.Button(porterR, Loc.T($"Porter {ch.CarrySlots}/{Town.MaxCarrySlots}", $"荷運び {ch.CarrySlots}/{Town.MaxCarrySlots}"), row, centered, () => Open(Panel.Porter));
+                Hud.OrnateFrame(porterR, Hud.FrameGold, frameT);
             }
 
             // ---- 施設のタブ（倉庫・ショップ・女神・カバン・鍛冶） ----
