@@ -55,10 +55,15 @@ def warden_hd(kind):
         mx=(x0+x1)/2
         for k in range(8):
             c.ell(x0+4+k*(x1-x0-8)/7,y0+3,1,1,'g')                         # 盾の縁の鋲
-        c.rect(mx-3,y0+12,mx+3,y1-24,'x'); c.rect(mx-14,y0+30,mx+14,y0+36,'x'); c.ell(mx,y0+33,4,4,'g')
+        # 盾の紋章は光（太陽の形）。陣羽織の十字と並ばないように
+        cy_=y0+(y1-y0)*0.42
+        for k in range(8):
+            a_=math.radians(k*45+22.5); ln=16 if k%2==0 else 11
+            c.line(mx+7*math.cos(a_),cy_+7*math.sin(a_),mx+ln*math.cos(a_),cy_+ln*math.sin(a_),'x',2.2)
+        c.ell(mx,cy_,7,7,'x'); c.ell(mx,cy_,4,4,'g')
     neck_hd(c)
-    c.rect(76,84,92,94,'m')       # 首当て
-    c.oy=7   # 頭を少し下げて首を短く
+    c.rect(76,86,92,94,'m')       # 首当て
+    c.oy=11  # 頭を下げて首を短く
     face_hd(c)
     hc={'base':'h','sun':'H','dawn':'H','bastion':'D','aegis':'D'}[kind]
     {'base':hair_bob,'sun':hair_braid,'dawn':hair_braid,'bastion':hair_curly,'aegis':hair_curly}[kind](c,hc)
