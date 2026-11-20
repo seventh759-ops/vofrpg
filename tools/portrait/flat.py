@@ -15,7 +15,7 @@ BASE=_ramps('static readonly Dictionary<char, Color32[]> ramps')
 VIVID=_ramps('static readonly Dictionary<char, Color32[]> VividOver')
 GLOW={'l':(255,230,130),'L':(255,170,60),'o':(255,250,220),'p':(200,130,255),'R':(255,70,80),'B':(150,210,255),'W':(150,255,200),
       '1':(255,250,220),'2':(200,130,255),'3':(150,210,255),'4':(150,255,200),'5':(255,170,60),'6':(255,70,80)}
-SHINY=set('mgxHuq')        # 上を明るく下を暗くする素材（金属・金・白・銀）
+SHINY=set('mgxHuqAX')        # 上を明るく下を暗くする素材（金属・金・白・銀）
 HAIR=set('hHqD')
 MAIL=set()                  # 鎖かたびらの編み目を付ける素材（絵ごとに flatten の mail で指定）
 POOL=[ch for ch in 'ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!#$%&*+-=?@^_~:;<>/|']+[chr(c) for c in range(0xC0,0x250) if chr(c) not in '×÷']   # 色が多いので、ラテン文字の拡張も使う
@@ -29,7 +29,7 @@ def ext_ramp(r):
     mix=lambda a,b,t: tuple(int(a[i]+(b[i]-a[i])*t) for i in range(3))
     return [mix(r[0],(255,255,255),0.3), r[0], mix(r[0],r[1],0.5), r[1], mix(r[1],r[2],0.5), r[2], r[3], mix(r[3],(0,0,0),0.35)]
 
-def flatten(M, pal, aura=None, extra=None, mail=''):
+def flatten(M, pal, aura=None, extra=None, mail='', front=()):
     """M: 素材の行（文字のリスト）。pal: その絵だけの色 {文字:(12個の数)}。aura: 光の縁の色 (r,g,b)。
     明るさは 0（照り＋）〜7（さらに深い影）の8段。光は左上から。
     ・横の幅のある所は円柱のように塗る（左寄りが明るく、右へ行くほど暗い。右端は反射でわずかに明るい）
@@ -103,6 +103,19 @@ def flatten(M, pal, aura=None, extra=None, mail=''):
             if not (ch in 'sSxeIpRBKQ') and any(n!='.' and n!=ch and n not in GLOW and n not in 'xeIKQ' for n in rb): v+=1.2
             if ch in SHINY and v<0.6 and dl<=3: T[y][x]='hi'; continue   # 金属のふちの白い照り
             T[y][x]=max(0.0,min(7.0,v))
+    # 前にある素材（袖・腕など）と、後ろの素材（胴など）の境目に強弱を付ける
+    for fr,bk in front:
+        for y in range(H):
+            for x in range(W):
+                if not isinstance(T[y][x],float): continue
+                if M[y][x] in fr:
+                    T[y][x]=max(0.0,T[y][x]-0.6)
+                    if x>0 and M[y][x-1] in bk: T[y][x]=max(0.0,T[y][x]-1.4)
+                elif M[y][x] in bk:
+                    d=min([k for k in range(1,9) for (dx,dy) in ((k,0),(-k,0),(0,-k),(0,k)) if 0<=x+dx<W and 0<=y+dy<H and M[y+dy][x+dx] in fr] or [99])
+                    if d==1: T[y][x]=7.0
+                    elif d<=4: T[y][x]=min(7.0,T[y][x]+2.4)
+                    elif d<=8: T[y][x]=min(7.0,T[y][x]+1.1)
     if extra: extra(T,M)
     # 色の表に直す
     out=[['.']*W for _ in range(H)]
