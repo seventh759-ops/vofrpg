@@ -48,6 +48,65 @@ namespace VividOfFade
             return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), w);
         }
 
+        /// <summary>町の「出撃」の絵：石の門（開いた扉の奥から灯りがあふれる）と、その前の階段。</summary>
+        public static Sprite GateIcon => Shaded("GateIcon48", GateRows, null, null, 48);
+
+        static readonly string[] GateRows =
+        {
+            "................................................",
+            ".....................gggggg.....................",
+            ".................qqqqggggggqqqq.................",
+            "..............qqqqqqqggggggqqqqqqq..............",
+            "............qqqqqqqqqggggggqqqqqqqqq............",
+            "..........qqqqqqqqqqqggggggqqqqqqqqqqq..........",
+            ".........qqqqqqqqqqqqggggggqqqqqqqqqqqq.........",
+            "........qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq........",
+            ".......qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq.......",
+            "......qqqqqqqqqqqqqLLLLLLLLLLqqqqqqqqqqqqq......",
+            ".....qqqqqqqqqqqLLLLLLLLLLLLLLLLqqqqqqqqqqq.....",
+            ".....qqqqqqqqqqLLLLLLLLLLLLLLLLLLqqqqqqqqqq.....",
+            "....qqqqqqqqqqLLLLLLLLLLLLLLLLLLLLqqqqqqqqqq....",
+            "....qqqqqqqqqLLLLLLLLLLLLLLLLLLLLLLqqqqqqqqq....",
+            "....qqqqqqqqqLLLLLLLLLLLLLLLLLLLLLLqqqqqqqqq....",
+            "....qqqqqqqqLLLLLLLLLLLLLLLLLLLLLLLLqqqqqqqq....",
+            "....qqqqqqqqLLLLLLLLllllllllLLLLLLLLqqqqqqqq....",
+            "....qqqqqqqqLLLLLLllllllllllllLLLLLLqqqqqqqq....",
+            "....qqqqqqqLLLLLLllllllllllllllLLLLLLqqqqqqq....",
+            "....qqqqqqqLLLLLllllllllllllllllLLLLLqqqqqqq....",
+            "....qqqqqqqwLLLLllllllllllllllllLLLwLqqqqqqq....",
+            "....qqqqqqqwwwLLllllllllllllllllLwwwLqqqqqqq....",
+            "....iiiiiiiwwwwlllllllllllllllllwwwwLiiiiiii....",
+            "....qqqqqqqwwwwlllllllllllllllllwwwwLqqqqqqq....",
+            "....qqqqqqqwwbwlllllllllllllllllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllllllllllllllllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllllllllllllllllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllllllllllllllllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....iiiiiiiwwbwlllloooooooooolllwwbwLiiiiiii....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....iiiiiiiwwbwlllloooooooooolllwwbwLiiiiiii....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "....qqqqqqqwwbwlllloooooooooolllwwbwLqqqqqqq....",
+            "...........wwbwlllloooooooooolllwwbwL...........",
+            "...........wwwwlllloooooooooolllwwwwL...........",
+            "........qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq........",
+            "........qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq........",
+            ".....qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq.....",
+            ".....qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq.....",
+            "..qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+            "..qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq..",
+        };
+
         /// <summary>町の「カバン」のアイコン（革の肩掛けカバン。ふたと金の留め金、肩ひも）。</summary>
         public static Sprite BagIcon => Shaded("BagIcon32", BagRows, null, null, 32);
 

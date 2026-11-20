@@ -103,104 +103,225 @@ namespace VividOfFade
 
         // ================= 町の入口 =================
 
+        /// <summary>丸（ふちがなめらかな白い円。色は GUI.color で付ける）。丸いボタン・Lv の丸・台座に使う。</summary>
+        static Texture2D disk;
+        static Texture2D Disk
+        {
+            get
+            {
+                if (disk != null) return disk;
+                const int n = 128;
+                disk = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var px = new Color32[n * n];
+                float r = n * 0.5f;
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        float d = Mathf.Sqrt((x + 0.5f - r) * (x + 0.5f - r) + (y + 0.5f - r) * (y + 0.5f - r));
+                        byte a = (byte)(255 * Mathf.Clamp01(r - d));
+                        px[y * n + x] = new Color32(255, 255, 255, a);
+                    }
+                disk.SetPixels32(px);
+                disk.Apply();
+                return disk;
+            }
+        }
+
+        static void DrawDisk(Rect r, Color c)
+        {
+            var old = GUI.color;
+            GUI.color = c;
+            GUI.DrawTexture(r, Disk);
+            GUI.color = old;
+        }
+
         void DrawMain(GameWorld world, CharacterData ch)
         {
-            // 上から：1段目 Lv・HP/MP・火種・欠片／2段目 職業・転生・最高到達／真ん中に自分を大きく／出撃／小さいボタンの段／施設の段
+            // 上から：情報のカード（職業・HP/MP｜Lv の丸と経験値の輪｜火種・欠片）／案内役の帯／
+            // 真ん中に台座の上の自分（右に丸いボタン：設定・キャラ選択・荷運び）／出撃の門と、左右に能力値・スキル／いちばん下に施設のタブ
             float W = Screen.width, H = Screen.height;
-            float pad = W * 0.04f;
+            float pad = W * 0.03f;
             var centered = hud.CenteredStyle;
             var small = hud.SmallStyle;
             var type = ClassInfo.Current;
             float frameT = Mathf.Max(1f, Mathf.Round(H * 0.0009f));
             var st = world.Player.BaseStats ?? world.Player.Stats;
+            var panelBack = new Color(0.04f, 0.035f, 0.07f, 0.88f);
+            var bold = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
 
-            // ---- 上の帯：ダンジョンの上の帯と同じ作り（ロゴ・転生の印・設定の歯車／LV・HP・MP・経験値／職業・最高到達／火種・欠片） ----
-            float headerBottom = hud.DrawTownHeader(ch, st, world.OpenSettings);
+            // ---- 情報のカード ----
+            var card = new Rect(pad, H * 0.022f, W - pad * 2f, H * 0.082f);
+            Hud.Fill(card, panelBack);
+            Hud.OrnateFrame(card, Hud.FrameGold, frameT * 2f);
+            float lvD = card.height * 1.12f;
+            var lvR = new Rect(card.center.x - lvD * 0.5f, card.center.y - lvD * 0.5f, lvD, lvD);
+            {
+                // 左：職業・転生・HP/MP のバー
+                float lx = card.x + card.height * 0.18f, lw = lvR.x - lx - card.height * 0.12f;
+                bold.normal.textColor = new Color(1f, 0.88f, 0.55f);
+                Hud.FitLabel(new Rect(lx, card.y + card.height * 0.06f, lw, card.height * 0.26f), ClassTitle(type, ch), bold);
+                var sub = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+                sub.normal.textColor = new Color(0.88f, 0.8f, 1f);
+                Hud.FitLabel(new Rect(lx, card.y + card.height * 0.3f, lw, card.height * 0.2f), Loc.T($"Reborn {ch.Rebirths}", $"転生 {ch.Rebirths}回"), sub);
+                for (int k = 0; k < 2; k++)
+                {
+                    bool hpRow = k == 0;
+                    var br = new Rect(lx, card.y + card.height * (0.53f + k * 0.22f), lw, card.height * 0.18f);
+                    Hud.Fill(br, new Color(0f, 0f, 0f, 0.6f));
+                    Hud.Fill(new Rect(br.x + 1f, br.y + 1f, br.width - 2f, br.height - 2f), hpRow ? new Color(0.78f, 0.15f, 0.2f, 1f) : new Color(0.22f, 0.38f, 0.82f, 1f));
+                    Hud.Fill(new Rect(br.x + 1f, br.y + 1f, br.width - 2f, br.height * 0.35f), new Color(1f, 1f, 1f, 0.2f));
+                    NumberFont.DrawIn(br, st != null ? (hpRow ? $"HP {st.MaxHp}" : $"MP {st.MaxMp}") : (hpRow ? "HP" : "MP"), Color.white, TextAnchor.MiddleCenter, 0.85f);
+                }
+                // 右：火種・欠片
+                float rx = lvR.xMax + card.height * 0.12f, rw = card.xMax - rx - card.height * 0.18f;
+                bool shards = ch.AbyssShards > 0 || GameConfig.CanEnterAbyss(ch);
+                for (int k = 0; k < 2; k++)
+                {
+                    var pr = new Rect(rx, card.y + card.height * (0.12f + k * 0.42f), rw, card.height * 0.34f);
+                    Hud.Fill(pr, new Color(0f, 0f, 0f, 0.45f));
+                    Hud.OrnateFrame(pr, new Color(0.85f, 0.72f, 0.42f, 0.7f), frameT, true, false);
+                    float ic = pr.height * 0.86f;
+                    var oldC = GUI.color;
+                    if (k == 1 && !shards) GUI.color = new Color(1f, 1f, 1f, 0.3f);
+                    Hud.DrawSprite(new Rect(pr.x + pr.height * 0.1f, pr.y + (pr.height - ic) * 0.5f, ic, ic), k == 0 ? PixelArt.Ember : PixelArt.ShardIcon);
+                    GUI.color = oldC;
+                    string v = k == 0 ? ch.Embers.ToString("N0") : (shards ? ch.AbyssShards.ToString("N0") : "-");
+                    var vc = k == 0 ? new Color(1f, 0.82f, 0.45f) : (shards ? new Color(0.85f, 0.62f, 1f) : new Color(1f, 1f, 1f, 0.3f));
+                    NumberFont.DrawIn(new Rect(pr.x + ic * 1.3f, pr.y, pr.width - ic * 1.3f - pr.height * 0.25f, pr.height), v, vc, TextAnchor.MiddleRight, 0.8f);
+                }
+                // 真ん中：Lv の丸と経験値の輪
+                DrawDisk(new Rect(lvR.x - frameT * 3f, lvR.y - frameT * 3f, lvR.width + frameT * 6f, lvR.height + frameT * 6f), Hud.FrameGold);
+                DrawDisk(lvR, new Color(0.05f, 0.045f, 0.09f, 1f));
+                float ratio = ch.Level >= Progression.LevelCap(ch) ? 1f : Mathf.Clamp01((float)ch.Exp / Mathf.Max(1, Progression.ExpToNext(ch, ch.Level)));
+                float ringR = lvD * 0.42f, dot = Mathf.Max(2f, lvD * 0.055f);
+                const int seg = 90;
+                for (int i = 0; i < seg; i++)
+                {
+                    float ang = (-90f + 360f * i / seg) * Mathf.Deg2Rad;
+                    var c = i < seg * ratio ? new Color(0.25f, 0.92f, 0.75f, 1f) : new Color(1f, 1f, 1f, 0.1f);
+                    Hud.Fill(new Rect(lvR.center.x + Mathf.Cos(ang) * ringR - dot * 0.5f, lvR.center.y + Mathf.Sin(ang) * ringR - dot * 0.5f, dot, dot), c);
+                }
+                var lvSmall = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+                lvSmall.normal.textColor = new Color(0.75f, 0.85f, 1f);
+                GUI.Label(new Rect(lvR.x, lvR.y + lvD * 0.18f, lvD, lvD * 0.2f), "Lv", lvSmall);
+                NumberFont.DrawIn(new Rect(lvR.x + lvD * 0.15f, lvR.y + lvD * 0.36f, lvD * 0.7f, lvD * 0.36f), ch.Level.ToString(), Color.white, TextAnchor.MiddleCenter, 1f);
+            }
 
-            // ---- いちばん下：施設の段（倉庫・ショップ・女神・鞄・鍛冶）と、その上の小さいボタンの段 ----
+            // ---- 案内役の帯（捧げたあとは、案内役はもういない） ----
+            float below = card.yMax + H * 0.01f;
+            if (!ch.Ascended)
+            {
+                var ban = new Rect(pad, below, W - pad * 2f, H * 0.052f);
+                Hud.Fill(ban, new Color(0.97f, 0.96f, 0.93f, 0.92f));
+                float gd = ban.height * 1.15f;
+                var gr = new Rect(ban.x - gd * 0.05f, ban.center.y - gd * 0.5f, gd, gd);
+                DrawDisk(gr, new Color(0.85f, 0.72f, 0.42f, 1f));
+                DrawDisk(new Rect(gr.x + 3f, gr.y + 3f, gr.width - 6f, gr.height - 6f), new Color(0.22f, 0.18f, 0.3f, 1f));
+                Hud.DrawSprite(new Rect(gr.x + gd * 0.1f, gr.y + gd * 0.1f, gd * 0.8f, gd * 0.8f), PixelArt.Guide);
+                var say = new GUIStyle(small) { wordWrap = true, alignment = TextAnchor.MiddleLeft };
+                say.normal.textColor = new Color(0.12f, 0.1f, 0.15f);
+                GUI.Label(new Rect(gr.xMax + W * 0.02f, ban.y, ban.xMax - gr.xMax - W * 0.04f, ban.height), Greeting(ch), say);
+                below = ban.yMax + H * 0.008f;
+            }
+
+            // ---- いちばん下：施設のタブ ----
             var adv = AdvancedClasses.Of(type, ch);
             bool advReady = adv == null && !ch.Special && ch.Level >= AdvancedClasses.ReqLevel;
             bool thirdReady = adv != null && !ch.Third && ch.Level >= ThirdClasses.PromoteLevel;
             bool rebirthReady = ThirdClasses.MeetsRequirements(ch);
             bool masterNotice = advReady || thirdReady || rebirthReady;
-            const int cols = 5;
-            float tgap = W * 0.015f;
-            float tw = (W - pad * 2f - tgap * (cols - 1)) / cols;
-            float th = Mathf.Min(tw * 1.15f, H * 0.11f);
-            float tilesY = H - pad - th;
-            void Tile(int i, Sprite icon, string name, System.Action onTap, bool notice = false)
-            {
-                var r = new Rect(pad + i * (tw + tgap), tilesY, tw, th);
-                Hud.Fill(r, new Color(0.02f, 0.02f, 0.05f, 0.78f)); // 町の絵の上でも読めるように、暗い下地
-                hud.Button(r, null, notice ? gold : row, centered, onTap);
-                Hud.OrnateFrame(r, notice ? new Color(1f, 0.85f, 0.4f) : Hud.FrameGold, frameT, false, false);
-                float size = Mathf.Min(r.width * 0.7f, r.height * 0.6f);
-                Hud.DrawSprite(new Rect(r.x + (r.width - size) * 0.5f, r.y + r.height * 0.07f, size, size), icon);
-                var nameStyle = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-                nameStyle.normal.textColor = Color.white;
-                Hud.FitLabel(new Rect(r.x, r.y + r.height * 0.7f, r.width, r.height * 0.26f), name, nameStyle);
-            }
-            Tile(0, PixelArt.TownIcon(0), Loc.T("Storage", "倉庫"), () => Open(Panel.Storage));
-            Tile(1, PixelArt.TownIcon(1), Loc.T("Shop", "ショップ"), () => Open(Panel.Merchant));
-            // 女神像は最初から見せる（転職・転生という先の目標を、早めに見せるため）。クリア後は血の涙を流している
-            Tile(2, ch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2), Loc.T("Goddess", "女神"), () => Open(Panel.Master), masterNotice);
-            Tile(3, PixelArt.BagIcon, Loc.T("Bag", "カバン"), world.OpenTownBag);
-            Tile(4, PixelArt.TownIcon(4), Loc.T("Smith", "鍛冶"), () => Open(Panel.Smith));
+            float tabH = H * 0.095f;
+            var tabBar = new Rect(0, H - tabH, W, tabH);
 
-            float sbh = H * 0.042f;
-            float sy = tilesY - tgap - sbh;
+            // ---- 出撃の門と、左右の能力値・スキル ----
+            float gateH = H * 0.13f, gateW = gateH * 48f / 52f;
+            var gate = new Rect((W - gateW) * 0.5f, tabBar.y - H * 0.012f - gateH, gateW, gateH);
+            float sideH = H * 0.055f, sideW = (W - pad * 2f - gateW) * 0.5f - W * 0.03f;
+            var statsR = new Rect(pad, gate.yMax - sideH - H * 0.01f, sideW, sideH);
+            var skillR = new Rect(W - pad - sideW, statsR.y, sideW, sideH);
+
+            // ---- 真ん中：台座の上の自分 ----
             {
-                bool points = ch.Points > 0;
-                float sw = (W - pad * 2f - tgap * 3f) / 4f;
-                var labels = new[]
+                float top = below + H * 0.01f, bottom = gate.y - H * 0.03f;
+                var big = PixelArt.TownPortrait(ch);
+                float px = Mathf.Ceil(Mathf.Max(W / TownScene.W, H / TownScene.H)) * (big.texture.height > 200 ? 0.5f : 1f);
+                float bw0 = big.texture.width * px, bh0 = big.texture.height * px;
+                float fit = Mathf.Min(1f, Mathf.Min((bottom - top) / bh0, (W - pad * 2f) / bw0));
+                bw0 *= fit; bh0 *= fit;
+                // 台座（丸い石の舞台）：ふち・面・照り
+                float pw = W * 0.62f, ph = pw * 0.24f;
+                var ped = new Rect((W - pw) * 0.5f, bottom - ph * 0.62f, pw, ph);
+                DrawDisk(new Rect(ped.x, ped.y + ph * 0.12f, pw, ph), new Color(0.18f, 0.15f, 0.14f, 0.95f));
+                DrawDisk(ped, new Color(0.55f, 0.5f, 0.45f, 1f));
+                DrawDisk(new Rect(ped.x + pw * 0.06f, ped.y + ph * 0.08f, pw * 0.88f, ph * 0.72f), new Color(0.72f, 0.67f, 0.6f, 1f));
+                Hud.Glow(ped.center.x, ped.center.y - ph * 0.1f, pw * 0.4f, new Color(1f, 0.85f, 0.6f, 0.18f));
+                var pr = new Rect((W - bw0) * 0.5f, ped.center.y - bh0 + ph * 0.05f, bw0, bh0);
+                Hud.DrawSprite(pr, big);
+            }
+
+            // ---- 右の丸いボタン：設定・キャラ選択・荷運び ----
+            {
+                float d = W * 0.13f, x = W - pad - d;
+                float y = below + H * 0.02f;
+                var labels = new[] { Loc.T("Settings", "設定"), Loc.T("Chars", "キャラ"), Loc.T($"Porter {ch.CarrySlots}/{Town.MaxCarrySlots}", $"荷運び\n{ch.CarrySlots}/{Town.MaxCarrySlots}") };
+                System.Action[] taps = { world.OpenSettings, world.ShowClassSelect, () => Open(Panel.Porter) };
+                var lab = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
+                lab.normal.textColor = new Color(0.15f, 0.12f, 0.2f);
+                for (int k = 0; k < 3; k++)
                 {
-                    Loc.T($"Porter {ch.CarrySlots}/{Town.MaxCarrySlots}", $"荷運び {ch.CarrySlots}/{Town.MaxCarrySlots}"),
-                    Loc.T("Characters", "キャラ選択"),
-                    points ? Loc.T($"STATS +{ch.Points}", $"能力値 +{ch.Points}") : Loc.T("STATS", "能力値"),
-                    Loc.T("SKILLS", "スキル"),
-                };
-                System.Action[] taps = { () => Open(Panel.Porter), world.ShowClassSelect, () => world.OpenTownPanel(true), () => world.OpenTownPanel(false) };
-                for (int k = 0; k < 4; k++)
-                {
-                    var r = new Rect(pad + k * (sw + tgap), sy, sw, sbh);
-                    Hud.Fill(r, new Color(0.02f, 0.02f, 0.05f, 0.78f));
-                    hud.Button(r, labels[k], k == 2 && points ? gold : row, centered, taps[k]);
+                    var r = new Rect(x, y + k * (d + H * 0.012f), d, d);
+                    DrawDisk(new Rect(r.x - frameT * 2f, r.y - frameT * 2f, d + frameT * 4f, d + frameT * 4f), Hud.FrameGold);
+                    DrawDisk(r, new Color(0.95f, 0.94f, 0.9f, 0.95f));
+                    hud.Button(r, null, new Color(0f, 0f, 0f, 0f), centered, taps[k]);
+                    if (k == 0) Hud.DrawSprite(new Rect(r.x + d * 0.18f, r.y + d * 0.18f, d * 0.64f, d * 0.64f), PixelArt.GearIcon);
+                    else if (k == 1) { Hud.DrawSprite(new Rect(r.x + d * 0.2f, r.y + d * 0.06f, d * 0.6f, d * 0.6f), PixelArt.PlayerFor(ch)); Hud.FitLabel(new Rect(r.x, r.y + d * 0.62f, d, d * 0.3f), labels[k], lab); }
+                    else GUI.Label(r, labels[k], lab);
                 }
             }
 
-            // ---- 出撃（小さいボタンの段の上、真ん中） ----
-            float dw = W * 0.62f, dh = H * 0.062f;
-            var departR = new Rect((W - dw) * 0.5f, sy - H * 0.014f - dh, dw, dh);
-            Hud.Fill(departR, new Color(0.02f, 0.02f, 0.05f, 0.7f));
-            hud.Button(departR, GameConfig.CanEnterAbyss(ch) ? Loc.T("DEPART  -  tower / abyss", "出撃  -  塔・深淵へ") : Loc.T("DEPART", "出撃"), new Color(0.2f, 0.5f, 0.25f, 0.9f), centered, world.Depart);
-            Hud.OrnateFrame(departR, new Color(1f, 0.85f, 0.45f), frameT);
-
-            // 案内役（出撃の上の段、左）。女神像に捧げたあとは、案内役はもういない（町にも現れず、何も言わない）
-            float portraitBottom = departR.y - H * 0.012f;
-            if (!ch.Ascended)
+            // ---- 出撃の門（押すと出撃）と、能力値・スキル ----
             {
-                float gs = W * 0.15f;
-                var gr = new Rect(pad, departR.y - gs - H * 0.008f, gs, gs);
-                Hud.DrawSprite(gr, PixelArt.Guide);
-                var bubble = new Rect(gr.xMax + W * 0.015f, gr.y + gs * 0.1f, W - gr.xMax - W * 0.015f - pad, gs * 0.8f);
-                Hud.Fill(bubble, new Color(1f, 1f, 1f, 0.88f));
-                var say = new GUIStyle(small) { wordWrap = true, alignment = TextAnchor.MiddleLeft };
-                say.normal.textColor = new Color(0.1f, 0.08f, 0.12f);
-                GUI.Label(new Rect(bubble.x + W * 0.015f, bubble.y, bubble.width - W * 0.03f, bubble.height), Greeting(ch), say);
-                portraitBottom = gr.y - H * 0.004f;
+                Hud.Glow(gate.center.x, gate.center.y + gateH * 0.05f, gateW * 0.75f, new Color(1f, 0.8f, 0.45f, 0.35f + 0.1f * Mathf.Sin(Time.unscaledTime * 2f)));
+                Hud.DrawSprite(gate, PixelArt.GateIcon);
+                hud.Button(gate, null, new Color(0f, 0f, 0f, 0f), centered, world.Depart);
+                var dep = new GUIStyle(hud.LabelStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+                Hud.OutlinedLabel(new Rect(gate.x - W * 0.1f, gate.y + gateH * 0.42f, gateW + W * 0.2f, gateH * 0.2f), Loc.T("DEPART", "出撃"), dep, new Color(0.3f, 0.15f, 0f, 0.9f));
+                if (GameConfig.CanEnterAbyss(ch))
+                {
+                    var sub = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+                    Hud.OutlinedLabel(new Rect(gate.x - W * 0.1f, gate.y + gateH * 0.6f, gateW + W * 0.2f, gateH * 0.14f), Loc.T("tower / abyss", "塔・深淵へ"), sub, new Color(0.3f, 0.15f, 0f, 0.9f));
+                }
+                bool points = ch.Points > 0;
+                Hud.Fill(statsR, new Color(0.02f, 0.02f, 0.05f, 0.85f));
+                hud.Button(statsR, points ? Loc.T($"STATS +{ch.Points}", $"能力値 +{ch.Points}") : Loc.T("STATS", "能力値"), points ? gold : row, centered, () => world.OpenTownPanel(true));
+                Hud.OrnateFrame(statsR, points ? new Color(1f, 0.85f, 0.4f) : Hud.FrameGold, frameT);
+                Hud.Fill(skillR, new Color(0.02f, 0.02f, 0.05f, 0.85f));
+                hud.Button(skillR, Loc.T("SKILLS", "スキル"), row, centered, () => world.OpenTownPanel(false));
+                Hud.OrnateFrame(skillR, Hud.FrameGold, frameT);
             }
 
-            // ---- 真ん中：自分を大きく（ドットの大きさは町の絵と同じ。入りきらなければ縮める） ----
+            // ---- 施設のタブ（倉庫・ショップ・女神・カバン・鍛冶） ----
+            Hud.Fill(tabBar, new Color(0.06f, 0.055f, 0.09f, 0.96f));
+            Hud.Fill(new Rect(0, tabBar.y, W, frameT * 2f), Hud.FrameGold);
             {
-                float top = headerBottom + H * 0.012f, bottom = portraitBottom;
-                var big = PixelArt.TownPortrait(ch);
-                float px = Mathf.Ceil(Mathf.Max(W / TownScene.W, H / TownScene.H)) * (big.texture.height > 200 ? 0.5f : 1f); // 町の絵の1ドットの大きさ（細かい版の絵はその半分）
-                float bw0 = big.texture.width * px, bh0 = big.texture.height * px; // 絵は1枚のテクスチャ
-                float fit = Mathf.Min(1f, Mathf.Min((bottom - top) / bh0, (W - pad * 2f) / bw0));
-                bw0 *= fit; bh0 *= fit;
-                var pr = new Rect((W - bw0) * 0.5f, bottom - bh0, bw0, bh0);
-                Hud.Glow(pr.center.x, pr.yMax - bh0 * 0.04f, bw0 * 0.45f, new Color(0f, 0f, 0f, 0.45f)); // 足元の影
-                Hud.DrawSprite(pr, big);
+                float cw = W / 5f;
+                var name = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+                void Tab(int i, Sprite icon, string label, System.Action onTap, bool notice = false)
+                {
+                    var r = new Rect(i * cw, tabBar.y + frameT * 2f, cw, tabH - frameT * 2f);
+                    if (notice) Hud.Fill(r, new Color(1f, 0.8f, 0.3f, 0.15f + 0.1f * Mathf.Sin(Time.unscaledTime * 4f)));
+                    hud.Button(r, null, new Color(1f, 1f, 1f, 0.03f), centered, onTap);
+                    float size = Mathf.Min(r.width * 0.62f, r.height * 0.58f);
+                    Hud.DrawSprite(new Rect(r.x + (r.width - size) * 0.5f, r.y + r.height * 0.06f, size, size), icon);
+                    name.normal.textColor = notice ? new Color(1f, 0.88f, 0.5f) : Color.white;
+                    Hud.FitLabel(new Rect(r.x, r.y + r.height * 0.68f, r.width, r.height * 0.28f), label, name);
+                    if (i > 0) Hud.Fill(new Rect(r.x, r.y + r.height * 0.15f, 1f, r.height * 0.7f), new Color(0.85f, 0.72f, 0.42f, 0.3f));
+                }
+                Tab(0, PixelArt.TownIcon(0), Loc.T("Storage", "倉庫"), () => Open(Panel.Storage));
+                Tab(1, PixelArt.TownIcon(1), Loc.T("Shop", "ショップ"), () => Open(Panel.Merchant));
+                Tab(2, ch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2), Loc.T("Goddess", "女神"), () => Open(Panel.Master), masterNotice); // クリア後は血の涙を流している
+                Tab(3, PixelArt.BagIcon, Loc.T("Bag", "カバン"), world.OpenTownBag);
+                Tab(4, PixelArt.TownIcon(4), Loc.T("Smith", "鍛冶"), () => Open(Panel.Smith));
             }
         }
 
