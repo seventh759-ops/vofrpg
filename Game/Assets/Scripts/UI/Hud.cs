@@ -1037,6 +1037,12 @@ namespace VividOfFade
             var bandColor = new Color(0.15f, 0.14f, 0.2f, 1f);
             // 1段目：ロゴ・転生の印・歯車
             var titleRow = new Rect(mm, mm, W - mm * 2f, TitleRowH);
+            {
+                // 帯の地は、ロゴや歯車より先に塗る（後から塗ると隠れてしまう）
+                float infoH = FloorRowH * 1.15f;
+                float ph = PanelPad * 2.8f + TopRowH + mm * 0.35f + ExpRowH + DividerT * 1.5f + infoH * 2f + PanelPad * 0.6f;
+                Fill(new Rect(0, 0, W, titleRow.yMax + mm * 0.6f + ph + mm), bandColor);
+            }
             var menu = ToGui(MenuRect);
             float gearS = menu.height * 1.15f;
             var gearR = new Rect(menu.xMax - gearS, menu.y + (menu.height - gearS) * 0.5f, gearS, gearS);
@@ -1074,7 +1080,6 @@ namespace VividOfFade
             float infoRowH = FloorRowH * 1.15f;
             float panelH = PanelPad * 2.8f + TopRowH + mm * 0.35f + ExpRowH + dt * 1.5f + infoRowH * 2f + pp * 0.6f;
             var panel = new Rect(mm, titleRow.yMax + mm * 0.6f, W - mm * 2f, panelH);
-            Fill(new Rect(0, 0, W, panel.yMax + mm), bandColor);
             Fill(panel, new Color(0.08f, 0.075f, 0.11f, 1f));
             var hi = new Color(1f, 0.95f, 0.75f, 0.9f);
             var lo = new Color(0f, 0f, 0f, 0.75f);
