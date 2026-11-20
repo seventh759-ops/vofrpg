@@ -24,6 +24,12 @@ namespace VividOfFade
             PlayerArt(type, ch, out var small, out var over, out var aura);
             var rows = Portraits.TryGetValue(form, out var own) ? own : Scale2x(Scale2x(small));
             int h = rows.Length, w = rows[0].Length;
+            if (own != null && PortraitPalette.TryGetValue(form, out var pal))
+            {
+                var merged = over != null ? new Dictionary<char, Color32[]>(over) : new Dictionary<char, Color32[]>();
+                foreach (var kv in pal) merged[kv.Key] = kv.Value;
+                over = merged;
+            }
             var px = PortraitPixels(rows, over, aura);
             return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), w);
         }
@@ -63,9 +69,22 @@ namespace VividOfFade
         /// <summary>照りの点を付ける素材（金属・金・白・金の髪）。</summary>
         static bool Shiny(char c) => c == 'm' || c == 'g' || c == 'x' || c == 'H' || c == 'u' || c == 'i';
 
-        static Color32[] PortraitPixels(string[] rows, Dictionary<char, Color32[]> overrides, Color32? auraColor)
+        /// <summary>宙に浮かぶきらめき・火の粉（数字の文字）。輪郭も光の縁も付けず、最後に光として描く。</summary>
+        static readonly Dictionary<char, char> SparkleGlow = new Dictionary<char, char> { { '1', 'o' }, { '2', 'p' }, { '3', 'B' }, { '4', 'W' }, { '5', 'L' }, { '6', 'R' } };
+
+        static Color32[] PortraitPixels(string[] src, Dictionary<char, Color32[]> overrides, Color32? auraColor)
         {
-            int h = rows.Length, w = rows[0].Length;
+            int h = src.Length, w = src[0].Length;
+            // きらめきは取り出して、絵の行からは消しておく
+            var sparkles = new List<(int x, int y, Color32 c)>();
+            var rows = new string[h];
+            for (int y = 0; y < h; y++)
+            {
+                var line = src[y].ToCharArray();
+                for (int x = 0; x < line.Length; x++)
+                    if (SparkleGlow.TryGetValue(line[x], out var gch)) { sparkles.Add((x, y, glows[gch])); line[x] = '.'; }
+                rows[y] = new string(line);
+            }
             char At(int x, int y) => x >= 0 && y >= 0 && x < w && y < h && x < rows[y].Length ? rows[y][x] : '.';
 
             // 素材ごとの、縁からの距離（4方向で数える）。縁は 1
@@ -186,6 +205,21 @@ namespace VividOfFade
                         }
                     px = halo;
                 }
+            }
+            // きらめき：芯は不透明、まわりに半透明の光
+            foreach (var g in sparkles)
+            {
+                for (int dy = -2; dy <= 2; dy++)
+                    for (int dx = -2; dx <= 2; dx++)
+                    {
+                        int x = g.x + dx, y = g.y + dy;
+                        if (x < 0 || y < 0 || x >= w || y >= h) continue;
+                        int i = (h - 1 - y) * w + x;
+                        if (dx == 0 && dy == 0) { px[i] = g.c; continue; }
+                        float d = Mathf.Sqrt(dx * dx + dy * dy);
+                        byte a = (byte)(90 * (1f - d / 2.9f));
+                        if (px[i].a == 0) px[i] = new Color32(g.c.r, g.c.g, g.c.b, a);
+                    }
             }
             return px;
         }
