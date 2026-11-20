@@ -66,15 +66,14 @@ def warden_hd(kind):
     c.oy=11  # 頭を下げて首を短く
     face_hd(c)
     hc={'base':'h','sun':'H','dawn':'H','bastion':'D','aegis':'D'}[kind]
-    {'base':hair_bob,'sun':hair_bob,'dawn':hair_bob,'bastion':hair_curly,'aegis':hair_curly}[kind](c,hc)
+    {'base':hair_bob,'sun':hair_swept,'dawn':hair_swept,'bastion':hair_sleek,'aegis':hair_sleek}[kind](c,hc)
     eyes_hd(c,brow=hc if hc!='H' else 'h',iris='B' if kind=='aegis' else 'I')
     if kind=='dawn':
         for a in range(0,360,4):
             r=math.radians(a); c.ell(84+16*math.cos(r),16+4*math.sin(r),1.2,1.2,'l')
     if kind=='aegis':
         c.line(66,40,102,40,'g',2)
-        c.poly([(68,38),(60,24),(58,8),(66,18),(72,34)],'w'); c.poly([(100,38),(108,24),(110,8),(102,18),(96,34)],'w')
-        c.ell(58,8,2.5,2.5,'g'); c.ell(110,8,2.5,2.5,'g')
+        c.ell(84,40,2.5,2.5,'B')                                              # 額の輪の石（角はなし）
         for (x,y) in [(170,100),(176,200),(16,60)]: c.line(x-3,y,x+3,y,'1'); c.line(x,y-3,x,y+3,'1')
     c.oy=0
     # 首を覆う板金の襟（あごの下まで立ち上がる）
