@@ -244,7 +244,7 @@ namespace VividOfFade
         {
             float bw = W - pad * 2f;
             float sh = H * 0.06f;
-            int rows = (Application.isMobilePlatform ? 7 : 8) + (Profile.CurrentEndingSeen ? 1 : 0); // 攻撃・音楽・効果音・BGM・FPS・言語・（エンディング）・（操作の一覧）・戻る
+            int rows = (Application.isMobilePlatform ? 8 : 9) + (Profile.CurrentEndingSeen ? 1 : 0); // 攻撃・音楽・効果音・BGM・FPS・言語・はじまりの語り・（エンディング）・（操作の一覧）・戻る
             float block = H * 0.07f + rows * sh + rows * gap;
             float top = (H - block) * 0.5f; // 画面の上下の真ん中に
             var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
@@ -262,6 +262,13 @@ namespace VividOfFade
             hud.Button(new Rect(pad, y, bw, sh), hud.ShowFps ? Loc.T("FPS: ON", "FPS：表示") : Loc.T("FPS: OFF", "FPS：非表示"), sub, centered, () => hud.ShowFps = !hud.ShowFps);
             y += sh + gap;
             hud.Button(new Rect(pad, y, bw, sh), $"Language: {Loc.LanguageName}", sub, centered, () => Loc.Next());
+            y += sh + gap;
+            // はじまりの語りを見返す
+            hud.Button(new Rect(pad, y, bw, sh), Loc.T("Prologue", "はじまりの語り"), sub, centered, () =>
+            {
+                settings = false;
+                world.ShowPrologue();
+            });
             y += sh + gap;
             if (Profile.CurrentEndingSeen)
             {

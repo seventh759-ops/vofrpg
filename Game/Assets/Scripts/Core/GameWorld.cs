@@ -47,7 +47,24 @@ namespace VividOfFade
         /// <summary>この層の祭壇はもう使った。</summary>
         public bool AltarUsed { get; private set; }
 
-        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen || MenuOpen || AltarOpen || EndingOpen || (Hud != null && Hud.Guide.Active);
+        public bool Paused => BagOpen || StatsOpen || SkillsOpen || ReturnOpen || MenuOpen || AltarOpen || EndingOpen || PrologueOpen || (Hud != null && Hud.Guide.Active);
+
+        /// <summary>はじまりの語り（初めてタイトルを抜けたときに一度だけ。設定から見返せる）。</summary>
+        public bool PrologueOpen { get; private set; }
+
+        public void ShowPrologue()
+        {
+            OpenPanel(false, false, false);
+            PrologueOpen = true;
+            Hud.StartPrologue();
+        }
+
+        public void ClosePrologue()
+        {
+            PrologueOpen = false;
+            Profile.MarkTip("prologue");
+            Profile.Save();
+        }
 
         /// <summary>エンディングを見ている（アビスを初めて倒した少しあと。設定から見返すこともできる）。</summary>
         public bool EndingOpen { get; private set; }
@@ -126,6 +143,7 @@ namespace VividOfFade
         {
             OnTitle = false;
             Input.ClearQueued();
+            if (!Profile.TipSeen("prologue")) ShowPrologue(); // 初めて遊ぶときだけ、はじまりの語り
         }
 
         /// <summary>町にいる（職業を選んだあと。出撃・倉庫・商人・転職・荷運び）。</summary>
@@ -637,7 +655,7 @@ namespace VividOfFade
             if (Input.NextMusicPressed) NextMusic();
             Music.SetBoss(!ChoosingClass && !Player.IsDead && Enemies.Boss != null);
             Music.SetGolden(!ChoosingClass && !Player.IsDead && Enemies.Golden != null); // 黄金のスライムがいる間はボーナスタイムの曲
-            Music.SetTitle(OnTitle || EndingOpen); // エンディングの間はタイトルの曲
+            Music.SetTitle(OnTitle || EndingOpen || PrologueOpen); // エンディング・はじまりの語りの間はタイトルの曲
             if (endingDelay > 0f && (endingDelay -= Time.unscaledDeltaTime) <= 0f)
             {
                 endingDelay = -1f;

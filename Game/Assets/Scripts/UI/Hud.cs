@@ -871,7 +871,8 @@ namespace VividOfFade
             else if (World.ReturnOpen) returnScreen.Draw(World);
             else if (World.MenuOpen) menu.Draw(World);
             else if (World.AltarOpen) altarScreen.Draw(World);
-            if (World.EndingOpen) DrawEnding();
+            if (World.PrologueOpen) DrawPrologue();
+            else if (World.EndingOpen) DrawEnding();
             else if (!World.ChoosingClass || World.InTown) Guide.Draw();
             DrawSlowMoGlow();
             DrawCelebration();
@@ -899,6 +900,83 @@ namespace VividOfFade
         }
 
         Color flashColor = Color.white;
+
+        // ---- はじまりの語り（初めて遊ぶとき一度だけ。設定から見返せる） ----
+        // 灯りの消えた塔の絵の上に、言葉が1行ずつ浮かぶ。タップで次の行へ、最後のあとのタップで閉じる。
+        float prologueTime = -1f;
+        int prologueShown; // 出し終えた行の数（タップで進める）
+        const float PrologueLineGap = 2.6f;
+
+        static string[] PrologueLines => Loc.Ja ? new[]
+        {
+            "かつて、世界から灯りが失われた。",
+            "灯りを失った世界は、混沌に呑まれた。",
+            "あるとき、胸に灯りを秘めた者が現れ、世界にふたたび灯りをともした。",
+            "そうして、世界に平和が訪れた。",
+            "けれど今、その灯りが、また失われつつある。",
+            "女神は、ひとりの者に、ひとつの可能性を見出した。",
+            "そして、自らを像に変える代償とひきかえに、その者に戦う力を授けた。",
+        } : new[]
+        {
+            "Long ago, the light was lost from the world.",
+            "Without its light, the world fell into chaos.",
+            "Then one who carried a light within their heart appeared, and lit the world once more.",
+            "And so, peace came to the world.",
+            "But now, that light is fading again.",
+            "The goddess saw a single possibility in one person.",
+            "At the price of turning herself into stone, she granted them the power to fight.",
+        };
+
+        public void StartPrologue()
+        {
+            prologueTime = 0f;
+            prologueShown = 0;
+        }
+
+        void DrawPrologue()
+        {
+            if (prologueTime < 0f) prologueTime = 0f;
+            if (Event.current.type == EventType.Repaint) prologueTime += Time.unscaledDeltaTime;
+            float t = prologueTime;
+            float W = Screen.width, H = Screen.height;
+            var lines = PrologueLines;
+            // 時間がたてば自動で次の行へ（タップで早送り）
+            prologueShown = Mathf.Max(prologueShown, Mathf.Min(lines.Length, Mathf.FloorToInt(t / PrologueLineGap) + 1));
+            Fill(new Rect(0, 0, W, H), Color.black);
+            // 背景：灯りの消えかけた塔（ゆっくり明るくなる）
+            float ps = Mathf.Ceil(Mathf.Max(W / TitleScene.W, H / TitleScene.H));
+            var bg = new Rect((W - TitleScene.W * ps) * 0.5f, (H - TitleScene.H * ps) * 0.5f, TitleScene.W * ps, TitleScene.H * ps);
+            var old = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, 0.35f * Mathf.Clamp01(t / 3f));
+            GUI.DrawTexture(bg, TitleScene.Texture);
+            GUI.color = old;
+            Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.03f, 0.45f));
+            var st = new GUIStyle(centered) { wordWrap = true, fontSize = Mathf.RoundToInt(label.fontSize * 1.05f) };
+            float lh = H * 0.075f;
+            float y0 = H * 0.5f - lines.Length * lh * 0.5f;
+            for (int i = 0; i < prologueShown; i++)
+            {
+                float since = t - i * PrologueLineGap;
+                float a = Mathf.Clamp01(since / 1.2f);
+                if (i >= Mathf.FloorToInt(t / PrologueLineGap) + 1) a = 1f; // タップで出した行はすぐに
+                bool last = i == lines.Length - 1;
+                var col = last ? new Color(1f, 0.88f, 0.6f, a) : new Color(0.95f, 0.92f, 1f, a);
+                st.normal.textColor = col;
+                OutlinedLabel(new Rect(W * 0.07f, y0 + i * lh, W * 0.86f, lh), lines[i], st, new Color(0f, 0f, 0f, 0.8f * a));
+            }
+            if (prologueShown >= lines.Length)
+            {
+                var tap = new GUIStyle(centered);
+                tap.normal.textColor = new Color(1f, 1f, 1f, 0.5f + 0.5f * Mathf.Sin(t * 3f));
+                GUI.Label(new Rect(0, H * 0.86f, W, H * 0.04f), Loc.T("Tap to continue", "タップで続ける"), tap);
+            }
+            // 全面のタップ：まだ行が残っていれば次の行を出し、出し終えていれば閉じる
+            Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0f), centered, () =>
+            {
+                if (prologueShown < lines.Length) prologueShown++;
+                else { prologueTime = -1f; World.ClosePrologue(); }
+            });
+        }
 
         // ---- 祝いの演出（転職・3次職・転生。町の画面の上にも出る）：回る光の筋、大きな文字、きらめき ----
         float celebTime = -1f;
