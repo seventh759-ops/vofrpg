@@ -871,6 +871,7 @@ namespace VividOfFade
             else if (World.AltarOpen) altarScreen.Draw(World);
             if (World.EndingOpen) DrawEnding();
             else if (!World.ChoosingClass || World.InTown) Guide.Draw();
+            DrawSlowMoGlow();
             DrawFlash();
 
             if (repaint)
@@ -895,6 +896,38 @@ namespace VividOfFade
         }
 
         Color flashColor = Color.white;
+
+        // スローの間、画面の縁がその品の色でほのかに光る（何が起きたか分かるように）
+        float slowGlowTime = -1f, slowGlowLife = 1f;
+        Color slowGlowColor = Color.white;
+
+        public void SetSlowMoGlow(Color color, float life)
+        {
+            slowGlowColor = color;
+            slowGlowLife = Mathf.Max(0.1f, life);
+            slowGlowTime = 0f;
+        }
+
+        void DrawSlowMoGlow()
+        {
+            if (slowGlowTime < 0f) return;
+            if (Event.current.type == EventType.Repaint) slowGlowTime += Time.unscaledDeltaTime;
+            float t = slowGlowTime / slowGlowLife;
+            if (t >= 1f) { slowGlowTime = -1f; return; }
+            float a = Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI) * 0.55f; // ふわっと光って消える
+            float W = Screen.width, H = Screen.height;
+            const int bands = 6;
+            float bw = W * 0.025f, bh = H * 0.015f;
+            for (int i = 0; i < bands; i++)
+            {
+                float k = a * (1f - i / (float)bands);
+                var c = new Color(slowGlowColor.r, slowGlowColor.g, slowGlowColor.b, k * 0.6f);
+                Fill(new Rect(i * bw, 0, bw, H), c);
+                Fill(new Rect(W - (i + 1) * bw, 0, bw, H), c);
+                Fill(new Rect(0, i * bh, W, bh), c);
+                Fill(new Rect(0, H - (i + 1) * bh, W, bh), c);
+            }
+        }
 
         void DrawFlash()
         {

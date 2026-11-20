@@ -518,6 +518,7 @@ namespace VividOfFade
             Inventory = new Inventory();
             Loot.Init(Inventory);
             Loot.Landed += OnLootLanded;
+            Loot.RareSpawned += OnRareSpawned;
             Loot.PickedUp += OnItemPickedUp;
             Codex.SetListener(OnCodexDiscovered);
             Loot.EmbersPickedUp += _ => Sfx.Ember();
@@ -1840,15 +1841,29 @@ namespace VividOfFade
                 Hud.Flash(0.45f, new Color(1f, 0.25f, 0.2f, 0.45f));
                 Sfx.Fountain();
                 cameraRig.Shake(0.35f, 0.7f);
-                slowMoTimer = 0.9f;
-                Time.timeScale = 0.25f;
             }
             else if (item.Rarity >= Rarity.Relic)
             {
                 cameraRig.Shake(0.25f, 0.5f);
-                slowMoTimer = 0.6f; // 一瞬スローにする
-                Time.timeScale = 0.3f;
             }
+        }
+
+        /// <summary>
+        /// 珍しい品（橙以上）が飛び出した瞬間：時間をゆっくりにして、品が宙をゆっくり舞うところを見せる（スローの理由が分かるように）。
+        /// 飛び出した場所から品の色の輪と光の粒が広がり、画面の縁がその色でほのかに光る。落ちた瞬間（OnLootLanded）に派手な演出。
+        /// </summary>
+        void OnRareSpawned(Item item, Vector2 from)
+        {
+            var c = item.DisplayColor;
+            bool big = item.Rarity >= Rarity.Mythic;
+            Fx.Ring(from, 1.2f, new Color(c.r, c.g, c.b, 0.9f), 0.5f);
+            Fx.Ring(from, 2.4f, new Color(c.r, c.g, c.b, 0.6f), 0.8f);
+            Fx.Sparks(from, big ? 26 : 14, c, 2.5f, 1f, 3f, true);
+            Fx.SoftPillar(from, new Color(c.r, c.g, c.b, 0.55f), 0.8f, 4f, 0.8f);
+            float len = big ? 1.1f : 0.75f;
+            if (slowMoTimer < len) slowMoTimer = len;
+            Time.timeScale = big ? 0.22f : 0.3f;
+            Hud.SetSlowMoGlow(c, len);
         }
 
         /// <summary>宝の間の宝箱を置く（宝の間がない層ではすべて隠す）。</summary>

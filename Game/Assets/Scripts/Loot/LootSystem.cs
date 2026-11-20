@@ -53,6 +53,8 @@ namespace VividOfFade
 
         /// <summary>品が着地した（品と、着地した場所）。</summary>
         public event Action<Item, Vector2> Landed;
+        /// <summary>珍しい品（橙以上）が飛び出した（その品と、飛び出した場所）。スローの演出に使う。</summary>
+        public event Action<Item, Vector2> RareSpawned;
         public event Action<Item> PickedUp;
         public event Action<int> EmbersPickedUp;
 
@@ -92,6 +94,7 @@ namespace VividOfFade
             g.Item = item;
             g.Embers = 0;
             g.Sr.sprite = PixelArt.ItemIcon(item);
+            if (item != null && item.Rarity >= Rarity.Relic) RareSpawned?.Invoke(item, from);
         }
 
         public void DropEmbers(Vector2 from, int amount, Room room, float spread = 1f)
