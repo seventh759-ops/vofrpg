@@ -48,6 +48,45 @@ namespace VividOfFade
             return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), w);
         }
 
+        /// <summary>町の「カバン」のアイコン（革の肩掛けカバン。ふたと金の留め金、肩ひも）。</summary>
+        public static Sprite BagIcon => Shaded("BagIcon32", BagRows, null, null, 32);
+
+        static readonly string[] BagRows =
+        {
+            "................................",
+            "................................",
+            "................w...............",
+            "...............www..............",
+            "..............wwwww.............",
+            ".............www.www............",
+            "............ww.....ww...........",
+            "..........www.......www.........",
+            ".........www.........www........",
+            "........www...........www.......",
+            ".........w.............w........",
+            "................................",
+            ".....bbbbbbbbbbbbbbbbbbbbbbb....",
+            ".....hhhhhhhhhhhhhhhhhhhhhh.....",
+            ".....hhhhhhhhhhhhhhhhhhhhhh.....",
+            ".....hhhhhhhhhhhhhhhhhhhhhh.....",
+            ".....bhhhhhhhhhhhhhhhhhhhhb.....",
+            ".....bhhhhhhhhhhhhhhhhhhhhb.....",
+            ".....bhhhhhhhhhhhhhhhhhhhhb.....",
+            ".....bhhhhhhhhggggghhhhhhhb.....",
+            "....bbbbhhhhhhgbbbghhhhhbbbb....",
+            "....bbbbbbbbbhgbbbgbbbbbbbbb....",
+            "....bbbbbbbbbbgbbbgbbbbbbbbb....",
+            "....bbbbbbbbbbgggggbbbbbbbbb....",
+            "....bbbbhbbbbbbbbbbbbbbbhbbb....",
+            "....bbbbhbbbbbbbbbbbbbbbhbbb....",
+            "....bbbbhbbbbbbbbbbbbbbbhbbb....",
+            "....bbbbhbbbbbbbbbbbbbbbhbbb....",
+            "................................",
+            "................................",
+            "................................",
+            "................................",
+        };
+
         /// <summary>深淵の欠片のアイコン（紫に光る結晶のかけら。町の画面の数字の横に出す）。</summary>
         public static Sprite ShardIcon => Shaded("ShardIcon12", ShardRows, ShardOver, null, 12);
 

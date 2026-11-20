@@ -19,6 +19,8 @@ namespace VividOfFade
         readonly Hud hud;
         Panel panel;
         Item selected;
+        Item matChoice;      // 強化の素材に選んだ品（節目の強化）
+        bool matPicking;     // 素材を選ぶ一覧を開いているか
         Item lastBought;
         string armed;
         float armedUntil;
@@ -214,7 +216,7 @@ namespace VividOfFade
             Tile(1, PixelArt.TownIcon(1), Loc.T("Shop", "ショップ"), () => Open(Panel.Merchant));
             // 女神像は最初から見せる（転職・転生という先の目標を、早めに見せるため）。クリア後は血の涙を流している
             Tile(2, ch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2), Loc.T("Goddess", "女神"), () => Open(Panel.Master), masterNotice);
-            Tile(3, PixelArt.Chest(false), Loc.T("Bag", "カバン"), world.OpenTownBag);
+            Tile(3, PixelArt.BagIcon, Loc.T("Bag", "カバン"), world.OpenTownBag);
             Tile(4, PixelArt.TownIcon(4), Loc.T("Smith", "鍛冶"), () => Open(Panel.Smith));
 
             float sbh = H * 0.042f;
@@ -299,6 +301,8 @@ namespace VividOfFade
             offerStep = 0; // 捧げる確認は、開き直したら閉じる
             if (p == Panel.Master) masterTab = MasterTab.Class;
             selected = null;
+            matChoice = null;
+            matPicking = false;
             lastBought = null;
             armed = null;
         }
@@ -985,6 +989,7 @@ namespace VividOfFade
             var small = new GUIStyle(hud.LabelStyle);
             var type = ClassInfo.Current;
             float lineH = small.fontSize * 1.4f;
+            if (matPicking && selected != null) { DrawMaterialPicker(ch, selected); return; } // 素材を選ぶ一覧を開いている間は、それだけを出す
             Header(Loc.T("BLACKSMITH", "鍛冶屋"), ch.Embers, W, pad, out float y);
 
             // 装備中の品（前回帰還したときの装備）と、次の挑戦に持ち込む品
@@ -1113,14 +1118,34 @@ namespace VividOfFade
                 int price = Town.EnhancePrice(item);
                 int shards = Town.ShardPrice(item);
                 bool needMat = Town.NeedsMaterial(item);
-                int mats = needMat ? Town.MaterialCount(ch, item) : 0;
+                var matList = needMat ? Town.MaterialsFor(ch, item) : null;
+                int mats = needMat ? matList.Count : 0;
+                if (needMat && mats > 0 && (matChoice == null || !matList.Contains(matChoice))) matChoice = matList[0]; // 選んでいなければ、いちばんレベルの低い品
+                if (needMat && mats > 0)
+                {
+                    // 左に素材の品（押すと一覧から選べる）、右に強化のボタン
+                    float mw = enhanceRect.height * 2.4f;
+                    var matR = new Rect(enhanceRect.x, enhanceRect.y, mw, enhanceRect.height);
+                    Hud.Fill(matR, new Color(0.04f, 0.04f, 0.07f, 0.9f));
+                    hud.Button(matR, null, new Color(1f, 1f, 1f, 0.08f), hud.CenteredStyle, () => matPicking = true);
+                    float ic = matR.height * 0.8f;
+                    Hud.DrawSprite(new Rect(matR.x + matR.height * 0.1f, matR.y + matR.height * 0.1f, ic, ic), PixelArt.ItemIcon(matChoice));
+                    var ms = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+                    ms.normal.textColor = Color.white;
+                    Hud.FitLabel(new Rect(matR.x + ic + matR.height * 0.15f, matR.y, mw - ic - matR.height * 0.2f, matR.height * 0.5f), Loc.T("Material", "素材"), ms);
+                    ms.normal.textColor = new Color(1f, 0.85f, 0.5f);
+                    Hud.FitLabel(new Rect(matR.x + ic + matR.height * 0.15f, matR.y + matR.height * 0.5f, mw - ic - matR.height * 0.2f, matR.height * 0.5f), Loc.T("change", "変える"), ms);
+                    Hud.OrnateFrame(matR, Hud.FrameGold, Mathf.Max(1f, Mathf.Round(H * 0.0009f)), false, false);
+                    enhanceRect = new Rect(matR.xMax + W * 0.02f, enhanceRect.y, enhanceRect.width - mw - W * 0.02f, enhanceRect.height);
+                }
                 bool can = ch.Embers >= price && ch.AbyssShards >= shards && (!needMat || mats > 0);
                 string shardNote = shards > 0 ? Loc.T($", {shards} shard" + (shards > 1 ? "s" : ""), $"・欠片 {shards}") : "";
                 string matNote = needMat ? Loc.T($", 1 same-slot {RarityInfo.LabelOf(item.Rarity)} (have {mats})", $"・同じ部位の{RarityInfo.LabelOf(item.Rarity)} 1（持っている {mats}）") : "";
                 string label = Loc.T($"ENHANCE  +{item.Enhance} → +{item.Enhance + 1}   ({price} embers{shardNote}{matNote})", $"強化  +{item.Enhance} → +{item.Enhance + 1}   （火種 {price}{shardNote}{matNote}）");
                 if (can) hud.Button(enhanceRect, label, gold, hud.CenteredStyle, () =>
                 {
-                    if (!Town.EnhanceItem(ch, item)) return;
+                    if (!Town.EnhanceItem(ch, item, matChoice)) return;
+                    matChoice = null;
                     smithFxTime = Time.unscaledTime;
                     smithFxText = $"+{item.Enhance}";
                     hud.World.Sfx.Anvil();
@@ -1155,6 +1180,46 @@ namespace VividOfFade
                     Hud.FitLabel(rr, label, hud.CenteredStyle);
                 }
             }
+        }
+
+        /// <summary>強化の素材を選ぶ一覧（鍛冶屋の上に重ねる）。押した品を素材にする。</summary>
+        void DrawMaterialPicker(CharacterData ch, Item target)
+        {
+            if (!matPicking) return;
+            float W = Screen.width, H = Screen.height;
+            var list = Town.MaterialsFor(ch, target);
+            Hud.Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.75f));
+            var panel = new Rect(W * 0.06f, H * 0.18f, W * 0.88f, H * 0.62f);
+            Hud.Fill(panel, new Color(0.05f, 0.05f, 0.08f, 0.97f));
+            Hud.OrnateFrame(panel, Hud.FrameGold, Mathf.Max(1f, Mathf.Round(H * 0.0012f)));
+            var title = new GUIStyle(hud.LabelStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            Hud.FitLabel(new Rect(panel.x, panel.y + H * 0.01f, panel.width, H * 0.045f), Loc.T("Choose the material", "素材にする品を選ぶ"), title);
+            float rowH = H * 0.07f, gap = H * 0.008f;
+            float y = panel.y + H * 0.065f;
+            var name = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
+            var sub = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.MiddleLeft };
+            sub.normal.textColor = new Color(0.8f, 0.8f, 0.85f);
+            int max = Mathf.Max(1, Mathf.FloorToInt((panel.yMax - y - H * 0.08f) / (rowH + gap)));
+            for (int i = 0; i < list.Count && i < max; i++)
+            {
+                var it = list[i];
+                var r = new Rect(panel.x + W * 0.03f, y, panel.width - W * 0.06f, rowH);
+                bool chosen = it == matChoice;
+                Hud.Fill(r, chosen ? new Color(0.45f, 0.35f, 0.1f, 0.9f) : new Color(1f, 1f, 1f, 0.06f));
+                var pick = it;
+                hud.Button(r, null, new Color(1f, 1f, 1f, 0.05f), hud.CenteredStyle, () => { matChoice = pick; matPicking = false; });
+                float ic = rowH * 0.84f;
+                Hud.DrawSprite(new Rect(r.x + rowH * 0.08f, r.y + rowH * 0.08f, ic, ic), PixelArt.ItemIcon(it));
+                name.normal.textColor = RarityInfo.ColorOf(it.Rarity);
+                float tx = r.x + ic + rowH * 0.25f;
+                Hud.FitLabel(new Rect(tx, r.y, r.xMax - tx - W * 0.02f, rowH * 0.55f), it.Name + (it.Enhance > 0 ? $" +{it.Enhance}" : ""), name);
+                Hud.FitLabel(new Rect(tx, r.y + rowH * 0.5f, r.xMax - tx - W * 0.02f, rowH * 0.45f), $"Lv {it.Level}   " + (Town.InStorage(it) ? Loc.T("in storage", "倉庫") : Loc.T("carry-in", "持ち込む品")), sub);
+                y += rowH + gap;
+            }
+            if (list.Count > max)
+                Hud.FitLabel(new Rect(panel.x, y, panel.width, H * 0.03f), Loc.T($"(+{list.Count - max} more, lowest level first)", $"（ほか {list.Count - max} 個。レベルの低い順）"), sub);
+            var back = new Rect(panel.x + panel.width * 0.25f, panel.yMax - H * 0.065f, panel.width * 0.5f, H * 0.05f);
+            hud.Button(back, Loc.T("BACK", "戻る"), row, hud.CenteredStyle, () => matPicking = false);
         }
 
         /// <summary>持ち帰った品の「部位を変える」「合成」のボタン（左右に半分ずつ）。</summary>

@@ -347,6 +347,18 @@ namespace VividOfFade
             return best;
         }
 
+        /// <summary>強化の素材にできる品の一覧（レベルの低い順）。鍛冶屋で選べるように。</summary>
+        public static List<Item> MaterialsFor(CharacterData ch, Item target)
+        {
+            var list = new List<Item>();
+            foreach (var (_, it) in Spare(ch, target)) if (it.Slot == target.Slot && SameKind(it, target)) list.Add(it);
+            list.Sort((a, b) => a.Level.CompareTo(b.Level));
+            return list;
+        }
+
+        /// <summary>素材の品が、持ち込む品か倉庫か（鍛冶屋の一覧に出す）。</summary>
+        public static bool InStorage(Item it) => Profile.Storage.Contains(it);
+
         public static int MaterialCount(CharacterData ch, Item target)
         {
             int n = 0;
@@ -466,7 +478,10 @@ namespace VividOfFade
         /// <summary>深淵の品の強化に要る深淵の欠片：1段ごとに1個、最後の +14→+15 だけ15個。</summary>
         public static int ShardPrice(Item it) => !it.Abyss && !it.Heaven ? 0 : it.Enhance == Item.MaxEnhance - 1 ? 15 : 1;
 
-        public static bool EnhanceItem(CharacterData ch, Item it)
+        public static bool EnhanceItem(CharacterData ch, Item it) => EnhanceItem(ch, it, null);
+
+        /// <summary>強化する。節目の強化では、選んだ素材（chosen）を使う。選んでいなければ、いちばんレベルの低い品。</summary>
+        public static bool EnhanceItem(CharacterData ch, Item it, Item chosen)
         {
             if (!Enhanceable(it) || it.Enhance >= it.EnhanceCap) return false;
             int shards = ShardPrice(it);
@@ -474,7 +489,7 @@ namespace VividOfFade
             Item material = null;
             if (NeedsMaterial(it))
             {
-                material = MaterialFor(ch, it);
+                material = chosen != null && MaterialsFor(ch, it).Contains(chosen) ? chosen : MaterialFor(ch, it);
                 if (material == null) return false; // 節目の強化には、同じ部位・同じ珍しさの品が要る
             }
             if (!Pay(ch, EnhancePrice(it))) return false;
