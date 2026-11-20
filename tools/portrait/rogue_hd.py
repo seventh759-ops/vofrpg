@@ -69,6 +69,12 @@ def rogue_hd(kind):
         hood_hd(c,'k' if kind!='base' else 'k',horns=purple)
         eyes_hd(c,iris='p' if kind=='eclipse' else 'I',pupil=kind!='eclipse')
     c.oy=0
+    # 口元を覆う布（首巻きを鼻の上まで引き上げる）。目元だけ見える
+    c.oy=7   # 頭と同じ位置に
+    c.poly([(69,62),(99,62),(100,68),(95,75),(84,79),(73,75),(68,68)],'r',only='sSKQh')
+    c.line(70,62,98,62,'r',1.4,only='sSKQh')
+    for (x0,y0,x1,y1) in [(76,64,80,73),(88,64,86,74),(82,66,84,76)]: c.line(x0,y0,x1,y1,'O',1,only='r')   # 布のしわ
+    c.oy=0
     if kind=='eclipse':
         for (x,y) in [(30,140),(160,90),(24,200),(166,210)]: c.line(x-3,y,x+3,y,'2'); c.line(x,y-3,x,y+3,'2')
     if kind=='bloodking':
