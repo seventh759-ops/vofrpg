@@ -104,10 +104,16 @@ def flatten(M, pal, aura=None, extra=None, mail='', front=()):
             if ch in SHINY and v<0.6 and dl<=3: T[y][x]='hi'; continue   # 金属のふちの白い照り
             T[y][x]=max(0.0,min(7.0,v))
     # 前にある素材（袖・腕など）と、後ろの素材（胴など）の境目に強弱を付ける
-    for fr,bk in front:
+    for item in front:
+        fr,bk=item[0],item[1]; side=len(item)>2 and item[2]=='side'
         for y in range(H):
             for x in range(W):
                 if not isinstance(T[y][x],float): continue
+                if side:
+                    # 体の横に並ぶ腕：腕の内側のふち（胴に接する所）だけ少し暗く、胴は接する1ドットだけ線を入れる
+                    if M[y][x] in fr and any(0<=x+dx<W and M[y][x+dx] in bk for dx in (1,-1)): T[y][x]=min(7.0,T[y][x]+1.3)
+                    elif M[y][x] in bk and any(0<=x+dx<W and M[y][x+dx] in fr for dx in (1,-1)): T[y][x]=min(7.0,T[y][x]+1.6)
+                    continue
                 if M[y][x] in fr:
                     T[y][x]=max(0.0,T[y][x]-0.6)
                     if x>0 and M[y][x-1] in bk: T[y][x]=max(0.0,T[y][x]-1.4)
