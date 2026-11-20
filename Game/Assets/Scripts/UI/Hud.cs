@@ -1034,15 +1034,9 @@ namespace VividOfFade
         public float DrawTownHeader(CharacterData ch, PlayerStats st, System.Action openSettings)
         {
             float W = Screen.width, mm = BandMargin;
-            var bandColor = new Color(0.15f, 0.14f, 0.2f, 1f);
             // 1段目：ロゴ・転生の印・歯車
             var titleRow = new Rect(mm, mm, W - mm * 2f, TitleRowH);
-            {
-                // 帯の地は、ロゴや歯車より先に塗る（後から塗ると隠れてしまう）
-                float infoH = FloorRowH * 1.15f;
-                float ph = PanelPad * 2.8f + TopRowH + mm * 0.35f + ExpRowH + DividerT * 1.5f + infoH * 2f + PanelPad * 0.6f;
-                Fill(new Rect(0, 0, W, titleRow.yMax + mm * 0.6f + ph + mm), bandColor);
-            }
+            // 町では帯の地を塗らない：町の空の絵の上に、ロゴと枠だけを乗せる
             var menu = ToGui(MenuRect);
             float gearS = menu.height * 1.15f;
             var gearR = new Rect(menu.xMax - gearS, menu.y + (menu.height - gearS) * 0.5f, gearS, gearS);
@@ -1080,7 +1074,7 @@ namespace VividOfFade
             float infoRowH = FloorRowH * 1.15f;
             float panelH = PanelPad * 2.8f + TopRowH + mm * 0.35f + ExpRowH + dt * 1.5f + infoRowH * 2f + pp * 0.6f;
             var panel = new Rect(mm, titleRow.yMax + mm * 0.6f, W - mm * 2f, panelH);
-            Fill(panel, new Color(0.08f, 0.075f, 0.11f, 1f));
+            Fill(panel, new Color(0.05f, 0.045f, 0.08f, 0.82f));                 // 枠の中は少し透かして、後ろの空がうっすら見える
             var hi = new Color(1f, 0.95f, 0.75f, 0.9f);
             var lo = new Color(0f, 0f, 0f, 0.75f);
             void HDivider(float x, float y, float w)
@@ -1141,7 +1135,6 @@ namespace VividOfFade
             NumberFont.DrawIn(new Rect(row2.x + row2.width * 0.5f + ic * 1.2f, row2.y, row2.width * 0.5f - ic * 1.4f, infoRowH), shards ? ch.AbyssShards.ToString() : "-", shards ? new Color(0.85f, 0.62f, 1f) : new Color(1f, 1f, 1f, 0.3f), TextAnchor.MiddleLeft, 0.9f, HudPx);
             OrnateFrame(panel, FrameGold, FrameT);
             float bottom = panel.yMax + mm;
-            Fill(new Rect(0, bottom - DividerT * 0.5f, W, DividerT * 0.5f), new Color(0.58f, 0.52f, 0.72f, 1f)); // 帯の下のふち
             return bottom;
         }
 
