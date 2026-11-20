@@ -72,8 +72,8 @@ def warden_hd(kind):
         for a in range(0,360,4):
             r=math.radians(a); c.ell(84+16*math.cos(r),16+4*math.sin(r),1.2,1.2,'l')
     if kind=='aegis':
-        c.line(66,40,102,40,'g',2)
-        c.ell(84,40,2.5,2.5,'B')                                              # 額の輪の石（角はなし）
+        c.line(66,38,102,38,'g',2)
+        c.ell(84,38,2.5,2.5,'B')                                              # 額の輪の石（角はなし）
         for (x,y) in [(170,100),(176,200),(16,60)]: c.line(x-3,y,x+3,y,'1'); c.line(x,y-3,x,y+3,'1')
     c.oy=0
     # 首を覆う板金の襟（あごの下まで立ち上がる）
