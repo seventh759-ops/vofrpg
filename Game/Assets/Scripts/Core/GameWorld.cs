@@ -1841,7 +1841,6 @@ namespace VividOfFade
                 var bc = BossSets.ColorOf(item.BossSet);
                 Fx.Sparks(pos, 24, bc, 4f, 0.9f, 3.5f);
                 Fx.Sparks(pos, 18, new Color(1f, 1f, 1f), 2f, 1.4f, 3f, true);
-                Sfx.Fountain();
                 cameraRig.Shake(0.2f, 0.4f);
             }
             else if (item.Rarity == Rarity.Mythic)
@@ -1849,7 +1848,6 @@ namespace VividOfFade
                 var red = RarityInfo.ColorOf(Rarity.Mythic);
                 Fx.Sparks(pos, 24, red, 4f, 0.9f, 3.5f);
                 Fx.Sparks(pos, 24, new Color(1f, 0.85f, 0.4f), 2f, 1.6f, 3f, true);
-                Sfx.Fountain();
                 cameraRig.Shake(0.25f, 0.5f);
             }
             else if (item.Rarity >= Rarity.Relic)
