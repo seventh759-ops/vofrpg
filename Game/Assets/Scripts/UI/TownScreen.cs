@@ -112,18 +112,21 @@ namespace VividOfFade
             float frameT = Mathf.Max(1f, Mathf.Round(H * 0.0009f));
             var st = world.Player.BaseStats ?? world.Player.Stats;
 
-            // ---- 1段目：Lv（経験値のバー）・HP・MP。右端に設定の歯車 ----
-            float r1y = H * 0.02f, r1h = H * 0.042f;
-            float gearS = r1h;
-            var gearR = new Rect(W - pad - gearS, r1y, gearS, gearS);
-            Hud.Fill(gearR, new Color(0.04f, 0.04f, 0.07f, 0.92f));
+            // ---- 上の3段は1枚の枠にまとめる（段の間は細い線）。設定の歯車は枠の中の右上 ----
+            float r1y = H * 0.02f, r1h = H * 0.042f, r2h = H * 0.034f, r3h = H * 0.034f;
+            var panel = new Rect(pad, r1y, W - pad * 2f, r1h + r2h + r3h);
+            Hud.Fill(panel, new Color(0.02f, 0.02f, 0.05f, 0.8f));
+            var divider = new Color(0.85f, 0.72f, 0.42f, 0.45f);
+            Hud.Fill(new Rect(panel.x, panel.y + r1h, panel.width, 1f), divider);
+            Hud.Fill(new Rect(panel.x, panel.y + r1h + r2h, panel.width, 1f), divider);
+            // ---- 1段目：Lv（経験値のバー）・HP・MP・設定の歯車 ----
+            float gearS = r1h * 0.8f;
+            var gearR = new Rect(panel.xMax - gearS - r1h * 0.1f, r1y + r1h * 0.1f, gearS, gearS);
             hud.Button(gearR, null, new Color(1f, 1f, 1f, 0.08f), centered, world.OpenSettings);
-            Hud.OrnateFrame(gearR, Hud.FrameGold, frameT, false, false);
-            float ip = gearS * 0.14f;
+            float ip = gearS * 0.1f;
             Hud.DrawSprite(new Rect(gearR.x + ip, gearR.y + ip, gearS - ip * 2f, gearS - ip * 2f), PixelArt.GearIcon);
-            var row1 = new Rect(pad, r1y, gearR.x - pad - W * 0.02f, r1h);
-            Hud.Fill(row1, new Color(0.02f, 0.02f, 0.05f, 0.78f));
-            Hud.OrnateFrame(row1, Hud.FrameGold, frameT, false, false);
+            Hud.Fill(new Rect(gearR.x - r1h * 0.1f, r1y + r1h * 0.2f, 1f, r1h * 0.6f), divider);
+            var row1 = new Rect(pad, r1y, gearR.x - r1h * 0.1f - pad, r1h);
             var cell = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
             {
                 float lvW = row1.width * 0.26f, hw = (row1.width - lvW) * 0.5f;
@@ -149,9 +152,8 @@ namespace VividOfFade
             }
 
             // ---- 2段目：火種・欠片（アイコンと数字だけ。欠片は深淵へ行けるようになってから） ----
-            float r2y = row1.yMax + H * 0.007f, r2h = H * 0.034f;
+            float r2y = row1.yMax;
             var rowM = new Rect(pad, r2y, W - pad * 2f, r2h);
-            Hud.Fill(rowM, new Color(0.02f, 0.02f, 0.05f, 0.7f));
             {
                 float half = rowM.width * 0.5f, ic = r2h * 0.78f;
                 var num = new GUIStyle(cell) { alignment = TextAnchor.MiddleLeft };
@@ -171,9 +173,9 @@ namespace VividOfFade
             }
 
             // ---- 3段目：職業・転生の回数・最高到達 ----
-            float r3y = rowM.yMax + H * 0.007f, r3h = H * 0.034f;
+            float r3y = rowM.yMax;
             var row2 = new Rect(pad, r3y, W - pad * 2f, r3h);
-            Hud.Fill(row2, new Color(0.02f, 0.02f, 0.05f, 0.62f));
+            Hud.OrnateFrame(panel, Hud.FrameGold, frameT, false, false);
             {
                 float cw = row2.width / 3f;
                 cell.normal.textColor = new Color(1f, 0.9f, 0.6f);
