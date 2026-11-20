@@ -133,10 +133,18 @@ namespace VividOfFade
                 var bar = new Rect(row1.x + lvW * 0.14f, row1.y + row1.height * 0.72f, lvW * 0.72f, row1.height * 0.12f);
                 Hud.Fill(bar, new Color(1f, 1f, 1f, 0.12f));
                 Hud.Fill(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(need > 0 ? (float)ch.Exp / need : 0f), bar.height), new Color(0.2f, 0.9f, 0.72f, 1f));
-                cell.normal.textColor = new Color(1f, 0.55f, 0.55f);
-                Hud.FitLabel(new Rect(row1.x + lvW, row1.y, hw, row1.height), st != null ? $"HP {st.MaxHp}" : "HP", cell);
-                cell.normal.textColor = new Color(0.55f, 0.7f, 1f);
-                Hud.FitLabel(new Rect(row1.x + lvW + hw, row1.y, hw, row1.height), st != null ? $"MP {st.MaxMp}" : "MP", cell);
+                // HP・MP：数字の下にバー（町では満タン）
+                for (int k = 0; k < 2; k++)
+                {
+                    bool hpRow = k == 0;
+                    float x0 = row1.x + lvW + hw * k;
+                    cell.normal.textColor = hpRow ? new Color(1f, 0.55f, 0.55f) : new Color(0.55f, 0.7f, 1f);
+                    Hud.FitLabel(new Rect(x0, row1.y, hw, row1.height * 0.74f), st != null ? (hpRow ? $"HP {st.MaxHp}" : $"MP {st.MaxMp}") : (hpRow ? "HP" : "MP"), cell);
+                    var hb = new Rect(x0 + hw * 0.12f, row1.y + row1.height * 0.72f, hw * 0.76f, row1.height * 0.12f);
+                    Hud.Fill(hb, new Color(1f, 1f, 1f, 0.12f));
+                    Hud.Fill(hb, hpRow ? new Color(0.85f, 0.2f, 0.25f, 1f) : new Color(0.25f, 0.45f, 0.95f, 1f));
+                    Hud.Fill(new Rect(hb.x, hb.y, hb.width, hb.height * 0.35f), new Color(1f, 1f, 1f, 0.25f)); // 光沢
+                }
                 for (int k = 0; k < 2; k++) Hud.Fill(new Rect(row1.x + lvW + hw * k, row1.y + row1.height * 0.2f, 1f, row1.height * 0.6f), new Color(0.85f, 0.72f, 0.42f, 0.4f));
             }
 
