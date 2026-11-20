@@ -147,6 +147,7 @@ namespace VividOfFade
         public List<CharacterData> Characters = new List<CharacterData>();
         public List<string> Codex = new List<string>();     // 図鑑：見つけたもの（全キャラクターで共有）
         public List<Item> Storage = new List<Item>();      // 町の倉庫（全職業で共有）
+        public bool LeftHanded;                               // 操作：左手（false なら右手。スキル1を親指の側に寄せる）
     }
 
     /// <summary>
@@ -317,6 +318,13 @@ namespace VividOfFade
         {
             get { EnsureLoaded(); return data.ShowFps; }
             set { EnsureLoaded(); data.ShowFps = value; Save(); }
+        }
+
+        /// <summary>操作の手（設定。保存する）。true なら左手：スキル1を左端、手動攻撃を左に置く。</summary>
+        public static bool LeftHandedSetting
+        {
+            get { EnsureLoaded(); return data.LeftHanded; }
+            set { EnsureLoaded(); data.LeftHanded = value; Save(); }
         }
 
         /// <summary>BGM の音量（0 はなし、1〜5）。保存する。</summary>

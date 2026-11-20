@@ -244,7 +244,7 @@ namespace VividOfFade
         {
             float bw = W - pad * 2f;
             float sh = H * 0.06f;
-            int rows = (Application.isMobilePlatform ? 8 : 9) + (Profile.CurrentEndingSeen ? 1 : 0); // 攻撃・音楽・効果音・BGM・FPS・言語・はじまりの語り・（エンディング）・（操作の一覧）・戻る
+            int rows = (Application.isMobilePlatform ? 9 : 10) + (Profile.CurrentEndingSeen ? 1 : 0); // 攻撃・操作の手・音楽・効果音・BGM・FPS・言語・はじまりの語り・（エンディング）・（操作の一覧）・戻る
             float block = H * 0.07f + rows * sh + rows * gap;
             float top = (H - block) * 0.5f; // 画面の上下の真ん中に
             var title = new GUIStyle(centered) { fontSize = hud.LabelStyle.fontSize * 2, fontStyle = FontStyle.Bold };
@@ -252,6 +252,10 @@ namespace VividOfFade
             float y = top + H * 0.07f;
             hud.Button(new Rect(pad, y, bw, sh), world.AutoAttack ? Loc.T("Attack: AUTO", "攻撃：自動") : Loc.T("Attack: HOLD", "攻撃：押す間"), sub, centered,
                 () => world.AutoAttack = !world.AutoAttack);
+            y += sh + gap;
+            // 操作の手：右手ならスキル1を右端に、左手なら左端に（親指の側に寄せる）
+            hud.Button(new Rect(pad, y, bw, sh), Hud.LeftHanded ? Loc.T("Controls: LEFT hand", "操作：左手") : Loc.T("Controls: RIGHT hand", "操作：右手"), sub, centered,
+                () => Hud.LeftHanded = !Hud.LeftHanded);
             y += sh + gap;
             hud.Button(new Rect(pad, y, bw, sh), Loc.T("Music volume: ", "音楽の音量：") + world.Music.VolumeLabel, sub, centered, () => world.Music.NextVolume()); // 押すたびに、なし → 1 〜 5
             y += sh + gap;

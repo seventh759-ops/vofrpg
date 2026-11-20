@@ -137,7 +137,8 @@ namespace VividOfFade
             float gap = BandMargin * 0.8f;
             float h = Screen.height * 0.034f;
             float w = (sc.width - gap * 2f) / 3f;
-            return new Rect(sc.x + i * (w + gap), sc.y - BandMargin * 0.8f - h, w, h);
+            int pos = LeftHanded ? i : 2 - i; // 右手なら右から 鞄・能力値・スキル
+            return new Rect(sc.x + pos * (w + gap), sc.y - BandMargin * 0.8f - h, w, h);
         }
 
         /// <summary>下の帯の上端（GUI 座標）。鞄・能力値・スキルのボタンの段と、ショートカットの区画を含む。</summary>
@@ -225,7 +226,9 @@ namespace VividOfFade
             float total = s * (n + (n - 1) * gapK + extraK);
             float x0 = (Screen.width - total) * 0.5f;
             float extra = slot >= SkillInfo.Slots ? s * extraK : 0f;
-            return new Rect(x0 + slot * s * (1f + gapK) + extra, BandMargin * 2.5f, s, s);
+            float x = x0 + slot * s * (1f + gapK) + extra;
+            if (!LeftHanded) x = Screen.width - x - s; // 右手：左右を入れかえる（スキル1が右端＝親指の側、薬が左端）
+            return new Rect(x, BandMargin * 2.5f, s, s);
         }
 
         /// <summary>スキルのボタンの上の細い帯（タップでオート／手動を切り替え。緑ならオート）。</summary>
@@ -411,7 +414,7 @@ namespace VividOfFade
                 float s = Mathf.Min(Screen.width, Screen.height) * 0.24f;
                 float m = Screen.height * 0.03f;
                 float bandTop = Screen.height - BottomBandTop; // 下の帯の上端（画面座標）。メッセージウィンドウと重ならないように、その上に置く
-                return new Rect(Screen.width - s - m, bandTop + m, s, s);
+                return new Rect(LeftHanded ? m : Screen.width - s - m, bandTop + m, s, s); // 左手なら左下
             }
         }
 
@@ -1504,7 +1507,13 @@ namespace VividOfFade
         /// <summary>操作の一覧（H で開閉）。</summary>
         public bool ShowHelp;
 
-        /// <summary>FPS を表示する（メニューの設定）。</summary>
+        /// <summary>操作：左手（メニューの設定）。下の段のボタンと手動攻撃を左に寄せる。</summary>
+        public static bool LeftHanded
+        {
+            get => Profile.LeftHandedSetting;
+            set => Profile.LeftHandedSetting = value;
+        }
+
         /// <summary>FPS を出すか（設定。保存する）。</summary>
         public bool ShowFps
         {
