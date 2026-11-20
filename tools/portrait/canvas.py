@@ -1,11 +1,11 @@
 import math
 class C:
-    def __init__(s,w,h,oy=0): s.w,s.h,s.oy=w,h,oy; s.g=[['.']*w for _ in range(h)]  # oy：描く座標を下へずらす（帽子・光輪が上にはみ出さないように）
+    def __init__(s,w,h,oy=0): s.w,s.h,s.oy,s.ox=w,h,oy,0; s.g=[['.']*w for _ in range(h)]  # ox：横へずらす（斜めの顔で目鼻を寄せる）  # oy：描く座標を下へずらす（帽子・光輪が上にはみ出さないように）
     def set(s,x,y,c):
-        x,y=int(round(x)),int(round(y))+s.oy
+        x,y=int(round(x))+s.ox,int(round(y))+s.oy
         if 0<=x<s.w and 0<=y<s.h: s.g[y][x]=c
     def get(s,x,y):
-        y=y+s.oy
+        x=x+s.ox; y=y+s.oy
         return s.g[y][x] if 0<=x<s.w and 0<=y<s.h else '.'
     def ell(s,cx,cy,rx,ry,c,only=None):
         for y in range(int(cy-ry)-1,int(cy+ry)+2):
