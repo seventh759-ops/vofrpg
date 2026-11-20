@@ -17,17 +17,25 @@ def eyes_hd(c, iris='I', brow='h', pupil=True):
     c.line(82,69,87,69,'K',1)
     c.rect(73,62,76,63,'Q'); c.rect(92,62,95,63,'Q')   # 頬の赤み
 def neck_hd(c,col='s'): c.rect(79,72,89,88,col)
-def hood_hd(c,col,trim=None,horns=False,hcol=None):
-    """顔のまわりを輪のように覆う頭巾（あごの下は開く）。"""
-    c.ell(CX,50,21,29,col,only='.')
+def hood_hd(c,col,trim=None,horns=False,hcol=None,inner='O'):
+    """顔のまわりを輪のように覆う頭巾（灯術師と同じ作り）。上は丸くふくらみ、あごの下は開き、
+    内側に影の輪、あごの横から肩へ布がたまる。inner は内側の影の素材（絵ごとに暗い色を決める）。"""
+    c.ell(CX,49,22,29,col,only='.')
+    c.ell(CX+2,28,16,10,col,only='.')                                    # 上は丸くふくらむ（後ろへ少し垂れる）
     for y in range(14,92):
         for x in range(58,111):
             o=((x-CX)/22)**2+((y-52)/30)**2; i=((x-CX)/15.5)**2+((y-55)/21.5)**2
             if y>70 and abs(x-CX)<13: continue
             if o<=1 and i>1 and c.get(x,y) in ('.h' if y>58 else '.hs'): c.set(x,y,col)
     if trim:
-        for a in range(180,361,2):
-            r=math.radians(a); c.ell(CX+15.8*math.cos(r),55+21.8*math.sin(r),1.1,1.1,trim,only=col)
+        for a_ in range(180,361,2):
+            r=math.radians(a_); c.ell(CX+15.8*math.cos(r),55+21.8*math.sin(r),1.1,1.1,trim,only=col)
+    for a_ in range(200,341,3):
+        r=math.radians(a_); c.ell(CX+18.5*math.cos(r),53+25*math.sin(r),1.1,1.1,inner,only=col)   # 内側の影の輪
+    for sx in (-1,1):
+        c.ell(CX+sx*17,76,8,11,col,only='.h')                                # あごの横から肩へ、布がたまる
+        for a_ in range(200 if sx<0 else -20, 290 if sx<0 else 70, 4):
+            r=math.radians(a_); c.set(CX+sx*17+6*math.cos(r),76+8*math.sin(r),inner)
     if horns:
         hc=hcol or col
         c.poly([(68,30),(62,22),(56,4),(66,14),(74,26)],hc); c.poly([(100,30),(106,22),(112,4),(102,14),(94,26)],hc)
