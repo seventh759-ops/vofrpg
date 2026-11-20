@@ -262,7 +262,7 @@ namespace VividOfFade
 
         AudioClip jackpot;
 
-        /// <summary>大当たり：鐘の連打「キンキンキン」から、ファンファーレ「タタタ・ターン・タ・ジャーン」、鈴がこぼれる（約1.9秒）。</summary>
+        /// <summary>大当たり：鐘の連打「キンキンキン」がだんだん速く高くなり、大きな鐘の和音「ジャーン」、鈴が一気にこぼれる（約1.9秒）。</summary>
         public void Jackpot()
         {
             if (jackpot == null) jackpot = MakeJackpot();
@@ -276,56 +276,54 @@ namespace VividOfFade
             const float length = 1.9f;
             int len = (int)(Rate * length);
             var data = new float[len];
-            // 鐘の音（倍音が整数倍でない澄んだ響き）
-            void Bell(float f, float at, float gain, float dur = 0.45f)
+            float[] ratios = { 1f, 2.76f, 5.4f };
+            float[] amps = { 1f, 0.5f, 0.25f };
+            // 鐘の音（倍音が整数倍でない澄んだ響き。聞こえない高さの倍音は入れない）
+            void Bell(float f, float at, float gain, float dur = 0.45f, float decay = 7f)
             {
                 int s = (int)(Rate * at), n = (int)(Rate * dur);
                 for (int i = 0; i < n && s + i < len; i++)
                 {
                     float t = (float)i / Rate;
-                    float v = Mathf.Sin(2f * Mathf.PI * f * t) + 0.5f * Mathf.Sin(2f * Mathf.PI * f * 2.76f * t) + 0.25f * Mathf.Sin(2f * Mathf.PI * f * 5.4f * t);
-                    data[s + i] += v * Mathf.Exp(-t * 7f) * Mathf.Min(1f, t / 0.002f) * gain;
+                    float v = 0f;
+                    for (int k = 0; k < ratios.Length; k++)
+                        if (f * ratios[k] < 20000f) v += amps[k] * Mathf.Sin(2f * Mathf.PI * f * ratios[k] * t);
+                    data[s + i] += v * Mathf.Exp(-t * decay) * Mathf.Min(1f, t / 0.002f) * gain;
                 }
             }
-            // 矩形波の1音（鳴った瞬間がいちばん大きく、減っていく）
-            void Square(float f, float at, float dur, float decay, float gain)
+            // 1) 鐘の連打：3段に高くなりながら、だんだん速く、大きく
+            int[] lo = { 91, 96, 100 }, hi = { 96, 100, 103 };
+            int[] steps = { 5, 5, 6 };
+            float tm = 0f;
+            int idx = 0;
+            for (int st = 0; st < steps.Length; st++)
+                for (int k = 0; k < steps[st]; k++, idx++)
+                {
+                    Bell(Note(idx % 2 == 0 ? hi[st] : lo[st]), tm, 0.15f + 0.01f * idx, 0.25f);
+                    tm += 0.05f - 0.0015f * idx;
+                }
+            // 2) 大きな鐘の和音「ジャーン」と、きらきら揺れる高い音
+            float hit = tm;
+            int[] chord = { 84, 88, 91, 96, 103 };
+            float[] chordGain = { 0.22f, 0.18f, 0.18f, 0.2f, 0.12f };
+            for (int c = 0; c < chord.Length; c++) Bell(Note(chord[c]), hit, chordGain[c], 1.3f, 2.6f);
             {
-                int s = (int)(Rate * at), n = (int)(Rate * dur);
+                int s = (int)(Rate * hit), n = (int)(Rate * 1.1f);
+                float f = Note(108);
                 for (int i = 0; i < n && s + i < len; i++)
                 {
                     float t = (float)i / Rate;
-                    data[s + i] += Pulse(f * t, 0.5f) * Mathf.Min(1f, t / 0.003f) * Mathf.Exp(-t * decay) * gain;
+                    float trem = Mathf.Sin(2f * Mathf.PI * 18f * t) >= 0f ? 1f : 0.5f;
+                    data[s + i] += Mathf.Sin(2f * Mathf.PI * f * t) * Mathf.Exp(-t * 2.5f) * trem * 0.07f;
                 }
             }
-            // 鐘の連打：高低を交互に、だんだん大きく
-            for (int k = 0; k < 10; k++) Bell(Note(k % 2 == 0 ? 96 : 91), k * 0.04f, 0.18f + 0.012f * k, 0.25f);
-            // ファンファーレ：和音と低音
-            int[] mel = { 72, 72, 72, 77, 81, 84 };
-            float[] at = { 0.42f, 0.50f, 0.58f, 0.66f, 0.84f, 0.93f };
-            float[] dur = { 0.08f, 0.08f, 0.08f, 0.16f, 0.08f, 0.95f };
-            int[] chord = { 0, 4, 7, 12 };
-            float[] chordGain = { 0.13f, 0.11f, 0.11f, 0.08f };
-            for (int k = 0; k < mel.Length; k++)
+            // 3) 鈴が一気にこぼれる（2列で重ねる）
+            int[] spill = { 103, 100, 96, 105, 98, 100, 91, 103, 96, 100, 98, 93, 103, 96, 100, 91, 98, 96, 103, 100, 96, 91, 98, 93 };
+            for (int k = 0; k < spill.Length; k++)
             {
-                float dec = dur[k] < 0.5f ? 25f : 2.6f;
-                for (int c = 0; c < chord.Length; c++) Square(Note(mel[k] + chord[c]), at[k], dur[k], dec, chordGain[c]);
-                Square(Note(mel[k] - 12), at[k], dur[k], dec, 0.12f);
-                Square(Note(mel[k] - 24), at[k], dur[k], dec * 0.8f, 0.10f);
+                Bell(Note(spill[k]), hit + 0.03f + k * 0.035f + (k % 3) * 0.007f, 0.10f);
+                if (k % 2 == 0) Bell(Note(spill[k] + 12), hit + 0.05f + k * 0.035f, 0.05f, 0.3f, 10f);
             }
-            // 最後の和音に、きらきら揺れる高い音
-            {
-                int s = (int)(Rate * 0.95f), n = (int)(Rate * 0.9f);
-                float f = Note(96);
-                for (int i = 0; i < n && s + i < len; i++)
-                {
-                    float t = (float)i / Rate;
-                    float trem = Mathf.Sin(2f * Mathf.PI * 16f * t) >= 0f ? 1f : 0f;
-                    data[s + i] += Mathf.Sin(2f * Mathf.PI * f * t) * Mathf.Exp(-t * 3f) * (0.5f + 0.5f * trem) * 0.08f;
-                }
-            }
-            // 鈴がこぼれる
-            int[] spill = { 100, 96, 103, 91, 98, 100, 96, 103, 88, 96, 100, 91, 103, 96, 98, 100, 91, 96 };
-            for (int k = 0; k < spill.Length; k++) Bell(Note(spill[k]), 0.95f + k * 0.04f + (k % 3) * 0.008f, 0.09f);
             // 終わりをなめらかに消して、大きさをそろえる
             float peak = 0.0001f;
             for (int i = 0; i < len; i++)
