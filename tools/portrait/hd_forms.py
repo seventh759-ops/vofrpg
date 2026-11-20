@@ -29,6 +29,17 @@ def mage_extra(T,M):
     poly_tone(T,M,[(96,100),(106,98),(100,140),(94,140)],2,'c')
     poly_tone(T,M,[(58,140),(66,140),(64,180),(54,180)],2,'C')
     poly_tone(T,M,[(114,140),(130,140),(128,160),(114,160)],2,'C')
+    # ケープ：左右の肩を丸く包む形で塗る（肩の上が明るく、裾へ暗く。腕の位置で色が変わらないように）
+    H=len(M); W=len(M[0])
+    for y in range(H):
+        for x in range(W):
+            if M[y][x]!='E' or not isinstance(T[y][x],float): continue
+            dy=(y-96)/14
+            bump=lambda cx_: max(0.0,1-((x-cx_)/16)**2-((y-92)/10)**2)        # 肩の上の丸い照り
+            v=3.0+1.3*(x-84)/45+1.5*dy-1.6*bump(56)-1.1*bump(112)
+            if M[min(H-1,y+1)][x]!='E' or M[min(H-1,y+2)][x]!='E': v+=1.2          # 裾の厚み
+            if x>0 and M[y][x-1]=='.': v-=0.8
+            T[y][x]=max(0.0,min(7.0,v))
     # 袖と長衣の境目に強弱：袖の左のふちは照り、袖の下と右に隠れる長衣は影
     H=len(M); W=len(M[0])
     for y in range(H):
@@ -52,6 +63,7 @@ def mage_hd(kind,pal,aura=None):
     c=lamp_hd(kind)
     p={**DEF,**pal}
     p.setdefault('C',p.get('c',(110,132,214,70,92,170,48,62,124,32,40,86)))   # 袖は長衣と同じ色
+    p.setdefault('E',p.get('c',(110,132,214,70,92,170,48,62,124,32,40,86)))   # ケープも同じ色
     return flatten(c.rows(),p,aura,mage_extra)
 
 def scaled(c,pal,iris='I',hair='h',aura=None,fix=None):
