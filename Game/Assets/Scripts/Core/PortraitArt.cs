@@ -113,7 +113,7 @@ namespace VividOfFade
                 Visit(x + 1, y); Visit(x - 1, y); Visit(x, y + 1); Visit(x, y - 1);
             }
 
-            const float R = 7f; // ふくらみが平らになるまでの距離
+            float R = 7f * Mathf.Max(1f, h / 136f); // ふくらみが平らになるまでの距離（細かい絵ほど長く）
             float Height(int x, int y, char c)
             {
                 if (At(x, y) != c) return 0f;
