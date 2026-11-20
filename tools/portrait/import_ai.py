@@ -3,6 +3,7 @@
 使い方: python3 import_ai.py 入力.webp 出力.png [ドットの大きさ(省略で自動)]
 ・ドットの大きさ（元の1粒が何ピクセルか）を色の変わり目の間隔から見つけ、粒の中心の色をとる
 ・色を減らす：くすんだ色（白・銀・肌・影）と、鮮やかな色（目・宝石・金）を分けて減らす（小さな宝石の色が消えないように）
+・背景が白い絵は、外側からつながる明るい色を背景として抜く
 ・外の縁：背景に接する暗い粒は、ひとつの縁の色にそろえる
 ・ぼやけで出た、ぽつんと浮いた1粒（くすんだ色だけ）を、まわりの色にそろえる
 """
@@ -46,6 +47,23 @@ def convert(src, bs=None, neutral=30, vivid=18, outline=(30, 24, 44)):
             alpha[y, x] = np.median(blk[:, 3]) > 128
             op = blk[blk[:, 3] > 128]
             if len(op): col[y, x] = np.median(op[:, :3], axis=0)
+    # 背景が白く塗ってある絵：外側からつながっている明るい色（白・光のにじみ）を背景として抜く（黒い縁で止まる）
+    if alpha.all():
+        from collections import deque
+        bg = np.zeros((H, W), bool); q0 = deque((y, x) for y in range(H) for x in (0, W - 1))
+        q0.extend((y, x) for x in range(W) for y in (0, H - 1))
+        while q0:
+            y, x = q0.popleft()
+            if not (0 <= y < H and 0 <= x < W) or bg[y, x] or col[y, x].min() < 205: continue
+            bg[y, x] = True; q0.extend(((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)))
+        alpha = ~bg
+        # 光のにじみの残り：背景に2方向以上で接する明るい粒も背景にする
+        for _ in range(3):
+            lit = alpha & (col.max(-1) > 170)
+            nbg = np.zeros((H, W), int)
+            for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                sh = np.roll(~alpha, (dy, dx), (0, 1)); nbg += sh
+            alpha = alpha & ~(lit & (nbg >= 2))
     px = col[alpha]
     mx, mn = px.max(1), px.min(1); sat = (mx - mn) / np.maximum(mx, 1)
     vmask = (sat > 0.35) & (mx > 60)
