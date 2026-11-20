@@ -212,14 +212,15 @@ namespace VividOfFade
             if (!ch.Ascended)
             {
                 var ban = new Rect(pad, below, W - pad * 2f, H * 0.052f);
-                Hud.Fill(ban, new Color(0.97f, 0.96f, 0.93f, 0.92f));
+                Hud.Fill(ban, panelBack);
+                Hud.OrnateFrame(ban, Hud.FrameGold, frameT, false, false);
                 float gd = ban.height * 1.15f;
                 var gr = new Rect(ban.x - gd * 0.05f, ban.center.y - gd * 0.5f, gd, gd);
                 DrawDisk(gr, new Color(0.85f, 0.72f, 0.42f, 1f));
                 DrawDisk(new Rect(gr.x + 3f, gr.y + 3f, gr.width - 6f, gr.height - 6f), new Color(0.22f, 0.18f, 0.3f, 1f));
                 Hud.DrawSprite(new Rect(gr.x + gd * 0.1f, gr.y + gd * 0.1f, gd * 0.8f, gd * 0.8f), PixelArt.Guide);
                 var say = new GUIStyle(small) { wordWrap = true, alignment = TextAnchor.MiddleLeft };
-                say.normal.textColor = new Color(0.12f, 0.1f, 0.15f);
+                say.normal.textColor = new Color(0.95f, 0.92f, 0.85f);
                 GUI.Label(new Rect(gr.xMax + W * 0.02f, ban.y, ban.xMax - gr.xMax - W * 0.04f, ban.height), Greeting(ch), say);
                 below = ban.yMax + H * 0.008f;
             }
@@ -236,8 +237,9 @@ namespace VividOfFade
             // ---- 出撃の門と、左右の能力値・スキル ----
             float gateH = H * 0.13f, gateW = gateH * 48f / 52f;
             var gate = new Rect((W - gateW) * 0.5f, tabBar.y - H * 0.012f - gateH, gateW, gateH);
-            float sideH = H * 0.055f, sideW = (W - pad * 2f - gateW) * 0.5f - W * 0.03f;
-            var statsR = new Rect(pad, gate.yMax - sideH - H * 0.01f, sideW, sideH);
+            float sideH = H * 0.06f, sideW = (W - pad * 2f - gateW) * 0.5f - W * 0.03f;
+            var statsR = new Rect(pad, gate.y + gateH * 0.55f - sideH * 0.5f, sideW, sideH);
+            var dock = new Rect(0, gate.y + gateH * 0.3f, W, H - (gate.y + gateH * 0.3f)); // 下の台（門の下半分からタブまで）
             var skillR = new Rect(W - pad - sideW, statsR.y, sideW, sideH);
 
             // ---- 真ん中：台座の上の自分 ----
@@ -266,12 +268,12 @@ namespace VividOfFade
                 var labels = new[] { Loc.T("Settings", "設定"), Loc.T("Chars", "キャラ"), Loc.T($"Porter {ch.CarrySlots}/{Town.MaxCarrySlots}", $"荷運び\n{ch.CarrySlots}/{Town.MaxCarrySlots}") };
                 System.Action[] taps = { world.OpenSettings, world.ShowClassSelect, () => Open(Panel.Porter) };
                 var lab = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = true };
-                lab.normal.textColor = new Color(0.15f, 0.12f, 0.2f);
+                lab.normal.textColor = new Color(0.95f, 0.92f, 0.85f);
                 for (int k = 0; k < 3; k++)
                 {
                     var r = new Rect(x, y + k * (d + H * 0.012f), d, d);
                     DrawDisk(new Rect(r.x - frameT * 2f, r.y - frameT * 2f, d + frameT * 4f, d + frameT * 4f), Hud.FrameGold);
-                    DrawDisk(r, new Color(0.95f, 0.94f, 0.9f, 0.95f));
+                    DrawDisk(r, new Color(0.06f, 0.055f, 0.1f, 0.95f));
                     hud.Button(r, null, new Color(0f, 0f, 0f, 0f), centered, taps[k]);
                     if (k == 0) Hud.DrawSprite(new Rect(r.x + d * 0.18f, r.y + d * 0.18f, d * 0.64f, d * 0.64f), PixelArt.GearIcon);
                     else if (k == 1) { Hud.DrawSprite(new Rect(r.x + d * 0.2f, r.y + d * 0.06f, d * 0.6f, d * 0.6f), PixelArt.PlayerFor(ch)); Hud.FitLabel(new Rect(r.x, r.y + d * 0.62f, d, d * 0.3f), labels[k], lab); }
@@ -279,9 +281,12 @@ namespace VividOfFade
                 }
             }
 
-            // ---- 出撃の門（押すと出撃）と、能力値・スキル ----
+            // ---- 出撃の門（押すと出撃）と、能力値・スキル。下の台に乗せる ----
+            Hud.Fill(dock, new Color(0.06f, 0.055f, 0.09f, 0.92f));
+            Hud.Fill(new Rect(0, dock.y, W, frameT * 2f), Hud.FrameGold);
+            Hud.Fill(new Rect(0, dock.y + frameT * 2f, W, frameT), new Color(1f, 0.95f, 0.75f, 0.35f));
             {
-                Hud.Glow(gate.center.x, gate.center.y + gateH * 0.05f, gateW * 0.75f, new Color(1f, 0.8f, 0.45f, 0.35f + 0.1f * Mathf.Sin(Time.unscaledTime * 2f)));
+                Hud.Glow(gate.center.x, gate.center.y + gateH * 0.05f, gateW * 0.6f, new Color(1f, 0.8f, 0.45f, 0.12f + 0.05f * Mathf.Sin(Time.unscaledTime * 2f))); // 門のまわりにかすかな灯り（中は暗い）
                 Hud.DrawSprite(gate, PixelArt.GateIcon);
                 hud.Button(gate, null, new Color(0f, 0f, 0f, 0f), centered, world.Depart);
                 var dep = new GUIStyle(hud.LabelStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
@@ -301,8 +306,7 @@ namespace VividOfFade
             }
 
             // ---- 施設のタブ（倉庫・ショップ・女神・カバン・鍛冶） ----
-            Hud.Fill(tabBar, new Color(0.06f, 0.055f, 0.09f, 0.96f));
-            Hud.Fill(new Rect(0, tabBar.y, W, frameT * 2f), Hud.FrameGold);
+            Hud.Fill(new Rect(pad, tabBar.y, W - pad * 2f, 1f), new Color(0.85f, 0.72f, 0.42f, 0.45f)); // 台の中の仕切り
             {
                 float cw = W / 5f;
                 var name = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
