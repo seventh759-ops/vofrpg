@@ -250,7 +250,7 @@ namespace VividOfFade
             {
                 float top = below + H * 0.01f, bottom = gate.y - H * 0.03f;
                 var big = PixelArt.TownPortrait(ch);
-                float px = Mathf.Ceil(Mathf.Max(W / TownScene.W, H / TownScene.H)) * (big.texture.height > 200 ? 0.5f : 1f);
+                float px = Mathf.Ceil(Mathf.Max(W / TownScene.W, H / TownScene.H)) * (136f / big.texture.height); // 絵の大きさ（ドット数）が違っても、同じ背の高さで置く（細かい絵は 272 ドット）
                 float bw0 = big.texture.width * px, bh0 = big.texture.height * px;
                 float fit = Mathf.Min(1f, Mathf.Min((bottom - top) / bh0, (W - pad * 2f) / bw0));
                 bw0 *= fit; bh0 *= fit;

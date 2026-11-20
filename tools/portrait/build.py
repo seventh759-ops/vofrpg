@@ -33,6 +33,23 @@ P={
 from hd_forms import forms
 FLAT={}
 FLAT.update(forms({n:d for n,(_,d) in P.items()}))
+# 外で描いた絵（ai/見た目の名前.png。import_ai.py でドットに戻して色を整えたもの）は、その絵で置き換える
+import glob
+from PIL import Image
+from flat import POOL
+for f in sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'ai','*.png'))):
+    name=os.path.splitext(os.path.basename(f))[0]
+    im=Image.open(f).convert('RGBA'); w,h=im.size; px=im.load()
+    cmap={}; rows_=[]
+    for y in range(h):
+        r=''
+        for x in range(w):
+            c=px[x,y]
+            if c[3]<128: r+='.'; continue
+            if c not in cmap: cmap[c]=POOL[len(cmap)]
+            r+=cmap[c]
+        rows_.append(r)
+    FLAT[name]=(rows_,{ch:c for c,ch in cmap.items()})
 for n in FLAT: P.pop(n,None)
 rows='\n'.join(cs(n,c.rows()) for n,(c,_) in P.items())
 flat_rows='\n'.join(cs(n,r) for n,(r,_) in FLAT.items())
