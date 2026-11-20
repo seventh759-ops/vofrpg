@@ -114,80 +114,8 @@ namespace VividOfFade
             float frameT = Mathf.Max(1f, Mathf.Round(H * 0.0009f));
             var st = world.Player.BaseStats ?? world.Player.Stats;
 
-            // ---- 上の3段は1枚の枠にまとめる（段の間は細い線）。設定の歯車は枠の中の右上 ----
-            float r1y = H * 0.02f, r1h = H * 0.042f, r2h = H * 0.034f, r3h = H * 0.034f;
-            var panel = new Rect(pad, r1y, W - pad * 2f, r1h + r2h + r3h);
-            Hud.Fill(panel, new Color(0.02f, 0.02f, 0.05f, 0.8f));
-            var divider = new Color(0.85f, 0.72f, 0.42f, 0.45f);
-            Hud.Fill(new Rect(panel.x, panel.y + r1h, panel.width, 1f), divider);
-            Hud.Fill(new Rect(panel.x, panel.y + r1h + r2h, panel.width, 1f), divider);
-            // ---- 1段目：Lv（経験値のバー）・HP・MP・設定の歯車 ----
-            float gearS = r1h * 0.8f;
-            var gearR = new Rect(panel.xMax - gearS - r1h * 0.1f, r1y + r1h * 0.1f, gearS, gearS);
-            hud.Button(gearR, null, new Color(1f, 1f, 1f, 0.08f), centered, world.OpenSettings);
-            float ip = gearS * 0.1f;
-            Hud.DrawSprite(new Rect(gearR.x + ip, gearR.y + ip, gearS - ip * 2f, gearS - ip * 2f), PixelArt.GearIcon);
-            Hud.Fill(new Rect(gearR.x - r1h * 0.1f, r1y + r1h * 0.2f, 1f, r1h * 0.6f), divider);
-            var row1 = new Rect(pad, r1y, gearR.x - r1h * 0.1f - pad, r1h);
-            var cell = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            {
-                float lvW = row1.width * 0.26f, hw = (row1.width - lvW) * 0.5f;
-                cell.normal.textColor = Color.white;
-                Hud.FitLabel(new Rect(row1.x, row1.y, lvW, row1.height * 0.74f), $"Lv {ch.Level}", cell);
-                int need = Progression.ExpToNext(ch, ch.Level);
-                var bar = new Rect(row1.x + lvW * 0.14f, row1.y + row1.height * 0.72f, lvW * 0.72f, row1.height * 0.12f);
-                Hud.Fill(bar, new Color(1f, 1f, 1f, 0.12f));
-                Hud.Fill(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(need > 0 ? (float)ch.Exp / need : 0f), bar.height), new Color(0.2f, 0.9f, 0.72f, 1f));
-                // HP・MP：数字の下にバー（町では満タン）
-                for (int k = 0; k < 2; k++)
-                {
-                    bool hpRow = k == 0;
-                    float x0 = row1.x + lvW + hw * k;
-                    cell.normal.textColor = hpRow ? new Color(1f, 0.55f, 0.55f) : new Color(0.55f, 0.7f, 1f);
-                    Hud.FitLabel(new Rect(x0, row1.y, hw, row1.height * 0.74f), st != null ? (hpRow ? $"HP {st.MaxHp}" : $"MP {st.MaxMp}") : (hpRow ? "HP" : "MP"), cell);
-                    var hb = new Rect(x0 + hw * 0.12f, row1.y + row1.height * 0.72f, hw * 0.76f, row1.height * 0.12f);
-                    Hud.Fill(hb, new Color(1f, 1f, 1f, 0.12f));
-                    Hud.Fill(hb, hpRow ? new Color(0.85f, 0.2f, 0.25f, 1f) : new Color(0.25f, 0.45f, 0.95f, 1f));
-                    Hud.Fill(new Rect(hb.x, hb.y, hb.width, hb.height * 0.35f), new Color(1f, 1f, 1f, 0.25f)); // 光沢
-                }
-                for (int k = 0; k < 2; k++) Hud.Fill(new Rect(row1.x + lvW + hw * k, row1.y + row1.height * 0.2f, 1f, row1.height * 0.6f), new Color(0.85f, 0.72f, 0.42f, 0.4f));
-            }
-
-            // ---- 2段目：火種・欠片（アイコンと数字だけ。欠片は深淵へ行けるようになってから） ----
-            float r2y = row1.yMax;
-            var rowM = new Rect(pad, r2y, W - pad * 2f, r2h);
-            {
-                float half = rowM.width * 0.5f, ic = r2h * 0.78f;
-                var num = new GUIStyle(cell) { alignment = TextAnchor.MiddleLeft };
-                // 火種
-                Hud.DrawSprite(new Rect(rowM.x + half * 0.2f, rowM.y + (r2h - ic) * 0.5f, ic, ic), PixelArt.Ember);
-                num.normal.textColor = new Color(1f, 0.8f, 0.4f);
-                Hud.FitLabel(new Rect(rowM.x + half * 0.2f + ic * 1.2f, rowM.y, half * 0.75f - ic, r2h), ch.Embers.ToString("N0"), num);
-                // 欠片
-                bool shards = ch.AbyssShards > 0 || GameConfig.CanEnterAbyss(ch);
-                var oldC = GUI.color;
-                if (!shards) GUI.color = new Color(1f, 1f, 1f, 0.3f);
-                Hud.DrawSprite(new Rect(rowM.x + half + half * 0.2f, rowM.y + (r2h - ic) * 0.5f, ic, ic), PixelArt.ShardIcon);
-                GUI.color = oldC;
-                num.normal.textColor = shards ? new Color(0.85f, 0.6f, 1f) : new Color(1f, 1f, 1f, 0.3f);
-                Hud.FitLabel(new Rect(rowM.x + half + half * 0.2f + ic * 1.2f, rowM.y, half * 0.75f - ic, r2h), shards ? ch.AbyssShards.ToString("N0") : "-", num);
-                Hud.Fill(new Rect(rowM.x + half, rowM.y + r2h * 0.2f, 1f, r2h * 0.6f), new Color(0.85f, 0.72f, 0.42f, 0.4f));
-            }
-
-            // ---- 3段目：職業・転生の回数・最高到達 ----
-            float r3y = rowM.yMax;
-            var row2 = new Rect(pad, r3y, W - pad * 2f, r3h);
-            Hud.OrnateFrame(panel, Hud.FrameGold, frameT, false, false);
-            {
-                float cw = row2.width / 3f;
-                cell.normal.textColor = new Color(1f, 0.9f, 0.6f);
-                Hud.FitLabel(new Rect(row2.x, row2.y, cw, r3h), ClassTitle(type, ch), cell);
-                cell.normal.textColor = Color.white;
-                Hud.FitLabel(new Rect(row2.x + cw, row2.y, cw, r3h), Loc.T($"Reborn {ch.Rebirths}", $"転生 {ch.Rebirths}回"), cell);
-                int best = ch.Ascended ? ch.AscentBest : ch.BestFloor;
-                string bestText = best > 0 ? GameConfig.FloorName(best, ch.Ascended) : "-";
-                Hud.FitLabel(new Rect(row2.x + cw * 2f, row2.y, cw, r3h), Loc.T($"Best {bestText}", $"最高到達 {bestText}"), cell);
-            }
+            // ---- 上の帯：ダンジョンの上の帯と同じ作り（ロゴ・転生の印・設定の歯車／LV・HP・MP・経験値／職業・最高到達／火種・欠片） ----
+            float headerBottom = hud.DrawTownHeader(ch, st, world.OpenSettings);
 
             // ---- いちばん下：施設の段（倉庫・ショップ・女神・鞄・鍛冶）と、その上の小さいボタンの段 ----
             var adv = AdvancedClasses.Of(type, ch);
@@ -264,7 +192,7 @@ namespace VividOfFade
 
             // ---- 真ん中：自分を大きく（ドットの大きさは町の絵と同じ。入りきらなければ縮める） ----
             {
-                float top = row2.yMax + H * 0.015f, bottom = portraitBottom;
+                float top = headerBottom + H * 0.012f, bottom = portraitBottom;
                 var big = PixelArt.TownPortrait(ch);
                 float px = Mathf.Ceil(Mathf.Max(W / TownScene.W, H / TownScene.H)) * (big.texture.height > 200 ? 0.5f : 1f); // 町の絵の1ドットの大きさ（細かい版の絵はその半分）
                 float bw0 = big.texture.width * px, bh0 = big.texture.height * px; // 絵は1枚のテクスチャ

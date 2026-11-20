@@ -1027,6 +1027,119 @@ namespace VividOfFade
             });
         }
 
+        /// <summary>
+        /// 町の画面の上の帯。ダンジョンの上の帯と同じ作り：1段目 ロゴ・転生の印・設定の歯車（MENU の場所）／
+        /// 1枚の枠に LV・HP・MP（町では満タン）・経験値、仕切りの下に 職業と最高到達、火種と欠片。下端（GUI 座標）を返す。
+        /// </summary>
+        public float DrawTownHeader(CharacterData ch, PlayerStats st, System.Action openSettings)
+        {
+            float W = Screen.width, mm = BandMargin;
+            var bandColor = new Color(0.15f, 0.14f, 0.2f, 1f);
+            // 1段目：ロゴ・転生の印・歯車
+            var titleRow = new Rect(mm, mm, W - mm * 2f, TitleRowH);
+            var menu = ToGui(MenuRect);
+            float gearS = menu.height * 1.15f;
+            var gearR = new Rect(menu.xMax - gearS, menu.y + (menu.height - gearS) * 0.5f, gearS, gearS);
+            {
+                var logo = TitleArt.Logo;
+                float lh = titleRow.height * 0.92f, lw = logo.width * lh / logo.height;
+                var logoRect = new Rect(titleRow.x + mm * 0.5f, titleRow.y + (titleRow.height - lh) * 0.5f, lw, lh);
+                var oldColor = GUI.color;
+                GUI.color = new Color(1f, 1f, 1f, 0.6f);
+                GUI.DrawTexture(new Rect(logoRect.x - lh * 0.05f, logoRect.y - lh * 0.05f, logoRect.width + lh * 0.1f, logoRect.height + lh * 0.1f), TitleArt.Glow);
+                GUI.color = oldColor;
+                GUI.DrawTexture(logoRect, logo);
+                if (ch.Rebirths > 0)
+                {
+                    var aura = ThirdClasses.AuraColor(ch.Rebirths);
+                    var countStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, fontStyle = FontStyle.Bold };
+                    countStyle.normal.textColor = Color.Lerp(aura, Color.white, 0.35f);
+                    string count = Loc.T($"Reborn x{ch.Rebirths}", $"転生{ch.Rebirths}");
+                    float cw = countStyle.CalcSize(new GUIContent(count)).x;
+                    float right = gearR.x - mm * 1.2f;
+                    GUI.Label(new Rect(right - cw, titleRow.y, cw, titleRow.height), count, countStyle);
+                    float gem = titleRow.height * 0.8f;
+                    var old2 = GUI.color;
+                    GUI.color = aura;
+                    DrawSprite(new Rect(right - cw - mm * 0.4f - gem, titleRow.y + (titleRow.height - gem) * 0.5f, gem, gem), PixelArt.RebirthGem);
+                    GUI.color = old2;
+                }
+                Button(gearR, null, new Color(1f, 1f, 1f, 0.06f), centered, openSettings);
+                DrawSprite(new Rect(gearR.x + gearS * 0.08f, gearR.y + gearS * 0.08f, gearS * 0.84f, gearS * 0.84f), PixelArt.GearIcon);
+            }
+
+            // 枠：LV・HP・MP・経験値、仕切り、職業と最高到達、火種と欠片
+            float pp = PanelPad, dt = DividerT;
+            float sh = Mathf.Max(1f, Mathf.Round(dt * 0.5f));
+            float infoRowH = FloorRowH * 1.15f;
+            float panelH = PanelPad * 2.8f + TopRowH + mm * 0.35f + ExpRowH + dt * 1.5f + infoRowH * 2f + pp * 0.6f;
+            var panel = new Rect(mm, titleRow.yMax + mm * 0.6f, W - mm * 2f, panelH);
+            Fill(new Rect(0, 0, W, panel.yMax + mm), bandColor);
+            Fill(panel, new Color(0.08f, 0.075f, 0.11f, 1f));
+            var hi = new Color(1f, 0.95f, 0.75f, 0.9f);
+            var lo = new Color(0f, 0f, 0f, 0.75f);
+            void HDivider(float x, float y, float w)
+            {
+                Fill(new Rect(x, y - sh, w, sh), lo); Fill(new Rect(x, y, w, dt), FrameGold);
+                Fill(new Rect(x, y, w, Mathf.Max(1f, dt * 0.3f)), hi); Fill(new Rect(x, y + dt, w, sh), lo);
+            }
+            void VDivider(float x, float y, float h)
+            {
+                Fill(new Rect(x - sh, y, sh, h), lo); Fill(new Rect(x, y, dt, h), FrameGold);
+                Fill(new Rect(x, y, Mathf.Max(1f, dt * 0.3f), h), hi); Fill(new Rect(x + dt, y, sh, h), lo);
+            }
+            float rowY = panel.y + pp, rowH = TopRowH, expGap = mm * 0.35f;
+            var lvBox = new Rect(panel.x + pp, rowY, W * 0.17f, rowH + expGap + ExpRowH);
+            string lvText = ch.Level >= Progression.LevelCap(ch) ? $"LV{ch.Level}★" : $"LV{ch.Level}";
+            NumberFont.DrawIn(lvBox, lvText, Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx + 1f);
+            VDivider(lvBox.xMax + pp * 0.5f, panel.y, lvBox.height + pp * 1.5f);
+            float barX = lvBox.xMax + pp * 1.5f;
+            float barW = (panel.xMax - pp - barX - pp) * 0.5f;
+            int maxHp = st != null ? st.MaxHp : 0, maxMp = st != null ? st.MaxMp : 0;
+            var hpBack = new Rect(barX, rowY, barW, rowH);
+            OrnateBar(hpBack, 1f, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold, false);
+            NumberFont.DrawIn(hpBack, $"HP {maxHp}", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx);
+            var mpBack = new Rect(hpBack.xMax + pp, rowY, panel.xMax - pp - (hpBack.xMax + pp), rowH);
+            OrnateBar(mpBack, 1f, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), FrameGold, false);
+            NumberFont.DrawIn(mpBack, $"MP {maxMp}", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx);
+            var expBack = new Rect(barX, rowY + rowH + expGap, panel.xMax - pp - barX, ExpRowH);
+            Fill(expBack, new Color(0.02f, 0.05f, 0.05f, 1f));
+            float expRatio = ch.Level >= Progression.LevelCap(ch) ? 1f : Mathf.Clamp01((float)ch.Exp / Mathf.Max(1, Progression.ExpToNext(ch, ch.Level)));
+            Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.2f, 0.9f, 0.72f, 1f));
+            Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.4f), new Color(0.85f, 1f, 0.95f, 0.45f));
+            for (int k = 1; k < 10; k++) Fill(new Rect(expBack.x + expBack.width * k / 10f, expBack.y, 1f, expBack.height), new Color(0f, 0f, 0f, 0.35f));
+            Frame(expBack, new Color(0f, 0f, 0f, 0.6f), 1f);
+
+            float divY = lvBox.yMax + pp * 0.5f;
+            HDivider(panel.x, divY, panel.width);
+            var txt = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            // 職業（左）と最高到達（右）
+            var row1 = new Rect(panel.x + pp, divY + dt * 1.5f + pp * 0.2f, panel.width - pp * 2f, infoRowH);
+            txt.normal.textColor = new Color(1f, 0.9f, 0.6f);
+            var adv = AdvancedClasses.Of(ClassInfo.Current, ch);
+            FitLabel(new Rect(row1.x, row1.y, row1.width * 0.5f, row1.height), adv != null ? adv.DisplayName : ClassInfo.Get(ClassInfo.Current).DisplayName, txt);
+            int best = ch.Ascended ? ch.AscentBest : ch.BestFloor;
+            string bestText = best > 0 ? GameConfig.FloorName(best, ch.Ascended) : "-";
+            var rt = new GUIStyle(txt) { alignment = TextAnchor.MiddleRight };
+            rt.normal.textColor = Color.white;
+            FitLabel(new Rect(row1.x + row1.width * 0.5f, row1.y, row1.width * 0.5f, row1.height), Loc.T($"Best {bestText}", $"最高到達 {bestText}"), rt);
+            // 火種と欠片（アイコンと数字）
+            var row2 = new Rect(row1.x, row1.yMax, row1.width, infoRowH);
+            float ic = infoRowH * 0.85f;
+            DrawSprite(new Rect(row2.x, row2.y + (infoRowH - ic) * 0.5f, ic, ic), PixelArt.Ember);
+            NumberFont.DrawIn(new Rect(row2.x + ic * 1.2f, row2.y, row2.width * 0.5f - ic * 1.4f, infoRowH), ch.Embers.ToString(), new Color(1f, 0.82f, 0.45f), TextAnchor.MiddleLeft, 0.9f, HudPx);
+            bool shards = ch.AbyssShards > 0 || GameConfig.CanEnterAbyss(ch);
+            var oldC = GUI.color;
+            if (!shards) GUI.color = new Color(1f, 1f, 1f, 0.3f);
+            DrawSprite(new Rect(row2.x + row2.width * 0.5f, row2.y + (infoRowH - ic) * 0.5f, ic, ic), PixelArt.ShardIcon);
+            GUI.color = oldC;
+            NumberFont.DrawIn(new Rect(row2.x + row2.width * 0.5f + ic * 1.2f, row2.y, row2.width * 0.5f - ic * 1.4f, infoRowH), shards ? ch.AbyssShards.ToString() : "-", shards ? new Color(0.85f, 0.62f, 1f) : new Color(1f, 1f, 1f, 0.3f), TextAnchor.MiddleLeft, 0.9f, HudPx);
+            OrnateFrame(panel, FrameGold, FrameT);
+            float bottom = panel.yMax + mm;
+            Fill(new Rect(0, bottom - DividerT * 0.5f, W, DividerT * 0.5f), new Color(0.58f, 0.52f, 0.72f, 1f)); // 帯の下のふち
+            return bottom;
+        }
+
         // ---- 祝いの演出（転職・3次職・転生。町の画面の上にも出る）：回る光の筋、大きな文字、きらめき ----
         float celebTime = -1f;
         const float CelebLife = 2.6f;
