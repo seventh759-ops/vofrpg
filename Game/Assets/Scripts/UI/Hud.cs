@@ -2276,7 +2276,11 @@ namespace VividOfFade
                 // 灯りの適性（職業ごとの、灯りとの関わり方）
                 var apt = new GUIStyle(small) { fontStyle = FontStyle.Italic };
                 apt.normal.textColor = new Color(1f, 0.85f, 0.55f);
-                FitLabel(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.4f + lh * 2.1f, tw, lh), spec.DisplayAptitude, apt);
+                // 欄が狭いので最初の一文だけ（全文は能力値の画面の「職業」で読める）
+                string aptText = spec.DisplayAptitude ?? "";
+                int cut = Loc.Ja ? aptText.IndexOf('。') : aptText.IndexOf(". ");
+                if (cut > 0) aptText = aptText.Substring(0, cut + 1);
+                FitLabel(new Rect(tx, r.y + inner + nameStyle.fontSize * 1.4f + lh * 2.1f, tw, lh), aptText, apt);
                 y += bh + gap;
             }
             Button(new Rect(pad, y, W - pad * 2f, H * 0.045f), Loc.T("BACK", "戻る"), new Color(1f, 1f, 1f, 0.08f), centered, () => newSlot = -1);
