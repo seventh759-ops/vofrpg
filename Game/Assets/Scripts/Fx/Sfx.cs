@@ -262,36 +262,33 @@ namespace VividOfFade
 
         AudioClip jackpot;
 
-        /// <summary>大当たり：高い鐘と少し低い鐘を交互に「キンキンキン…」と12回（約0.95秒）。</summary>
+        /// <summary>
+        /// 大当たり：高いドと少し低いソを交互に「キンキンキン…」と12回（約0.7秒）。
+        /// ほかのドロップ音と同じ作り（1音ずつ、鳴った瞬間がいちばん大きく、すっと減る）で、丸い音に紫のファンファーレの硬い音を少し混ぜる。
+        /// </summary>
         public void Jackpot()
         {
             if (jackpot == null) jackpot = MakeJackpot();
             Play(jackpot, 1f, true);
         }
 
-        static float Note(int midi) => 440f * Mathf.Pow(2f, (midi - 69) / 12f);
-
         static AudioClip MakeJackpot()
         {
-            const float length = 0.95f;
-            int len = (int)(Rate * length);
-            var data = new float[len];
-            // 鐘の音（倍音が整数倍でない澄んだ響き）
-            void Bell(float f, float at, float gain, float dur)
+            const float noteLength = 0.06f;
+            const int count = 12;
+            int per = (int)(Rate * noteLength);
+            var data = new float[per * count];
+            for (int n = 0; n < count; n++)
             {
-                int s = (int)(Rate * at), n = (int)(Rate * dur);
-                for (int i = 0; i < n && s + i < len; i++)
+                float f = n % 2 == 0 ? 2093f : 1568f;
+                for (int i = 0; i < per; i++)
                 {
                     float t = (float)i / Rate;
-                    float v = Mathf.Sin(2f * Mathf.PI * f * t) + 0.5f * Mathf.Sin(2f * Mathf.PI * f * 2.76f * t) + 0.25f * Mathf.Sin(2f * Mathf.PI * f * 5.4f * t);
-                    data[s + i] += v * Mathf.Exp(-t * 6f) * Mathf.Min(1f, t / 0.002f) * gain;
+                    float env = 1f - (float)i / per;
+                    data[n * per + i] = (Mathf.Sin(2f * Mathf.PI * f * t) * 0.4f + Pulse(f * t, 0.5f) * 0.08f) * env * env;
                 }
             }
-            for (int k = 0; k < 12; k++) Bell(Note(k % 2 == 0 ? 96 : 91), k * 0.06f, 0.3f, 0.25f);
-            float peak = 0.0001f;
-            for (int i = 0; i < len; i++) peak = Mathf.Max(peak, Mathf.Abs(data[i]));
-            for (int i = 0; i < len; i++) data[i] *= 0.5f / peak;
-            var clip = AudioClip.Create("jackpot", len, 1, Rate, false);
+            var clip = AudioClip.Create("jackpot", data.Length, 1, Rate, false);
             clip.SetData(data, 0);
             return clip;
         }
