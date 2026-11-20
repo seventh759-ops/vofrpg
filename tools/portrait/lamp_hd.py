@@ -182,7 +182,7 @@ def lamp_hd(kind='base'):
         c.rect(ex-2,56,ex+1,59,'I'); c.rect(ex-1,57,ex,59,'e'); c.set(ex+1,56,'x')
         c.line(ex-4,55,ex+3,55,'e',1); c.line(ex-3,54,ex+2,54,'e',1)
         c.set(ex+4*side,56,'e')
-        c.line(ex-4,50+(1 if side<0 else 0),ex+3,50+(0 if side<0 else 1),'h',1.4)
+        c.line(ex-4,50+(0 if side<0 else 1),ex+3,50+(1 if side<0 else 0),'h',1.4)   # 眉は内側の端を少し下げる（困り眉にしない）
     # 鼻・口
     c.line(85,60,85,64,'S',1); c.set(84,65,'S'); c.set(86,65,'S')
     c.line(82,69,87,69,'K',1)
