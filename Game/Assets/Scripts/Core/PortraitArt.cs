@@ -48,6 +48,26 @@ namespace VividOfFade
             return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), w);
         }
 
+        /// <summary>深淵の欠片のアイコン（紫に光る結晶のかけら。町の画面の数字の横に出す）。</summary>
+        public static Sprite ShardIcon => Shaded("ShardIcon12", ShardRows, ShardOver, null, 12);
+
+        static readonly string[] ShardRows =
+        {
+            "............",
+            "......a.....",
+            ".....aa.....",
+            ".....apa....",
+            "....aappa...",
+            "....apppa...",
+            "...aappaa.a.",
+            "...apppa.aa.",
+            "..aappaa.apa",
+            "..apppa..aa.",
+            "...aaa......",
+            "............",
+        };
+        static readonly Dictionary<char, Color32[]> ShardOver = new Dictionary<char, Color32[]> { { 'a', Ramp(200, 140, 255, 150, 90, 220, 106, 56, 170, 70, 34, 120) } };
+
         /// <summary>見た目の名前（専用の絵の鍵）。例：Lampwright／Lampwright_Adv0／Lampwright_Adv1_3rd／Vividbearer。</summary>
         static string PortraitForm(ClassType type, CharacterData ch)
         {

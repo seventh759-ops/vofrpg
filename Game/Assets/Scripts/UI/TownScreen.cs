@@ -112,8 +112,8 @@ namespace VividOfFade
             float frameT = Mathf.Max(1f, Mathf.Round(H * 0.0009f));
             var st = world.Player.BaseStats ?? world.Player.Stats;
 
-            // ---- 1段目：Lv（経験値のバー）・HP/MP・火種・欠片。右端に設定の歯車 ----
-            float r1y = H * 0.02f, r1h = H * 0.055f;
+            // ---- 1段目：Lv（経験値のバー）・HP・MP。右端に設定の歯車 ----
+            float r1y = H * 0.02f, r1h = H * 0.042f;
             float gearS = r1h;
             var gearR = new Rect(W - pad - gearS, r1y, gearS, gearS);
             Hud.Fill(gearR, new Color(0.04f, 0.04f, 0.07f, 0.92f));
@@ -124,46 +124,57 @@ namespace VividOfFade
             var row1 = new Rect(pad, r1y, gearR.x - pad - W * 0.02f, r1h);
             Hud.Fill(row1, new Color(0.02f, 0.02f, 0.05f, 0.78f));
             Hud.OrnateFrame(row1, Hud.FrameGold, frameT, false, false);
+            var cell = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
             {
-                float cw = row1.width / 4f;
-                var head = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-                head.normal.textColor = Color.white;
-                var cell = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-                // Lv と、その下に経験値の細いバー
-                var lvR = new Rect(row1.x, row1.y, cw, row1.height * 0.72f);
-                Hud.FitLabel(lvR, $"Lv {ch.Level}", head);
+                float lvW = row1.width * 0.26f, hw = (row1.width - lvW) * 0.5f;
+                cell.normal.textColor = Color.white;
+                Hud.FitLabel(new Rect(row1.x, row1.y, lvW, row1.height * 0.74f), $"Lv {ch.Level}", cell);
                 int need = Progression.ExpToNext(ch, ch.Level);
-                var bar = new Rect(row1.x + cw * 0.12f, row1.y + row1.height * 0.72f, cw * 0.76f, row1.height * 0.12f);
+                var bar = new Rect(row1.x + lvW * 0.14f, row1.y + row1.height * 0.72f, lvW * 0.72f, row1.height * 0.12f);
                 Hud.Fill(bar, new Color(1f, 1f, 1f, 0.12f));
                 Hud.Fill(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(need > 0 ? (float)ch.Exp / need : 0f), bar.height), new Color(0.2f, 0.9f, 0.72f, 1f));
-                // HP / MP（最大値）
                 cell.normal.textColor = new Color(1f, 0.55f, 0.55f);
-                Hud.FitLabel(new Rect(row1.x + cw, row1.y, cw, row1.height * 0.5f), st != null ? $"HP {st.MaxHp}" : "HP", cell);
+                Hud.FitLabel(new Rect(row1.x + lvW, row1.y, hw, row1.height), st != null ? $"HP {st.MaxHp}" : "HP", cell);
                 cell.normal.textColor = new Color(0.55f, 0.7f, 1f);
-                Hud.FitLabel(new Rect(row1.x + cw, row1.y + row1.height * 0.5f, cw, row1.height * 0.5f), st != null ? $"MP {st.MaxMp}" : "MP", cell);
-                // 火種・欠片（欠片は深淵へ行けるようになってから）
-                cell.normal.textColor = new Color(1f, 0.8f, 0.4f);
-                Hud.FitLabel(new Rect(row1.x + cw * 2f, row1.y, cw, row1.height), Loc.T($"Embers {ch.Embers}", $"火種 {ch.Embers}"), cell);
-                bool shards = ch.AbyssShards > 0 || GameConfig.CanEnterAbyss(ch);
-                cell.normal.textColor = shards ? new Color(0.85f, 0.55f, 1f) : new Color(1f, 1f, 1f, 0.3f);
-                Hud.FitLabel(new Rect(row1.x + cw * 3f, row1.y, cw, row1.height), shards ? Loc.T($"Shards {ch.AbyssShards}", $"欠片 {ch.AbyssShards}") : Loc.T("Shards -", "欠片 -"), cell);
-                for (int k = 1; k < 4; k++) Hud.Fill(new Rect(row1.x + cw * k, row1.y + row1.height * 0.2f, 1f, row1.height * 0.6f), new Color(0.85f, 0.72f, 0.42f, 0.4f));
+                Hud.FitLabel(new Rect(row1.x + lvW + hw, row1.y, hw, row1.height), st != null ? $"MP {st.MaxMp}" : "MP", cell);
+                for (int k = 0; k < 2; k++) Hud.Fill(new Rect(row1.x + lvW + hw * k, row1.y + row1.height * 0.2f, 1f, row1.height * 0.6f), new Color(0.85f, 0.72f, 0.42f, 0.4f));
             }
 
-            // ---- 2段目：職業・転生の回数・最高到達 ----
-            float r2y = row1.yMax + H * 0.008f, r2h = H * 0.036f;
-            var row2 = new Rect(pad, r2y, W - pad * 2f, r2h);
+            // ---- 2段目：火種・欠片（アイコンと数字だけ。欠片は深淵へ行けるようになってから） ----
+            float r2y = row1.yMax + H * 0.007f, r2h = H * 0.034f;
+            var rowM = new Rect(pad, r2y, W - pad * 2f, r2h);
+            Hud.Fill(rowM, new Color(0.02f, 0.02f, 0.05f, 0.7f));
+            {
+                float half = rowM.width * 0.5f, ic = r2h * 0.78f;
+                var num = new GUIStyle(cell) { alignment = TextAnchor.MiddleLeft };
+                // 火種
+                Hud.DrawSprite(new Rect(rowM.x + half * 0.2f, rowM.y + (r2h - ic) * 0.5f, ic, ic), PixelArt.Ember);
+                num.normal.textColor = new Color(1f, 0.8f, 0.4f);
+                Hud.FitLabel(new Rect(rowM.x + half * 0.2f + ic * 1.2f, rowM.y, half * 0.75f - ic, r2h), ch.Embers.ToString("N0"), num);
+                // 欠片
+                bool shards = ch.AbyssShards > 0 || GameConfig.CanEnterAbyss(ch);
+                var oldC = GUI.color;
+                if (!shards) GUI.color = new Color(1f, 1f, 1f, 0.3f);
+                Hud.DrawSprite(new Rect(rowM.x + half + half * 0.2f, rowM.y + (r2h - ic) * 0.5f, ic, ic), PixelArt.ShardIcon);
+                GUI.color = oldC;
+                num.normal.textColor = shards ? new Color(0.85f, 0.6f, 1f) : new Color(1f, 1f, 1f, 0.3f);
+                Hud.FitLabel(new Rect(rowM.x + half + half * 0.2f + ic * 1.2f, rowM.y, half * 0.75f - ic, r2h), shards ? ch.AbyssShards.ToString("N0") : "-", num);
+                Hud.Fill(new Rect(rowM.x + half, rowM.y + r2h * 0.2f, 1f, r2h * 0.6f), new Color(0.85f, 0.72f, 0.42f, 0.4f));
+            }
+
+            // ---- 3段目：職業・転生の回数・最高到達 ----
+            float r3y = rowM.yMax + H * 0.007f, r3h = H * 0.034f;
+            var row2 = new Rect(pad, r3y, W - pad * 2f, r3h);
             Hud.Fill(row2, new Color(0.02f, 0.02f, 0.05f, 0.62f));
             {
-                var cell = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
                 float cw = row2.width / 3f;
                 cell.normal.textColor = new Color(1f, 0.9f, 0.6f);
-                Hud.FitLabel(new Rect(row2.x, row2.y, cw, r2h), ClassTitle(type, ch), cell);
+                Hud.FitLabel(new Rect(row2.x, row2.y, cw, r3h), ClassTitle(type, ch), cell);
                 cell.normal.textColor = Color.white;
-                Hud.FitLabel(new Rect(row2.x + cw, row2.y, cw, r2h), Loc.T($"Reborn {ch.Rebirths}", $"転生 {ch.Rebirths}回"), cell);
+                Hud.FitLabel(new Rect(row2.x + cw, row2.y, cw, r3h), Loc.T($"Reborn {ch.Rebirths}", $"転生 {ch.Rebirths}回"), cell);
                 int best = ch.Ascended ? ch.AscentBest : ch.BestFloor;
                 string bestText = best > 0 ? GameConfig.FloorName(best, ch.Ascended) : "-";
-                Hud.FitLabel(new Rect(row2.x + cw * 2f, row2.y, cw, r2h), Loc.T($"Best {bestText}", $"最高到達 {bestText}"), cell);
+                Hud.FitLabel(new Rect(row2.x + cw * 2f, row2.y, cw, r3h), Loc.T($"Best {bestText}", $"最高到達 {bestText}"), cell);
             }
 
             // ---- いちばん下：施設の段（倉庫・ショップ・女神・鞄・鍛冶）と、その上の小さいボタンの段 ----
