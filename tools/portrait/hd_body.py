@@ -20,11 +20,11 @@ def neck_hd(c,col='s'): c.rect(79,72,89,88,col)
 def hood_hd(c,col,trim=None,horns=False,hcol=None,inner='O'):
     """顔のまわりを輪のように覆う頭巾（灯術師と同じ作り）。上は丸くふくらみ、あごの下は開き、
     内側に影の輪、あごの横から肩へ布がたまる。inner は内側の影の素材（絵ごとに暗い色を決める）。"""
-    c.ell(CX,49,22,29,col,only='.')
-    c.ell(CX+2,28,16,10,col,only='.')                                    # 上は丸くふくらむ（後ろへ少し垂れる）
+    c.ell(CX,52,22,26,col,only='.')                                      # 頭の上は低めに（上へ長く伸びないように）
+    c.ell(CX+1,32,15,7,col,only='.')
     for y in range(14,92):
         for x in range(58,111):
-            o=((x-CX)/22)**2+((y-52)/30)**2; i=((x-CX)/15.5)**2+((y-55)/21.5)**2
+            o=((x-CX)/22)**2+((y-53)/27)**2; i=((x-CX)/15.5)**2+((y-55)/21.5)**2
             if y>70 and abs(x-CX)<13: continue
             if o<=1 and i>1 and c.get(x,y) in ('.h' if y>58 else '.hs'): c.set(x,y,col)
     if trim:

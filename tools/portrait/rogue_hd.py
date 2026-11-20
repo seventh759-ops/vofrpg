@@ -90,7 +90,7 @@ def rogue_hd(kind):
             for (x,y) in ((90,12),(78,12),(84,22)): c.ell(x,y,1.6,1.6,'R')
     else:
         bangs_hd(c,'h')
-        hood_hd(c,'k' if kind!='base' else 'k',horns=purple)
+        hood_hd(c,'k')                                                     # 角は付けない
         eyes_hd(c,iris='p' if kind=='eclipse' else 'I',pupil=kind!='eclipse')
     c.oy=0
     # 口元を覆う布（首巻きを鼻の上まで引き上げる）。目元だけ見える
