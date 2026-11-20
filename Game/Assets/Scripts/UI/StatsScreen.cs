@@ -21,6 +21,9 @@ namespace VividOfFade
         // 「すべての能力」の一覧（開いているか、スクロール量）
         bool showAll;
         float allScroll;
+        // 「職業」の説明（開いているか、スクロール量）
+        bool classView;
+        float classScroll;
 
         // 2回押しで実行する確認（押してから数秒だけ有効）
         string armed;
@@ -51,8 +54,16 @@ namespace VividOfFade
             var spec = ClassInfo.Get(st.Class);
             var title = new GUIStyle(label) { fontStyle = FontStyle.Bold };
             var adv = AdvancedClasses.Of(st.Class, ch);
-            GUI.Label(new Rect(pad, pad, W, btnH), (adv != null ? adv.DisplayName : spec.DisplayName) + $"   Lv {ch.Level}" + (ch.Rebirths > 0 ? Loc.T($"   Reborn x{ch.Rebirths}", $"   転生 {ch.Rebirths}回") : ""), title);
+            Hud.FitLabel(new Rect(pad, pad, W - pad * 2f - W * 0.48f, btnH), (adv != null ? adv.DisplayName : spec.DisplayName) + $"   Lv {ch.Level}" + (ch.Rebirths > 0 ? Loc.T($"   Reborn x{ch.Rebirths}", $"   転生 {ch.Rebirths}回") : ""), title);
             hud.Button(new Rect(W - pad - W * 0.22f, pad, W * 0.22f, btnH), Loc.T("CLOSE", "閉じる"), buttonBack, centered, () => world.StatsOpen = false);
+            // 職業の説明（特徴・主能力・武器・補正・スキル・この先の成長）を開く／閉じる
+            hud.Button(new Rect(W - pad - W * 0.46f, pad, W * 0.22f, btnH), classView ? Loc.T("STATS", "能力値") : Loc.T("CLASS", "職業"), classView ? plusBack : buttonBack, centered, () => { classView = !classView; classScroll = 0f; });
+            if (classView)
+            {
+                float cy = pad + btnH + H * 0.015f;
+                DrawClassInfo(world, ch, st, new Rect(pad, cy, W - pad * 2f, H - pad - cy));
+                return;
+            }
 
             // 経験値
             float y = pad + btnH + H * 0.015f;
@@ -350,13 +361,96 @@ namespace VividOfFade
             }
             if (rows.Count == before) Line(Loc.T("None", "なし"), new Color(0.6f, 0.6f, 0.65f));
 
+            DrawRowList(rows, area, ref allScroll);
+        }
+
+        /// <summary>
+        /// 職業の説明：今の職業（上位職・3次職・彩灯者）の特徴、主能力と副能力、能力値ごとの働き、職業の基本の数値、
+        /// 使える武器と攻撃の形、職の補正、スキル（覚えるレベル）、この先の成長（転職・3次職・転生）。
+        /// </summary>
+        void DrawClassInfo(GameWorld world, CharacterData ch, PlayerStats st, Rect area)
+        {
+            var rows = new System.Collections.Generic.List<(string k, string v, Color c)>();
+            Color white = Color.white, gold = new Color(1f, 0.85f, 0.4f), soft = new Color(0.85f, 0.85f, 0.9f), dimC = new Color(0.6f, 0.6f, 0.65f);
+            void H(string t) => rows.Add((t, null, gold));
+            void R(string k, string v) => rows.Add((k, v, white));
+            void L(string t, Color c) => rows.Add(("", t, c));
+            var type = (ClassType)ch.ClassId;
+            var cls = ClassInfo.Get(type);
+            var adv = AdvancedClasses.Of(type, ch);
+            var third = ThirdClasses.Of(type, ch);
+            var special = SpecialClass.Of(ch);
+
+            H(AdvancedClasses.NameFor(ch));
+            L(cls.DisplayName + Loc.T(": ", "：") + Loc.T(cls.Line1, cls.Line1Ja) + " " + Loc.T(cls.Line2, cls.Line2Ja), soft);
+            if (special != null) L(special.DisplayDesc, soft);
+            if (adv != null) L(adv.DisplayName + Loc.T(": ", "：") + adv.DisplayDesc, soft);
+            if (third != null) L(third.DisplayName + Loc.T(": ", "：") + third.DisplayDesc, soft);
+
+            H(Loc.T("Attributes", "能力値"));
+            if (st.AllSub) L(Loc.T("No main attribute: every attribute is a sub attribute (+1% attack each).", "主能力はなく、5つの能力値すべてが副能力（1ポイントで攻撃力 +1%）。"), soft);
+            else
+            {
+                R(Loc.T("Main", "主能力"), Loc.T($"{Attributes.ShortName(st.MainAttr)}  (+2% attack each)", $"{Attributes.ShortName(st.MainAttr)}（1ポイントで攻撃力 +2%）"));
+                R(Loc.T("Sub", "副能力"), Loc.T($"{Attributes.ShortName(st.SubAttr)}  (+1% attack each)", $"{Attributes.ShortName(st.SubAttr)}（1ポイントで攻撃力 +1%）"));
+                if (st.ThirdAttr.HasValue) R(Loc.T("3rd class", "3次職の追加"), Loc.T($"{Attributes.ShortName(st.ThirdAttr.Value)}  (+1% attack each)", $"{Attributes.ShortName(st.ThirdAttr.Value)}（1ポイントで攻撃力 +1%）"));
+            }
+            for (int a = 0; a < Attributes.Count; a++) L($"{Attributes.ShortName((Attr)a)}" + Loc.T(": ", "：") + Attributes.Effect((Attr)a), dimC);
+
+            H(Loc.T("Base", "職業の基本"));
+            R(Loc.T("Base HP", "基本のHP"), $"{cls.BaseHp}");
+            R(Loc.T("Speed", "速さ"), $"{cls.Speed:0.0}");
+            R(Loc.T("Light", "明るさ"), $"{cls.BaseLight:0.0}");
+            R(Loc.T("Crit", "会心率"), $"{cls.Crit * 100f:0}%");
+            if (cls.Armor > 0f) R(Loc.T("Armor", "防御"), $"+{cls.Armor:0}");
+            if (cls.DamageTaken < 1f) R(Loc.T("Damage taken", "受けるダメージ"), $"-{(1f - cls.DamageTaken) * 100f:0}%");
+            if (cls.DodgeCooldownMult < 1f) R(Loc.T("Dodge cooldown", "回避の待ち時間"), $"-{(1f - cls.DodgeCooldownMult) * 100f:0}%");
+
+            H(Loc.T("Weapons", "使える武器"));
+            foreach (var wk in cls.Weapons)
+            {
+                var w = ClassInfo.Weapon(wk);
+                string attr = w.Main.HasValue ? Loc.T($"  [{Attributes.ShortName(w.Main.Value)}]", $"（{Attributes.ShortName(w.Main.Value)}で伸びる）") : "";
+                L(w.DisplayName + Loc.T(": ", "：") + w.DisplayDesc + attr, soft);
+            }
+            if (st.Hybrid) L(Loc.T("Any range: cuts near, shoots far.", "遠近両用：近くの敵は斬り、遠くの敵には弾を撃つ。"), soft);
+
+            H(Loc.T("Skills", "スキル"));
+            for (int i = 0; i < SkillInfo.PerClass; i++)
+            {
+                if (i == AdvancedClasses.SkillIndex && ch.Advanced < 0 && !ch.Special) continue;
+                if (i == ThirdClasses.SkillIndex && !ch.Third && !ch.Special) continue;
+                var sp = SkillInfo.Get(type, i);
+                bool learned = SkillInfo.Learned(type, i, ch.Level);
+                L(Loc.T($"Lv{sp.ReqLevel}  ", $"Lv{sp.ReqLevel}  ") + sp.DisplayName + Loc.T(": ", "：") + sp.DisplayDesc, learned ? soft : dimC);
+            }
+
+            H(Loc.T("Growth", "この先の成長"));
+            if (ch.Special) L(Loc.T("No further class changes. Rebirth at Lv 99 keeps you a Vividbearer (all stats +5 each time).", "この先の転職はない。Lv99 で転生しても彩灯者のまま（転生ごとに全能力値 +5）。"), soft);
+            else
+            {
+                if (adv == null) L(Loc.T($"Class change at Lv {AdvancedClasses.ReqLevel} ({AdvancedClasses.Cost} embers): choose one of two advanced classes.", $"Lv{AdvancedClasses.ReqLevel}で転職（火種 {AdvancedClasses.Cost}）：2つの上位職から選ぶ。"), ch.Level >= AdvancedClasses.ReqLevel ? gold : soft);
+                else if (!ch.Third) L(Loc.T($"3rd class at Lv {ThirdClasses.PromoteLevel} ({ThirdClasses.PromoteCost} embers).", $"上位職でLv{ThirdClasses.PromoteLevel}になると3次職へ（火種 {ThirdClasses.PromoteCost}）。"), ch.Level >= ThirdClasses.PromoteLevel ? gold : soft);
+                L(Loc.T($"Rebirth at Lv {ThirdClasses.ReqLevel}: back to your base class at Lv 1, all stats +5 each time.", $"Lv{ThirdClasses.ReqLevel}で転生：基本職の Lv1 に戻り、転生ごとに全能力値 +5。"), soft);
+                if (SpecialClass.RebirthBecomesSpecial(ch)) L(Loc.T("You have never changed class... rebirth as you are, and you may become something special.", "一度も転職していない……このまま転生すれば、特別な何かになれるかもしれない。"), new Color(1f, 0.6f, 0.9f));
+            }
+
+            DrawRowList(rows, area, ref classScroll);
+        }
+
+        /// <summary>
+        /// (名前, 値, 色) の行を並べて描く（値が null は見出し、名前が空は1行まるごとの文）。入りきらなければスクロールする。
+        /// </summary>
+        void DrawRowList(System.Collections.Generic.List<(string k, string v, Color c)> rows, Rect area, ref float scroll)
+        {
+            Color gold = new Color(1f, 0.85f, 0.4f);
             // 描く（見えている範囲だけ。スクロールできる）
             var small = hud.SmallStyle;
             var label = hud.LabelStyle;
             float rowH = label.fontSize * 1.45f;
             float contentH = rows.Count * rowH;
             float maxScroll = Mathf.Max(0f, contentH - area.height);
-            allScroll = Mathf.Clamp(allScroll + ScrollInput.Delta(), 0f, maxScroll);
+            scroll = Mathf.Clamp(scroll + ScrollInput.Delta(), 0f, maxScroll);
             var key = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
             key.normal.textColor = new Color(0.7f, 0.7f, 0.75f);
             var val = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleRight };
@@ -364,7 +458,7 @@ namespace VividOfFade
             head.normal.textColor = gold;
             var line = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
             GUI.BeginGroup(area);
-            float y = -allScroll;
+            float y = -scroll;
             int stripe = 0;
             foreach (var (k, v, c) in rows)
             {
@@ -400,7 +494,7 @@ namespace VividOfFade
             if (maxScroll > 0f)
             {
                 float sbH = area.height * area.height / contentH;
-                float sbY = area.y + (area.height - sbH) * (allScroll / maxScroll);
+                float sbY = area.y + (area.height - sbH) * (scroll / maxScroll);
                 Hud.Fill(new Rect(area.xMax + area.width * 0.005f, sbY, Mathf.Max(3f, area.width * 0.008f), sbH), new Color(1f, 1f, 1f, 0.3f));
             }
         }
