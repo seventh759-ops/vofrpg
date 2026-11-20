@@ -30,11 +30,13 @@ P={
  'Vividbearer':(vivid(),{}),
 }
 # 色を1ドットずつ書き出した絵（陰影を計算しない）：見た目の名前 → (行, 文字→色)
-FLAT={'Lampwright':(lamp_flat(),LAMP_FLAT)}
+from hd_forms import forms
+FLAT={'Lampwright':(lamp_flat(),{k:v+(255,) for k,v in LAMP_FLAT.items()})}
+FLAT.update(forms({n:d for n,(_,d) in P.items()}))
 for n in FLAT: P.pop(n,None)
 rows='\n'.join(cs(n,c.rows()) for n,(c,_) in P.items())
 flat_rows='\n'.join(cs(n,r) for n,(r,_) in FLAT.items())
-def fpal(d): return ', '.join("{ '%s', new Color32(%d, %d, %d, 255) }" % (k,*v) for k,v in d.items())
+def fpal(d): return ', '.join("{ '%s', new Color32(%d, %d, %d, %d) }" % (k,*v) for k,v in d.items())
 flat_pals='\n'.join('            ["%s"] = new Dictionary<char, Color32> { %s },' % (n,fpal(d)) for n,(_,d) in FLAT.items())
 def pal(d): return ', '.join("{ '%s', Ramp(%s) }" % (k, ', '.join(map(str,v))) for k,v in d.items())
 pals='\n'.join('            ["%s"] = new Dictionary<char, Color32[]> { %s },' % (n,pal(d)) for n,(_,d) in P.items() if d)
