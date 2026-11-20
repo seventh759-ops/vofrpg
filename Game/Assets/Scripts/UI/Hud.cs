@@ -426,7 +426,7 @@ namespace VividOfFade
             get
             {
                 // 手動攻撃のボタン（右下。下の帯の上に置く）
-                float s = Mathf.Min(Screen.width, Screen.height) * 0.24f;
+                float s = Mathf.Min(Screen.width, Screen.height) * 0.18f; // 薬を上に積むので、少し小さめ
                 float m = Screen.height * 0.03f;
                 float bandTop = Screen.height - BottomBandTop; // 下の帯の上端（画面座標）。メッセージウィンドウと重ならないように、その上に置く
                 return new Rect(LeftHanded ? m : Screen.width - s - m, bandTop + m, s, s); // 左手なら左下
