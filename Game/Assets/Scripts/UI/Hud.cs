@@ -94,15 +94,17 @@ namespace VividOfFade
         static float HudPx => Mathf.Max(1f, Mathf.Round(Screen.height * 0.019f * 0.9f / NumberFont.Height));
         static float FloorRowH => Screen.height * 0.021f;
 
-        /// <summary>上の帯の下端（GUI 座標、上が 0）。</summary>
-        public static float TopBandBottom => BandMargin * 2.6f + TitleRowH + StatusPanelH; // ロゴの段と、まとめた1枚の枠
+        /// <summary>まとめた1枚の枠（LV・HP・MP・経験値・層）の下端（GUI 座標）。</summary>
+        static float StatusBottom => BandMargin * 2.6f + TitleRowH + StatusPanelH;
+        /// <summary>上の帯の下端（GUI 座標、上が 0）。ロゴの段と、まとめた1枚の枠と、メッセージウィンドウ。</summary>
+        public float TopBandBottom => MessageWindow.yMax + BandMargin;
         static float PanelPad => BandMargin * 0.6f;
         /// <summary>LV・HP・MP・経験値・層をまとめた枠の高さ。</summary>
         static float DividerT => Mathf.Max(4f, FrameT * 2f); // 枠の2倍の太さ（縮小表示でも見えるように）
         static float StatusPanelH => PanelPad * 2.8f + TopRowH + BandMargin * 0.35f + ExpRowH + FloorRowH + DividerT * 1.5f;
 
         /// <summary>メッセージウィンドウの行数と、1行の高さ。</summary>
-        const int LogLines = 4;
+        const int LogLines = 3; // 上の帯に置くので3行（下の帯を薄くして、指で操作できる所を広げるため）
         float LogLineH => (small != null ? small.fontSize : Screen.height * 0.016f) * 1.3f; // 起動直後（文字の設定を作る前）は画面の高さから見積もる
 
         /// <summary>ショートカット（スキルと薬）の区画（GUI 座標）。下の帯の下側。</summary>
@@ -115,31 +117,31 @@ namespace VividOfFade
             }
         }
 
-        /// <summary>メッセージウィンドウの区画（GUI 座標）。ショートカットの区画のすぐ上。</summary>
+        /// <summary>メッセージウィンドウの区画（GUI 座標）。上の帯の、まとめた1枚の枠のすぐ下（下の帯を薄くするため、上へ移した）。</summary>
         Rect MessageWindow
         {
             get
             {
                 float h = LogLines * LogLineH + BandMargin * 1.6f;
-                var sc = ShortcutPanel;
-                return new Rect(sc.x, sc.y - BandMargin - h, sc.width, h);
+                float x = BandMargin * 1.5f;
+                return new Rect(x, StatusBottom - BandMargin * 0.4f, Screen.width - x * 2f, h);
             }
         }
 
         /// <summary>
-        /// 鞄・能力値・スキルをすぐ開くボタン（GUI 座標）。メッセージウィンドウの右端に縦に3つ（スマホで MENU を経由しなくてよいように）。
+        /// 鞄・能力値・スキルをすぐ開くボタン（GUI 座標）。下の帯の、スキルの段のすぐ上に横に3つ（親指が届く所。MENU を経由しなくてよいように）。
         /// </summary>
         Rect QuickRect(int i)
         {
-            var m = MessageWindow;
-            float pad = BandMargin * 0.7f, gap = BandMargin * 0.4f;
-            float w = Screen.width * 0.2f;
-            float h = (m.height - pad * 2f - gap * 2f) / 3f;
-            return new Rect(m.xMax - pad - w, m.y + pad + i * (h + gap), w, h);
+            var sc = ShortcutPanel;
+            float gap = BandMargin * 0.8f;
+            float h = Screen.height * 0.034f;
+            float w = (sc.width - gap * 2f) / 3f;
+            return new Rect(sc.x + i * (w + gap), sc.y - BandMargin * 0.8f - h, w, h);
         }
 
-        /// <summary>下の帯の上端（GUI 座標）。メッセージウィンドウとショートカットの2つの区画を含む。</summary>
-        float BottomBandTop => MessageWindow.y - BandMargin;
+        /// <summary>下の帯の上端（GUI 座標）。鞄・能力値・スキルのボタンの段と、ショートカットの区画を含む。</summary>
+        float BottomBandTop => QuickRect(0).y - BandMargin;
 
         /// <summary>枠線を描く。</summary>
         public static void Frame(Rect r, Color c, float t = 1f)
@@ -1294,7 +1296,7 @@ namespace VividOfFade
                     style.normal.textColor = c;
                     // 収まらない文は縮めて1行に収める（切らない）。右端は鞄・能力・スキルのボタンの分あける
                     int row = k - start;
-                    float textW = QuickRect(0).x - msgR.x - mm * 2f;
+                    float textW = msgR.width - mm * 2f;
                     FitLabel(new Rect(msgR.x + mm, msgR.y + mm * 0.8f + row * logH, textW, logH), "+ " + t.Text, style);
                 }
             }
