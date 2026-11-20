@@ -276,6 +276,7 @@ namespace VividOfFade
                 var r = ToGui(SkillRect(i));
                 if (index < 0 || !SkillInfo.Learned(ClassInfo.Current, index, ch.Level))
                 {
+                    Fill(r, new Color(0.06f, 0.055f, 0.09f, 1f)); // 空いた欄は不透明に（後ろの透かしが透けないように）
                     Button(r, null, new Color(0f, 0f, 0f, 0.3f), centered, () => World.OpenPanel(false, false, true));
                     OrnateFrame(r, FrameGold, FrameT, false, false);
                     continue;
@@ -1615,9 +1616,9 @@ namespace VividOfFade
             DrawSprite(new Rect(menuR.x + menuR.width * 0.16f, menuR.y + menuR.height * 0.16f, menuR.width * 0.68f, menuR.height * 0.68f), PixelArt.GearIcon);
             if (notice)
             {
-                float bsz = menuR.height * 0.95f * (1f + 0.08f * Mathf.Sin(Time.unscaledTime * 6f));
+                float bsz = menuR.height * 0.5f * (1f + 0.08f * Mathf.Sin(Time.unscaledTime * 6f)); // 歯車を隠さない大きさ
                 // 右上の角に重ねる。画面の上端・右端からはみ出さないように内側へ寄せる
-                var badge = new Rect(Mathf.Min(menuR.xMax - bsz * 0.55f, W - bsz * 0.9f), Mathf.Max(menuR.y - bsz * 0.35f, -bsz * 0.1f), bsz, bsz);
+                var badge = new Rect(Mathf.Min(menuR.xMax - bsz * 0.7f, W - bsz), menuR.y - bsz * 0.25f, bsz, bsz); // 右上の角に小さく
                 var oldC = GUI.color;
                 GUI.color = new Color(0f, 0f, 0f, 0.8f);
                 GUI.DrawTexture(new Rect(badge.x - 1f, badge.y - 1f, badge.width + 2f, badge.height + 2f), TitleArt.SoftGlow);
