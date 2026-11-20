@@ -66,7 +66,7 @@ def warden_hd(kind):
     c.oy=11  # 頭を下げて首を短く
     face_hd(c)
     hc={'base':'h','sun':'H','dawn':'H','bastion':'D','aegis':'D'}[kind]
-    {'base':hair_bob,'sun':hair_braid,'dawn':hair_braid,'bastion':hair_curly,'aegis':hair_curly}[kind](c,hc)
+    {'base':hair_bob,'sun':hair_bob,'dawn':hair_bob,'bastion':hair_curly,'aegis':hair_curly}[kind](c,hc)
     eyes_hd(c,brow=hc if hc!='H' else 'h',iris='B' if kind=='aegis' else 'I')
     if kind=='dawn':
         for a in range(0,360,4):
