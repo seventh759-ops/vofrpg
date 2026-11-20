@@ -1237,18 +1237,37 @@ namespace VividOfFade
             if (Event.current.type == EventType.Repaint) slowGlowTime += Time.unscaledDeltaTime;
             float t = slowGlowTime / slowGlowLife;
             if (t >= 1f) { slowGlowTime = -1f; return; }
-            float a = Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI) * 0.55f; // ふわっと光って消える
+            float a = Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI); // ふわっと光って消える
+            // 珍しい品の光：画面の縁を品の色で塗ると、ダメージを受けたように見える（特に赤）ので、
+            // 白みがかった薄い光と、品の色のきらめきにする。帯の上にはかけず、ダンジョンが見えている所だけ
             float W = Screen.width, H = Screen.height;
-            const int bands = 6;
-            float bw = W * 0.025f, bh = H * 0.015f;
+            float top = TopBandBottom, bottom = BottomBandTop, h = bottom - top;
+            var soft = Color.Lerp(slowGlowColor, Color.white, 0.7f);
+            const int bands = 3;
+            float bw = W * 0.018f, bh = H * 0.01f;
             for (int i = 0; i < bands; i++)
             {
-                float k = a * (1f - i / (float)bands);
-                var c = new Color(slowGlowColor.r, slowGlowColor.g, slowGlowColor.b, k * 0.6f);
-                Fill(new Rect(i * bw, 0, bw, H), c);
-                Fill(new Rect(W - (i + 1) * bw, 0, bw, H), c);
-                Fill(new Rect(0, i * bh, W, bh), c);
-                Fill(new Rect(0, H - (i + 1) * bh, W, bh), c);
+                var c = new Color(soft.r, soft.g, soft.b, a * 0.14f * (1f - i / (float)bands));
+                Fill(new Rect(i * bw, top, bw, h), c);
+                Fill(new Rect(W - (i + 1) * bw, top, bw, h), c);
+                Fill(new Rect(0, top + i * bh, W, bh), c);
+                Fill(new Rect(0, bottom - (i + 1) * bh, W, bh), c);
+            }
+            // きらめき：縁に沿って、品の色・白っぽい色・白の小さな十字が瞬く（位置は毎回同じ並び）
+            var rng = new System.Random(7);
+            float sz = Mathf.Max(2f, H * 0.0025f);
+            for (int k = 0; k < 28; k++)
+            {
+                int side = rng.Next(4);
+                float u = (float)rng.NextDouble(), d = (float)rng.NextDouble() * W * 0.045f;
+                float x = side == 0 ? d : side == 1 ? W - d : u * W;
+                float y = side == 0 || side == 1 ? top + u * h : side == 2 ? top + d * 0.6f : bottom - d * 0.6f;
+                float tw = 0.5f + 0.5f * Mathf.Sin(slowGlowTime * 9f + k * 1.7f);
+                var col = k % 3 == 0 ? slowGlowColor : k % 3 == 1 ? soft : Color.white;
+                col.a = a * tw;
+                float r = sz * (1.5f + (k % 3));
+                Fill(new Rect(x - r, y - sz * 0.5f, r * 2f, sz), col);
+                Fill(new Rect(x - sz * 0.5f, y - r, sz, r * 2f), col);
             }
         }
 
