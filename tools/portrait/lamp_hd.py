@@ -151,8 +151,6 @@ def lamp_hd(kind='base'):
                 if o<=1 and i>1 and c.get(x,y) in ('.h' if y>58 else '.hs'): c.set(x,y,'c')
         for a in range(180,361,2):
             r=math.radians(a); c.ell(CX+15.8*math.cos(r),55+21.8*math.sin(r),1.1,1.1,'g',only='c')
-        for a in range(200,341,3):
-            r=math.radians(a); c.ell(CX+18.5*math.cos(r),53+25*math.sin(r),1.1,1.1,'d',only='c')
 
     else:
         c.line(66,46,102,46,'g',2.4); c.ell(84,45,3,3,'L')       # 額の金の輪と灯りの石

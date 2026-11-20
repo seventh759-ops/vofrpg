@@ -100,7 +100,8 @@ def flatten(M, pal, aura=None, extra=None, mail='', front=()):
                         v+= (2.2 if k==1 else 1.6 if k==2 else 0.9 if k==3 else 0.5); break
             # 境目の影の線（右と下）
             rb=(m(x+1,y),m(x,y+1))
-            if not (ch in 'sSxeIpRBKQ') and any(n!='.' and n!=ch and n not in GLOW and n not in 'xeIKQ' for n in rb): v+=1.2
+            # （髪や肌に接する所は付けない：頭巾などのふちが額の上に線になって見えないように。影は髪の側に落ちる）
+            if not (ch in 'sSxeIpRBKQ') and any(n!='.' and n!=ch and n not in GLOW and n not in 'xeIKQ' and n not in HAIR and n not in 'sS' for n in rb): v+=1.2
             if ch in SHINY and v<0.6 and dl<=3: T[y][x]='hi'; continue   # 金属のふちの白い照り
             T[y][x]=max(0.0,min(7.0,v))
     # 前にある素材（袖・腕など）と、後ろの素材（胴など）の境目に強弱を付ける

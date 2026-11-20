@@ -30,8 +30,6 @@ def hood_hd(c,col,trim=None,horns=False,hcol=None,inner='O'):
     if trim:
         for a_ in range(180,361,2):
             r=math.radians(a_); c.ell(CX+15.8*math.cos(r),55+21.8*math.sin(r),1.1,1.1,trim,only=col)
-    for a_ in range(200,341,3):
-        r=math.radians(a_); c.ell(CX+18.5*math.cos(r),53+25*math.sin(r),1.1,1.1,inner,only=col)   # 内側の影の輪
     for sx in (-1,1):
         c.ell(CX+sx*17,76,8,11,col,only='.h')                                # あごの横から肩へ、布がたまる
         for a_ in range(200 if sx<0 else -20, 290 if sx<0 else 70, 4):
