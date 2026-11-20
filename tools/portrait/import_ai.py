@@ -5,6 +5,7 @@
 ・色を減らす：くすんだ色（白・銀・肌・影）と、鮮やかな色（目・宝石・金）を分けて減らす（小さな宝石の色が消えないように）
 ・背景が白い絵は、外側からつながる明るい色を背景として抜く
 ・外の縁：背景に接する暗い粒は、ひとつの縁の色にそろえる
+・縁の外に散らばった白っぽい1粒（光のにじみの残り）を消す
 ・ぼやけで出た、ぽつんと浮いた1粒（くすんだ色だけ）を、まわりの色にそろえる
 """
 import sys
@@ -96,7 +97,27 @@ def convert(src, bs=None, neutral=30, vivid=18, outline=(30, 24, 44)):
         for x in range(W):
             if q[y, x] >= 0: out[y, x] = (*np.clip(pal[q[y, x]], 0, 255).astype(np.uint8), 255)
     img = Image.fromarray(out, 'RGBA')
+    img = clear_specks(img)
     return img.crop(img.getbbox()), bs
+
+def clear_specks(img):
+    """縁の外に散らばった、白っぽい・灰色の1粒（光のにじみの残り）を消す。鮮やかな色と縁の色は残す。"""
+    a = np.asarray(img.convert('RGBA')).astype(int).copy(); H, W = a.shape[:2]
+    def g(y, x): return a[y, x] if 0 <= y < H and 0 <= x < W else np.array([0, 0, 0, 0])
+    for _ in range(2):
+        rm = []
+        for y in range(H):
+            for x in range(W):
+                c = a[y, x]
+                if c[3] == 0: continue
+                mx, mn = max(c[:3]), min(c[:3]); lum = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2]
+                if mx < 80 or (mx - mn) / max(mx, 1) > 0.3 or lum <= 100: continue
+                n4 = [g(y + dy, x + dx) for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1))]
+                if not any(m[3] == 0 for m in n4): continue
+                same = sum(m[3] > 0 and np.abs(m[:3] - c[:3]).sum() < 40 for m in n4)
+                if same <= 1: rm.append((y, x))
+        for y, x in rm: a[y, x] = (0, 0, 0, 0)
+    return Image.fromarray(a.astype(np.uint8), 'RGBA')
 
 if __name__ == '__main__':
     img, bs = convert(sys.argv[1], float(sys.argv[3]) if len(sys.argv) > 3 else None)
