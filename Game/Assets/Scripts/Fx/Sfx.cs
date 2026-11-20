@@ -262,7 +262,7 @@ namespace VividOfFade
 
         AudioClip jackpot;
 
-        /// <summary>大当たり：鐘の連打「キンキンキン」がだんだん速く高くなり、高い鐘の和音「シャーン」、鈴が一気にこぼれる（約1.9秒）。</summary>
+        /// <summary>大当たり：高い鐘と少し低い鐘を交互に「キンキンキン…」と12回（約0.95秒）。</summary>
         public void Jackpot()
         {
             if (jackpot == null) jackpot = MakeJackpot();
@@ -273,64 +273,23 @@ namespace VividOfFade
 
         static AudioClip MakeJackpot()
         {
-            const float length = 1.9f;
+            const float length = 0.95f;
             int len = (int)(Rate * length);
             var data = new float[len];
-            float[] ratios = { 1f, 2.76f, 5.4f };
-            float[] amps = { 1f, 0.5f, 0.25f };
-            // 鐘の音（倍音が整数倍でない澄んだ響き。聞こえない高さの倍音は入れない）
-            void Bell(float f, float at, float gain, float dur = 0.45f, float decay = 7f)
+            // 鐘の音（倍音が整数倍でない澄んだ響き）
+            void Bell(float f, float at, float gain, float dur)
             {
                 int s = (int)(Rate * at), n = (int)(Rate * dur);
                 for (int i = 0; i < n && s + i < len; i++)
                 {
                     float t = (float)i / Rate;
-                    float v = 0f;
-                    for (int k = 0; k < ratios.Length; k++)
-                        if (f * ratios[k] < 20000f) v += amps[k] * Mathf.Sin(2f * Mathf.PI * f * ratios[k] * t);
-                    data[s + i] += v * Mathf.Exp(-t * decay) * Mathf.Min(1f, t / 0.002f) * gain;
+                    float v = Mathf.Sin(2f * Mathf.PI * f * t) + 0.5f * Mathf.Sin(2f * Mathf.PI * f * 2.76f * t) + 0.25f * Mathf.Sin(2f * Mathf.PI * f * 5.4f * t);
+                    data[s + i] += v * Mathf.Exp(-t * 6f) * Mathf.Min(1f, t / 0.002f) * gain;
                 }
             }
-            // 1) 鐘の連打：3段に高くなりながら、だんだん速く、大きく
-            int[] lo = { 91, 96, 100 }, hi = { 96, 100, 103 };
-            int[] steps = { 5, 5, 6 };
-            float tm = 0f;
-            int idx = 0;
-            for (int st = 0; st < steps.Length; st++)
-                for (int k = 0; k < steps[st]; k++, idx++)
-                {
-                    Bell(Note(idx % 2 == 0 ? hi[st] : lo[st]), tm, 0.15f + 0.01f * idx, 0.25f);
-                    tm += 0.05f - 0.0015f * idx;
-                }
-            // 2) 高い鐘の和音「シャーン」と、きらきら揺れる高い音
-            float hit = tm;
-            int[] chord = { 96, 100, 103, 108 }; // 連打より低い音を入れると「カーン」と浮くので、高い音だけ
-            float[] chordGain = { 0.2f, 0.16f, 0.16f, 0.1f };
-            for (int c = 0; c < chord.Length; c++) Bell(Note(chord[c]), hit, chordGain[c], 1.3f, 3.2f);
-            {
-                int s = (int)(Rate * hit), n = (int)(Rate * 1.1f);
-                float f = Note(108);
-                for (int i = 0; i < n && s + i < len; i++)
-                {
-                    float t = (float)i / Rate;
-                    float trem = Mathf.Sin(2f * Mathf.PI * 18f * t) >= 0f ? 1f : 0.5f;
-                    data[s + i] += Mathf.Sin(2f * Mathf.PI * f * t) * Mathf.Exp(-t * 2.5f) * trem * 0.07f;
-                }
-            }
-            // 3) 鈴が一気にこぼれる（2列で重ねる）
-            int[] spill = { 103, 100, 96, 105, 98, 100, 91, 103, 96, 100, 98, 93, 103, 96, 100, 91, 98, 96, 103, 100, 96, 91, 98, 93 };
-            for (int k = 0; k < spill.Length; k++)
-            {
-                Bell(Note(spill[k]), hit + 0.03f + k * 0.035f + (k % 3) * 0.007f, 0.10f);
-                if (k % 2 == 0) Bell(Note(spill[k] + 12), hit + 0.05f + k * 0.035f, 0.05f, 0.3f, 10f);
-            }
-            // 終わりをなめらかに消して、大きさをそろえる
+            for (int k = 0; k < 12; k++) Bell(Note(k % 2 == 0 ? 96 : 91), k * 0.06f, 0.3f, 0.25f);
             float peak = 0.0001f;
-            for (int i = 0; i < len; i++)
-            {
-                data[i] *= Mathf.Clamp01((length - (float)i / Rate) / 0.15f);
-                peak = Mathf.Max(peak, Mathf.Abs(data[i]));
-            }
+            for (int i = 0; i < len; i++) peak = Mathf.Max(peak, Mathf.Abs(data[i]));
             for (int i = 0; i < len; i++) data[i] *= 0.5f / peak;
             var clip = AudioClip.Create("jackpot", len, 1, Rate, false);
             clip.SetData(data, 0);
