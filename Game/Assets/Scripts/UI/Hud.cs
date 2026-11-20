@@ -86,6 +86,9 @@ namespace VividOfFade
         static Rect TopCard => new Rect(BandMargin, BandMargin, Screen.width - BandMargin * 2f, TopCardH);
         static float TopCardH => Screen.height * 0.088f;
         static float TopLvD => TopCardH * 1.02f;
+        /// <summary>ミニマップの上端（GUI 座標）。上の帯のすぐ下（メッセージと重なってよい。メッセージは地図の上に出る）。</summary>
+        float MiniTop => TopBandBottom + Screen.height * 0.008f;
+
         /// <summary>MENU の歯車（GUI 座標）。ミニマップのすぐ下、右端。</summary>
         Rect MenuGui
         {
@@ -94,7 +97,7 @@ namespace VividOfFade
                 float w = Screen.width * 0.38f, h = w * Room.MiniH / Room.MiniW;
                 float right = Screen.width - Screen.height * 0.015f;
                 float s = Screen.height * 0.05f;
-                return new Rect(right - s, ViewTop + Screen.height * 0.01f + h + Screen.height * 0.008f, s, s);
+                return new Rect(right - s, MiniTop + h + Screen.height * 0.008f, s, s);
             }
         }
 
@@ -1576,7 +1579,10 @@ namespace VividOfFade
                 GUI.color = oldL;
             }
 
-            // メッセージ：直近の行を残す（新しいものほど下）。来たばかりの行は明るく、古い行は少し暗い
+            DrawBossBar();
+            DrawGoldenMarker();
+            DrawMinimap();
+            // メッセージ：地図より手前に（重なってよい）。直近の行を残す（新しいものほど下）。来たばかりの行は明るく、古い行は少し暗い
             {
                 float logH = LogLineH;
                 int start = Mathf.Max(0, messages.Count - LogLines);
@@ -1594,9 +1600,6 @@ namespace VividOfFade
                 }
             }
 
-            DrawBossBar();
-            DrawGoldenMarker();
-            DrawMinimap();
             DrawBanner();
 
             if (World.Paused || player.IsDead || World.ChoosingClass) return;
@@ -1732,7 +1735,7 @@ namespace VividOfFade
         {
             var room = World.Room;
             if (room.Minimap == null) return;
-            var below = new Rect(0, 0, Screen.width, ViewTop); // メッセージウィンドウの下から
+            var below = new Rect(0, 0, Screen.width, MiniTop - Screen.height * 0.01f); // 上の帯のすぐ下から（メッセージと重なってよい）
             float w = Screen.width * 0.38f;
             float h = w * Room.MiniH / Room.MiniW;
             var r = new Rect(Screen.width - w - Screen.height * 0.015f, below.yMax + Screen.height * 0.01f, w, h);
