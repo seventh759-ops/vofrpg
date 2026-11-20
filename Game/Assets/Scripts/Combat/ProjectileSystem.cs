@@ -51,7 +51,7 @@ namespace VividOfFade
             if (look.Sprite == null && ClassInfo.Current == ClassType.Vividbearer)
             {
                 // 彩灯者の通常攻撃：色とりどりの結晶（1発ごとに色が変わる）
-                look = new Look { Sprite = PixelArt.Crystal, Tint = VividShotColors[vividShot++ % VividShotColors.Length], AlignToDir = true, Scale = 1.15f };
+                look = new Look { Sprite = PixelArt.Crystal, Tint = VividShotColors[vividShot++ % VividShotColors.Length], AlignToDir = true, Scale = 0.75f };
             }
             var p = pool.Get();
             p.Sr.sprite = look.Sprite != null ? look.Sprite : PixelArt.Fireball;
