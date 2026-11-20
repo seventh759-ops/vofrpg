@@ -105,7 +105,7 @@ namespace VividOfFade
 
         /// <summary>丸（ふちがなめらかな白い円。色は GUI.color で付ける）。丸いボタン・Lv の丸・台座に使う。</summary>
         static Texture2D disk;
-        static Texture2D Disk
+        internal static Texture2D Disk
         {
             get
             {
@@ -127,7 +127,7 @@ namespace VividOfFade
             }
         }
 
-        static void DrawDisk(Rect r, Color c)
+        internal static void DrawDisk(Rect r, Color c)
         {
             var old = GUI.color;
             GUI.color = c;

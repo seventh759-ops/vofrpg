@@ -77,10 +77,23 @@ namespace VividOfFade
         {
             get
             {
-                float w = Screen.width * 0.17f;
-                float h = TitleRowH;
-                float m = BandMargin;
-                return new Rect(Screen.width - w - m, Screen.height - h - m, w, h);
+                var g = MenuGui;
+                return new Rect(g.x, Screen.height - g.y - g.height, g.width, g.height);
+            }
+        }
+
+        /// <summary>上の情報カード（GUI 座標）。町の画面のカードと同じ作り：左 HP・MP・層／真ん中 Lv の丸と経験値の輪／右 MENU・転生・回避。</summary>
+        static Rect TopCard => new Rect(BandMargin, BandMargin, Screen.width - BandMargin * 2f, TopCardH);
+        static float TopCardH => Screen.height * 0.088f;
+        static float TopLvD => TopCardH * 1.02f;
+        /// <summary>MENU（GUI 座標）。カードの右の列の上。</summary>
+        static Rect MenuGui
+        {
+            get
+            {
+                var c = TopCard;
+                float rx = c.center.x + TopLvD * 0.5f + PanelPad * 1.5f, rw = c.xMax - PanelPad - rx;
+                return new Rect(rx, c.y + c.height * 0.1f, rw, c.height * 0.36f);
             }
         }
 
@@ -95,7 +108,7 @@ namespace VividOfFade
         static float FloorRowH => Screen.height * 0.021f;
 
         /// <summary>まとめた1枚の枠（LV・HP・MP・経験値・層）の下端（GUI 座標）。</summary>
-        static float StatusBottom => BandMargin * 2.6f + TitleRowH + StatusPanelH;
+        static float StatusBottom => BandMargin * 1.6f + TopCardH;
         /// <summary>上の帯の下端（GUI 座標、上が 0）。ロゴの段と、まとめた1枚の枠まで（メッセージウィンドウは、その下のダンジョンに半透明で重ねる）。</summary>
         public float TopBandBottom => StatusBottom + BandMargin * 0.6f;
         /// <summary>メッセージウィンドウの下端（GUI 座標）。強化のアイコン・地図・画面の外を指す矢印は、ここより下に置く。自分もここと下の帯の間の真ん中に映す。</summary>
@@ -144,8 +157,9 @@ namespace VividOfFade
             float w = (to - from - gap * 2f) / 3f;
             float x = from + i * (w + gap);
             if (!LeftHanded) x = Screen.width - x - w;
-            float h = s * 1.21f;                                                   // スキルのボタンとオートの帯を合わせた高さ
-            return new Rect(x, Screen.height - (first.y + h), w, h);
+            float full = s * 1.21f;                                                // スキルのボタンとオートの帯を合わせた高さ
+            float h = full * 0.62f;                                                // ボタンは低め。下の空きに「H：操作」
+            return new Rect(x, Screen.height - (first.y + full), w, h);
         }
 
         /// <summary>下の帯の上端（GUI 座標）。ショートカットの区画（スキルと、鞄・能力値・スキルのボタン）を含む。</summary>
@@ -1448,127 +1462,80 @@ namespace VividOfFade
             Fill(new Rect(0, bottomTop + edgeT, W, edgeT), new Color(1f, 1f, 1f, 0.08f));
             Fill(new Rect(0, topBottom - edgeT * 2f, W, edgeT), new Color(0f, 0f, 0f, 0.35f));
 
-            // 1段目：ゲームのロゴ（左）と MENU（右。あとで描く）
-            var titleRow = new Rect(mm, mm, W - mm * 2f, TitleRowH);
-            {
-                var logo = TitleArt.Logo;
-                float lh = titleRow.height * 0.92f, lw = logo.width * lh / logo.height;
-                var logoRect = new Rect(titleRow.x + mm * 0.5f, titleRow.y + (titleRow.height - lh) * 0.5f, lw, lh);
-                var oldColor = GUI.color;
-                GUI.color = new Color(1f, 1f, 1f, 0.6f);
-                GUI.DrawTexture(new Rect(logoRect.x - lh * 0.05f, logoRect.y - lh * 0.05f, logoRect.width + lh * 0.1f, logoRect.height + lh * 0.1f), TitleArt.Glow);
-                GUI.color = oldColor;
-                GUI.DrawTexture(logoRect, logo);
-                if (!Application.isMobilePlatform)
-                {
-                    // 操作の案内（PC・エディタ向け）：ロゴのすぐ右に小さく
-                    var hint = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
-                    hint.normal.textColor = new Color(1f, 1f, 1f, 0.45f);
-                    GUI.Label(new Rect(logoRect.xMax + mm * 1.2f, titleRow.y, W * 0.3f, titleRow.height), Loc.T("H: Controls", "H：操作"), hint);
-                }
-                if (ch != null && ch.Rebirths > 0)
-                {
-                    // 転生の印：MENU の左に、オーラの色の宝石と「転生N」
-                    var aura = ThirdClasses.AuraColor(ch.Rebirths);
-                    var countStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleRight, fontStyle = FontStyle.Bold };
-                    countStyle.normal.textColor = Color.Lerp(aura, Color.white, 0.35f);
-                    string count = Loc.T($"Reborn x{ch.Rebirths}", $"転生{ch.Rebirths}");
-                    float cw = countStyle.CalcSize(new GUIContent(count)).x;
-                    float right = ToGui(MenuRect).x - mm * 1.2f;
-                    GUI.Label(new Rect(right - cw, titleRow.y, cw, titleRow.height), count, countStyle);
-                    float gem = titleRow.height * 0.8f;
-                    var gemRect = new Rect(right - cw - mm * 0.4f - gem, titleRow.y + (titleRow.height - gem) * 0.5f, gem, gem);
-                    var old2 = GUI.color;
-                    GUI.color = aura;
-                    DrawSprite(gemRect, PixelArt.RebirthGem);
-                    GUI.color = old2;
-                }
-            }
-
-            // 2段目から：LV・HP・MP・経験値・層を、1枚の枠の中にまとめる（間は細い仕切りだけ。すき間を作らない）
+            // ---- 上の情報カード（町の画面と同じ作り） ----
             float lineH = small.fontSize * 1.35f;
-            var panel = new Rect(mm, titleRow.yMax + mm * 0.6f, W - mm * 2f, StatusPanelH);
-            Fill(panel, new Color(0.08f, 0.075f, 0.11f, 1f)); // 下のショートカットの欄と同じ色
+            var card = TopCard;
             float pp = PanelPad;
-            // 仕切り：金の線と、その下（右）に暗い影の線（枠と同じ凹凸）
-            float dt = DividerT;
-            float sh = Mathf.Max(1f, Mathf.Round(dt * 0.5f));
-            var hi = new Color(1f, 0.95f, 0.75f, 0.9f); // 照り返し
-            var lo = new Color(0f, 0f, 0f, 0.75f);      // 影
-            void HDivider(float x, float y, float w)
-            {
-                Fill(new Rect(x, y - sh, w, sh), lo);
-                Fill(new Rect(x, y, w, dt), FrameGold);
-                Fill(new Rect(x, y, w, Mathf.Max(1f, dt * 0.3f)), hi);
-                Fill(new Rect(x, y + dt, w, sh), lo);
-            }
-            void VDivider(float x, float y, float h)
-            {
-                Fill(new Rect(x - sh, y, sh, h), lo);
-                Fill(new Rect(x, y, dt, h), FrameGold);
-                Fill(new Rect(x, y, Mathf.Max(1f, dt * 0.3f), h), hi);
-                Fill(new Rect(x + dt, y, sh, h), lo);
-            }
-            float rowY = panel.y + pp, rowH = TopRowH;
-            float expGap = mm * 0.35f;
-            float lvW = W * 0.17f;
-            var lvBox = new Rect(panel.x + pp, rowY, lvW, rowH + expGap + ExpRowH);
-            float lvGlow = LevelGlow;
-            if (lvGlow > 0f) Fill(lvBox, new Color(1f, 0.8f, 0.3f, 0.45f * lvGlow)); // レベルアップの直後は光る
-            // LV を押すと能力値の画面が開く。ポイントが余っていれば、LV の欄がゆっくり金色に明滅する
-            if (ch != null && ch.Points > 0) Fill(lvBox, new Color(1f, 0.78f, 0.25f, 0.18f + 0.14f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f))));
-            if (!World.Paused && !player.IsDead && !World.ChoosingClass)
-                Button(lvBox, null, new Color(0f, 0f, 0f, 0f), centered, () => World.OpenPanel(false, true, false));
-            int level = ch != null ? ch.Level : 1;
-            string lvText = ch != null && ch.Level >= Progression.LevelCap(ch) ? $"LV{level}★" : $"LV{level}";
-            NumberFont.DrawIn(lvBox, lvText, lvGlow > 0f ? Color.Lerp(Color.white, new Color(1f, 0.9f, 0.5f), lvGlow) : Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx + 1f); // ほかより一回り大きく
-            VDivider(lvBox.xMax + pp * 0.5f, panel.y, lvBox.height + pp * 1.5f); // LV の右の仕切り
-
-            float barX = lvBox.xMax + pp * 1.5f;
-            float barW = (panel.xMax - pp - barX - pp) * 0.5f;
-            var hpBack = new Rect(barX, rowY, barW, rowH);
+            Fill(card, new Color(0.08f, 0.075f, 0.11f, 1f));
+            float lvD = TopLvD;
+            var lvR = new Rect(card.center.x - lvD * 0.5f, card.center.y - lvD * 0.5f, lvD, lvD);
+            // 左：HP・MP のバー、その下に層と残りの敵
+            float lx = card.x + pp * 1.5f, lw = lvR.x - pp * 1.5f - lx;
+            var hpBack = new Rect(lx, card.y + card.height * 0.1f, lw, card.height * 0.25f);
             float ratio = player.MaxHp > 0 ? Mathf.Clamp01((float)player.Hp / player.MaxHp) : 0f;
             OrnateBar(hpBack, ratio, new Color(0.15f, 0.04f, 0.05f, 1f), new Color(0.8f, 0.1f, 0.12f, 1f), FrameGold, false);
-            NumberFont.DrawIn(hpBack, $"HP {player.Hp}/{player.MaxHp}", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx); // HUD の文字は、どの段も同じ大きさのドット文字
-            var mpBack = new Rect(hpBack.xMax + pp, rowY, panel.xMax - pp - (hpBack.xMax + pp), rowH);
+            NumberFont.DrawIn(hpBack, $"HP {player.Hp}/{player.MaxHp}", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx);
+            var mpBack = new Rect(lx, card.y + card.height * 0.39f, lw, card.height * 0.25f);
             float mpRatio = player.MaxMp > 0 ? Mathf.Clamp01((float)player.Mp / player.MaxMp) : 0f;
             OrnateBar(mpBack, mpRatio, new Color(0.05f, 0.08f, 0.18f, 1f), new Color(0.2f, 0.35f, 0.75f, 1f), FrameGold, false);
             NumberFont.DrawIn(mpBack, $"MP {player.Mp}/{player.MaxMp}", Color.white, TextAnchor.MiddleCenter, 0.9f, HudPx);
-
-            // 経験値：HP・MP の下に細いバーだけ
-            var expBack = new Rect(barX, rowY + rowH + expGap, panel.xMax - pp - barX, ExpRowH);
-            Fill(expBack, new Color(0.02f, 0.05f, 0.05f, 1f)); // 背景は暗く（たまった分が浮き出るように）
-            if (ch != null)
-            {
-                float expRatio = ch.Level >= Progression.LevelCap(ch) ? 1f : Mathf.Clamp01((float)ch.Exp / Progression.ExpToNext(ch, ch.Level));
-                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height), new Color(0.2f, 0.9f, 0.72f, 1f)); // 明るい碧
-                Fill(new Rect(expBack.x, expBack.y, expBack.width * expRatio, expBack.height * 0.4f), new Color(0.85f, 1f, 0.95f, 0.45f)); // 光沢
-                if (expRatio > 0f && expRatio < 1f) Fill(new Rect(expBack.x + expBack.width * expRatio - 2f, expBack.y, 2f, expBack.height), new Color(1f, 1f, 1f, 0.6f + 0.3f * Mathf.Sin(Time.unscaledTime * 4f))); // 先端が白く光る
-                for (int k = 1; k < 10; k++) Fill(new Rect(expBack.x + expBack.width * k / 10f, expBack.y, 1f, expBack.height), new Color(0f, 0f, 0f, 0.35f)); // 10% ごとの目盛り
-            }
-            Frame(expBack, new Color(0f, 0f, 0f, 0.6f), 1f);
-
-            // 横の仕切り、その下に層（ボスのときは添える）と、右に回避の待ち時間
-            float divY = lvBox.yMax + pp * 0.5f;
-            HDivider(panel.x, divY, panel.width); // 層の上の仕切り
-            var floorRow = new Rect(panel.x + pp, divY + dt * 1.5f + pp * 0.3f, panel.width - pp * 2f, FloorRowH);
-            string floorText = GameConfig.FloorNameEn(World.Floors.Floor) + (World.Floors.IsBossFloor ? "   BOSS" : ""); // HUD では「71F」と短く
-            NumberFont.DrawIn(new Rect(floorRow.x, floorRow.y, floorRow.width * 0.45f, floorRow.height), floorText, Color.white, TextAnchor.MiddleLeft, 0.9f, HudPx);
-            // 普通の層：階段の封印までの残りの敵（階段の部屋）。開いたら「OPEN」
+            var floorRow = new Rect(lx, card.y + card.height * 0.69f, lw, card.height * 0.24f);
+            string floorText = GameConfig.FloorNameEn(World.Floors.Floor) + (World.Floors.IsBossFloor ? " BOSS" : ""); // HUD では「71F」と短く
+            NumberFont.DrawIn(new Rect(floorRow.x, floorRow.y, floorRow.width * 0.48f, floorRow.height), floorText, Color.white, TextAnchor.MiddleLeft, 0.9f, HudPx);
             if (!World.Floors.IsBossFloor && World.Room.StairsArea != null)
             {
+                // 普通の層：階段の封印までの残りの敵（階段の部屋）。開いたら「OPEN」
                 int left = World.Enemies.RemainingIn(World.Room.StairsArea);
                 bool open = World.Floors.StairsOpen;
                 string t = open ? "OPEN" : $"ENEMY {left}";
                 var col = open ? new Color(0.55f, 0.8f, 1f) : new Color(1f, 0.82f, 0.4f);
-                NumberFont.DrawIn(new Rect(floorRow.x + floorRow.width * 0.42f, floorRow.y, floorRow.width * 0.3f, floorRow.height), t, col, TextAnchor.MiddleLeft, 0.9f, HudPx);
+                NumberFont.DrawIn(new Rect(floorRow.x + floorRow.width * 0.48f, floorRow.y, floorRow.width * 0.52f, floorRow.height), t, col, TextAnchor.MiddleRight, 0.9f, HudPx);
             }
-            var dodge = new Rect(floorRow.xMax - W * 0.22f, floorRow.y + floorRow.height * 0.35f, W * 0.22f, floorRow.height * 0.3f);
+            // 右：MENU（あとで描く）、転生の印、回避の待ち時間
+            var mg = MenuGui;
+            if (ch != null && ch.Rebirths > 0)
+            {
+                var aura = ThirdClasses.AuraColor(ch.Rebirths);
+                var countStyle = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold };
+                countStyle.normal.textColor = Color.Lerp(aura, Color.white, 0.35f);
+                float gem = card.height * 0.2f;
+                var gemRect = new Rect(mg.x, card.y + card.height * 0.5f, gem, gem);
+                var old2 = GUI.color;
+                GUI.color = aura;
+                DrawSprite(gemRect, PixelArt.RebirthGem);
+                GUI.color = old2;
+                FitLabel(new Rect(gemRect.xMax + mm * 0.4f, gemRect.y - gem * 0.1f, mg.width - gem - mm * 0.4f, gem * 1.2f), Loc.T($"Reborn x{ch.Rebirths}", $"転生{ch.Rebirths}"), countStyle);
+            }
+            var dodge = new Rect(mg.x, card.y + card.height * 0.78f, mg.width, card.height * 0.1f);
             Fill(dodge, new Color(0f, 0f, 0f, 0.6f));
             Fill(new Rect(dodge.x, dodge.y, dodge.width * player.DodgeReady, dodge.height), new Color(0.75f, 0.85f, 1f, 0.9f));
             Frame(dodge, new Color(0f, 0f, 0f, 0.6f), 1f);
-
-            OrnateFrame(panel, FrameGold, FrameT, true, false); // まとめて1枚の枠
+            // 真ん中：Lv の丸と経験値の輪（押すと能力値の画面。ポイントが余っていれば金色に明滅）
+            TownScreen.DrawDisk(new Rect(lvR.x - FrameT * 2f, lvR.y - FrameT * 2f, lvD + FrameT * 4f, lvD + FrameT * 4f), FrameGold);
+            TownScreen.DrawDisk(lvR, new Color(0.05f, 0.045f, 0.09f, 1f));
+            float lvGlow = LevelGlow;
+            if (lvGlow > 0f) TownScreen.DrawDisk(lvR, new Color(1f, 0.8f, 0.3f, 0.45f * lvGlow)); // レベルアップの直後は光る
+            if (ch != null && ch.Points > 0) TownScreen.DrawDisk(lvR, new Color(1f, 0.78f, 0.25f, 0.18f + 0.14f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f))));
+            if (!World.Paused && !player.IsDead && !World.ChoosingClass)
+                Button(lvR, null, new Color(0f, 0f, 0f, 0f), centered, () => World.OpenPanel(false, true, false));
+            if (ch != null)
+            {
+                float expRatio = ch.Level >= Progression.LevelCap(ch) ? 1f : Mathf.Clamp01((float)ch.Exp / Mathf.Max(1, Progression.ExpToNext(ch, ch.Level)));
+                float ringR = lvD * 0.42f, dot = Mathf.Max(2f, lvD * 0.06f);
+                const int seg = 90;
+                for (int i = 0; i < seg; i++)
+                {
+                    float ang = (-90f + 360f * i / seg) * Mathf.Deg2Rad;
+                    var c = i < seg * expRatio ? new Color(0.25f, 0.92f, 0.75f, 1f) : new Color(1f, 1f, 1f, 0.1f);
+                    Fill(new Rect(lvR.center.x + Mathf.Cos(ang) * ringR - dot * 0.5f, lvR.center.y + Mathf.Sin(ang) * ringR - dot * 0.5f, dot, dot), c);
+                }
+            }
+            int level = ch != null ? ch.Level : 1;
+            var lvSmall = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+            lvSmall.normal.textColor = new Color(0.75f, 0.85f, 1f);
+            GUI.Label(new Rect(lvR.x, lvR.y + lvD * 0.16f, lvD, lvD * 0.2f), ch != null && ch.Level >= Progression.LevelCap(ch) ? "Lv★" : "Lv", lvSmall);
+            NumberFont.DrawIn(new Rect(lvR.x + lvD * 0.15f, lvR.y + lvD * 0.36f, lvD * 0.7f, lvD * 0.34f), level.ToString(), lvGlow > 0f ? Color.Lerp(Color.white, new Color(1f, 0.9f, 0.5f), lvGlow) : Color.white, TextAnchor.MiddleCenter, 1f);
+            OrnateFrame(card, FrameGold, FrameT, true, false); // まとめて1枚の枠
             float y = topBottom + mm;
 
             // FPS（ダンジョンの左下。右上はミニマップ、右下は攻撃ボタンがあるので）
@@ -1583,6 +1550,16 @@ namespace VividOfFade
             OrnateFrame(msgR, new Color(frameColor.r, frameColor.g, frameColor.b, 0.55f), frameT, false, false);
             var scR = ShortcutPanel;
             Fill(scR, new Color(0.08f, 0.075f, 0.11f, 1f));
+            {
+                // 透かしのロゴ（ボタンの後ろにうっすら）
+                var logo = TitleArt.Logo;
+                float lh = scR.height * 0.55f, lw2 = logo.width * lh / logo.height;
+                if (lw2 > scR.width * 0.9f) { lw2 = scR.width * 0.9f; lh = logo.height * lw2 / logo.width; }
+                var oldL = GUI.color;
+                GUI.color = new Color(1f, 1f, 1f, 0.1f);
+                GUI.DrawTexture(new Rect(scR.center.x - lw2 * 0.5f, scR.center.y - lh * 0.5f, lw2, lh), logo);
+                GUI.color = oldL;
+            }
             OrnateFrame(scR, frameColor, frameT);
 
             // メッセージ：直近の行を残す（新しいものほど下）。来たばかりの行は明るく、古い行は少し暗い
@@ -1638,6 +1615,15 @@ namespace VividOfFade
             DrawSkillButtons(ch);
             DrawPotions(ch);
             DrawQuickButtons(ch, points > 0, inv.BagFull);
+            if (!Application.isMobilePlatform)
+            {
+                // 操作の案内（PC・エディタ向け）：鞄・能力値・スキルのボタンの下の空きに
+                var q0 = QuickRect(0); var q2 = QuickRect(2);
+                float qx = Mathf.Min(q0.x, q2.x), qw = Mathf.Max(q0.xMax, q2.xMax) - qx;
+                var hint = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter };
+                hint.normal.textColor = new Color(1f, 1f, 1f, 0.5f);
+                GUI.Label(new Rect(qx, q0.yMax + q0.height * 0.08f, qw, q0.height * 0.5f), Loc.T("H: Controls", "H：操作"), hint);
+            }
 
             // 攻撃ボタン（押している間だけ、のとき）
             if (!World.AutoAttack)
