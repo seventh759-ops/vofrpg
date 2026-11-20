@@ -118,7 +118,7 @@ def forms(P):
     out['Warden_Adv1_3rd']=hd(warden_hd('aegis'),{**STEEL,**HAIR,**BLUE},(190,225,255),front=WF)
     from flat import VIVID
     vp={k:tuple(x for t in v for x in t) for k,v in VIVID.items()}
-    vp.update({'P':(246,180,226,226,140,200,190,104,170,140,70,128),'b':(250,196,232,232,160,212,200,120,180,150,84,136)})
+    vp.update({'P':(246,180,226,226,140,200,190,104,170,140,70,128),'O':(176,170,212,140,134,180,104,98,146,70,64,104)})   # O：白い頭巾の内側の影（淡い紫）
     vp.setdefault('X',vp.get('x'))
     out['Vividbearer']=hd(vivid_hd(),vp,(255,90,215),front=VF)
     return out
