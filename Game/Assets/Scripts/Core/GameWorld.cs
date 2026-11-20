@@ -1835,84 +1835,51 @@ namespace VividOfFade
 
         void OnLootLanded(Item item, Vector2 pos)
         {
+            // 珍しい品の演出は「きらきら（光の粒）」ひとつに揃える。輪・柱・画面の色づきは他の演出と紛れるので使わない。
             if (item != null && item.Heaven)
-            {
-                // 天界の装備：金の輪と、立ちのぼる光の粒
-                Fx.Ring(pos, 1.3f, new Color(RarityInfo.HeavenColor.r, RarityInfo.HeavenColor.g, RarityInfo.HeavenColor.b, 0.9f), 0.35f);
                 Fx.Sparks(pos, 12, RarityInfo.HeavenColor, 1.2f, 0.9f, 2f, true);
-            }
             if (item != null && item.Abyss)
-            {
-                // 深淵の装備：赤紫の輪と、立ちのぼる闇の粒
-                Fx.Ring(pos, 1.3f, new Color(RarityInfo.AbyssColor.r, RarityInfo.AbyssColor.g, RarityInfo.AbyssColor.b, 0.9f), 0.35f);
                 Fx.Sparks(pos, 10, RarityInfo.AbyssColor, 1.2f, 0.9f, 2f, true);
-            }
             if (item == null || item.Rarity < Rarity.Rare) return;
             Sfx.Landed(item.Rarity);
             if (item.Rarity == Rarity.Legendary)
             {
-                // 紫：紫の輪と光の柱、はじける粒
-                var pc = RarityInfo.ColorOf(Rarity.Legendary);
-                Fx.Ring(pos, 1.4f, new Color(pc.r, pc.g, pc.b, 0.9f), 0.4f);
-                Fx.SoftPillar(pos, new Color(pc.r, pc.g, pc.b, 0.6f), 0.8f, 3.2f, 0.8f);
-                Fx.Sparks(pos, 16, pc, 3f, 0.8f, 3f);
-                cameraRig.Shake(0.15f, 0.3f);
+                Fx.Sparks(pos, 16, RarityInfo.ColorOf(Rarity.Legendary), 3f, 0.8f, 3f);
             }
             else if (item.Rarity == Rarity.Boss)
             {
-                // ボスのセットの品：セットの色の衝撃の輪と光の柱、強めの揺れ
                 var bc = BossSets.ColorOf(item.BossSet);
-                Fx.Ring(pos, 1.6f, new Color(bc.r, bc.g, bc.b, 0.95f), 0.35f);
-                Fx.Ring(pos, 3.2f, new Color(bc.r, bc.g, bc.b, 0.8f), 0.7f);
-                Fx.SoftPillar(pos, new Color(bc.r, bc.g, bc.b, 0.8f), 1.3f, 4.5f, 1.1f);
                 Fx.Sparks(pos, 24, bc, 4f, 0.9f, 3.5f);
                 Fx.Sparks(pos, 18, new Color(1f, 1f, 1f), 2f, 1.4f, 3f, true);
-                Hud.Flash(0.4f, new Color(bc.r, bc.g, bc.b, 0.4f));
                 Sfx.Fountain();
-                cameraRig.Shake(0.3f, 0.6f);
+                cameraRig.Shake(0.2f, 0.4f);
             }
             else if (item.Rarity == Rarity.Mythic)
             {
-                // 神話：3重の衝撃の輪、強い揺れ、長めのスロー、画面中央に大きく知らせる
                 var red = RarityInfo.ColorOf(Rarity.Mythic);
-                Fx.Ring(pos, 1.6f, new Color(red.r, red.g, red.b, 0.95f), 0.35f);
-                Fx.Ring(pos, 3f, new Color(1f, 0.85f, 0.4f, 0.9f), 0.6f);
-                Fx.Ring(pos, 4.5f, new Color(red.r, red.g, red.b, 0.8f), 0.9f);
-                // 赤い光の柱（キャラクターの数倍の高さ）、はじける赤と金の粒、画面がうっすら赤く光る（文字の知らせは出さない）
-                Fx.SoftPillar(pos, new Color(red.r, red.g, red.b, 0.8f), 1.3f, 4.5f, 1.1f); // レベルアップの柱と同じやわらかい光
-                Fx.SoftPillar(pos, new Color(1f, 0.9f, 0.6f, 0.6f), 0.55f, 5f, 0.8f);
                 Fx.Sparks(pos, 24, red, 4f, 0.9f, 3.5f);
                 Fx.Sparks(pos, 24, new Color(1f, 0.85f, 0.4f), 2f, 1.6f, 3f, true);
-                Hud.Flash(0.45f, new Color(1f, 0.25f, 0.2f, 0.45f));
                 Sfx.Fountain();
-                cameraRig.Shake(0.35f, 0.7f);
+                cameraRig.Shake(0.25f, 0.5f);
             }
             else if (item.Rarity >= Rarity.Relic)
             {
-                // 橙：2重の輪と太い光の柱、金の粒、画面がうっすら橙に光る
                 var oc = RarityInfo.ColorOf(Rarity.Relic);
-                Fx.Ring(pos, 1.5f, new Color(oc.r, oc.g, oc.b, 0.95f), 0.4f);
-                Fx.Ring(pos, 3f, new Color(1f, 0.85f, 0.4f, 0.75f), 0.7f);
-                Fx.SoftPillar(pos, new Color(oc.r, oc.g, oc.b, 0.75f), 1.1f, 4f, 1f);
                 Fx.Sparks(pos, 22, oc, 3.5f, 0.9f, 3.5f);
                 Fx.Sparks(pos, 14, new Color(1f, 0.9f, 0.5f), 1.6f, 1.4f, 3f, true);
-                Hud.Flash(0.35f, new Color(oc.r, oc.g, oc.b, 0.3f));
-                cameraRig.Shake(0.25f, 0.5f);
+                cameraRig.Shake(0.15f, 0.3f);
             }
         }
 
         /// <summary>
-        /// 珍しい品（橙以上）が飛び出した瞬間：時間をゆっくりにして、品が宙をゆっくり舞うところを見せる（スローの理由が分かるように）。
-        /// 飛び出した場所から品の色の輪と光の粒が広がり、画面の縁がその色でほのかに光る。落ちた瞬間（OnLootLanded）に派手な演出。
+        /// 珍しい品（橙以上）が飛び出した瞬間：時間をゆっくりにして、品が宙をゆっくり舞うところを見せる。
+        /// 演出はきらきらひとつ：飛び出した場所から品の色の光の粒、画面（ダンジョン部分）の縁の淡い光と、またたく小さな光。
         /// </summary>
         void OnRareSpawned(Item item, Vector2 from)
         {
             var c = item.DisplayColor;
             bool big = item.Rarity >= Rarity.Mythic;
-            Fx.Ring(from, 1.2f, new Color(c.r, c.g, c.b, 0.9f), 0.5f);
-            Fx.Ring(from, 2.4f, new Color(c.r, c.g, c.b, 0.6f), 0.8f);
             Fx.Sparks(from, big ? 26 : 14, c, 2.5f, 1f, 3f, true);
-            Fx.SoftPillar(from, new Color(c.r, c.g, c.b, 0.55f), 0.8f, 4f, 0.8f);
             float len = big ? 1.1f : 0.75f;
             if (slowMoTimer < len) slowMoTimer = len;
             Time.timeScale = big ? 0.22f : 0.3f;
