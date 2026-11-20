@@ -31,7 +31,7 @@ P={
 }
 # 色を1ドットずつ書き出した絵（陰影を計算しない）：見た目の名前 → (行, 文字→色)
 from hd_forms import forms
-FLAT={'Lampwright':(lamp_flat(),{k:v+(255,) for k,v in LAMP_FLAT.items()})}
+FLAT={}
 FLAT.update(forms({n:d for n,(_,d) in P.items()}))
 for n in FLAT: P.pop(n,None)
 rows='\n'.join(cs(n,c.rows()) for n,(c,_) in P.items())

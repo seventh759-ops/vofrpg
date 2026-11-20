@@ -128,7 +128,7 @@ def lamp_hd(kind='base'):
             for x in range(58,111):
                 o=((x-CX)/22)**2+((y-52)/30)**2; i=((x-CX)/15.5)**2+((y-55)/21.5)**2
                 if y>70 and abs(x-CX)<13: continue          # あごの下は開いている（首と襟が見える）
-                if o<=1 and i>1 and c.get(x,y) in '.hs': c.set(x,y,'c')
+                if o<=1 and i>1 and c.get(x,y) in ('.h' if y>58 else '.hs'): c.set(x,y,'c')
         for a in range(180,361,2):
             r=math.radians(a); c.ell(CX+15.8*math.cos(r),55+21.8*math.sin(r),1.1,1.1,'g',only='c')
         for a in range(200,341,3):

@@ -18,19 +18,38 @@ GLOW={'l':(255,230,130),'L':(255,170,60),'o':(255,250,220),'p':(200,130,255),'R'
 SHINY=set('mgxHuq')        # 上を明るく下を暗くする素材（金属・金・白・銀）
 HAIR=set('hHqD')
 MAIL=set()                  # 鎖かたびらの編み目を付ける素材（絵ごとに flatten の mail で指定）
-POOL=[ch for ch in 'ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!#$%&*+-=?@^_~:;<>/|']
+POOL=[ch for ch in 'ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!#$%&*+-=?@^_~:;<>/|']+[chr(c) for c in range(0xC0,0x250) if chr(c) not in '×÷']   # 色が多いので、ラテン文字の拡張も使う
 
 def ramp(pal,ch):
     if ch in pal: v=pal[ch]; return [tuple(v[k:k+3]) for k in range(0,12,3)]
     return BASE.get(ch)
 
+def ext_ramp(r):
+    """4段の色を8段に広げる（照り＋・照り・その間・地・その間・影・深い影・さらに深い影）。"""
+    mix=lambda a,b,t: tuple(int(a[i]+(b[i]-a[i])*t) for i in range(3))
+    return [mix(r[0],(255,255,255),0.3), r[0], mix(r[0],r[1],0.5), r[1], mix(r[1],r[2],0.5), r[2], r[3], mix(r[3],(0,0,0),0.35)]
+
 def flatten(M, pal, aura=None, extra=None, mail=''):
     """M: 素材の行（文字のリスト）。pal: その絵だけの色 {文字:(12個の数)}。aura: 光の縁の色 (r,g,b)。
-    extra(T,M) で、その絵だけの影・照りを足せる（T は段の番号 0〜3 か、('G',色) の表）。"""
+    明るさは 0（照り＋）〜7（さらに深い影）の8段。光は左上から。
+    ・横の幅のある所は円柱のように塗る（左寄りが明るく、右へ行くほど暗い。右端は反射でわずかに明るい）
+    ・縦にも、上が明るく下が暗い
+    ・ほかの素材の下には落ち影、境目には影の線
+    extra(T,M) で、その絵だけの影・照りを足せる（T は 0〜7 の数か、('G',色)）。"""
     global MAIL; MAIL=set(mail)
     H=len(M); W=len(M[0])
     def m(x,y): return M[y][x] if 0<=x<W and 0<=y<H else '.'
     T=[[None]*W for _ in range(H)]
+    # 縦の連なり（上端・下端）
+    top=[[0]*W for _ in range(H)]; bot=[[0]*W for _ in range(H)]
+    for x in range(W):
+        y=0
+        while y<H:
+            ch=M[y][x]
+            if ch=='.': y+=1; continue
+            y0=y
+            while y<H and M[y][x]==ch: y+=1
+            for k in range(y0,y): top[k][x]=y0; bot[k][x]=y-1
     def run(x,y):
         ch=M[y][x]; l=x
         while m(l-1,y)==ch: l-=1
@@ -42,41 +61,48 @@ def flatten(M, pal, aura=None, extra=None, mail=''):
             ch=M[y][x]
             if ch=='.': continue
             if ch in GLOW: T[y][x]=('G',GLOW[ch]); continue
+            if ch=='Q': T[y][x]=3; continue
             dl,dr,wid=run(x,y)
-            t=1
-            if ch=='Q': T[y][x]=1; continue
-            if ch in SHINY:
-                if m(x,y-1)!=ch: t=0
-                elif m(x,y+1)!=ch: t=2
-                if dr==0 and m(x,y+1)!=ch: t=3
-                elif dr==0: t=2
-            elif ch in 'sS':
-                if dr<=1 or (m(x,y-1) in 'hHq' or m(x,y-2) in 'hHq'): t=2
-                elif dl==0: t=0
-            elif ch in 'hHq' and False: pass
+            u=dl/max(1,wid-1)
+            hgt=bot[y][x]-top[y][x]+1
+            w_=(y-top[y][x])/max(1,hgt-1)
+            if ch in 'sS':
+                v=2.6+2.2*(u-0.3)
+                if m(x,y-1) in HAIR or m(x,y-2) in HAIR or m(x,y-3) in HAIR: v+=1.6
+                if dr==0: v+=0.8
+                v=max(1.5,min(5.5,v))
+            elif ch in SHINY:
+                v=3+3.6*(u-0.35)+1.2*(w_-0.5)
+                if m(x,y-1)!=ch: v=min(v,0.8)
+                if m(x,y+1)!=ch: v=max(v,5.6)
+                if dr==0: v=max(v,6)
+                if wid>=6 and 0.12<u<0.3: v-=1.2                    # 金属の照りの筋
+            elif wid<5:
+                v=3+(1.4 if dr==0 else 0)-(1.0 if dl==0 else 0)+0.8*(w_-0.5)
             else:
-                big = wid>=10
-                if dr<=(1 if big else 0): t=3 if big else 2
-                elif big and dr<=4: t=2
-                elif dl<=(1 if big else 0): t=0
-                # 上にほかの素材があれば、その下に落ち影
-                for k in (1,2,3):
-                    up=m(x,y-k)
-                    if up!='.' and up!=ch and up not in GLOW and up not in 'sS':
-                        t=max(t,3 if k==1 else 2); break
+                v=3+3.2*(u-0.35)+1.4*(w_-0.45)
+                if dl==0: v-=0.9
+                if dr==0: v=max(v,6.2)
+                elif dr==1 and wid>=10: v=max(5.2,v-0.8)            # 右端の内側は反射でわずかに明るい
             if ch in HAIR:
-                k=(x - y//3) % 7
-                if k==0 and m(x,y-1)==ch: t=0                      # 毛束の照り
-                elif k==4: t=max(t,2)                               # 毛束の影
-                if m(x+1,y)!=ch or m(x,y+1)!=ch: t=3 if t>=2 else 2
+                k=(x - y//3) % 6
+                if k==0: v-=1.6
+                elif k==3: v+=1.3
+                if m(x+1,y)!=ch or m(x,y+1)!=ch: v=max(v,5.5)
             if ch in MAIL:
-                t = 1 if (x//2+y//2)%2==0 else 2                    # 鎖の編み目
-                if (x%4==0 and y%4==0): t=0
-            # 素材の境目：右と下でほかの素材に接するところは一段暗く（線で描いたように見せる）
+                v=(3 if (x//2+y//2)%2==0 else 5)+(1 if u>0.6 else 0)
+                if x%4==0 and y%4==0: v=1
+            # 落ち影：上にほかの素材があれば、その下は暗い
+            if ch not in 'sSQ':
+                for k in (1,2,3,4):
+                    up=m(x,y-k)
+                    if up!='.' and up!=ch and up not in GLOW and up not in 'sSQxeIK':
+                        v+= (2.2 if k==1 else 1.6 if k==2 else 0.9 if k==3 else 0.5); break
+            # 境目の影の線（右と下）
             rb=(m(x+1,y),m(x,y+1))
-            if not (ch in 'sSxeIpRBKQ') and any(n!='.' and n!=ch and n not in GLOW and n not in 'xeIKQ' for n in rb): t=min(3,t+1)
-            if ch in SHINY and t==0 and dl<=3 and m(x,y-1)!=ch: t='hi'      # 金属のふちの白い照り
-            T[y][x]=t
+            if not (ch in 'sSxeIpRBKQ') and any(n!='.' and n!=ch and n not in GLOW and n not in 'xeIKQ' for n in rb): v+=1.2
+            if ch in SHINY and v<0.6 and dl<=3: T[y][x]='hi'; continue   # 金属のふちの白い照り
+            T[y][x]=max(0.0,min(7.0,v))
     if extra: extra(T,M)
     # 色の表に直す
     out=[['.']*W for _ in range(H)]
@@ -93,7 +119,7 @@ def flatten(M, pal, aura=None, extra=None, mail=''):
             r=ramp(pal,ch) or BASE['c']
             if t=='hi':
                 c0=r[0]; out[y][x]=code(tuple(min(255,int(v+(255-v)*0.6)) for v in c0)+(255,)); continue
-            out[y][x]=code(r[t]+(255,))
+            out[y][x]=code(ext_ramp(r)[int(round(t))]+(255,))
     # 輪郭（きらめきの数字は輪郭を付けない）
     def solid(x,y): return 0<=x<W and 0<=y<H and out[y][x] not in '.' and M[y][x] not in '123456' and out[y][x]!=key.get((22,16,30,255))
     oc=code((22,16,30,255))
