@@ -1674,7 +1674,7 @@ namespace VividOfFade
                 return;
             }
             // 画面の外：ダンジョンの領域の中心から、スライムの方向へ伸ばして、端で止める
-            var center = new Vector2(Screen.width * 0.5f, (TopBandBottom + BottomBandTop) * 0.5f);
+            var center = new Vector2(Screen.width * 0.5f, (TopBandBottom + BottomBandTop) * 0.5f - ViewRaise * Screen.height); // 自分のいる所（ダンジョンを少し上げた分）
             Vector2 d = p - center;
             if (d.sqrMagnitude < 1f) return;
             float tx = d.x > 0 ? (rightX - center.x) / d.x : d.x < 0 ? (leftX - center.x) / d.x : float.MaxValue;
