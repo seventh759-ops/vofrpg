@@ -6,6 +6,7 @@ from rogues import rogue
 from wardens import warden
 from vivid import vivid
 from lamp_hd import lamp_hd
+from lamp_flat import lamp_flat, PALETTE as LAMP_FLAT
 # 見た目の名前 → (絵, 色の差し替え)。色は Ramp と同じ 12 個の数（明るい順に4段）
 FLAME=(255,170,60,236,120,30,190,76,16,130,44,10)
 P={
@@ -28,7 +29,13 @@ P={
  'Warden_Adv1_3rd':(warden('aegis'),{'m':(170,190,230,110,130,176,74,90,130,46,56,86),'v':(70,96,170,44,64,130,30,44,94,20,28,64),'F':(40,56,116,32,46,98,24,34,76,16,22,54)}),
  'Vividbearer':(vivid(),{}),
 }
+# 色を1ドットずつ書き出した絵（陰影を計算しない）：見た目の名前 → (行, 文字→色)
+FLAT={'Lampwright':(lamp_flat(),LAMP_FLAT)}
+for n in FLAT: P.pop(n,None)
 rows='\n'.join(cs(n,c.rows()) for n,(c,_) in P.items())
+flat_rows='\n'.join(cs(n,r) for n,(r,_) in FLAT.items())
+def fpal(d): return ', '.join("{ '%s', new Color32(%d, %d, %d, 255) }" % (k,*v) for k,v in d.items())
+flat_pals='\n'.join('            ["%s"] = new Dictionary<char, Color32> { %s },' % (n,fpal(d)) for n,(_,d) in FLAT.items())
 def pal(d): return ', '.join("{ '%s', Ramp(%s) }" % (k, ', '.join(map(str,v))) for k,v in d.items())
 pals='\n'.join('            ["%s"] = new Dictionary<char, Color32[]> { %s },' % (n,pal(d)) for n,(_,d) in P.items() if d)
 src=f'''using System.Collections.Generic;
@@ -45,6 +52,18 @@ namespace VividOfFade
         static readonly Dictionary<string, string[]> Portraits = new Dictionary<string, string[]>
         {{
 {rows}
+        }};
+
+        /// <summary>色を1ドットずつ書き出した絵（影・照り・輪郭も文字で描いてある。陰影は計算しない）。</summary>
+        static readonly Dictionary<string, string[]> FlatPortraits = new Dictionary<string, string[]>
+        {{
+{flat_rows}
+        }};
+
+        /// <summary>FlatPortraits の文字 → 色。</summary>
+        static readonly Dictionary<string, Dictionary<char, Color32>> FlatPortraitColors = new Dictionary<string, Dictionary<char, Color32>>
+        {{
+{flat_pals}
         }};
 
         static readonly Dictionary<string, Dictionary<char, Color32[]>> PortraitPalette = new Dictionary<string, Dictionary<char, Color32[]>>
