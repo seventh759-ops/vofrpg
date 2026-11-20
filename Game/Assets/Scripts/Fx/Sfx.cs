@@ -262,7 +262,7 @@ namespace VividOfFade
 
         AudioClip jackpot;
 
-        /// <summary>大当たり：鐘の連打「キンキンキン」がだんだん速く高くなり、大きな鐘の和音「ジャーン」、鈴が一気にこぼれる（約1.9秒）。</summary>
+        /// <summary>大当たり：鐘の連打「キンキンキン」がだんだん速く高くなり、高い鐘の和音「シャーン」、鈴が一気にこぼれる（約1.9秒）。</summary>
         public void Jackpot()
         {
             if (jackpot == null) jackpot = MakeJackpot();
@@ -302,11 +302,11 @@ namespace VividOfFade
                     Bell(Note(idx % 2 == 0 ? hi[st] : lo[st]), tm, 0.15f + 0.01f * idx, 0.25f);
                     tm += 0.05f - 0.0015f * idx;
                 }
-            // 2) 大きな鐘の和音「ジャーン」と、きらきら揺れる高い音
+            // 2) 高い鐘の和音「シャーン」と、きらきら揺れる高い音
             float hit = tm;
-            int[] chord = { 84, 88, 91, 96, 103 };
-            float[] chordGain = { 0.22f, 0.18f, 0.18f, 0.2f, 0.12f };
-            for (int c = 0; c < chord.Length; c++) Bell(Note(chord[c]), hit, chordGain[c], 1.3f, 2.6f);
+            int[] chord = { 96, 100, 103, 108 }; // 連打より低い音を入れると「カーン」と浮くので、高い音だけ
+            float[] chordGain = { 0.2f, 0.16f, 0.16f, 0.1f };
+            for (int c = 0; c < chord.Length; c++) Bell(Note(chord[c]), hit, chordGain[c], 1.3f, 3.2f);
             {
                 int s = (int)(Rate * hit), n = (int)(Rate * 1.1f);
                 float f = Note(108);
