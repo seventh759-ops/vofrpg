@@ -75,10 +75,10 @@ def legs_hd(c,pants='T',boots='b',trim='g',top=150):
 def arm_down(c,side,sleeve,cuff=None,hand=True,hx=None,hy=172):
     """下ろした腕（肩は横に張り、手の先は太ももの中ほど）。side=-1 は見て左、1 は見て右。"""
     if side<0:
-        c.poly([(54,90),(68,94),(66,132),(64,164),(51,164),(49,132),(50,102)],sleeve)
-        if cuff: c.rect(50,156,65,166,cuff)
-        if hand: c.ell(hx or 57,hy,5.5,7,'s')
+        c.poly([(52,90),(62,94),(61,132),(60,164),(48,164),(46,132),(47,102)],sleeve)   # 腕は細く、胴の外側に
+        if cuff: c.rect(47,156,60,166,cuff)
+        if hand: c.ell(hx or 54,hy,5,6.5,'s')
     else:
-        c.poly([(100,94),(114,90),(118,102),(119,132),(117,164),(104,164),(102,132)],sleeve)
-        if cuff: c.rect(103,156,118,166,cuff)
-        if hand: c.ell(hx or 111,hy,5.5,7,'s')
+        c.poly([(106,94),(116,90),(121,102),(122,132),(120,164),(108,164),(107,132)],sleeve)
+        if cuff: c.rect(108,156,121,166,cuff)
+        if hand: c.ell(hx or 114,hy,5,6.5,'s')
