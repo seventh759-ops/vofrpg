@@ -150,7 +150,7 @@ namespace VividOfFade
             var bold = new GUIStyle(small) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
 
             // ---- 情報のカード ----
-            var card = new Rect(pad, H * 0.022f, W - pad * 2f, H * 0.082f);
+            var card = new Rect(pad, H * 0.022f, W - pad * 2f, H * 0.1f);
             Hud.Fill(card, panelBack);
             Hud.OrnateFrame(card, Hud.FrameGold, frameT * 2f);
             float lvD = card.height * 1.12f;
@@ -159,14 +159,14 @@ namespace VividOfFade
                 // 左：職業・転生・HP/MP のバー
                 float lx = card.x + card.height * 0.18f, lw = lvR.x - lx - card.height * 0.12f;
                 bold.normal.textColor = new Color(1f, 0.88f, 0.55f);
-                Hud.FitLabel(new Rect(lx, card.y + card.height * 0.06f, lw, card.height * 0.26f), ClassTitle(type, ch), bold);
+                Hud.FitLabel(new Rect(lx, card.y + card.height * 0.05f, lw, card.height * 0.22f), ClassTitle(type, ch), bold);
                 var sub = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
                 sub.normal.textColor = new Color(0.88f, 0.8f, 1f);
-                Hud.FitLabel(new Rect(lx, card.y + card.height * 0.3f, lw, card.height * 0.2f), Loc.T($"Reborn {ch.Rebirths}", $"転生 {ch.Rebirths}回"), sub);
+                Hud.FitLabel(new Rect(lx, card.y + card.height * 0.27f, lw, card.height * 0.18f), Loc.T($"Reborn {ch.Rebirths}", $"転生 {ch.Rebirths}回"), sub);
                 for (int k = 0; k < 2; k++)
                 {
                     bool hpRow = k == 0;
-                    var br = new Rect(lx, card.y + card.height * (0.53f + k * 0.22f), lw, card.height * 0.18f);
+                    var br = new Rect(lx, card.y + card.height * (0.5f + k * 0.245f), lw, card.height * 0.21f);   // バーと数字は読める大きさに
                     Hud.Fill(br, new Color(0f, 0f, 0f, 0.6f));
                     Hud.Fill(new Rect(br.x + 1f, br.y + 1f, br.width - 2f, br.height - 2f), hpRow ? new Color(0.78f, 0.15f, 0.2f, 1f) : new Color(0.22f, 0.38f, 0.82f, 1f));
                     Hud.Fill(new Rect(br.x + 1f, br.y + 1f, br.width - 2f, br.height * 0.35f), new Color(1f, 1f, 1f, 0.2f));
@@ -185,7 +185,7 @@ namespace VividOfFade
                     if (k == 1 && !shards) GUI.color = new Color(1f, 1f, 1f, 0.3f);
                     Hud.DrawSprite(new Rect(pr.x + pr.height * 0.1f, pr.y + (pr.height - ic) * 0.5f, ic, ic), k == 0 ? PixelArt.Ember : PixelArt.ShardIcon);
                     GUI.color = oldC;
-                    string v = k == 0 ? ch.Embers.ToString("N0") : (shards ? ch.AbyssShards.ToString("N0") : "-");
+                    string v = k == 0 ? ch.Embers.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) : (shards ? ch.AbyssShards.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) : "-"); // 区切りはいつもカンマ
                     var vc = k == 0 ? new Color(1f, 0.82f, 0.45f) : (shards ? new Color(0.85f, 0.62f, 1f) : new Color(1f, 1f, 1f, 0.3f));
                     NumberFont.DrawIn(new Rect(pr.x + ic * 1.3f, pr.y, pr.width - ic * 1.3f - pr.height * 0.25f, pr.height), v, vc, TextAnchor.MiddleRight, 0.8f);
                 }
@@ -235,7 +235,7 @@ namespace VividOfFade
             var tabBar = new Rect(0, H - tabH, W, tabH);
 
             // ---- 出撃の門と、左右の能力値・スキル ----
-            float gateH = H * 0.13f, gateW = gateH * 48f / 52f;
+            float gateH = H * 0.16f, gateW = gateH * 48f / 52f;
             var gate = new Rect((W - gateW) * 0.5f, tabBar.y - H * 0.012f - gateH, gateW, gateH);
             // 門の左右に2段ずつ：左 能力値／キャラ選択、右 スキル／荷運び
             float sideH = H * 0.046f, sideW = (W - pad * 2f - gateW) * 0.5f - W * 0.03f, sideGap = H * 0.01f;
@@ -294,11 +294,11 @@ namespace VividOfFade
                 Hud.DrawSprite(gate, PixelArt.GateIcon);
                 hud.Button(gate, null, new Color(0f, 0f, 0f, 0f), centered, world.Depart);
                 var dep = new GUIStyle(hud.LabelStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-                Hud.OutlinedLabel(new Rect(gate.x - W * 0.1f, gate.y + gateH * 0.42f, gateW + W * 0.2f, gateH * 0.2f), Loc.T("DEPART", "出撃"), dep, new Color(0.3f, 0.15f, 0f, 0.9f));
+                Hud.OutlinedLabel(new Rect(gate.x, gate.y + gateH * 0.5f, gateW, gateH * 0.18f), Loc.T("DEPART", "出撃"), dep, new Color(0.3f, 0.15f, 0f, 0.9f)); // 暗い扉の中に
                 if (GameConfig.CanEnterAbyss(ch))
                 {
                     var sub = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-                    Hud.OutlinedLabel(new Rect(gate.x - W * 0.1f, gate.y + gateH * 0.6f, gateW + W * 0.2f, gateH * 0.14f), Loc.T("tower / abyss", "塔・深淵へ"), sub, new Color(0.3f, 0.15f, 0f, 0.9f));
+                    Hud.OutlinedLabel(new Rect(gate.x, gate.y + gateH * 0.67f, gateW, gateH * 0.12f), Loc.T("tower / abyss", "塔・深淵へ"), sub, new Color(0.3f, 0.15f, 0f, 0.9f));
                 }
                 bool points = ch.Points > 0;
                 Hud.Fill(statsR, new Color(0.02f, 0.02f, 0.05f, 0.85f));
