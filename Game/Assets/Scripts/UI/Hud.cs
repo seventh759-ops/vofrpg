@@ -874,6 +874,7 @@ namespace VividOfFade
             if (World.EndingOpen) DrawEnding();
             else if (!World.ChoosingClass || World.InTown) Guide.Draw();
             DrawSlowMoGlow();
+            DrawCelebration();
             DrawFlash();
 
             if (repaint)
@@ -898,6 +899,69 @@ namespace VividOfFade
         }
 
         Color flashColor = Color.white;
+
+        // ---- 祝いの演出（転職・3次職・転生。町の画面の上にも出る）：回る光の筋、大きな文字、きらめき ----
+        float celebTime = -1f;
+        const float CelebLife = 2.6f;
+        string celebTitle, celebSub;
+        Color celebColor = Color.white;
+
+        public void Celebrate(string title, string sub, Color color)
+        {
+            celebTitle = title;
+            celebSub = sub;
+            celebColor = color;
+            celebTime = 0f;
+        }
+
+        void DrawCelebration()
+        {
+            if (celebTime < 0f) return;
+            if (Event.current.type == EventType.Repaint) celebTime += Time.unscaledDeltaTime;
+            float t = celebTime;
+            if (t >= CelebLife) { celebTime = -1f; return; }
+            float W = Screen.width, H = Screen.height;
+            float a = Mathf.Clamp01(t / 0.25f) * Mathf.Clamp01((CelebLife - t) / 0.6f);
+            var center = new Vector2(W * 0.5f, H * 0.42f);
+            // 暗い下地と、中心から回りながら広がる光の筋
+            Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.02f, 0.45f * a));
+            var oldM = GUI.matrix;
+            int rays = 16;
+            float len = Mathf.Max(W, H) * (0.4f + 0.4f * Mathf.Clamp01(t / 0.8f));
+            for (int i = 0; i < rays; i++)
+            {
+                float ang = i * 360f / rays + t * 25f;
+                GUIUtility.RotateAroundPivot(ang, center);
+                float wdt = W * (i % 2 == 0 ? 0.035f : 0.018f);
+                Fill(new Rect(center.x, center.y - wdt * 0.5f, len, wdt), new Color(celebColor.r, celebColor.g, celebColor.b, 0.22f * a));
+                GUI.matrix = oldM;
+            }
+            // 中心の光
+            var oldC = GUI.color;
+            GUI.color = new Color(celebColor.r, celebColor.g, celebColor.b, 0.7f * a);
+            float gr = W * (0.35f + 0.08f * Mathf.Sin(t * 6f));
+            GUI.DrawTexture(new Rect(center.x - gr, center.y - gr, gr * 2f, gr * 2f), TitleArt.SoftGlow);
+            GUI.color = oldC;
+            // きらめき（ばらばらに瞬く点）
+            for (int i = 0; i < 40; i++)
+            {
+                float px = Hash01(i * 13 + 5) * W, py = Hash01(i * 7 + 11) * H;
+                float tw = Mathf.Abs(Mathf.Sin(t * (3f + Hash01(i) * 4f) + i));
+                float s = W * 0.008f * (0.5f + tw);
+                Fill(new Rect(px, py, s, s), new Color(1f, 1f, 1f, 0.8f * a * tw));
+            }
+            // 大きな文字（ぽんと大きく出て、少し縮んで落ち着く）
+            float pop = 1f + 0.25f * Mathf.Exp(-t * 8f);
+            var ts = new GUIStyle(centered) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(label.fontSize * 2.4f * pop) };
+            ts.normal.textColor = new Color(1f, 1f, 1f, a);
+            OutlinedLabel(new Rect(0, center.y - H * 0.06f, W, H * 0.08f), celebTitle, ts, new Color(celebColor.r * 0.4f, celebColor.g * 0.4f, celebColor.b * 0.4f, a));
+            if (!string.IsNullOrEmpty(celebSub))
+            {
+                var ss = new GUIStyle(centered) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(label.fontSize * 1.3f) };
+                ss.normal.textColor = new Color(celebColor.r, celebColor.g, celebColor.b, a);
+                OutlinedLabel(new Rect(0, center.y + H * 0.03f, W, H * 0.05f), celebSub, ss, new Color(0f, 0f, 0f, 0.8f * a));
+            }
+        }
 
         // スローの間、画面の縁がその品の色でほのかに光る（何が起きたか分かるように）
         float slowGlowTime = -1f, slowGlowLife = 1f;

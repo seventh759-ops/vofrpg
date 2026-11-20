@@ -243,7 +243,12 @@ namespace VividOfFade
             Profile.Save();
             var adv = AdvancedClasses.Of(ClassInfo.Current, ch);
             Player.SetClass(ClassInfo.Current); // 見た目を上位職に
-            if (adv != null) Hud.Toast(Loc.T($"Class changed: {adv.DisplayName}", $"転職：{adv.DisplayName}"), new Color(1f, 0.85f, 0.4f));
+            if (adv != null)
+            {
+                Hud.Toast(Loc.T($"Class changed: {adv.DisplayName}", $"転職：{adv.DisplayName}"), new Color(1f, 0.85f, 0.4f));
+                Hud.Celebrate(Loc.T("CLASS CHANGE!", "転職！"), adv.DisplayName, new Color(1f, 0.85f, 0.4f));
+                Hud.Flash(0.6f, new Color(1f, 0.95f, 0.7f, 0.7f));
+            }
             ToastStored();
             Sfx.Landed(Rarity.Legendary);
         }
@@ -270,7 +275,12 @@ namespace VividOfFade
             Profile.Save();
             Player.SetClass(ClassInfo.Current); // 見た目を3次職に
             var third = ThirdClasses.Of(ClassInfo.Current, ch);
-            if (third != null) Hud.Toast(Loc.T($"Class changed: {third.DisplayName}", $"3次職：{third.DisplayName}"), new Color(1f, 0.8f, 0.35f));
+            if (third != null)
+            {
+                Hud.Toast(Loc.T($"Class changed: {third.DisplayName}", $"3次職：{third.DisplayName}"), new Color(1f, 0.8f, 0.35f));
+                Hud.Celebrate(Loc.T("3RD CLASS!", "3次職！"), third.DisplayName, new Color(1f, 0.75f, 0.3f));
+                Hud.Flash(0.7f, new Color(1f, 0.9f, 0.6f, 0.75f));
+            }
             ToastStored();
             Sfx.Landed(Rarity.Relic);
         }
@@ -290,6 +300,8 @@ namespace VividOfFade
                 Skills.Learn(ch, ThirdClasses.SkillIndex);
                 Profile.Save();
                 // 知らせは短く2行に分ける（長い1行は縮んで読めなくなるので）
+                Hud.Celebrate(Town.LastRebirthBecameSpecial ? Loc.T("A NEW PATH!", "特別な職へ！") : Loc.T("REBIRTH!", "転生！"), SpecialClass.Spec.DisplayName, (Color)SpecialClass.AuraColor);
+                Hud.Flash(0.8f, new Color(1f, 0.85f, 0.95f, 0.8f));
                 if (Town.LastRebirthBecameSpecial)
                     Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: became a {SpecialClass.Spec.DisplayName}!", $"転生{ch.Rebirths}回目：{SpecialClass.Spec.DisplayName}になった！"), (Color)SpecialClass.AuraColor);
                 else
@@ -301,6 +313,8 @@ namespace VividOfFade
             }
             var name = ClassInfo.Get(ClassInfo.Current).DisplayName;
             Hud.Toast(Loc.T($"Reborn x{ch.Rebirths}: back to {name}", $"転生{ch.Rebirths}回目：{name}に戻った"), ThirdClasses.AuraColor(ch.Rebirths));
+            Hud.Celebrate(Loc.T("REBIRTH!", "転生！"), Loc.T($"x{ch.Rebirths}  -  all stats +{ThirdClasses.BonusStats(ch)}", $"{ch.Rebirths}回目  -  全能力値 +{ThirdClasses.BonusStats(ch)}"), ThirdClasses.AuraColor(ch.Rebirths));
+            Hud.Flash(0.7f, new Color(1f, 1f, 1f, 0.7f));
             Hud.Toast(Loc.T($"All stats +{ThirdClasses.BonusStats(ch)}", $"全能力値 +{ThirdClasses.BonusStats(ch)}"), ThirdClasses.AuraColor(ch.Rebirths));
             ToastStored();
             Sfx.Landed(Rarity.Mythic);
@@ -1669,6 +1683,12 @@ namespace VividOfFade
             Fx.Sparks(Player.Pos, 8, new Color(1f, 1f, 0.97f), 1f, 0.9f, 2.2f, true);
             Fx.Anchor = Player.Pos;
             Fx.LevelUp();
+            // 派手に：足元から金の輪が2重に広がり、光の粒が大きく弾け、画面が一瞬金色に光る
+            Fx.Ring(Player.Pos, 2.2f, new Color(1f, 0.9f, 0.45f, 0.9f), 0.5f);
+            Fx.Ring(Player.Pos, 4f, new Color(1f, 0.95f, 0.7f, 0.6f), 0.8f);
+            Fx.Sparks(Player.Pos, 30, new Color(1f, 0.9f, 0.5f), 4.5f, 0.9f, 3.5f);
+            Hud.Flash(0.35f, new Color(1f, 0.9f, 0.5f, 0.3f));
+            cameraRig.Shake(0.12f, 0.25f);
             Hud.ShowLevelUp(ch.Level, gained * Progression.PointsPerLevel);
             Sfx.LevelUp(); // 装備が落ちたときの音とは別の、レベルアップ専用の音
             Hud.Toast(Loc.T($"LEVEL UP!  Lv {ch.Level}  (+{gained * Progression.PointsPerLevel} points)", $"レベルアップ！  Lv {ch.Level}  （ポイント +{gained * Progression.PointsPerLevel}）"), new Color(1f, 0.95f, 0.5f));
@@ -1811,6 +1831,11 @@ namespace VividOfFade
             Sfx.Landed(item.Rarity);
             if (item.Rarity == Rarity.Legendary)
             {
+                // 紫：紫の輪と光の柱、はじける粒
+                var pc = RarityInfo.ColorOf(Rarity.Legendary);
+                Fx.Ring(pos, 1.4f, new Color(pc.r, pc.g, pc.b, 0.9f), 0.4f);
+                Fx.SoftPillar(pos, new Color(pc.r, pc.g, pc.b, 0.6f), 0.8f, 3.2f, 0.8f);
+                Fx.Sparks(pos, 16, pc, 3f, 0.8f, 3f);
                 cameraRig.Shake(0.15f, 0.3f);
             }
             else if (item.Rarity == Rarity.Boss)
@@ -1844,6 +1869,14 @@ namespace VividOfFade
             }
             else if (item.Rarity >= Rarity.Relic)
             {
+                // 橙：2重の輪と太い光の柱、金の粒、画面がうっすら橙に光る
+                var oc = RarityInfo.ColorOf(Rarity.Relic);
+                Fx.Ring(pos, 1.5f, new Color(oc.r, oc.g, oc.b, 0.95f), 0.4f);
+                Fx.Ring(pos, 3f, new Color(1f, 0.85f, 0.4f, 0.75f), 0.7f);
+                Fx.SoftPillar(pos, new Color(oc.r, oc.g, oc.b, 0.75f), 1.1f, 4f, 1f);
+                Fx.Sparks(pos, 22, oc, 3.5f, 0.9f, 3.5f);
+                Fx.Sparks(pos, 14, new Color(1f, 0.9f, 0.5f), 1.6f, 1.4f, 3f, true);
+                Hud.Flash(0.35f, new Color(oc.r, oc.g, oc.b, 0.3f));
                 cameraRig.Shake(0.25f, 0.5f);
             }
         }
