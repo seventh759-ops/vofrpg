@@ -51,8 +51,27 @@ def rogue_hd(kind):
     c.poly([(54,178),(59,178),(54,206),(51,204)],blade); c.rect(50,176,62,178,'g')
     # 首巻き（首に巻いて、左へ長くなびく）
     c.poly([(70,78),(98,78),(100,92),(68,92)],'r')
-    c.poly([(68,82),(72,92),(40,106),(10,108),(30,98)],'r')
-    c.poly([(40,106),(10,108),(4,118),(28,114)],'r')
+    # なびく首巻きの端（2本）：曲線に沿って、波打ちながら細くなる帯。ねじれの所は濃い色（Z）
+    def ribbon(p0,p1,p2,w0,w1,waves,amp):
+        L=[];R=[];mid=[]
+        n=40
+        for i in range(n+1):
+            t=i/n
+            x=(1-t)**2*p0[0]+2*(1-t)*t*p1[0]+t*t*p2[0]; y=(1-t)**2*p0[1]+2*(1-t)*t*p1[1]+t*t*p2[1]
+            dx=2*(1-t)*(p1[0]-p0[0])+2*t*(p2[0]-p1[0]); dy=2*(1-t)*(p1[1]-p0[1])+2*t*(p2[1]-p1[1])
+            d=math.hypot(dx,dy) or 1; nx,ny=-dy/d,dx/d
+            off=amp*math.sin(t*math.pi*2*waves)*t
+            w=(w0+(w1-w0)*t)*(0.85+0.15*abs(math.cos(t*math.pi*2*waves)))   # 波の山で少し細く（ねじれ）
+            cx,cy=x+nx*off,y+ny*off
+            L.append((cx+nx*w/2,cy+ny*w/2)); R.append((cx-nx*w/2,cy-ny*w/2)); mid.append((cx,cy,nx,ny,w,t))
+        c.poly(L+R[::-1],'r')
+        for (cx,cy,nx,ny,w,t) in mid:
+            ph=(t*waves*2)%1
+            if 0.42<ph<0.58: c.line(cx+nx*w/2,cy+ny*w/2,cx-nx*w/2,cy-ny*w/2,'Z',1.2,only='r')   # ねじれの影
+        ex,ey,nx,ny,w,_=mid[-1]
+        c.poly([(ex+nx*w/2,ey+ny*w/2),(ex-nx*w/2,ey-ny*w/2),(ex-6,ey+w*0.6)],'r')   # 端は斜めに切れる
+    ribbon((72,92),(50,104),(30,118),10,8,0.5,3)         # 後ろの短い端
+    ribbon((70,84),(42,76),(8,98),15,11,0.75,5)          # 前の長い端（ゆるく一度うねる）
     neck_hd(c)
     c.poly([(70,78),(98,78),(100,92),(68,92)],'r')
     c.oy=7   # 頭を少し下げて首を短く
