@@ -1054,7 +1054,8 @@ namespace VividOfFade
 
         void DrawSmith(CharacterData ch)
         {
-            if (matPicking && selected != null) { DrawMaterialPicker(ch, selected); return; } // 素材を選ぶ一覧を開いている間は、それだけを出す
+            if (matPicking && !(selected != null && smithMode == SmithMode.Enhance && Town.NeedsMaterial(selected))) matPicking = false;
+            if (matPicking) { DrawMaterialPicker(ch, selected); return; } // 素材を選ぶ一覧を開いている間は、それだけを出す
             var equipped = new List<Item>();
             foreach (var it in ch.Loadout) if (it != null && !it.IsEmptyMarker) equipped.Add(it);
             if (selected != null && !equipped.Contains(selected) && !ch.Stash.Contains(selected)) selected = null;
@@ -1185,8 +1186,17 @@ namespace VividOfFade
             pickNote.normal.textColor = new Color(1f, 0.85f, 0.5f);
             if (!needMat)
             {
-                Hud.FitLabel(new Rect(right.x, right.y + sh * 0.3f, sw, sh * 0.2f), Loc.T("Not needed", "素材は不要"), nm);
-                Hud.FitLabel(new Rect(right.x, right.y + sh * 0.55f, sw, sh * 0.15f), Loc.T("(used at +10 and +15)", "（+10・+15 のときに使う）"), sub);
+                // 素材が要らない段：同じ枠を出すが、押せない（薄い枠と「－」）
+                var off = new Color(0.3f, 0.29f, 0.34f);
+                Hud.Fill(right, new Color(0f, 0f, 0f, 0.35f));
+                Hud.Frame(slotR, off, Mathf.Max(1f, frameT));
+                var dash = new GUIStyle(hud.LabelStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+                dash.normal.textColor = off;
+                GUI.Label(slotR, "－", dash);
+                var offNote = new GUIStyle(sub);
+                offNote.normal.textColor = new Color(0.55f, 0.54f, 0.6f);
+                Hud.FitLabel(new Rect(right.x, right.y + sh * 0.7f, sw, sh * 0.15f), Loc.T("Not needed", "素材は不要"), offNote);
+                Hud.FitLabel(new Rect(right.x, right.y + sh * 0.84f, sw, sh * 0.13f), Loc.T("(only at +10 and +15)", "（+10・+15 のときだけ）"), offNote);
             }
             else
             {
