@@ -394,7 +394,7 @@ namespace VividOfFade
         /// <summary>部位の変換：次の部位（武器→ランタン→鎧→指輪→武器）の、同じ珍しさ・同じレベルの品に作り直す。</summary>
         public static Item Convert(CharacterData ch, Item it)
         {
-            if (!Convertible(it) || !IsSpare(ch, it) || !Pay(ch, ConvertPrice(it))) return null;
+            if (!Convertible(it) || it.Locked || !IsSpare(ch, it) || !Pay(ch, ConvertPrice(it))) return null;
             int si = System.Array.IndexOf(slotOrder, it.Slot);
             var next = slotOrder[(si + 1) % slotOrder.Length];
             var made = ItemGenerator.RollExact(it.Level, it.Rarity, next, it.Heaven);
@@ -428,7 +428,7 @@ namespace VividOfFade
         /// <summary>合成：選んだ品と、同じ種類の品2つを使い、選んだ品と同じ部位・同じレベルで1つ上の珍しさの品を作る。</summary>
         public static Item Synthesize(CharacterData ch, Item it)
         {
-            if (!Synthesizable(it) || !IsSpare(ch, it)) return null;
+            if (!Synthesizable(it) || it.Locked || !IsSpare(ch, it)) return null;
             var partners = SynthPartners(ch, it);
             if (partners.Count < 2 || !Pay(ch, SynthPrice(it))) return null;
             var made = ItemGenerator.RollExact(it.Level, it.Rarity + 1, it.Slot, it.Heaven);

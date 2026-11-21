@@ -1134,7 +1134,15 @@ namespace VividOfFade
             if (canReroll) hud.Button(r2, rerollLabel, new Color(0.32f, 0.22f, 0.5f, 0.9f), hud.CenteredStyle, () => { smithMode = SmithMode.Reroll; armed = null; });
             else { Hud.Fill(r2, dim); Hud.FitLabel(r2, rerollLabel, hud.CenteredStyle); }
             var spareRow = new Rect(pad, buttonsTop + btnH + gap, W - pad * 2f, btnH);
-            if (Town.IsSpare(ch, item) && (Town.Convertible(item) || Town.Synthesizable(item))) DrawSpareActions(ch, item, spareRow);
+            if (item.Locked && Town.IsSpare(ch, item) && (Town.Convertible(item) || Town.Synthesizable(item)))
+            {
+                // ロック中の品は作り直すと消えるので押せない（ロックを外すと使える）
+                Hud.Fill(spareRow, dim);
+                float ls = spareRow.height * 0.6f;
+                Hud.DrawSprite(new Rect(spareRow.x + spareRow.height * 0.2f, spareRow.y + spareRow.height * 0.2f, ls, ls), PixelArt.Padlock(true));
+                Hud.FitLabel(spareRow, Loc.T("Locked: unlock to reforge / fuse", "ロック中：外すと部位を変える・合成ができる"), hud.CenteredStyle);
+            }
+            else if (Town.IsSpare(ch, item) && (Town.Convertible(item) || Town.Synthesizable(item))) DrawSpareActions(ch, item, spareRow);
             else
             {
                 Hud.Fill(spareRow, dim);
