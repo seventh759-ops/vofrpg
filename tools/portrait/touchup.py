@@ -26,7 +26,6 @@ REGIONS = {
         ((38, 6, 52, 9), [OUT] + GOLD + GEM_B + SILVER),                                                                   # 冠
         ((38, 23, 54, 46), [OUT] + GOLD + GEM_R + GEM_P + GEM_B + GEM_G + WHITE + NAVY),                                   # 襟と胸の飾り
     ],
-    'Lampwright': [],
 }
 
 def near(c, pal):
@@ -53,21 +52,9 @@ def classify(c, pal):
 # 色の置き換え（範囲の中の、決まった色を別の色へ）と、1粒ずつの描き直し（目など）
 H = lambda s: tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))
 RECOLOR = {
-    'Lampwright': [
-        ((30, 12, 46, 14), {H('c0ab87'): H('a8754e'), H('aa8b51'): H('a8754e'), H('8f8a7c'): H('6d4b38')}),      # 前髪のくすんだ粒 → 髪の照り
-        ((30, 15, 46, 23), {H('d3bc71'): H('e2aa8e'), H('c0ab87'): H('e2aa8e'), H('aa8b51'): H('e2aa8e'),          # 顔の黄色っぽい粒 → 肌の影
-                            H('8f8a7c'): H('6d4b38'), H('595b5e'): H('6d4b38'), H('6e7276'): H('6d4b38')}),
-    ],
 }
 LASH, IRIS, IRISD, HL = H('2a1a14'), H('9a6438'), H('5a3820'), (255, 255, 255)
 PIXELS = {
-    'Lampwright': {   # 茶色の目（見て左・右）
-        (33, 14): LASH, (34, 14): LASH, (35, 14): LASH,
-        (33, 15): LASH, (34, 15): IRISD, (35, 15): HL, (34, 16): IRIS, (35, 16): IRIS,
-        (42, 14): LASH, (43, 14): LASH,
-        (40, 15): LASH, (41, 15): IRISD, (42, 15): HL, (41, 16): IRIS, (42, 16): IRIS, (40, 16): H('f3c9ae'),
-        (36, 18): H('f3c9ae'), (37, 20): H('d98c7c'),   # 頬の点を消し、口を小さく
-    },
 }
 
 def touch(name):
