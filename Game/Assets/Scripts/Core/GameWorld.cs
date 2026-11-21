@@ -141,6 +141,9 @@ namespace VividOfFade
         {
             OnTitle = false;
             Input.ClearQueued();
+            // 前の版の保存で、中断した挑戦が複数のキャラクターに残っていたら、最初の1つだけにする
+            int suspended = SuspendedSlot;
+            if (suspended >= 0) KeepOneSuspended(Profile.InSlot(suspended));
             if (!Profile.TipSeen("prologue")) ShowPrologue(); // 初めて遊ぶときだけ、はじまりの語り
         }
 
@@ -159,6 +162,20 @@ namespace VividOfFade
                 }
                 return -1;
             }
+        }
+
+        /// <summary>中断できる挑戦は、全キャラクターで1つだけ。keep 以外のキャラクターの中断した挑戦を消す。</summary>
+        void KeepOneSuspended(CharacterData keep)
+        {
+            bool changed = false;
+            for (int s = 0; s < Profile.SlotCount; s++)
+            {
+                var c = Profile.InSlot(s);
+                if (c == null || c == keep || c.Run == null || !c.Run.Active) continue;
+                c.Run = new RunSave();
+                changed = true;
+            }
+            if (changed) Profile.Save();
         }
 
         /// <summary>中断した挑戦を続ける（そのキャラクターを選んで、保存した層の最初から）。</summary>
@@ -2096,6 +2113,7 @@ namespace VividOfFade
             var run = ch.Run;
             run.Active = true;
             run.Floor = Floors.Floor;
+            KeepOneSuspended(ch); // 中断できるのは1キャラクターだけ
             Inventory.SaveRun(run);
             run.Boons.Clear();
             run.Boons.AddRange(Player.Boons);
