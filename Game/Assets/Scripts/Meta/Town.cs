@@ -356,6 +356,17 @@ namespace VividOfFade
             return list;
         }
 
+        /// <summary>同じ部位・同じ珍しさだが、ロック中で素材にできない品（鍛冶屋の一覧に暗く出す。ロックを外せば使える）。</summary>
+        public static List<Item> LockedMaterialsFor(CharacterData ch, Item target)
+        {
+            var list = new List<Item>();
+            void Add(List<Item> src) { foreach (var it in src) if (it != null && it != target && it.Locked && !it.IsEmptyMarker && it.Slot == target.Slot && SameKind(it, target)) list.Add(it); }
+            Add(ch.Stash);
+            Add(Profile.Storage);
+            list.Sort((a, b) => a.Level.CompareTo(b.Level));
+            return list;
+        }
+
         /// <summary>素材の品が、持ち込む品か倉庫か（鍛冶屋の一覧に出す）。</summary>
         public static bool InStorage(Item it) => Profile.Storage.Contains(it);
 

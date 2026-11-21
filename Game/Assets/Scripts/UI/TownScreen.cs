@@ -554,6 +554,7 @@ namespace VividOfFade
                 GUI.color = old;
                 Hud.DrawEnhance(r, item);
                 Hud.DrawItemLevel(r, item);
+                if (item.Locked) { float ls = r.width * 0.3f; Hud.DrawSprite(new Rect(r.xMax - ls - r.width * 0.06f, r.yMax - ls - r.width * 0.06f, ls, ls), PixelArt.Padlock(true)); } // ロック中の印（右下）
                 if (item == selected) Hud.Frame(r, new Color(1f, 0.82f, 0.4f), Mathf.Max(2f, Mathf.Round(r.width * 0.05f))); // 選んでいる品は金の枠
             }
             int rows = (shown + cols - 1) / cols;
@@ -1177,6 +1178,7 @@ namespace VividOfFade
             // 右：素材（+10・+15 のときだけ要る）
             bool needMat = Town.NeedsMaterial(item);
             var matList = needMat ? Town.MaterialsFor(ch, item) : null;
+            int lockedMats = needMat ? Town.LockedMaterialsFor(ch, item).Count : 0;
             if (needMat && matChoice != null && !matList.Contains(matChoice)) matChoice = null;
             Hud.Fill(right, new Color(0.04f, 0.04f, 0.07f, 0.92f));
             Hud.OrnateFrame(right, Hud.FrameGold, frameT, false, false);
@@ -1200,7 +1202,7 @@ namespace VividOfFade
             }
             else
             {
-                hud.Button(right, null, new Color(1f, 1f, 1f, 0.05f), hud.CenteredStyle, () => { if (matList.Count > 0) matPicking = true; });
+                hud.Button(right, null, new Color(1f, 1f, 1f, 0.05f), hud.CenteredStyle, () => { if (matList.Count + lockedMats > 0) matPicking = true; });
                 if (matChoice != null)
                 {
                     Hud.DrawSprite(slotR, PixelArt.ItemIcon(matChoice));
@@ -1214,7 +1216,7 @@ namespace VividOfFade
                     var plus = new GUIStyle(arrow);
                     plus.normal.textColor = new Color(0.6f, 0.58f, 0.68f);
                     GUI.Label(slotR, "＋", plus);
-                    Hud.FitLabel(new Rect(right.x, right.y + sh * 0.72f, sw, sh * 0.15f), matList.Count > 0 ? Loc.T("Tap to choose", "タップして選ぶ") : Loc.T("None to use", "使える品がない"), pickNote);
+                    Hud.FitLabel(new Rect(right.x, right.y + sh * 0.72f, sw, sh * 0.15f), matList.Count > 0 ? Loc.T("Tap to choose", "タップして選ぶ") : lockedMats > 0 ? Loc.T("Only locked items", "ロック中の品だけ") : Loc.T("None to use", "使える品がない"), pickNote);
                 }
             }
             y += sh + H * 0.02f;
@@ -1385,6 +1387,8 @@ namespace VividOfFade
             if (!matPicking) return;
             float W = Screen.width, H = Screen.height;
             var list = Town.MaterialsFor(ch, target);
+            list.AddRange(Town.LockedMaterialsFor(ch, target));
+            list.Sort((a, b) => a.Level.CompareTo(b.Level));
             Hud.Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0f, 0.75f));
             var panel = new Rect(W * 0.06f, H * 0.18f, W * 0.88f, H * 0.62f);
             Hud.Fill(panel, new Color(0.05f, 0.05f, 0.08f, 0.97f));
@@ -1402,15 +1406,33 @@ namespace VividOfFade
                 var it = list[i];
                 var r = new Rect(panel.x + W * 0.03f, y, panel.width - W * 0.06f, rowH);
                 bool chosen = it == matChoice;
-                Hud.Fill(r, chosen ? new Color(0.45f, 0.35f, 0.1f, 0.9f) : new Color(1f, 1f, 1f, 0.06f));
+                bool isLocked = it.Locked;
                 var pick = it;
-                hud.Button(r, null, new Color(1f, 1f, 1f, 0.05f), hud.CenteredStyle, () => { matChoice = pick; matPicking = false; });
+                // 右端の錠：閉じている＝ロック中（素材にできない）。押すと外れて、明るくなり選べる
+                float lockW = rowH * 0.9f;
+                var lockR = new Rect(r.xMax - lockW, r.y, lockW, rowH);
+                var body = new Rect(r.x, r.y, r.width - lockW - W * 0.015f, rowH);
+                Hud.Fill(body, chosen ? new Color(0.45f, 0.35f, 0.1f, 0.9f) : isLocked ? new Color(0f, 0f, 0f, 0.3f) : new Color(1f, 1f, 1f, 0.06f));
+                if (!isLocked) hud.Button(body, null, new Color(1f, 1f, 1f, 0.05f), hud.CenteredStyle, () => { matChoice = pick; matPicking = false; });
+                hud.Button(lockR, null, isLocked ? new Color(0.5f, 0.4f, 0.1f, 0.6f) : new Color(1f, 1f, 1f, 0.12f), hud.CenteredStyle, () =>
+                {
+                    pick.Locked = !pick.Locked;
+                    if (pick.Locked && matChoice == pick) matChoice = null;
+                    Profile.Save();
+                });
+                float lp = lockR.height * 0.22f;
+                Hud.DrawSprite(new Rect(lockR.x + lp, lockR.y + lp, lockR.width - lp * 2f, lockR.height - lp * 2f), PixelArt.Padlock(isLocked));
                 float ic = rowH * 0.84f;
+                var oldColor = GUI.color;
+                if (isLocked) GUI.color = new Color(0.45f, 0.45f, 0.5f, 1f); // ロック中は暗く
                 Hud.DrawSprite(new Rect(r.x + rowH * 0.08f, r.y + rowH * 0.08f, ic, ic), PixelArt.ItemIcon(it));
-                name.normal.textColor = RarityInfo.ColorOf(it.Rarity);
+                GUI.color = oldColor;
+                name.normal.textColor = isLocked ? new Color(0.5f, 0.5f, 0.55f) : RarityInfo.ColorOf(it.Rarity);
                 float tx = r.x + ic + rowH * 0.25f;
-                Hud.FitLabel(new Rect(tx, r.y, r.xMax - tx - W * 0.02f, rowH * 0.55f), it.Name + (it.Enhance > 0 ? $" +{it.Enhance}" : ""), name);
-                Hud.FitLabel(new Rect(tx, r.y + rowH * 0.5f, r.xMax - tx - W * 0.02f, rowH * 0.45f), $"Lv {it.Level}   " + (Town.InStorage(it) ? Loc.T("in storage", "倉庫") : Loc.T("carry-in", "持ち込む品")), sub);
+                float tw = body.xMax - tx - W * 0.01f;
+                Hud.FitLabel(new Rect(tx, r.y, tw, rowH * 0.55f), it.Name + (it.Enhance > 0 ? $" +{it.Enhance}" : ""), name);
+                string place = Town.InStorage(it) ? Loc.T("in storage", "倉庫") : Loc.T("carry-in", "持ち込む品");
+                Hud.FitLabel(new Rect(tx, r.y + rowH * 0.5f, tw, rowH * 0.45f), $"Lv {it.Level}   " + place + (isLocked ? Loc.T("   Locked: unlock to use", "　ロック中：外すと使える") : ""), sub);
                 y += rowH + gap;
             }
             if (list.Count > max)
