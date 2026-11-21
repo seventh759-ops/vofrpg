@@ -24,6 +24,11 @@ def block_size(a):
         r = np.array(gaps) / s
         sc = np.sum(np.abs(r - np.round(r)) < 0.12) - 0.02 * len(gaps) * (s < 5)
         if sc > score: best, score = s, sc
+    # 半分の大きさ（粒の中に線がある絵）を選んでしまうことがあるので、2倍でもほぼ合うなら2倍にする
+    def fit(v):
+        r = np.array(gaps) / v
+        return np.sum(np.abs(r - np.round(r)) < 0.12)
+    if best * 2 < 16 and fit(best * 2) >= 0.85 * fit(best): best *= 2
     return best
 
 def kmeans(px, k, seed=0, it=30):
