@@ -45,11 +45,22 @@ def convert(src, bs=None, neutral=30, vivid=18, outline=(30, 24, 44)):
     im = Image.open(src).convert('RGBA'); a = np.asarray(im)
     bs = bs or block_size(a)
     while im.height / bs > 200: bs *= 2   # 立ち絵は高さ200ドット以内（半分の大きさを選んだときは2倍に直す）
-    W = int(round(im.width / bs)); H = int(round(im.height / bs))
+    # 粒の区切りの位置（ずれ）を合わせる：粒の中の色のばらつきがいちばん小さくなるずれを探す
+    g = a[..., :3].astype(int).sum(-1)
+    def spread(ox, oy):
+        tot = 0
+        for yy in np.arange(oy + bs * 0.5, im.height - bs, bs * 3):
+            for xx in np.arange(ox + bs * 0.5, im.width - bs, bs * 3):
+                y0, x0 = int(yy - bs * 0.3), int(xx - bs * 0.3); y1, x1 = int(yy + bs * 0.3) + 1, int(xx + bs * 0.3) + 1
+                tot += g[y0:y1, x0:x1].std()
+        return tot
+    steps = max(1, int(bs // 6))
+    ox, oy = min(((x, y) for x in np.arange(0, bs, steps) for y in np.arange(0, bs, steps)), key=lambda o: spread(*o)) if bs >= 6 else (0, 0)
+    W = int((im.width - ox) / bs); H = int((im.height - oy) / bs)
     col = np.zeros((H, W, 3)); alpha = np.zeros((H, W), bool)
     for y in range(H):
         for x in range(W):
-            cy = int((y + 0.5) * bs); cx = int((x + 0.5) * bs)
+            cy = int(oy + (y + 0.5) * bs); cx = int(ox + (x + 0.5) * bs)
             blk = a[max(0, cy - 2):cy + 3, max(0, cx - 2):cx + 3].reshape(-1, 4)
             alpha[y, x] = np.median(blk[:, 3]) > 128
             op = blk[blk[:, 3] > 128]

@@ -75,7 +75,8 @@ namespace VividOfFade
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                     px[(h - 1 - y) * w + x] = colors.TryGetValue(rows[y][x], out var c) ? c : new Color32(0, 0, 0, 0); // テクスチャは下から上へ並ぶ
-            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), 32); // 32 ドットで 1 マス（縦長の 32×64 は 2 マスの高さ、ドットの大きさは床・敵と同じ）
+            // 32 ドットで 1 マス（縦長の 32×64 は 2 マスの高さ）。それより細かい縦長の絵（47×91 など）は、2 マスの高さに収める
+            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), h > 64 ? h / 2 : 32);
         }
 
         static string[] AnimRows(string[] src, int frame, string feetChars = "b")
@@ -86,7 +87,8 @@ namespace VividOfFade
             int bottom = -1;
             for (int y = h - 1; y >= 0 && bottom < 0; y--) for (int x = 0; x < w; x++) if (At(x, y) != '.') { bottom = y; break; }
             if (bottom < 4) return src;
-            int feetTop = bottom - 3;
+            int k = Mathf.Max(1, Mathf.RoundToInt(h / 32f)); // 細かい絵ほど、足元の段数・持ち上げる高さを増やす（32 ドットの絵で 1）
+            int feetTop = bottom - 4 * k + 1;
             // 足は靴（b）のある列だけ。武器や杖が足元まで伸びていても、足と一緒に切り離さない（武器は体と一緒に動く）
             int bootMin = w, bootMax = -1;
             for (int y = feetTop - 1; y <= bottom; y++) for (int x = 0; x < w; x++) if (feetChars.IndexOf(At(x, y)) >= 0) { bootMin = Mathf.Min(bootMin, x); bootMax = Mathf.Max(bootMax, x); }
@@ -105,12 +107,12 @@ namespace VividOfFade
                     if (c == '.') continue;
                     int ny = y;
                     bool feet = y >= feetTop && x >= bootMin - 1 && x <= bootMax + 1;
-                    if (frame == 4) ny = feet || y >= feetTop ? y : Mathf.Min(feetTop - 1, y + 1); // 呼吸：上半身が1ドット沈む（足元の高さの武器は動かさない）
+                    if (frame == 4) ny = feet || y >= feetTop ? y : Mathf.Min(feetTop - 1, y + k); // 呼吸：上半身が1ドット沈む（足元の高さの武器は動かさない）
                     else
                     {
                         bool left = x < mid;
-                        if (!feet) ny = y - 1;                                          // 足を上げたコマは、体が1ドット弾む
-                        else if ((frame == 1 && left) || (frame == 3 && !left)) ny = y - 2; // 上げた足
+                        if (!feet) ny = y - k;                                          // 足を上げたコマは、体が1ドット弾む
+                        else if ((frame == 1 && left) || (frame == 3 && !left)) ny = y - 2 * k; // 上げた足
                     }
                     if (ny >= 0 && ny < h && g[ny][x] == '.') g[ny][x] = c;
                 }

@@ -17,7 +17,8 @@ def build():
         bottom = max(y for y in range(h) for x in range(w) if px[x, y][3] >= 128)
         cmap = {}; boots = set(); rows = []
         # 体の真ん中（足元より少し上の段の、色のある粒の真ん中）。杖など、体から離れた所の茶色は足に数えない
-        xs = sorted(x for y in range(max(0, bottom - 12), bottom - 3) for x in range(w) if px[x, y][3] >= 128)
+        k = max(1, round(h / 32))   # 細かい絵ほど、足元の段数を増やす（ゲームの AnimRows と同じ）
+        xs = sorted(x for y in range(max(0, bottom - 12 * k), bottom - 4 * k + 1) for x in range(w) if px[x, y][3] >= 128)
         mid = xs[len(xs) // 2] if xs else w // 2
         for y in range(h):
             r = ''
@@ -25,7 +26,7 @@ def build():
                 c = px[x, y]
                 if c[3] < 128: r += '.'; continue
                 c = (c[0], c[1], c[2], 255)
-                boot = y >= bottom - 3 and abs(x - mid) <= 7 and c[0] > c[2] + 10 and c[0] >= c[1] and 40 < c[0] < 220
+                boot = y >= bottom - 4 * k + 1 and abs(x - mid) <= w * 0.25 and c[0] > c[2] + 10 and c[0] >= c[1] and 40 < c[0] < 220
                 key = (c, boot)   # 足の粒は、同じ色でも別の文字にする（杖などと分ける）
                 if key not in cmap: cmap[key] = POOL[len(cmap)]
                 ch = cmap[key]
