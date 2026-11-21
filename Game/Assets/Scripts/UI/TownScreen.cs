@@ -33,7 +33,9 @@ namespace VividOfFade
         /// <summary>Esc：ひとつ前へ（町の入口なら職業選択へ）。</summary>
         public void Back()
         {
-            if (panel != Panel.Main)
+            if (panel == Panel.Smith && matPicking) matPicking = false;              // 素材の一覧 → 強化の画面
+            else if (panel == Panel.Smith && smithMode != SmithMode.List) smithMode = SmithMode.List; // 強化・再抽選 → 品を選ぶ画面
+            else if (panel != Panel.Main)
             {
                 panel = Panel.Main;
                 selected = null;
@@ -364,6 +366,7 @@ namespace VividOfFade
             offerStep = 0; // 捧げる確認は、開き直したら閉じる
             if (p == Panel.Master) masterTab = MasterTab.Class;
             selected = null;
+            smithMode = SmithMode.List;
             matChoice = null;
             matPicking = false;
             lastBought = null;
@@ -371,14 +374,14 @@ namespace VividOfFade
         }
 
         /// <summary>見出し（左）と戻るボタン（右）。火種は見出しの下の行に出す（長い見出しとボタンが重ならないように）。</summary>
-        void Header(string titleText, int embers, float W, float pad, out float y)
+        void Header(string titleText, int embers, float W, float pad, out float y, System.Action onBack = null)
         {
             var label = hud.LabelStyle;
             var title = new GUIStyle(label) { fontStyle = FontStyle.Bold };
             float btnH = Screen.height * 0.045f;
             float btnW = W * 0.22f;
             Hud.FitLabel(new Rect(pad, pad, W - pad * 2f - btnW - W * 0.02f, btnH), titleText, title);
-            hud.Button(new Rect(W - pad - btnW, pad, btnW, btnH), Loc.T("BACK", "戻る"), row, hud.CenteredStyle, () => Open(Panel.Main));
+            hud.Button(new Rect(W - pad - btnW, pad, btnW, btnH), Loc.T("BACK", "戻る"), row, hud.CenteredStyle, onBack ?? (() => Open(Panel.Main)));
             y = pad + btnH + Screen.height * 0.006f;
             var ember = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };
             ember.normal.textColor = new Color(1f, 0.85f, 0.5f);
@@ -551,6 +554,7 @@ namespace VividOfFade
                 GUI.color = old;
                 Hud.DrawEnhance(r, item);
                 Hud.DrawItemLevel(r, item);
+                if (item == selected) Hud.Frame(r, new Color(1f, 0.82f, 0.4f), Mathf.Max(2f, Mathf.Round(r.width * 0.05f))); // 選んでいる品は金の枠
             }
             int rows = (shown + cols - 1) / cols;
             return y + rows * (cell + gap);
@@ -1044,77 +1048,276 @@ namespace VividOfFade
 
         // ================= 鍛冶屋 =================
 
+        /// <summary>鍛冶屋の中の画面：品を選ぶ一覧／強化（左に強化する品、右に素材）／効果の再抽選。</summary>
+        enum SmithMode { List, Enhance, Reroll }
+        SmithMode smithMode;
+
         void DrawSmith(CharacterData ch)
         {
+            if (matPicking && selected != null) { DrawMaterialPicker(ch, selected); return; } // 素材を選ぶ一覧を開いている間は、それだけを出す
+            var equipped = new List<Item>();
+            foreach (var it in ch.Loadout) if (it != null && !it.IsEmptyMarker) equipped.Add(it);
+            if (selected != null && !equipped.Contains(selected) && !ch.Stash.Contains(selected)) selected = null;
+            if (selected == null) smithMode = SmithMode.List;
+            if (smithMode == SmithMode.Enhance) { DrawEnhanceScreen(ch, selected); return; }
+            if (smithMode == SmithMode.Reroll) { DrawRerollScreen(ch, selected); return; }
+
             float W = Screen.width, H = Screen.height;
             float pad = W * 0.05f;
-            // 文字は一段大きく（ふつうの大きさ）、品のマスも大きくする
             var small = new GUIStyle(hud.LabelStyle);
             var type = ClassInfo.Current;
             float lineH = small.fontSize * 1.4f;
-            if (matPicking && selected != null) { DrawMaterialPicker(ch, selected); return; } // 素材を選ぶ一覧を開いている間は、それだけを出す
             Header(Loc.T("BLACKSMITH", "鍛冶屋"), ch.Embers, W, pad, out float y);
 
-            // 装備中の品（前回帰還したときの装備）と、次の挑戦に持ち込む品
-            var equipped = new List<Item>();
-            foreach (var it in ch.Loadout) if (it != null && !it.IsEmptyMarker) equipped.Add(it);
+            // 装備中の品と、次の挑戦に持ち込む品（どちらも同じ大きさのマスで5つずつ並べる）
             GUI.Label(new Rect(pad, y, W, lineH), Loc.T("Equipped", "装備中"), small);
             y += lineH;
             y = Grid(equipped, 5, y, pad, type, 5) + H * 0.01f;
-            GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Items you bring: {ch.Stash.Count}/{Inventory.BagCapacity}", $"持ち込む品：{ch.Stash.Count}/{Inventory.BagCapacity}"), small);
+            GUI.Label(new Rect(pad, y, W, lineH), Loc.T($"Items you bring: {ch.Stash.Count}/{Inventory.BagCapacity}", $"持ち込む品　{ch.Stash.Count}/{Inventory.BagCapacity}"), small);
             y += lineH;
-            y = Grid(ch.Stash, Inventory.BagCapacity, y, pad, type) + H * 0.01f;
+            y = Grid(ch.Stash, Inventory.BagCapacity, y, pad, type, 5) + H * 0.015f;
 
-            float btnH = H * 0.055f;
-            float by = H - pad - btnH;
-            if (selected == null || (!equipped.Contains(selected) && !ch.Stash.Contains(selected)))
+            float btnH = H * 0.06f, gap = W * 0.03f;
+            float backTop = H - pad;
+            float buttonsTop = backTop - btnH * 2f - gap;
+            if (selected == null)
             {
-                selected = null;
-                var wrap = new GUIStyle(small) { wordWrap = true };
-                string help = Loc.T($"Tap an item. Enhancing (Relic/orange up to +10, Mythic/red and Abyssal up to +{Item.MaxEnhance}) raises its base value and effects by {Item.EnhanceStep * 100f:0}% per level. Reaching +10 and +15 also uses one brought-home item of the same slot and rarity. Abyssal gear also needs Abyss Shards (1 per level, 15 for +15). Rerolling (Mythic only) draws new effects at the item's level. Brought-home items can be reforged into another slot, or three of a rarity fused into one of the next.   Abyss Shards: {ch.AbyssShards}",
-                    $"品をタップ。強化（灯宝＝橙は+10、神話＝赤と深淵の品は+{Item.MaxEnhance}まで）すると、1段ごとに基本の数値と効果の値が{Item.EnhanceStep * 100f:0}%上がる。+10・+15 にするときは、持ち帰った同じ部位・同じ珍しさの品も1つ使う。深淵の品は深淵の欠片も要る（1段ごとに1個、+15だけ15個）。再抽選（神話だけ）すると、その品のレベルで効果を引き直す。持ち帰った品は、別の部位に作り直したり、同じ珍しさ3つを1つ上の珍しさに合成できる。　深淵の欠片：{ch.AbyssShards}個");
+                var wrap = new GUIStyle(hud.SmallStyle) { wordWrap = true };
+                string help = Loc.T($"Tap an item to choose it. Enhancing (Relic/orange up to +10, Mythic/red and Abyssal up to +{Item.MaxEnhance}) raises its base value and effects by {Item.EnhanceStep * 100f:0}% per level. Reaching +10 and +15 also uses one brought-home item of the same slot and rarity. Rerolling (Mythic only) draws new effects. Brought-home items can be reforged into another slot, or three of a rarity fused into one of the next.",
+                    $"品をタップして選ぶ。強化（灯宝＝橙は+10、神話＝赤と深淵の品は+{Item.MaxEnhance}まで）すると、1段ごとに基本の数値と効果の値が{Item.EnhanceStep * 100f:0}%上がる。+10・+15 にするときは、持ち帰った同じ部位・同じ珍しさの品も1つ使う。再抽選（神話だけ）すると効果を引き直す。持ち帰った品は、別の部位に作り直したり、同じ珍しさ3つを1つ上の珍しさに合成できる。");
                 GUI.Label(new Rect(pad, y, W - pad * 2f, wrap.CalcHeight(new GUIContent(help), W - pad * 2f)), help, wrap);
                 return;
             }
 
+            // 選んだ品の説明（枠の中に、アイコン・名前・どこの品か・数値）
             var item = selected;
+            var box = new Rect(pad, y, W - pad * 2f, buttonsTop - gap - y);
+            Hud.Fill(box, new Color(1f, 1f, 1f, 0.05f));
+            Hud.OrnateFrame(box, Hud.FrameGold, Mathf.Max(1f, Mathf.Round(H * 0.0012f)), false, false);
+            float inner = W * 0.03f;
+            float ic = Mathf.Min(box.height * 0.3f, W * 0.18f);
+            Hud.DrawSprite(new Rect(box.x + inner, box.y + inner, ic, ic), PixelArt.ItemIcon(item));
+            float tx = box.x + inner * 2f + ic;
+            var nameRect = new Rect(tx, box.y + inner, box.xMax - inner - tx, lineH * 1.2f);
+            var name = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
+            name.normal.textColor = item.DisplayColor;
+            Hud.FitLabel(nameRect, item.Name, name);
+            var sub = new GUIStyle(hud.SmallStyle);
+            sub.normal.textColor = new Color(0.82f, 0.82f, 0.88f);
+            string where = equipped.Contains(item) ? Loc.T("Equipped", "装備中") : Loc.T("Carry-in", "持ち込む品");
+            string enh = Town.Enhanceable(item) ? Loc.T($"   Enhance +{item.Enhance}/{item.EnhanceCap}", $"　強化 +{item.Enhance}/{item.EnhanceCap}") : "";
+            Hud.FitLabel(new Rect(tx, nameRect.yMax, box.xMax - inner - tx, lineH), $"{where}　Lv {item.Level}" + enh, sub);
+            float ly = Mathf.Max(box.y + inner * 2f + ic, nameRect.yMax + lineH * 1.2f);
+            var lineStyle = new GUIStyle(hud.SmallStyle);
+            foreach (var line in item.Describe())
+            {
+                if (ly + lineH > box.yMax - inner * 0.5f) break;
+                Hud.FitLabel(new Rect(box.x + inner, ly, box.width - inner * 2f, lineH), line, lineStyle);
+                ly += lineH;
+            }
+            DrawSmithFx(nameRect);
+
+            // 行動のボタン：強化・効果の再抽選／部位を変える・合成（持ち帰った品だけ）
+            float bw = (W - pad * 2f - gap) * 0.5f;
+            var r1 = new Rect(pad, buttonsTop, bw, btnH);
+            var r2 = new Rect(pad + bw + gap, buttonsTop, bw, btnH);
+            bool canEnhance = Town.Enhanceable(item) && item.Enhance < item.EnhanceCap;
+            string enhanceLabel = !Town.Enhanceable(item) ? Loc.T("ENHANCE (Relic+)", "強化（灯宝＝橙以上）")
+                : item.Enhance >= item.EnhanceCap ? Loc.T("MAX ENHANCED", "強化は最大")
+                : Loc.T($"ENHANCE  +{item.Enhance} → +{item.Enhance + 1}", $"強化　+{item.Enhance} → +{item.Enhance + 1}");
+            if (canEnhance) hud.Button(r1, enhanceLabel, gold, hud.CenteredStyle, () => { smithMode = SmithMode.Enhance; matChoice = null; armed = null; });
+            else { Hud.Fill(r1, dim); Hud.FitLabel(r1, enhanceLabel, hud.CenteredStyle); }
+            bool canReroll = Town.Smithable(item) && item.Affixes.Count > 0;
+            string rerollLabel = Loc.T("REROLL EFFECTS", "効果を再抽選") + (canReroll ? "" : Loc.T(" (Mythic)", "（神話だけ）"));
+            if (canReroll) hud.Button(r2, rerollLabel, new Color(0.32f, 0.22f, 0.5f, 0.9f), hud.CenteredStyle, () => { smithMode = SmithMode.Reroll; armed = null; });
+            else { Hud.Fill(r2, dim); Hud.FitLabel(r2, rerollLabel, hud.CenteredStyle); }
+            var spareRow = new Rect(pad, buttonsTop + btnH + gap, W - pad * 2f, btnH);
+            if (Town.IsSpare(ch, item) && (Town.Convertible(item) || Town.Synthesizable(item))) DrawSpareActions(ch, item, spareRow);
+            else
+            {
+                Hud.Fill(spareRow, dim);
+                Hud.FitLabel(spareRow, Loc.T("Reforge / fuse: brought-home items only", "部位を変える・合成：持ち帰った品だけ"), hud.CenteredStyle);
+            }
+        }
+
+        /// <summary>強化の画面：左に強化する品、右に素材（+10・+15 のとき）。条件がそろったら火種で強化。</summary>
+        void DrawEnhanceScreen(CharacterData ch, Item item)
+        {
+            float W = Screen.width, H = Screen.height;
+            float pad = W * 0.05f;
+            float lineH = hud.LabelStyle.fontSize * 1.4f;
+            Header(Loc.T("ENHANCE", "強化"), ch.Embers, W, pad, out float y, () => { smithMode = SmithMode.List; matChoice = null; });
+            float frameT = Mathf.Max(1f, Mathf.Round(H * 0.0012f));
+            float arrowW = W * 0.08f;
+            float sw = (W - pad * 2f - arrowW) * 0.5f, sh = H * 0.22f;
+            var left = new Rect(pad, y, sw, sh);
+            var right = new Rect(pad + sw + arrowW, y, sw, sh);
+            var cap = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.MiddleCenter };
+            cap.normal.textColor = new Color(0.9f, 0.86f, 0.8f);
+            var nm = new GUIStyle(hud.LabelStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            var sub = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.MiddleCenter };
+            sub.normal.textColor = new Color(0.82f, 0.82f, 0.88f);
+            float ic = Mathf.Min(sh * 0.5f, sw * 0.6f);
+
+            // 左：強化する品
+            Hud.Fill(left, new Color(0.04f, 0.04f, 0.07f, 0.92f));
+            Hud.OrnateFrame(left, Hud.FrameGold, frameT, false, false);
+            Hud.FitLabel(new Rect(left.x, left.y + sh * 0.02f, sw, sh * 0.12f), Loc.T("Item to enhance", "強化する装備"), cap);
+            Hud.DrawSprite(new Rect(left.center.x - ic * 0.5f, left.y + sh * 0.16f, ic, ic), PixelArt.ItemIcon(item));
+            nm.normal.textColor = item.DisplayColor;
+            var nameRect = new Rect(left.x, left.y + sh * 0.7f, sw, sh * 0.15f);
+            Hud.FitLabel(nameRect, item.Name, nm);
+            Hud.FitLabel(new Rect(left.x, left.y + sh * 0.84f, sw, sh * 0.13f), $"Lv {item.Level}", sub);
+
+            var arrow = new GUIStyle(hud.LabelStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            arrow.normal.textColor = new Color(0.95f, 0.78f, 0.38f);
+            GUI.Label(new Rect(left.xMax, y, arrowW, sh), "←", arrow);
+
+            // 右：素材（+10・+15 のときだけ要る）
+            bool needMat = Town.NeedsMaterial(item);
+            var matList = needMat ? Town.MaterialsFor(ch, item) : null;
+            if (needMat && matChoice != null && !matList.Contains(matChoice)) matChoice = null;
+            Hud.Fill(right, new Color(0.04f, 0.04f, 0.07f, 0.92f));
+            Hud.OrnateFrame(right, Hud.FrameGold, frameT, false, false);
+            Hud.FitLabel(new Rect(right.x, right.y + sh * 0.02f, sw, sh * 0.12f), Loc.T("Material", "素材にする装備"), cap);
+            var slotR = new Rect(right.center.x - ic * 0.5f, right.y + sh * 0.16f, ic, ic);
+            var pickNote = new GUIStyle(sub);
+            pickNote.normal.textColor = new Color(1f, 0.85f, 0.5f);
+            if (!needMat)
+            {
+                Hud.FitLabel(new Rect(right.x, right.y + sh * 0.3f, sw, sh * 0.2f), Loc.T("Not needed", "素材は不要"), nm);
+                Hud.FitLabel(new Rect(right.x, right.y + sh * 0.55f, sw, sh * 0.15f), Loc.T("(used at +10 and +15)", "（+10・+15 のときに使う）"), sub);
+            }
+            else
+            {
+                hud.Button(right, null, new Color(1f, 1f, 1f, 0.05f), hud.CenteredStyle, () => { if (matList.Count > 0) matPicking = true; });
+                if (matChoice != null)
+                {
+                    Hud.DrawSprite(slotR, PixelArt.ItemIcon(matChoice));
+                    nm.normal.textColor = matChoice.DisplayColor;
+                    Hud.FitLabel(new Rect(right.x, right.y + sh * 0.7f, sw, sh * 0.15f), matChoice.Name, nm);
+                    Hud.FitLabel(new Rect(right.x, right.y + sh * 0.84f, sw, sh * 0.13f), $"Lv {matChoice.Level}　" + (Town.InStorage(matChoice) ? Loc.T("storage", "倉庫") : Loc.T("carry-in", "持ち込む品")), sub);
+                }
+                else
+                {
+                    Hud.Frame(slotR, new Color(0.45f, 0.42f, 0.52f), Mathf.Max(1f, frameT));
+                    var plus = new GUIStyle(arrow);
+                    plus.normal.textColor = new Color(0.6f, 0.58f, 0.68f);
+                    GUI.Label(slotR, "＋", plus);
+                    Hud.FitLabel(new Rect(right.x, right.y + sh * 0.72f, sw, sh * 0.15f), matList.Count > 0 ? Loc.T("Tap to choose", "タップして選ぶ") : Loc.T("None to use", "使える品がない"), pickNote);
+                }
+            }
+            y += sh + H * 0.02f;
+
+            // 強化したあとの値
+            var pv = new Rect(pad, y, W - pad * 2f, lineH * 3.4f);
+            Hud.Fill(pv, new Color(1f, 1f, 1f, 0.05f));
+            var big = new GUIStyle(hud.LabelStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+            big.normal.textColor = new Color(1f, 0.9f, 0.6f);
+            Hud.FitLabel(new Rect(pv.x, pv.y + lineH * 0.1f, pv.width, lineH * 1.1f), $"+{item.Enhance}  →  +{item.Enhance + 1}", big);
+            var okc = new Color(0.55f, 0.92f, 0.6f);
+            var row1 = new GUIStyle(hud.SmallStyle);
+            float nextMult = 1f + Item.EnhanceStep * (item.Enhance + 1);
+            float lx = pv.x + W * 0.04f, vx = pv.x + pv.width * 0.5f;
+            GUI.Label(new Rect(lx, pv.y + lineH * 1.3f, pv.width * 0.45f, lineH), Loc.T("Value multiplier", "値の倍率"), row1);
+            var val = new GUIStyle(row1); val.normal.textColor = okc;
+            GUI.Label(new Rect(vx, pv.y + lineH * 1.3f, pv.width * 0.5f, lineH), $"x{item.EnhanceMult:0.00}  →  x{nextMult:0.00}", val);
+            GUI.Label(new Rect(lx, pv.y + lineH * 2.25f, pv.width * 0.45f, lineH), Loc.T("Base value", "基本の数値"), row1);
+            GUI.Label(new Rect(vx, pv.y + lineH * 2.25f, pv.width * 0.5f, lineH), $"{item.EffBase:0}  →  {item.BaseValue * nextMult:0}", val);
+            y = pv.yMax + H * 0.02f;
+
+            // 強化の条件（そろったものに ✔）
+            int price = Town.EnhancePrice(item);
+            int shards = Town.ShardPrice(item);
+            bool matOk = !needMat || matChoice != null;
+            bool emberOk = ch.Embers >= price;
+            bool shardOk = ch.AbyssShards >= shards;
+            var condTitle = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
+            condTitle.normal.textColor = new Color(0.95f, 0.8f, 0.45f);
+            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH), Loc.T("Requirements", "強化の条件"), condTitle);
+            y += lineH * 1.1f;
+            void Cond(bool ok, string text)
+            {
+                var st = new GUIStyle(hud.SmallStyle);
+                st.normal.textColor = ok ? okc : new Color(0.62f, 0.62f, 0.68f);
+                Hud.FitLabel(new Rect(pad + W * 0.02f, y, W - pad * 2f - W * 0.02f, lineH), (ok ? "✔ " : "・ ") + text, st);
+                y += lineH * 1.05f;
+            }
+            if (needMat)
+            {
+                string slotName = item.Slot.ToString();
+                Cond(matOk, Loc.T($"Same slot and rarity ({RarityInfo.LabelOf(item.Rarity)})", $"同じ部位・同じ珍しさ（{RarityInfo.LabelOf(item.Rarity)}）の素材"));
+            }
+            Cond(emberOk, Loc.T($"Embers {price:N0} (have {ch.Embers:N0})", $"火種 {price:N0}（持っている {ch.Embers:N0}）"));
+            if (shards > 0) Cond(shardOk, Loc.T($"Abyss Shards {shards} (have {ch.AbyssShards})", $"深淵の欠片 {shards}（持っている {ch.AbyssShards}）"));
+
+            // 強化のボタン
+            float btnH = H * 0.07f;
+            var br = new Rect(pad, H - pad - btnH - lineH * 1.4f, W - pad * 2f, btnH);
+            bool can = matOk && emberOk && shardOk && !SlotsSpinning;
+            if (can)
+                hud.Button(br, Loc.T($"ENHANCE for {price:N0} embers", $"火種 {price:N0} で強化する"), gold, hud.CenteredStyle, () =>
+                {
+                    if (!Town.EnhanceItem(ch, item, matChoice)) return;
+                    matChoice = null;
+                    smithFxTime = Time.unscaledTime;
+                    smithFxText = $"+{item.Enhance}";
+                    hud.World.Sfx.Anvil();
+                    if (item.Enhance >= item.EnhanceCap) smithMode = SmithMode.List; // 最大まで上がったら一覧へ戻る
+                });
+            else
+            {
+                Hud.Fill(br, dim);
+                string why = !matOk ? Loc.T("Choose a material", "素材を選んでください") : !emberOk ? Loc.T("Not enough embers", "火種が足りない") : Loc.T("Not enough shards", "欠片が足りない");
+                Hud.FitLabel(br, why, hud.CenteredStyle);
+            }
+            if (needMat)
+            {
+                var warn = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.MiddleCenter };
+                warn.normal.textColor = new Color(1f, 0.65f, 0.55f);
+                Hud.FitLabel(new Rect(pad, br.yMax + lineH * 0.2f, W - pad * 2f, lineH), Loc.T("The material is used up when you enhance.", "素材にした装備は、強化するとなくなります"), warn);
+            }
+            DrawSmithFx(nameRect);
+        }
+
+        /// <summary>効果の再抽選の画面：残す効果に錠をかけて、火種で引き直す（神話だけ）。</summary>
+        void DrawRerollScreen(CharacterData ch, Item item)
+        {
+            float W = Screen.width, H = Screen.height;
+            float pad = W * 0.05f;
+            var small = new GUIStyle(hud.LabelStyle);
+            var type = ClassInfo.Current;
+            float lineH = small.fontSize * 1.4f;
+            Header(Loc.T("REROLL EFFECTS", "効果を再抽選"), ch.Embers, W, pad, out float y, () => { smithMode = SmithMode.List; });
+            float btnH = H * 0.06f;
+            float by = H - pad - btnH;
             if (lockFor != item)
             {
                 lockFor = item;
                 locked.Clear();
             }
-            // 強化の紋章（右）と名前（左）
-            float emblem = lineH * 2.4f;
-            // 強化の段は名前の「+N」と、アイコンの枠の飾りで分かる（印は出さない）
-            var nameRect = new Rect(pad, y, W - pad * 2f - emblem, lineH * 1.2f);
+            var nameRect = new Rect(pad, y, W - pad * 2f, lineH * 1.2f);
             var name = new GUIStyle(hud.LabelStyle) { fontStyle = FontStyle.Bold };
             name.normal.textColor = item.DisplayColor;
             Hud.FitLabel(nameRect, item.Name, name);
             y += lineH * 1.2f;
-            var info = new GUIStyle(small);
-            info.normal.textColor = new Color(1f, 0.85f, 0.5f);
-            GUI.Label(new Rect(pad, y, W - pad * 2f, lineH),
-                Loc.T($"Enhance +{item.Enhance}/{item.EnhanceCap}   (values x{item.EnhanceMult:0.00})" + (item.Abyss || item.Heaven ? $"   Shards {ch.AbyssShards}" : ""),
-                      $"強化 +{item.Enhance}/{item.EnhanceCap}   （値 x{item.EnhanceMult:0.00}）" + (item.Abyss || item.Heaven ? $"   欠片 {ch.AbyssShards}個" : "")), info);
-            y += lineH;
+            var note = new GUIStyle(hud.SmallStyle) { wordWrap = true };
+            note.normal.textColor = new Color(0.82f, 0.82f, 0.88f);
+            string help = Loc.T("Lock the effects to keep (padlock), then reroll the rest.", "残したい効果に錠をかけて（最大3つ）、ほかの効果を引き直す。");
+            float hh = note.CalcHeight(new GUIContent(help), W - pad * 2f);
+            GUI.Label(new Rect(pad, y, W - pad * 2f, hh), help, note);
+            y += hh + H * 0.01f;
 
-            // 持ち帰った品（装備していない品）は、部位の変換・合成ができる（その分、ボタンの段を1つ増やす）
-            bool spareActions = Town.IsSpare(ch, item) && (Town.Convertible(item) || Town.Synthesizable(item));
-            float extraRow = spareActions ? btnH + W * 0.03f * 0.5f : 0f;
-            // 説明。効果の行には、再抽選のときに残す「ロック」の切り替えを付ける（最大3つ、全部はロックできない）
-            bool smithable = Town.Smithable(item);
             var lines = item.Describe();
             int baseLines = lines.Count - item.Affixes.Count - item.Uniques.Count;
             int maxLocks = Mathf.Min(Town.MaxRerollLocks, item.Affixes.Count - 1);
             float lockW = lineH * 1.6f;
             for (int li = 0; li < lines.Count; li++)
             {
-                int ai0 = li - baseLines;
-                bool affixRow = smithable && ai0 >= 0 && ai0 < item.Affixes.Count;
-                float rowLine = affixRow ? lineH * 1.35f : lineH; // 固定ボタンの行は少し高く
-                if (y + rowLine > by - btnH - extraRow - H * 0.02f) break;
                 int ai = li - baseLines;
-                bool isAffix = smithable && ai >= 0 && ai < item.Affixes.Count;
+                bool isAffix = ai >= 0 && ai < item.Affixes.Count;
+                float rowLine = isAffix ? lineH * 1.35f : lineH;
+                if (y + rowLine > by - H * 0.02f) break;
                 if (isAffix)
                 {
                     int idx = ai;
@@ -1127,10 +1330,7 @@ namespace VividOfFade
                         {
                             if (!locked.Remove(idx)) locked.Add(idx);
                         });
-                    else
-                    {
-                        Hud.Fill(lr, dim);
-                    }
+                    else Hud.Fill(lr, dim);
                     var oldColor = GUI.color;
                     if (!canLock) GUI.color = new Color(1f, 1f, 1f, 0.3f);
                     float li2 = lr.height * 0.12f;
@@ -1141,107 +1341,31 @@ namespace VividOfFade
                     var textRect = new Rect(pad + lockW + W * 0.03f, y + lineH * 0.18f, W - pad * 2f - lockW - W * 0.03f, lineH);
                     Hud.FitLabel(textRect, SlotText(item, idx, lines[li], textRect, st), st);
                 }
-                else
-                {
-                    Hud.FitLabel(new Rect(pad, y, W - pad * 2f, lineH), lines[li], small);
-                }
+                else Hud.FitLabel(new Rect(pad, y, W - pad * 2f, lineH), lines[li], small);
                 y += rowLine;
             }
-
             DrawSmithFx(nameRect);
 
-            if (spareActions) DrawSpareActions(ch, item, new Rect(pad, by - btnH * 2f - W * 0.03f, W - pad * 2f, btnH));
-
-            bool enhanceable = Town.Enhanceable(item);
-            if (!enhanceable)
-            {
-                var r = new Rect(pad, by, W - pad * 2f, btnH);
-                Hud.Fill(r, dim);
-                Hud.FitLabel(r, Loc.T("Only Relic (orange) or better can be enhanced", "強化できるのは灯宝（橙）以上"), hud.CenteredStyle);
-                return;
-            }
-
-            // 強化（すぐ実行。カンカンと火花）と再抽選（2回押し。ロックの数で値段が倍々）
-            float gap = W * 0.03f;
+            var rr = new Rect(pad, by, W - pad * 2f, btnH);
             if (SlotsSpinning)
             {
-                var wait = new Rect(pad, by - btnH - gap * 0.5f, W - pad * 2f, btnH * 2f + gap * 0.5f);
-                Hud.Fill(wait, dim);
-                Hud.FitLabel(wait, Loc.T("Rolling...", "抽選中……"), hud.CenteredStyle);
+                Hud.Fill(rr, dim);
+                Hud.FitLabel(rr, Loc.T("Rolling...", "抽選中……"), hud.CenteredStyle);
                 return;
             }
-            var enhanceRect = new Rect(pad, by - btnH - gap * 0.5f, W - pad * 2f, btnH);
-            if (item.Enhance >= item.EnhanceCap)
-            {
-                Hud.Fill(enhanceRect, dim);
-                GUI.Label(enhanceRect, Loc.T("MAX ENHANCED", "強化は最大"), hud.CenteredStyle);
-            }
+            int rp = Town.RerollPrice(item, locked.Count);
+            string lockNote = locked.Count > 0 ? Loc.T($", {locked.Count} locked", $"・固定 {locked.Count}") : "";
+            string label = Loc.T($"REROLL EFFECTS   ({rp} embers{lockNote})", $"効果を再抽選   （火種 {rp}{lockNote}）");
+            if (ch.Embers >= rp)
+                Confirm(rr, "reroll", label, () =>
+                {
+                    var lockList = new List<int>(locked);
+                    if (Town.RerollItem(ch, item, type, lockList)) StartSlots(item, lockList);
+                });
             else
             {
-                int price = Town.EnhancePrice(item);
-                int shards = Town.ShardPrice(item);
-                bool needMat = Town.NeedsMaterial(item);
-                var matList = needMat ? Town.MaterialsFor(ch, item) : null;
-                int mats = needMat ? matList.Count : 0;
-                if (needMat && mats > 0 && (matChoice == null || !matList.Contains(matChoice))) matChoice = matList[0]; // 選んでいなければ、いちばんレベルの低い品
-                if (needMat && mats > 0)
-                {
-                    // 左に素材の品（押すと一覧から選べる）、右に強化のボタン
-                    float mw = enhanceRect.height * 2.4f;
-                    var matR = new Rect(enhanceRect.x, enhanceRect.y, mw, enhanceRect.height);
-                    Hud.Fill(matR, new Color(0.04f, 0.04f, 0.07f, 0.9f));
-                    hud.Button(matR, null, new Color(1f, 1f, 1f, 0.08f), hud.CenteredStyle, () => matPicking = true);
-                    float ic = matR.height * 0.8f;
-                    Hud.DrawSprite(new Rect(matR.x + matR.height * 0.1f, matR.y + matR.height * 0.1f, ic, ic), PixelArt.ItemIcon(matChoice));
-                    var ms = new GUIStyle(hud.SmallStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-                    ms.normal.textColor = Color.white;
-                    Hud.FitLabel(new Rect(matR.x + ic + matR.height * 0.15f, matR.y, mw - ic - matR.height * 0.2f, matR.height * 0.5f), Loc.T("Material", "素材"), ms);
-                    ms.normal.textColor = new Color(1f, 0.85f, 0.5f);
-                    Hud.FitLabel(new Rect(matR.x + ic + matR.height * 0.15f, matR.y + matR.height * 0.5f, mw - ic - matR.height * 0.2f, matR.height * 0.5f), Loc.T("change", "変える"), ms);
-                    Hud.OrnateFrame(matR, Hud.FrameGold, Mathf.Max(1f, Mathf.Round(H * 0.0009f)), false, false);
-                    enhanceRect = new Rect(matR.xMax + W * 0.02f, enhanceRect.y, enhanceRect.width - mw - W * 0.02f, enhanceRect.height);
-                }
-                bool can = ch.Embers >= price && ch.AbyssShards >= shards && (!needMat || mats > 0);
-                string shardNote = shards > 0 ? Loc.T($", {shards} shard" + (shards > 1 ? "s" : ""), $"・欠片 {shards}") : "";
-                string matNote = needMat ? Loc.T($", 1 same-slot {RarityInfo.LabelOf(item.Rarity)} (have {mats})", $"・同じ部位の{RarityInfo.LabelOf(item.Rarity)} 1（持っている {mats}）") : "";
-                string label = Loc.T($"ENHANCE  +{item.Enhance} → +{item.Enhance + 1}   ({price} embers{shardNote}{matNote})", $"強化  +{item.Enhance} → +{item.Enhance + 1}   （火種 {price}{shardNote}{matNote}）");
-                if (can) hud.Button(enhanceRect, label, gold, hud.CenteredStyle, () =>
-                {
-                    if (!Town.EnhanceItem(ch, item, matChoice)) return;
-                    matChoice = null;
-                    smithFxTime = Time.unscaledTime;
-                    smithFxText = $"+{item.Enhance}";
-                    hud.World.Sfx.Anvil();
-                });
-                else
-                {
-                    Hud.Fill(enhanceRect, dim);
-                    Hud.FitLabel(enhanceRect, label, hud.CenteredStyle);
-                }
-            }
-            if (!smithable)
-            {
-                var rr = new Rect(pad, by, W - pad * 2f, btnH);
                 Hud.Fill(rr, dim);
-                Hud.FitLabel(rr, Loc.T("Rerolling is for Mythic (red) only", "再抽選は神話（赤）だけ"), hud.CenteredStyle);
-            }
-            else if (item.Affixes.Count > 0)
-            {
-                int rp = Town.RerollPrice(item, locked.Count);
-                string lockNote = locked.Count > 0 ? Loc.T($", {locked.Count} locked", $"・固定 {locked.Count}") : "";
-                string label = Loc.T($"REROLL EFFECTS   ({rp} embers{lockNote})", $"効果を再抽選   （火種 {rp}{lockNote}）");
-                var rr = new Rect(pad, by, W - pad * 2f, btnH);
-                if (ch.Embers >= rp)
-                    Confirm(rr, "reroll", label, () =>
-                    {
-                        var lockList = new List<int>(locked);
-                        if (Town.RerollItem(ch, item, type, lockList)) StartSlots(item, lockList);
-                    });
-                else
-                {
-                    Hud.Fill(rr, dim);
-                    Hud.FitLabel(rr, label, hud.CenteredStyle);
-                }
+                Hud.FitLabel(rr, label, hud.CenteredStyle);
             }
         }
 
