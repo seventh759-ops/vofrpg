@@ -28,7 +28,7 @@ def block_size(a):
     def fit(v):
         r = np.array(gaps) / v
         return np.sum(np.abs(r - np.round(r)) < 0.12)
-    if best * 2 < 16 and fit(best * 2) >= 0.85 * fit(best): best *= 2
+    if best * 2 < 16 and fit(best * 2) >= 0.7 * fit(best): best *= 2
     return best
 
 def kmeans(px, k, seed=0, it=30):
