@@ -31,9 +31,11 @@ namespace VividOfFade
         public static bool CanEnterAbyss(CharacterData ch) => ch != null && !ch.Ascended && ch.Level >= AbyssReqLevel && ch.BossCleared >= MaxFloor; // 捧げたら深淵は閉じる
 
         // 昇る塔（クリア後）：女神像に火種を捧げたキャラクターは、同じ1〜100層を「昇る」。深淵は閉じる。
-        // 捧げるとレベルも Lv1 に戻る。昇る塔の敵は1層で Lv10 相当から始まり、100層で塔の100層と同じ（Lv99 相当）に届く。
+        // 捧げるとレベルも Lv1 に戻る。昇る塔の敵は1層で Lv24 相当から始まり、100層で塔の100層と同じ（Lv99 相当）に届く。体力・攻撃はさらに倍率を掛ける。
         // 落ちる装備は段階に合わせる（塔と同じ決め方）。天界（101〜120層）は深淵と同じ強さ・Lv100〜120 の装備。
-        public const int AscentStartTier = 10;
+        public const int AscentStartTier = 24;   // 1層の敵の強さ（前は 10。捧げても装備・転生・スキルは残るので、手応えが出るように上げた）
+        /// <summary>昇る塔・天界の敵の体力と攻撃の倍率（捧げたあとは装備・転生・スキルが残っていて楽すぎるため）。</summary>
+        public const float AscentHpMult = 1.6f, AscentDamageMult = 1.4f;
         /// <summary>いまのキャラクターが昇る塔か（GameWorld が毎フレーム入れる）。</summary>
         public static bool Ascent;
         /// <summary>その層の「深さ」の目安（敵の数・段階の割合に使う）。昇る塔も塔と同じ。</summary>
@@ -52,7 +54,7 @@ namespace VividOfFade
         public static int LastFloorFor(CharacterData ch) => CanEnterAbyss(ch) || CanEnterHeaven(ch) ? AbyssLastFloor : MaxFloor;
         public static bool IsBossFloor(int floor) => floor > 0 && floor % BossFloorEvery == 0;
         public static int Tier(int floor) => Ascent && floor <= MaxFloor
-            ? Mathf.RoundToInt(AscentStartTier + (Mathf.Max(1, floor) - 1) * (MaxFloor * 2f - AscentStartTier) / (MaxFloor - 1)) // 昇る塔：1層 10 → 100層 200
+            ? Mathf.RoundToInt(AscentStartTier + (Mathf.Max(1, floor) - 1) * (MaxFloor * 2f - AscentStartTier) / (MaxFloor - 1)) // 昇る塔：1層 24 → 100層 200
             : floor * 2;
         public static int RoomEnemies(int floor, int roomArea) => Mathf.Min(5 + Mathf.RoundToInt(EffectiveFloor(floor) * 1.2f) + roomArea / 14, 45); // 前の約6割の密度
         public const float StairsRadius = 0.7f;
@@ -90,7 +92,7 @@ namespace VividOfFade
         // 波が進むほど、体力も攻撃力も増える（後半ほど伸びが大きい）
         // 体力の複利は 3% → 2.2% にした（後半に敵が硬すぎたため）
         public const float EnemyHpGrowth = 1.022f;
-        public static float EnemyHp(int wave) => 20f * (1f + 0.3f * (wave - 1)) * Mathf.Pow(EnemyHpGrowth, wave - 1);
+        public static float EnemyHp(int wave) => 20f * (1f + 0.3f * (wave - 1)) * Mathf.Pow(EnemyHpGrowth, wave - 1) * (Ascent ? AscentHpMult : 1f);
         /// <summary>
         /// 術師の弾のダメージ。体当たりと違い、深い層でも急に強くならない（指数で増えない）。
         /// 避けにくい分、少しずつ削る攻撃にする。
@@ -143,7 +145,7 @@ namespace VividOfFade
         /// 体当たりのダメージ（防御で減る前）。基準のキャラの実質の HP × 削る割合
         /// （1層は約9、25層で約190、50層で約510、74層で約880）。精鋭・ボス・種類の倍率はこれに掛ける。
         /// </summary>
-        public static int EnemyDamage(int wave) => Mathf.Max(1, Mathf.RoundToInt(RefEffectiveHp(wave) * RefHitPct(wave)));
+        public static int EnemyDamage(int wave) => Mathf.Max(1, Mathf.RoundToInt(RefEffectiveHp(wave) * RefHitPct(wave) * (Ascent ? AscentDamageMult : 1f)));
 
         // 敵の波
         public const int MaxEnemies = 600; // 眠っている敵も含む（層に入った時点で全部の部屋に置く）
