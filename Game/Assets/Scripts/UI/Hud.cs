@@ -916,6 +916,7 @@ namespace VividOfFade
             else if (World.ChoosingClass && World.InTown && World.SkillsOpen) skills.Draw(World);
             else if (World.ChoosingClass && World.InTown && World.MenuOpen) menu.Draw(World); // 町から開いた設定
             else if (World.ChoosingClass && World.InTown) Town.Draw(World);
+            else if (World.ChoosingClass && World.SuspendedSlot >= 0) DrawResumePrompt(World.SuspendedSlot); // 中断した挑戦があれば、ほかを選ぶ前に続けるかやめるかだけを聞く
             else if (World.ChoosingClass) DrawClassSelect();
             else if (World.Player.IsDead) DrawGameOver();
             else if (World.BagOpen) bag.Draw(World);
@@ -2070,6 +2071,70 @@ namespace VividOfFade
             Button(back, Loc.T("BACK", "戻る"), new Color(1f, 1f, 1f, 0.08f), centered, () => World.CancelFloorSelect());
 
             if (confirmFloor >= 0) DrawFloorConfirm(type, ch);
+        }
+
+        bool confirmAbandon;
+
+        /// <summary>
+        /// 起動したとき、中断した挑戦があれば出す画面：中断したときの様子（キャラクター・層・体力・火種・鞄など）と、
+        /// 「続ける」「やめる」だけ。やめるときは、もう一度確かめる。
+        /// </summary>
+        void DrawResumePrompt(int slot)
+        {
+            float W = Screen.width, H = Screen.height;
+            var ch = Profile.InSlot(slot);
+            if (ch == null) return;
+            var run = ch.Run;
+            Fill(new Rect(0, 0, W, H), new Color(0.03f, 0.03f, 0.06f, 0.92f));
+            var box = new Rect(W * 0.07f, H * 0.2f, W * 0.86f, H * 0.5f);
+            Fill(box, new Color(0.08f, 0.07f, 0.12f, 0.98f));
+            OrnateFrame(box, FrameGold, FrameT);
+            float pad = box.width * 0.06f;
+            var title = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            title.normal.textColor = new Color(1f, 0.88f, 0.5f);
+            FitLabel(new Rect(box.x, box.y + box.height * 0.04f, box.width, box.height * 0.1f), Loc.T("A suspended run remains", "中断した挑戦があります"), title);
+
+            // キャラクターの絵と名前
+            float icon = box.height * 0.26f;
+            var top = box.y + box.height * 0.17f;
+            DrawSprite(new Rect(box.x + pad, top, icon * 0.75f, icon), PixelArt.PlayerFor(ch));
+            float tx = box.x + pad + icon * 0.85f, tw = box.xMax - pad - tx;
+            var name = new GUIStyle(label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            FitLabel(new Rect(tx, top, tw, icon * 0.4f), AdvancedClasses.NameFor(ch) + $"   Lv {ch.Level}", name);
+            var info = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+            FitLabel(new Rect(tx, top + icon * 0.42f, tw, icon * 0.3f), Loc.T("Place: ", "場所：") + GameConfig.FloorName(run.Floor, ch.Ascended) + (run.BossDefeated ? Loc.T("  (boss defeated)", "（ボス撃破済み）") : ""), info);
+            FitLabel(new Rect(tx, top + icon * 0.7f, tw, icon * 0.3f), $"HP {Mathf.RoundToInt(run.HpRatio * 100f)}%   MP {Mathf.RoundToInt(run.MpRatio * 100f)}%", info);
+
+            // 持っている物
+            int bag = 0; foreach (var it in run.Bag) if (it != null && !it.IsEmptyMarker) bag++;
+            float ly = top + icon + box.height * 0.04f, lh = small.fontSize * 1.6f;
+            var line = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft };
+            FitLabel(new Rect(box.x + pad, ly, box.width - pad * 2f, lh), Loc.T($"Embers found: {run.Embers:N0}", $"この挑戦で拾った火種：{run.Embers:N0}"), line);
+            FitLabel(new Rect(box.x + pad, ly + lh, box.width - pad * 2f, lh), Loc.T($"Items in bag: {bag}   Boons: {run.Boons.Count}", $"鞄の品：{bag} 個   加護：{run.Boons.Count} 個"), line);
+            var note = new GUIStyle(small) { alignment = TextAnchor.MiddleLeft, wordWrap = true };
+            note.normal.textColor = new Color(0.75f, 0.75f, 0.8f);
+            GUI.Label(new Rect(box.x + pad, ly + lh * 2.1f, box.width - pad * 2f, lh * 2.2f),
+                Loc.T("Continue starts again at the beginning of this floor.", "続けると、この層の最初から始まります。"), note);
+
+            float bw = box.width * 0.38f, bh = box.height * 0.12f, by = box.yMax - bh - box.height * 0.06f;
+            Button(new Rect(box.x + box.width * 0.08f, by, bw, bh), Loc.T("CONTINUE", "続ける"), new Color(0.2f, 0.5f, 0.25f, 0.9f), centered, () => { confirmAbandon = false; World.ResumeSuspended(slot); });
+            Button(new Rect(box.xMax - box.width * 0.08f - bw, by, bw, bh), Loc.T("QUIT RUN", "やめる"), new Color(0.5f, 0.15f, 0.15f, 0.9f), centered, () => confirmAbandon = true);
+
+            if (!confirmAbandon) return;
+            // やめる前の確認
+            Button(new Rect(0, 0, W, H), null, new Color(0f, 0f, 0f, 0.6f), centered, () => confirmAbandon = false);
+            var cb = new Rect(W * 0.1f, H * 0.36f, W * 0.8f, H * 0.24f);
+            Fill(cb, new Color(0.1f, 0.08f, 0.14f, 0.98f));
+            Fill(new Rect(cb.x, cb.y, cb.width, cb.height * 0.03f), new Color(1f, 0.45f, 0.35f));
+            Button(cb, null, new Color(0f, 0f, 0f, 0f), centered, () => { });
+            var warn = new GUIStyle(small) { alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            warn.normal.textColor = new Color(1f, 0.8f, 0.7f);
+            GUI.Label(new Rect(cb.x + cb.width * 0.06f, cb.y + cb.height * 0.08f, cb.width * 0.88f, cb.height * 0.5f),
+                Loc.T("Quit this run? The items and embers found in it will be lost. The gear you brought stays in town.",
+                      "この挑戦をやめますか？\nこの挑戦で拾った品と火種はなくなります。\n持ち込んだ装備は町に残っています。"), warn);
+            float cbw = cb.width * 0.38f, cbh = cb.height * 0.24f, cby = cb.yMax - cbh - cb.height * 0.08f;
+            Button(new Rect(cb.x + cb.width * 0.08f, cby, cbw, cbh), Loc.T("QUIT", "やめる"), new Color(0.5f, 0.15f, 0.15f, 0.9f), centered, () => { confirmAbandon = false; World.AbandonSuspended(slot); });
+            Button(new Rect(cb.xMax - cb.width * 0.08f - cbw, cby, cbw, cbh), Loc.T("BACK", "戻る"), new Color(1f, 1f, 1f, 0.15f), centered, () => confirmAbandon = false);
         }
 
         /// <summary>層を選んだときの確認（-1 は確認なし、0 は「続きから」、1以上は始める層）。</summary>

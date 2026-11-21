@@ -144,6 +144,42 @@ namespace VividOfFade
             if (!Profile.TipSeen("prologue")) ShowPrologue(); // 初めて遊ぶときだけ、はじまりの語り
         }
 
+        /// <summary>
+        /// 中断した挑戦があるキャラクターの枠（なければ -1）。起動したときは、キャラクター選択や町へ行く前に、
+        /// まず「続ける／やめる」だけを聞く（中断したまま町で転職などをすると、転職前の装備で続きを遊べてしまうため）。
+        /// </summary>
+        public int SuspendedSlot
+        {
+            get
+            {
+                for (int s = 0; s < Profile.SlotCount; s++)
+                {
+                    var c = Profile.InSlot(s);
+                    if (c != null && c.Run != null && c.Run.Active) return s;
+                }
+                return -1;
+            }
+        }
+
+        /// <summary>中断した挑戦を続ける（そのキャラクターを選んで、保存した層の最初から）。</summary>
+        public void ResumeSuspended(int slot)
+        {
+            var ch = Profile.InSlot(slot);
+            if (ch == null) return;
+            Profile.SelectSlot(slot);
+            ClassInfo.Current = (ClassType)ch.ClassId;
+            ResumeRun(ClassInfo.Current);
+        }
+
+        /// <summary>中断した挑戦をやめる（その挑戦で拾った品と火種はなくなる。持ち込んだ装備は町に残っている）。</summary>
+        public void AbandonSuspended(int slot)
+        {
+            var ch = Profile.InSlot(slot);
+            if (ch == null) return;
+            ClearRun(ch);
+            Profile.Save();
+        }
+
         /// <summary>町にいる（職業を選んだあと。出撃・倉庫・商人・転職・荷運び）。</summary>
         public bool InTown { get; private set; }
 
@@ -708,6 +744,7 @@ namespace VividOfFade
                     else if (Input.NumberPressed >= 0 && Input.NumberPressed < cps.Count) Hud.AskFloor(cps[Input.NumberPressed]);
                     else if (Input.CancelPressed) CancelFloorSelect();
                 }
+                else if (SuspendedSlot >= 0) { } // 中断した挑戦の「続ける／やめる」を聞いている間は、キーでほかを選ばせない
                 else if (Input.NumberPressed >= 0)
                 {
                     Hud.PressSlotKey(Input.NumberPressed); // キャラクター選択の画面（数字キー）
