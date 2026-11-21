@@ -1396,6 +1396,7 @@ namespace VividOfFade
             Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
             cameraRig.Shake(0.3f, 0.5f);
             Hud.Toast(Loc.T("BOSS DEFEATED!", "ボスを倒した！"), new Color(1f, 0.5f, 0.4f));
+            Loot.VacuumAfter(GameConfig.VacuumDelay); // 落ちた品を自動で回収（ボスの区画は「部屋を片付けた」の判定がないので、ここで）
             GainExp(KillExp(30f));
             Floors.OpenStairs();
             var ch = Profile.Current;

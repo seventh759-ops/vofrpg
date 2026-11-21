@@ -80,7 +80,7 @@ namespace VividOfFade
         }
 
         /// <summary>ボスの区画の中ほどまで来た：ボスとお供を、起きた状態で出す。お供は経験値・ドロップなし。</summary>
-        void SpawnBossArea(EnemySystem enemies, Room room)
+        void SpawnBossArea(EnemySystem enemies, Room room, Vector2 playerPos)
         {
             var area = bossPending;
             bossPending = null;
@@ -93,15 +93,36 @@ namespace VividOfFade
             bool goddess = GameConfig.Ascent && Floor == GameConfig.MaxFloor; // 昇る塔の最上（100層）は女神像
             bool final = Floor == GameConfig.AbyssLastFloor || goddess; // 深淵の最奥（アビス）・女神像は、ほかのボスより強い
             float bite = GameConfig.EarlyBite(Floor); // 序盤（5〜20層）のボスは少し硬く、痛い
-            enemies.SpawnBoss(area.Center, GameConfig.EnemyHp(Tier) * GameConfig.BossHpMult * (final ? GameConfig.FinalBossHpMult : 1f) * (1f + GameConfig.EarlyBossHp * bite),
+            Vector2 bossPos = FarSide(area, playerPos); // ボスは区画の奥（入ってきた側の反対）
+            enemies.SpawnBoss(bossPos, GameConfig.EnemyHp(Tier) * GameConfig.BossHpMult * (final ? GameConfig.FinalBossHpMult : 1f) * (1f + GameConfig.EarlyBossHp * bite),
                 Mathf.RoundToInt(GameConfig.EnemyDamage(Tier) * GameConfig.BossDamageMult * (final ? GameConfig.FinalBossDamageMult : 1f) * (1f + GameConfig.EarlyBossDamage * bite)),
                 goddess ? BossKind.Goddess : (BossKind?)null);
-            if (enemies.Active.Count > 0) enemies.Active[enemies.Active.Count - 1].Home = area;
+            if (enemies.Active.Count > 0) { var b = enemies.Active[enemies.Active.Count - 1]; b.Home = area; b.Hold = GameConfig.BossIntroHold; } // 現れてしばらくは身構えるだけ
             for (int i = 0; i < minionTarget; i++)
-                if (!SpawnMinion(enemies, area, room.RandomPointCentral(area))) break;
+                if (!SpawnMinion(enemies, area, NearBoss(area, bossPos, room))) break;
             bossFight = area;
-            minionTimer = GameConfig.BossMinionRespawn;
-            BossAppeared?.Invoke(area.Center);
+            minionTimer = GameConfig.BossMinionRespawn + GameConfig.BossIntroHold;
+            BossAppeared?.Invoke(bossPos);
+        }
+
+        /// <summary>区画の奥：中心から、プレイヤーと反対の向きへ、縁の少し手前まで寄せた点。</summary>
+        static Vector2 FarSide(RoomArea area, Vector2 playerPos)
+        {
+            Vector2 c = area.Center;
+            Vector2 d = c - playerPos;
+            if (d.sqrMagnitude < 0.01f) d = Vector2.up;
+            d = d.normalized;
+            float reach = Mathf.Min(area.W, area.H) * 0.5f - 3f; // 縁から3マス内側
+            return c + d * Mathf.Max(0f, reach);
+        }
+
+        /// <summary>ボスのそばの、区画の中の点（お供を出す場所）。</summary>
+        static Vector2 NearBoss(RoomArea area, Vector2 bossPos, Room room)
+        {
+            Vector2 p = bossPos + Random.insideUnitCircle * 3f;
+            p.x = Mathf.Clamp(p.x, area.X + 1.5f, area.X + area.W - 1.5f);
+            p.y = Mathf.Clamp(p.y, area.Y + 1.5f, area.Y + area.H - 1.5f);
+            return room.Clamp(p, GameConfig.SlimeRadius);
         }
 
         /// <summary>お供を1体出す（経験値・ドロップなし）。上限で出せなければ false。</summary>
@@ -115,6 +136,7 @@ namespace VividOfFade
                 enemies.MakeElite(m, EnemySystem.RandomElite());
             m.Home = area;
             m.NoReward = true;
+            m.Hold = bossFight == null ? GameConfig.BossIntroHold : GameConfig.MinionRespawnHold; // 登場の間・沸いた直後は少し動かない
             MinionSpawned?.Invoke(m.Pos);
             return true;
         }
@@ -131,7 +153,7 @@ namespace VividOfFade
             foreach (var e in enemies.Active)
                 if (!e.Dying && !e.IsBoss && e.NoReward && e.Home == bossFight) alive++;
             for (int i = alive; i < minionTarget; i++)
-                if (!SpawnMinion(enemies, bossFight, room.RandomPointIn(bossFight, player.Pos, 4f))) break;
+                if (!SpawnMinion(enemies, bossFight, NearBoss(bossFight, FarSide(bossFight, player.Pos), room))) break; // 沸き直しも、プレイヤーから見て奥に
         }
 
         static void Sleep(EnemySystem enemies, RoomArea area)
@@ -161,7 +183,7 @@ namespace VividOfFade
             // 部屋の入口（部屋の縁から1マス外まで）に来たら、その部屋の敵が起きる
             // ボスの区画：入り口では何も起きず、中ほど（縁から数マス）まで来たらボスとお供が現れる
             if (bossPending != null && bossPending.Contains(player.Pos, GameConfig.BossTriggerInset))
-                SpawnBossArea(enemies, room);
+                SpawnBossArea(enemies, room, player.Pos);
             TickMinions(dt, enemies, player, room);
             foreach (var area in room.Areas)
             {

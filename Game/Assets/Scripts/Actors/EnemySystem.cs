@@ -236,6 +236,7 @@ namespace VividOfFade
             e.SummonIndex = 0;
             e.NoReward = false;
             e.ChainLeft = 0;
+            e.Hold = 0f;
             e.InChain = false;
             e.Enraged = false;
             e.Elite = EliteKind.None;
@@ -530,6 +531,7 @@ namespace VividOfFade
         {
             if (e.Dying) return;
             if (e.Dormant) Wake(e.Home); // 外から攻撃されたら、その部屋の敵がみんな起きる
+            if (e.Hold > 0f) foreach (var o in Active) if (o.Home == e.Home) o.Hold = 0f; // 登場の間に攻撃されたら、みんな動き出す
             if (e.IsBoss || e.Elite != EliteKind.None) amount *= EliteDamageMult;
             e.Hp -= amount;
             e.FlashTimer = 0.08f;
@@ -723,6 +725,15 @@ namespace VividOfFade
                 {
                     e.FlashTimer -= dt;
                     if (e.FlashTimer <= 0f) e.Sr.color = e.Tint;
+                }
+
+                if (e.Hold > 0f)
+                {
+                    // 現れたばかり：その場で身構えるだけ（ボスの登場の間。攻撃されたら動き出す）
+                    e.Hold -= dt;
+                    float breathe = 1f + 0.06f * Mathf.Sin(Time.time * 5f + e.Phase);
+                    e.transform.localScale = new Vector3(e.BaseScale, e.BaseScale * breathe, 1f);
+                    continue;
                 }
 
                 if (e.Dormant)

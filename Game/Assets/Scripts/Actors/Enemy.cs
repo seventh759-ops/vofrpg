@@ -45,6 +45,7 @@ namespace VividOfFade
         public int SummonIndex;    // アビス：次に呼び出す歴代のボスの番号
         public int ChainLeft;      // 怒ったボス：続けて出す突進の残り
         public bool InChain;       // 続けての突進の最中（その突進では、続ける回数を数え直さない）
+        public float Hold;         // 現れたばかりで、まだ動かない残り時間（ボスの登場の間など）
         public bool NoReward;      // ボスの部屋のお供・ボスが呼んだ手下：倒しても経験値とドロップなし（仕掛けとしての敵）
         public readonly System.Collections.Generic.List<Vector2> SafeSpots = new System.Collections.Generic.List<Vector2>(); // 全体攻撃の安全な円
 
