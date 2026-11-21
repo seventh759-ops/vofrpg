@@ -12,13 +12,13 @@ namespace VividOfFade.EditorTools
     ///   こうすると Unity が切り欠きの下から画面を始めるので、ゲームの側（Screen.height など）は何も変えなくてよい。
     /// ・画面は縦向きに固定する（横にしても回らない）。
     /// ・パッケージ名・バージョン・アイコンは、まだ初期値のままのときだけ入れる（あとで手で変えたら、それを優先する）。
-    ///   今はまだ正式版（1.0）ではなく、テスト版（0.9.0）として扱う。
+    ///   今はまだ正式版（1.0）ではなく、テスト版（0.9.x）として扱う。
     /// </summary>
     [InitializeOnLoad]
     static class ReleaseSettings
     {
         const string PackageName = "com.tomoshibiworks.vividoffade";
-        const string TestVersion = "0.9.0";
+        const string TestVersion = "0.9.1";
         const string IconPath = "Assets/Icons/AppIcon.png";
 
         static ReleaseSettings()
