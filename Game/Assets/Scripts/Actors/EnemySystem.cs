@@ -235,6 +235,8 @@ namespace VividOfFade
             e.Summoned = false;
             e.SummonIndex = 0;
             e.NoReward = false;
+            e.ChainLeft = 0;
+            e.InChain = false;
             e.Enraged = false;
             e.Elite = EliteKind.None;
             e.Tint = Color.white;

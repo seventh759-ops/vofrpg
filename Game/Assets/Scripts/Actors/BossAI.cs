@@ -29,7 +29,10 @@ namespace VividOfFade
         public const float ChargeSpeed = 9f;
         public const float ChargeTime = 0.8f;
         public const float Interval = 2.8f;         // 次の攻撃まで
-        public const float EnragedInterval = 1.8f;
+        public const float EnragedInterval = 1.2f;   // 怒ったら：次の攻撃までが短い
+        public const float EnragedWindup = 0.7f;     // 怒ったら：予告も短い（倍率）
+        public const int EnragedChargeChain = 2;     // 怒ったら：突進のあと、さらに続けて突進する回数
+        public const int EnragedShockBullets = 12;   // 怒ったら：叩きつけ・衝撃・扇のあとに広がる余波の弾
         public const float BlinkCooldown = 4f;       // 司書が近づかれて離れる瞬間移動の待ち時間
         public const float KeepAway = 5.5f;          // 司書が保とうとする距離
 
@@ -249,6 +252,7 @@ namespace VividOfFade
                 e.Speed *= GameConfig.BossEnragedSpeedMult;
                 e.Tint = new Color(1f, 0.6f, 0.6f);
                 e.Sr.color = e.Tint;
+                e.SlamTimer = Mathf.Min(e.SlamTimer, 0.5f); // 怒った直後にすぐ動く
                 BossEnraged?.Invoke();
             }
 
@@ -256,7 +260,16 @@ namespace VividOfFade
             {
                 e.Charging -= dt;
                 moveDir = e.ChargeDir;
-                speed = BossInfo.ChargeSpeed;
+                speed = BossInfo.ChargeSpeed * (e.Enraged ? 1.25f : 1f);
+                if (e.Charging <= 0f && e.ChainLeft > 0)
+                {
+                    // 怒ったボス：止まらずに、もう一度プレイヤーへ向き直って突進（短い予告つき）
+                    e.ChainLeft--;
+                    e.InChain = true;
+                    Begin(e, BossAttack.Charge, dir, room, 0.35f);
+                    return true;
+                }
+                if (e.Charging <= 0f) e.InChain = false;
                 return false;
             }
 
@@ -301,11 +314,11 @@ namespace VividOfFade
             return false;
         }
 
-        void Begin(Enemy e, BossAttack atk, Vector2 dir, Room room)
+        void Begin(Enemy e, BossAttack atk, Vector2 dir, Room room, float windup = -1f)
         {
             e.Attack = atk;
             e.AttackDir = dir.sqrMagnitude > 0.0001f ? dir : Vector2.down;
-            e.Windup = BossInfo.Windup(atk) * (e.Enraged ? 0.8f : 1f);
+            e.Windup = windup > 0f ? windup : BossInfo.Windup(atk) * (e.Enraged ? BossInfo.EnragedWindup : 1f);
             if (atk == BossAttack.RoomWide)
             {
                 // 安全な円：ボスの部屋の中の、ばらけた場所
@@ -329,6 +342,7 @@ namespace VividOfFade
                     // 予告した向き（予告を出した時点のプレイヤーの方向）へまっすぐ突進する。予告のあとに避ければ当たらない
                     e.Charging = BossInfo.ChargeTime;
                     e.ChargeDir = e.AttackDir;
+                    if (e.Enraged && !e.InChain) e.ChainLeft = BossInfo.EnragedChargeChain;
                     break;
                 case BossAttack.BulletRing:
                     int ring = BossInfo.IsAbyss(e.BossKind) ? 24 : 16; // 深淵のボスは弾が多い
@@ -337,18 +351,20 @@ namespace VividOfFade
                     {
                         float a = spin + k * Mathf.PI * 2f / ring;
                         Fire(e.Pos, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * GameConfig.BulletSpeed * 0.8f, bulletDamage, debuff);
+                        // 怒ったら：すき間を埋める、遅い2つ目の輪
+                        if (e.Enraged) Fire(e.Pos, new Vector2(Mathf.Cos(a + Mathf.PI / ring), Mathf.Sin(a + Mathf.PI / ring)) * GameConfig.BulletSpeed * 0.5f, bulletDamage, debuff);
                     }
                     break;
                 case BossAttack.BulletFan:
-                    int half = BossInfo.IsAbyss(e.BossKind) ? 5 : 3;
+                    int half = (BossInfo.IsAbyss(e.BossKind) ? 5 : 3) + (e.Enraged ? 2 : 0); // 怒ったら扇が広い
                     for (int k = -half; k <= half; k++)
                     {
                         float a = Mathf.Atan2(aim.y, aim.x) + k * 10f * Mathf.Deg2Rad;
-                        Fire(e.Pos, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * GameConfig.BulletSpeed, bulletDamage, debuff);
+                        Fire(e.Pos, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * GameConfig.BulletSpeed * (e.Enraged ? 1.2f : 1f), bulletDamage, debuff);
                     }
                     break;
                 case BossAttack.Summon:
-                    for (int k = 0; k < 3; k++)
+                    for (int k = 0; k < (e.Enraged ? 5 : 3); k++) // 怒ったら手下が多い
                     {
                         int before = Active.Count;
                         Vector2 p = room.Clamp(e.Pos + UnityEngine.Random.insideUnitCircle.normalized * 2f, GameConfig.SlimeRadius);
@@ -375,6 +391,17 @@ namespace VividOfFade
                         }
                     }
                     break;
+            }
+            // 怒ったら：叩きつけ・衝撃・扇の攻撃のあとに、余波の弾が全方向へ広がる
+            if (e.Enraged && (e.Attack == BossAttack.Slam || e.Attack == BossAttack.StunNova || e.Attack == BossAttack.Cone))
+            {
+                int n = BossInfo.EnragedShockBullets;
+                float off = UnityEngine.Random.value * Mathf.PI * 2f;
+                for (int k = 0; k < n; k++)
+                {
+                    float a = off + k * Mathf.PI * 2f / n;
+                    Fire(e.Pos, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * GameConfig.BulletSpeed * 0.6f, bulletDamage, null);
+                }
             }
             BossStrike?.Invoke(e, e.Attack);
         }
