@@ -52,9 +52,17 @@ for f in sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)
     FLAT[name]=(rows_,{ch:c for c,ch in cmap.items()})
 for n in FLAT: P.pop(n,None)
 rows='\n'.join(cs(n,c.rows()) for n,(c,_) in P.items())
-flat_rows='\n'.join(cs(n,r) for n,(r,_) in FLAT.items())
-def fpal(d): return ', '.join("{ '%s', new Color32(%d, %d, %d, %d) }" % (k,*v) for k,v in d.items())
-flat_pals='\n'.join('            ["%s"] = new Dictionary<char, Color32> { %s },' % (n,fpal(d)) for n,(_,d) in FLAT.items())
+# 色を1ドットずつ決めた絵は PNG にして、base64 の文字列でコードに入れる（文字の行と色の表をそのまま書くと、
+# 静的コンストラクタが巨大になって Android（IL2CPP）のビルドが失敗するため）。起動中に Texture2D.LoadImage で読む
+import base64, io
+def png_b64(rows_, colors):
+    h=len(rows_); w=len(rows_[0]); im=Image.new('RGBA',(w,h),(0,0,0,0)); px=im.load()
+    for y,r in enumerate(rows_):
+        for x,ch in enumerate(r):
+            c=colors.get(ch)
+            if c: px[x,y]=tuple(c) if len(c)==4 else (*c,255)
+    buf=io.BytesIO(); im.save(buf,'PNG',optimize=True); return base64.b64encode(buf.getvalue()).decode()
+flat_png='\n'.join('            ["%s"] = "%s",' % (n,png_b64(r,d)) for n,(r,d) in FLAT.items())
 def pal(d): return ', '.join("{ '%s', Ramp(%s) }" % (k, ', '.join(map(str,v))) for k,v in d.items())
 pals='\n'.join('            ["%s"] = new Dictionary<char, Color32[]> { %s },' % (n,pal(d)) for n,(_,d) in P.items() if d)
 src=f'''using System.Collections.Generic;
@@ -73,16 +81,13 @@ namespace VividOfFade
 {rows}
         }};
 
-        /// <summary>色を1ドットずつ書き出した絵（影・照り・輪郭も文字で描いてある。陰影は計算しない）。</summary>
-        static readonly Dictionary<string, string[]> FlatPortraits = new Dictionary<string, string[]>
+        /// <summary>
+        /// 色を1ドットずつ決めた立ち絵の PNG（base64）。陰影は計算しない。
+        /// （大きな表をコードに書くと Android のビルドで静的コンストラクタが巨大になって失敗するので、画像の文字列で持つ）
+        /// </summary>
+        static readonly Dictionary<string, string> FlatPortraitPng = new Dictionary<string, string>
         {{
-{flat_rows}
-        }};
-
-        /// <summary>FlatPortraits の文字 → 色。</summary>
-        static readonly Dictionary<string, Dictionary<char, Color32>> FlatPortraitColors = new Dictionary<string, Dictionary<char, Color32>>
-        {{
-{flat_pals}
+{flat_png}
         }};
 
         static readonly Dictionary<string, Dictionary<char, Color32[]>> PortraitPalette = new Dictionary<string, Dictionary<char, Color32[]>>

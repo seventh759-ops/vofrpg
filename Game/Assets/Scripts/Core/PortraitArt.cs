@@ -22,17 +22,10 @@ namespace VividOfFade
             if (cache.TryGetValue(key, out var cached)) return cached;
 
             // 色を1ドットずつ書き出した絵は、そのまま置く（陰影は計算しない）
-            if (FlatPortraits.TryGetValue(form, out var flat) && FlatPortraitColors.TryGetValue(form, out var colors))
+            if (FlatPortraitPng.TryGetValue(form, out var png))
             {
-                int fh = flat.Length, fw = flat[0].Length;
-                var fpx = new Color32[fw * fh];
-                for (int y = 0; y < fh; y++)
-                    for (int x = 0; x < fw; x++)
-                    {
-                        char c = x < flat[y].Length ? flat[y][x] : '.';
-                        fpx[(fh - 1 - y) * fw + x] = colors.TryGetValue(c, out var col) ? col : new Color32(0, 0, 0, 0); // テクスチャは下から上へ並ぶ
-                    }
-                return Store(key, MakeTexture(key, fw, fh, fpx, TextureWrapMode.Clamp), fw);
+                var tex = DecodePng(key, png);
+                return Store(key, tex, tex.width);
             }
 
             PlayerArt(type, ch, out var small, out var over, out var aura);

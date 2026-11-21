@@ -43,7 +43,7 @@ namespace VividOfFade
             string suffix = frame == 0 ? "" : "_f" + frame;
             // 外で作った、色をそのまま使う絵があれば、それを使う（陰影は計算しない）
             string form = PortraitForm(type, ch);
-            if (FlatSd.TryGetValue(form, out var flatRows)) return FlatSdSprite("Sd_" + form + suffix, AnimRows(flatRows, frame, FlatSdFeet[form]), FlatSdColors[form]);
+            if (FlatSdPng.ContainsKey(form)) return FlatSdSprite("Sd_" + form + suffix, form, frame);
             // 特別な職「彩灯者」：専用の絵に、桃色の光の縁
             if (type == ClassType.Vividbearer)
                 return Shaded("PlayerHd_Vividbearer" + suffix, AnimRows(VividbearerHdRows, frame), VividOver, SpecialClass.AuraColor);
@@ -66,10 +66,58 @@ namespace VividOfFade
         }
 
         /// <summary>絵の行から、歩き・呼吸のコマを作る（足元の4段を左右に分けて扱う）。</summary>
-        /// <summary>色をそのまま使う絵（文字→色）から、キャラの絵を作る（32 ドットで 1 マス）。</summary>
-        static Sprite FlatSdSprite(string key, string[] rows, Dictionary<char, Color32> colors)
+        /// <summary>PNG（base64）を読み込んで、ドット絵のテクスチャにする（点で拡大・端は伸ばさない）。</summary>
+        static Texture2D DecodePng(string name, string base64)
+        {
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false) { name = name };
+            tex.LoadImage(System.Convert.FromBase64String(base64), false);
+            tex.filterMode = FilterMode.Point;
+            tex.wrapMode = TextureWrapMode.Clamp;
+            return tex;
+        }
+
+        /// <summary>SDキャラの PNG を、色ごとに1文字の行にしたもの（歩きのコマを AnimRows で作るため）。見た目ごとに1回だけ作る。</summary>
+        static readonly Dictionary<string, (string[] rows, Dictionary<char, Color32> colors)> flatSdRows = new Dictionary<string, (string[], Dictionary<char, Color32>)>();
+
+        static (string[] rows, Dictionary<char, Color32> colors) FlatSdRows(string form)
+        {
+            if (flatSdRows.TryGetValue(form, out var got)) return got;
+            var tex = DecodePng("SdSource_" + form, FlatSdPng[form]);
+            int w = tex.width, h = tex.height;
+            var px = tex.GetPixels32(); // 下から上へ並ぶ
+            Object.Destroy(tex);
+            var colors = new Dictionary<char, Color32>();
+            var index = new Dictionary<Color32, char>();
+            var rows = new string[h];
+            var line = new char[w];
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    var c = px[(h - 1 - y) * w + x];
+                    if (c.a < 128) { line[x] = '.'; continue; }
+                    if (!index.TryGetValue(c, out var ch))
+                    {
+                        ch = (char)(0x100 + index.Count); // '.' と重ならない文字
+                        index[c] = ch;
+                        colors[ch] = c;
+                    }
+                    line[x] = ch;
+                }
+                rows[y] = new string(line);
+            }
+            got = (rows, colors);
+            flatSdRows[form] = got;
+            return got;
+        }
+
+        /// <summary>色をそのまま使うSDキャラの1コマ（32 ドットで 1 マス）。</summary>
+        static Sprite FlatSdSprite(string key, string form, int frame)
         {
             if (cache.TryGetValue(key, out var cached)) return cached;
+            var (src, colors) = FlatSdRows(form);
+            var feet = FlatSdFeet[form];
+            var rows = AnimRows(src, frame, "", feet[0], feet[1]);
             int h = rows.Length, w = rows[0].Length;
             var px = new Color32[w * h];
             for (int y = 0; y < h; y++)
@@ -79,7 +127,7 @@ namespace VividOfFade
             return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), h > 64 ? h / 2 : 32);
         }
 
-        static string[] AnimRows(string[] src, int frame, string feetChars = "b")
+        static string[] AnimRows(string[] src, int frame, string feetChars = "b", int fixedBootMin = -1, int fixedBootMax = -1)
         {
             if (frame == 0 || frame == 2) return src;
             int h = src.Length, w = src[0].Length;
@@ -92,6 +140,7 @@ namespace VividOfFade
             // 足は靴（b）のある列だけ。武器や杖が足元まで伸びていても、足と一緒に切り離さない（武器は体と一緒に動く）
             int bootMin = w, bootMax = -1;
             for (int y = feetTop - 1; y <= bottom; y++) for (int x = 0; x < w; x++) if (feetChars.IndexOf(At(x, y)) >= 0) { bootMin = Mathf.Min(bootMin, x); bootMax = Mathf.Max(bootMax, x); }
+            if (fixedBootMax >= 0) { bootMin = fixedBootMin; bootMax = fixedBootMax; } // 足の列の範囲を決めてある絵（外で作ったSDキャラ）
             if (bootMax < 0) { bootMin = 0; bootMax = w - 1; }
             // 足元の真ん中（左右の足の境目）
             float sum = 0f; int cnt = 0;
