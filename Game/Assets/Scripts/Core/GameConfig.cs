@@ -193,6 +193,8 @@ namespace VividOfFade
         /// </summary>
         public const float BossPctHit = 0.06f, BossPctHitEnraged = 0.09f, SummonedBossPct = 0.03f;
         public static float BossPctDamage(Enemy e) => e == null ? 0f : e.Summoned ? SummonedBossPct : e.Enraged ? BossPctHitEnraged : BossPctHit;
+        /// <summary>ボスの通常攻撃（体当たり・突進）の最低ダメージ。防御で減らしてもこれより少なくならない（ただし防御で減らす前のダメージが上限なので、序盤は自然に小さい）。</summary>
+        public const int BossMinHit = 100;
         public const float BossHpMult = 180f;          // 同じ波の雑魚の何倍か（前は 120）
 
         /// <summary>

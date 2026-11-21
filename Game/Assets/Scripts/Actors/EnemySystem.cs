@@ -794,7 +794,7 @@ namespace VividOfFade
 
                 if (!player.IsDead && e.ContactDamage > 0 && dist < e.Radius + GameConfig.PlayerRadius)
                 {
-                    if (player.TryHit(e.ContactDamage, Describe(e) + " contact", e.Acc, NearbyCount)) e.Knock -= dir * 4f;
+                    if (player.TryHit(e.ContactDamage, Describe(e) + " contact", e.Acc, NearbyCount, e.IsBoss ? GameConfig.BossMinHit : 0)) e.Knock -= dir * 4f; // ボスの体当たり・突進は最低ダメージあり
                 }
             }
         }
