@@ -99,6 +99,21 @@ namespace VividOfFade
             float mid = cnt > 0 ? sum / cnt : w / 2f;
             var g = new char[h][];
             for (int y = 0; y < h; y++) g[y] = new string('.', w).ToCharArray();
+            if (k > 1 && (frame == 1 || frame == 3))
+            {
+                // 細かい絵の歩き：体は動かさず、片足だけを持ち上げる（体を弾ませると、もう片方の足との間が切れて見えるため）。
+                // 持ち上げた足は脚の上に重ねて描く（先に体を置き、あとから足で上書き）
+                bool Lifted(int x, int y) => y >= feetTop && x >= bootMin - 1 && x <= bootMax + 1 && (frame == 1 ? x < mid : x >= mid);
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                        if (At(x, y) != '.' && !Lifted(x, y)) g[y][x] = At(x, y);
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                        if (At(x, y) != '.' && Lifted(x, y) && y - 2 * k >= 0) g[y - 2 * k][x] = At(x, y);
+                var lifted = new string[h];
+                for (int y = 0; y < h; y++) lifted[y] = new string(g[y]);
+                return lifted;
+            }
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)

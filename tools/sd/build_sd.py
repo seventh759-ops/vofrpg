@@ -26,7 +26,7 @@ def build():
                 c = px[x, y]
                 if c[3] < 128: r += '.'; continue
                 c = (c[0], c[1], c[2], 255)
-                boot = y >= bottom - 4 * k + 1 and abs(x - mid) <= w * 0.25 and c[0] > c[2] + 10 and c[0] >= c[1] and 40 < c[0] < 220
+                boot = y >= bottom - 4 * k + 1 and abs(x - mid) <= w * 0.25 and (k > 1 or (c[0] > c[2] + 10 and c[0] >= c[1] and 40 < c[0] < 220))   # 細かい絵は、足元の真ん中の色はみな足（靴の色が茶色とは限らない）
                 key = (c, boot)   # 足の粒は、同じ色でも別の文字にする（杖などと分ける）
                 if key not in cmap: cmap[key] = POOL[len(cmap)]
                 ch = cmap[key]

@@ -512,7 +512,8 @@ namespace VividOfFade
             float size = 0.62f + 0.06f * pulse;
             aura.transform.localScale = new Vector3(size, size, 1f);
             float feet = Sr.sprite != null ? Sr.sprite.bounds.min.y : -0.5f;
-            aura.transform.localPosition = new Vector3(0f, feet + 0.1f, 0f);
+            // 縦長の絵（足が小さく見える）では、輪を足の下へずらし、足に重ならないようにする
+            aura.transform.localPosition = new Vector3(0f, feet + (Sr.sprite != null && Sr.sprite.bounds.size.y > 1.5f ? 0.02f : 0.1f), 0f);
             aura.sortingOrder = Sr.sortingOrder - 1;
         }
     }
