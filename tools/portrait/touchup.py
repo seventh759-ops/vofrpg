@@ -55,6 +55,8 @@ RECOLOR = {
 }
 LASH, IRIS, IRISD, HL = H('2a1a14'), H('9a6438'), H('5a3820'), (255, 255, 255)
 PIXELS = {
+    'Shadeblade_Adv0_3rd': {(x, 24): H('f4dacd') for x in range(56, 64)},   # 首布の上の黒い線（口に見える）→ 肌
+    'Shadeblade_Adv1_3rd': {(x, 23): H('f9d9c1') for x in range(55, 64)},
     'Shadeblade_Adv1': {(x, 24): H('f6d2c3') for x in range(53, 60)},   # 首布の上の黒い線（口に見える）→ 肌
     'Shadeblade_Adv0': {(x, 23): H('f5d7d1') for x in range(53, 57)},   # 首布の上の黒い線（口に見える）→ 肌
 }
