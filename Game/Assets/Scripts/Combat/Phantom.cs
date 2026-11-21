@@ -147,7 +147,7 @@ namespace VividOfFade
             sr.sprite = player.Sr.sprite;
             sr.sharedMaterial = player.Sr.sharedMaterial;
             transform.localScale = player.transform.localScale;
-            transform.position = Iso.ToScreen(pos);
+            transform.position = Iso.ToScreen(pos) + new Vector2(0f, transform.localScale.y * player.HalfHeight - 0.5f); // 本体と同じく、足元を床に付ける（縦長の絵でも）
             sr.sortingOrder = SortOrder.For(pos);
             float a = 0.55f + 0.1f * Mathf.Sin(t * 5f); // ゆらゆらと光る
             sr.color = new Color(1f, 0.62f, 0.95f, a);
