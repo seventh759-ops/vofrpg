@@ -44,6 +44,7 @@ def kmeans(px, k, seed=0, it=30):
 def convert(src, bs=None, neutral=30, vivid=18, outline=(30, 24, 44)):
     im = Image.open(src).convert('RGBA'); a = np.asarray(im)
     bs = bs or block_size(a)
+    while im.height / bs > 200: bs *= 2   # 立ち絵は高さ200ドット以内（半分の大きさを選んだときは2倍に直す）
     W = int(round(im.width / bs)); H = int(round(im.height / bs))
     col = np.zeros((H, W, 3)); alpha = np.zeros((H, W), bool)
     for y in range(H):
