@@ -249,7 +249,7 @@ namespace VividOfFade
         /// <summary>攻撃を受けた（受けたダメージ）。深淵の装備の反撃に使う。</summary>
         public event System.Action<int> Hurt;
 
-        /// <param name="skill">ボスの技：元のダメージの一部（固定の分）は防御で減らない。</param>
+        /// <param name="skill">ボスの技・体当たり：元のダメージの一部（固定の分）は防御で減らない。</param>
         /// <param name="pctMaxHp">最大 HP に対する割合のダメージ（防御で減らない。ボスの技）。</param>
         /// <param name="minDamage">防御で減らしても、これより少なくはしない（元のダメージが上限。ボスの体当たり）。</param>
         public bool TakeHit(int damage, string source = "?", bool skill = false, float pctMaxHp = 0f, int minDamage = 0)
@@ -277,7 +277,7 @@ namespace VividOfFade
         /// 敵の攻撃（体当たり・弾）。EVA と囲まれ補正で避けられる。避けたら少しの間だけ無敵（同じ敵に何度も判定しない）。
         /// 当たったら true。
         /// </summary>
-        public bool TryHit(int damage, string source, int enemyAcc, int nearbyEnemies, int minDamage = 0)
+        public bool TryHit(int damage, string source, int enemyAcc, int nearbyEnemies, int minDamage = 0, bool fixedShare = false)
         {
             if (invuln > 0f || IsDead) return false;
             MarkCombat(); // 避けても戦闘中
@@ -289,7 +289,7 @@ namespace VividOfFade
                 if (LogDamage) Debug.Log($"[Damage] {source}: MISS (evade {chance * 100f:0}%, nearby {nearbyEnemies})");
                 return false;
             }
-            return TakeHit(damage, source, false, 0f, minDamage);
+            return TakeHit(damage, source, fixedShare, 0f, minDamage);
         }
 
         /// <summary>受けたダメージをコンソールに出す（調べるときだけ true にする。ふだんは重くなるので出さない）。</summary>

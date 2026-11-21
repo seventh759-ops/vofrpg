@@ -181,7 +181,7 @@ namespace VividOfFade
         public static bool IsBossWave(int wave) => wave > 0 && wave % 10 == 0;
         /// <summary>
         /// ボスの技で、防御で減らせない固定の分（元のダメージに対する割合）。防御・被ダメージの軽減をどれだけ上げても、少なくともこの割合は受ける。
-        /// 守りを固めすぎて、時間をかければ楽に勝ててしまうのを防ぐ。通常の攻撃（体当たり・弾）には付けない。
+        /// 守りを固めすぎて、時間をかければ楽に勝ててしまうのを防ぐ。ボスの技と、ボスの体当たり・突進に付ける（雑魚と弾には付けない）。
         /// </summary>
         public const float FixedDamageShare = 0.25f;
         /// <summary>受けるダメージの倍率：固定の分 ＋ 残りを被ダメージ倍率と防御で減らした分。</summary>
