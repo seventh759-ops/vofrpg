@@ -8,6 +8,8 @@ namespace VividOfFade
         // 部屋（マス）。1マス = 16ドット = 1ユニット
         // 塔：5層ごとにボスの層。敵の強さ・経験値・ドロップは「段階」（層×2）で決める（試作の波の数と同じ尺度）
         public const int BossFloorEvery = 5;
+        public const float BossTriggerInset = 3.5f;    // ボスの区画の縁から何マス入ったら、ボスとお供が現れるか
+        public const float BossMinionRespawn = 12f;    // お供が減っていたら、この秒数ごとに最初の数まで沸き直す（ボスが生きている間）
         // 祭壇：ボスの層の1つ前には必ず1つ。ほかの層に出る確率（0 なら出ない）
         public const float AltarChanceOther = 0f;
         public const float SpringChance = 0.3f; // 癒やしの泉（HP と MP を満タンに戻すだけ）が普通の層に出る確率

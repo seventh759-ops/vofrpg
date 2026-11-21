@@ -353,7 +353,7 @@ namespace VividOfFade
                         int before = Active.Count;
                         Vector2 p = room.Clamp(e.Pos + UnityEngine.Random.insideUnitCircle.normalized * 2f, GameConfig.SlimeRadius);
                         Spawn(p, GameConfig.EnemyHp(FloorTier), GameConfig.EnemyDamage(FloorTier), EnemyKind.Slime, 0);
-                        if (Active.Count > before) Active[Active.Count - 1].Home = e.Home;
+                        if (Active.Count > before) { Active[Active.Count - 1].Home = e.Home; Active[Active.Count - 1].NoReward = true; } // 呼んだ手下は経験値・ドロップなし
                     }
                     break;
                 case BossAttack.Blink:

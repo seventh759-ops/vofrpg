@@ -23,11 +23,25 @@ namespace VividOfFade
         public event System.Action RoomActivated;
         /// <summary>宝の間に入った。</summary>
         public event System.Action TreasureEntered;
+        /// <summary>ボスの区画の中ほどまで入って、ボスが現れた（ボスの位置）。</summary>
+        public event System.Action<Vector2> BossAppeared;
+        /// <summary>ボスのお供が1体現れた（位置）。はじめと、沸き直しのたび。</summary>
+        public event System.Action<Vector2> MinionSpawned;
+
+        /// <summary>まだ現れていないボスの区画（入るまでは誰もいない・暗い）。</summary>
+        RoomArea bossPending;
+        /// <summary>ボスと戦っている区画（お供の沸き直しに使う）。ボスが倒れたら null。</summary>
+        RoomArea bossFight;
+        int minionTarget;
+        float minionTimer;
+        /// <summary>ボスの区画に入るのを待っているか（暗くしておく）。</summary>
+        public bool BossWaiting => bossPending != null;
 
         public void Begin(int floor, Room room)
         {
             Floor = floor;
             CurrentArea = null;
+            bossPending = bossFight = null;
             room.Generate(floor, IsBossFloor, Random.Range(int.MinValue, int.MaxValue));
             StairsOpen = false; // 普通の層も、階段のある部屋の敵を全部倒すまでは通れない
         }
@@ -50,14 +64,8 @@ namespace VividOfFade
                 }
                 if (area.IsBoss)
                 {
-                    bool goddess = GameConfig.Ascent && Floor == GameConfig.MaxFloor; // 昇る塔の最上（100層）は女神像
-                    bool final = Floor == GameConfig.AbyssLastFloor || goddess; // 深淵の最奥（アビス）・女神像は、ほかのボスより強い
-                    float bite = GameConfig.EarlyBite(Floor); // 序盤（5〜20層）のボスは少し硬く、痛い
-                    enemies.SpawnBoss(area.Center, GameConfig.EnemyHp(Tier) * GameConfig.BossHpMult * (final ? GameConfig.FinalBossHpMult : 1f) * (1f + GameConfig.EarlyBossHp * bite),
-                        Mathf.RoundToInt(GameConfig.EnemyDamage(Tier) * GameConfig.BossDamageMult * (final ? GameConfig.FinalBossDamageMult : 1f) * (1f + GameConfig.EarlyBossDamage * bite)),
-                        goddess ? BossKind.Goddess : (BossKind?)null);
-                    Sleep(enemies, area);
-                    count /= 2; // お供
+                    bossPending = area; // ボスとお供は、区画の中ほどまで入ったときに出す
+                    continue;
                 }
                 for (int i = 0; i < count; i++)
                 {
@@ -69,6 +77,61 @@ namespace VividOfFade
                     Sleep(enemies, area);
                 }
             }
+        }
+
+        /// <summary>ボスの区画の中ほどまで来た：ボスとお供を、起きた状態で出す。お供は経験値・ドロップなし。</summary>
+        void SpawnBossArea(EnemySystem enemies, Room room)
+        {
+            var area = bossPending;
+            bossPending = null;
+            area.Activated = true;
+            CurrentArea = area;
+            int rooms = 0;
+            foreach (var a in room.Areas) if (!a.IsStart && !a.IsTreasure) rooms++;
+            int perRoom = rooms > 0 ? (GameConfig.MaxEnemies - 20) / rooms : 0;
+            minionTarget = Mathf.Min(GameConfig.RoomEnemies(Floor, area.W * area.H), perRoom) / 2; // お供
+            bool goddess = GameConfig.Ascent && Floor == GameConfig.MaxFloor; // 昇る塔の最上（100層）は女神像
+            bool final = Floor == GameConfig.AbyssLastFloor || goddess; // 深淵の最奥（アビス）・女神像は、ほかのボスより強い
+            float bite = GameConfig.EarlyBite(Floor); // 序盤（5〜20層）のボスは少し硬く、痛い
+            enemies.SpawnBoss(area.Center, GameConfig.EnemyHp(Tier) * GameConfig.BossHpMult * (final ? GameConfig.FinalBossHpMult : 1f) * (1f + GameConfig.EarlyBossHp * bite),
+                Mathf.RoundToInt(GameConfig.EnemyDamage(Tier) * GameConfig.BossDamageMult * (final ? GameConfig.FinalBossDamageMult : 1f) * (1f + GameConfig.EarlyBossDamage * bite)),
+                goddess ? BossKind.Goddess : (BossKind?)null);
+            if (enemies.Active.Count > 0) enemies.Active[enemies.Active.Count - 1].Home = area;
+            for (int i = 0; i < minionTarget; i++)
+                if (!SpawnMinion(enemies, area, room.RandomPointCentral(area))) break;
+            bossFight = area;
+            minionTimer = GameConfig.BossMinionRespawn;
+            BossAppeared?.Invoke(area.Center);
+        }
+
+        /// <summary>お供を1体出す（経験値・ドロップなし）。上限で出せなければ false。</summary>
+        bool SpawnMinion(EnemySystem enemies, RoomArea area, Vector2 pos)
+        {
+            int before = enemies.Active.Count;
+            enemies.SpawnMixed(pos, GameConfig.EnemyHp(Tier), GameConfig.EnemyDamage(Tier), GameConfig.RollEnemyTier(Floor));
+            if (enemies.Active.Count == before) return false;
+            var m = enemies.Active[enemies.Active.Count - 1];
+            if (Random.value < GameConfig.EliteChance(Tier) * (1f + 0.3f * Zones.For(Floor).Cycle))
+                enemies.MakeElite(m, EnemySystem.RandomElite());
+            m.Home = area;
+            m.NoReward = true;
+            MinionSpawned?.Invoke(m.Pos);
+            return true;
+        }
+
+        /// <summary>ボスが生きている間、一定時間ごとに、減ったお供を最初の数まで沸き直す（プレイヤーのすぐそばには出さない）。</summary>
+        void TickMinions(float dt, EnemySystem enemies, Player player, Room room)
+        {
+            if (bossFight == null) return;
+            if (enemies.Boss == null) { bossFight = null; return; } // ボスが倒れたら終わり
+            minionTimer -= dt;
+            if (minionTimer > 0f) return;
+            minionTimer = GameConfig.BossMinionRespawn;
+            int alive = 0;
+            foreach (var e in enemies.Active)
+                if (!e.Dying && !e.IsBoss && e.NoReward && e.Home == bossFight) alive++;
+            for (int i = alive; i < minionTarget; i++)
+                if (!SpawnMinion(enemies, bossFight, room.RandomPointIn(bossFight, player.Pos, 4f))) break;
         }
 
         static void Sleep(EnemySystem enemies, RoomArea area)
@@ -96,9 +159,13 @@ namespace VividOfFade
         public void Tick(float dt, EnemySystem enemies, Player player, Room room)
         {
             // 部屋の入口（部屋の縁から1マス外まで）に来たら、その部屋の敵が起きる
+            // ボスの区画：入り口では何も起きず、中ほど（縁から数マス）まで来たらボスとお供が現れる
+            if (bossPending != null && bossPending.Contains(player.Pos, GameConfig.BossTriggerInset))
+                SpawnBossArea(enemies, room);
+            TickMinions(dt, enemies, player, room);
             foreach (var area in room.Areas)
             {
-                if (area.Activated || area.IsStart || !area.Contains(player.Pos, -1f)) continue;
+                if (area == bossPending || area.Activated || area.IsStart || !area.Contains(player.Pos, -1f)) continue;
                 Activate(area, enemies, player, room);
             }
             // 念のため：眠っている敵のすぐ近く（3マス）まで来たら、その部屋ごと起こす

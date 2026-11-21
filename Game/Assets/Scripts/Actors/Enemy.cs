@@ -43,6 +43,7 @@ namespace VividOfFade
         public float BlinkCooldown;
         public bool Summoned;      // アビスに呼び出された歴代のボス（倒しても層は終わらない・体力バーは出さない）
         public int SummonIndex;    // アビス：次に呼び出す歴代のボスの番号
+        public bool NoReward;      // ボスの部屋のお供・ボスが呼んだ手下：倒しても経験値とドロップなし（仕掛けとしての敵）
         public readonly System.Collections.Generic.List<Vector2> SafeSpots = new System.Collections.Generic.List<Vector2>(); // 全体攻撃の安全な円
 
         // 層に入った時点で全部の部屋に置かれ、部屋に入るまで眠っている

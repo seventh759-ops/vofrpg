@@ -320,6 +320,8 @@ namespace VividOfFade
         {
             foreach (var go in spawned) Destroy(go);
             spawned.Clear();
+            bossTiles.Clear();
+            bossDark = bossDarkTarget = 0f;
             System.Array.Clear(wallRenderers, 0, wallRenderers.Length);
             fadedWalls.Clear();
 
@@ -333,14 +335,51 @@ namespace VividOfFade
                     var p = new Vector2(i + 0.5f, j + 0.5f);
                     if (IsFloorTile(i, j))
                     {
-                        Place((i + j) % 2 == 0 ? floorA : floorB, p, SortOrder.Floor);
+                        var fsr = Place((i + j) % 2 == 0 ? floorA : floorB, p, SortOrder.Floor);
+                        if (InBossArea(p)) bossTiles.Add(fsr);
                         continue;
                     }
                     // 床に接する壁だけを、どこも同じ高さで描く（高さがそろって見えるように）
                     bool touches = IsFloorTile(i - 1, j) || IsFloorTile(i + 1, j) || IsFloorTile(i, j - 1) || IsFloorTile(i, j + 1)
                                    || IsFloorTile(i - 1, j - 1) || IsFloorTile(i + 1, j + 1) || IsFloorTile(i + 1, j - 1) || IsFloorTile(i - 1, j + 1);
-                    if (touches) wallRenderers[j * MapSize + i] = Place(rim, p, SortOrder.For(p));
+                    if (touches)
+                    {
+                        wallRenderers[j * MapSize + i] = Place(rim, p, SortOrder.For(p));
+                        if (InBossArea(p)) bossTiles.Add(wallRenderers[j * MapSize + i]);
+                    }
                 }
+            }
+        }
+
+        // ---- ボスの区画の暗さ（ボスが現れるまで暗く、現れたら明るく戻す） ----
+        readonly List<SpriteRenderer> bossTiles = new List<SpriteRenderer>();
+        float bossDark, bossDarkTarget;
+        static readonly Color BossDarkTint = new Color(0.22f, 0.2f, 0.28f);
+
+        bool InBossArea(Vector2 p) => BossArea != null && p.x > BossArea.X - 1f && p.x < BossArea.X + BossArea.W + 1f && p.y > BossArea.Y - 1f && p.y < BossArea.Y + BossArea.H + 1f;
+
+        /// <summary>ボスの区画を暗くする／明るく戻す。instant でなければ、ゆっくり変える。</summary>
+        public void SetBossDark(bool dark, bool instant)
+        {
+            bossDarkTarget = dark ? 1f : 0f;
+            if (instant) { bossDark = bossDarkTarget; ApplyBossDark(); }
+        }
+
+        public void TickBossDark(float dt)
+        {
+            if (bossDark == bossDarkTarget) return;
+            bossDark = Mathf.MoveTowards(bossDark, bossDarkTarget, dt * 1.2f);
+            ApplyBossDark();
+        }
+
+        void ApplyBossDark()
+        {
+            var tint = Color.Lerp(Color.white, BossDarkTint, bossDark);
+            foreach (var sr in bossTiles)
+            {
+                if (sr == null) continue;
+                tint.a = sr.color.a; // 壁の透け具合はそのまま
+                sr.color = tint;
             }
         }
 

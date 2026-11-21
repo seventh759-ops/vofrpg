@@ -56,6 +56,7 @@ namespace VividOfFade
             public EnemyKind Kind;   // 元の精鋭と同じ種類・段階で分かれる
             public int Tier;
             public float Scale;      // 元の大きさ（精鋭の拡大を除いたもの）
+            public bool NoReward;    // 元が報酬なしなら分身もなし
         }
 
         // 分裂は一覧を回している最中に起きるので、次の Tick の最初に出す
@@ -84,6 +85,8 @@ namespace VividOfFade
 
         /// <summary>直前に倒した敵の経験値の倍率（段階）。Killed の中で読む。</summary>
         public float LastKillExpMult { get; private set; } = 1f;
+        /// <summary>直前に倒した敵が、経験値・ドロップなしの敵か（ボスのお供・呼ばれた手下）。Killed の中で読む。</summary>
+        public bool LastKillNoReward { get; private set; }
 
         /// <summary>今の区画での、その種類の敵の絵（深淵では深淵の敵の絵。黄金のスライムはいつも同じ）。</summary>
         Sprite SpriteFor(EnemyKind kind, int tier)
@@ -231,6 +234,7 @@ namespace VividOfFade
             e.IsBoss = false;
             e.Summoned = false;
             e.SummonIndex = 0;
+            e.NoReward = false;
             e.Enraged = false;
             e.Elite = EliteKind.None;
             e.Tint = Color.white;
@@ -388,6 +392,7 @@ namespace VividOfFade
             var e = Active[Active.Count - 1];
             e.IsBoss = true;
             e.Summoned = true;
+            e.NoReward = true;
             e.Home = master.Home;
             e.Acc = master.Acc;
             e.Eva = master.Eva;
@@ -543,16 +548,17 @@ namespace VividOfFade
                 }
                 Kills++;
                 LastKillExpMult = e.ExpMult;
+                LastKillNoReward = e.NoReward;
                 Codex.MarkKill(e, zone);
                 Killed?.Invoke(e.Pos);
                 if (e.IsBoss && !e.Summoned) BossKilled?.Invoke(e.Pos); // 呼び出された歴代のボスを倒しても、層は終わらない
-                if (e.Elite != EliteKind.None) EliteKilled?.Invoke(e.Pos);
+                if (e.Elite != EliteKind.None && !e.NoReward) EliteKilled?.Invoke(e.Pos);
                 if (e.Kind == EnemyKind.Golden) GoldenKilled?.Invoke(e.Pos);
                 if (e.Elite == EliteKind.Splitter)
                 {
                     for (int k = 0; k < GameConfig.SplitCount; k++)
                         pendingSplits.Add(new Split { Home = e.Home, Pos = e.Pos, Hp = e.MaxHp / GameConfig.EliteHpMult * 0.5f, Damage = e.ContactDamage,
-                            Kind = e.Kind, Tier = e.Tier, Scale = e.BaseScale / GameConfig.EliteScale });
+                            Kind = e.Kind, Tier = e.Tier, Scale = e.BaseScale / GameConfig.EliteScale, NoReward = e.NoReward });
                 }
             }
         }
@@ -664,6 +670,7 @@ namespace VividOfFade
                 small.BaseScale = s.Scale * 0.75f;
                 small.Radius = GameConfig.SlimeRadius * small.BaseScale;
                 small.Speed *= 1.3f;
+                small.NoReward = s.NoReward;
                 small.transform.localScale = new Vector3(small.BaseScale, small.BaseScale, 1f);
             }
             pendingSplits.Clear();

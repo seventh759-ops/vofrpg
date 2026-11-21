@@ -667,6 +667,20 @@ namespace VividOfFade
                 Hud.Toast(Loc.T("A treasure room!", "宝の間だ！"), new Color(1f, 0.85f, 0.4f));
                 Guide("treasure", Loc.T("A treasure room. No enemies here, just chests. Walk up to open them.", "宝の間だよ。敵はいなくて、宝箱だけ。近づくと開く。"));
             };
+            Floors.BossAppeared += pos =>
+            {
+                // ボスの区画の中ほどまで来た：明かりがともり、ボスとお供が現れる
+                Room.SetBossDark(false, false);
+                var boss = Enemies.Boss;
+                string bossName = boss != null ? BossInfo.NameAt(boss.BossKind, Floors.Floor) : Loc.T("BOSS", "ボス");
+                Fx.Pillar(pos, new Color(1f, 0.3f, 0.25f, 0.9f), 1.6f, 6f, 0.9f);
+                Fx.Sparks(pos, 30, new Color(1f, 0.4f, 0.3f), 4.5f, 0.8f, 3f);
+                cameraRig.Shake(0.25f, 0.5f);
+                Sfx.Boom();
+                Hud.ShowBanner(bossName, GameConfig.FloorName(Floors.Floor), new Color(1f, 0.45f, 0.4f));
+            };
+            // お供が現れた（はじめと、一定時間ごとの沸き直し）：黒い煙から出てくる
+            Floors.MinionSpawned += pos => Fx.Sparks(pos, 8, new Color(0.45f, 0.3f, 0.5f, 0.85f), 1.6f, 0.5f, 1.5f, true);
             Floors.RoomActivated += () =>
             {
                 roomRewardPending = true;
@@ -868,6 +882,7 @@ namespace VividOfFade
             if (Enemies.ShroudNear) Player.AddDebuff(DebuffKind.Blind, 0.5f);
             Player.LightPenalty = Player.HasDebuff(DebuffKind.Blind) ? Debuffs.BlindLight : 0f;
             Lighting.Tick(Player.Pos, Player.EffectiveLight, dt);
+            Room.TickBossDark(dt);
             cameraRig.CenterShift = Hud.ViewCenterShift; // 上下の帯の間の中心にプレイヤーを置く
             cameraRig.Tick(Player.Pos, Room, dt);
         }
@@ -1122,6 +1137,7 @@ namespace VividOfFade
             Enemies.SetZone(Room.Zone); // 敵を置く前に、区画の敵の割合と色を合わせる
             bool bossDown = resumeBossDefeated && Floors.IsBossFloor;
             Floors.Populate(Enemies, Room, bossDown);
+            Room.SetBossDark(Floors.BossWaiting, true); // ボスが出るまで、ボスの区画は暗い
             BossDownThisFloor = bossDown;
             if (bossDown) Floors.OpenStairs(); // 倒したあとに中断していた：階段は開いたまま
             if (Floors.IsBossFloor) Guide("boss", Loc.T("A boss waits deep in this floor. When the red ring spreads, get outside it or dodge!", "この層の奥にはボスがいる。赤い輪が広がったら、輪の外へ逃げるか回避！"),
@@ -1666,11 +1682,13 @@ namespace VividOfFade
                 Fx.Sparks(pos, 6, accent, 3f, 0.5f, 2f);
                 Fx.Sparks(pos, 3, accent, 1f, 0.8f, 1.5f, true);
             }
-            GainExp(Mathf.Max(1, Mathf.RoundToInt(Progression.KillExp(GameConfig.ExpTier(Floors.Floor)) * Enemies.LastKillExpMult)));
             var stats = Player.Stats;
-
-            if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(DropLevel, 0f), Room);
-            if (Random.value < GameConfig.EmberDropChance) Loot.DropEmbers(pos, GameConfig.EmberAmount(Floors.Tier), Room, 0.6f);
+            if (!Enemies.LastKillNoReward) // ボスのお供・呼ばれた手下は、経験値もドロップもなし
+            {
+                GainExp(Mathf.Max(1, Mathf.RoundToInt(Progression.KillExp(GameConfig.ExpTier(Floors.Floor)) * Enemies.LastKillExpMult)));
+                if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(DropLevel, 0f), Room);
+                if (Random.value < GameConfig.EmberDropChance) Loot.DropEmbers(pos, GameConfig.EmberAmount(Floors.Tier), Room, 0.6f);
+            }
             if (stats.HealOnKill > 0) Player.Heal(stats.HealOnKill);
             if (stats.HealOnKillPct > 0f) Player.Heal(Mathf.Max(1, Mathf.RoundToInt(Player.MaxHp * stats.HealOnKillPct))); // 苔母のセット
 
