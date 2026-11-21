@@ -233,6 +233,8 @@ namespace VividOfFade
         /// </summary>
         static Sprite AdvancedLook(ClassType type, int index, bool third = false)
         {
+            string form = $"{type}_Adv{Mathf.Clamp(index, 0, 1)}" + (third ? "_3rd" : "");
+            if (FlatSdPng.ContainsKey(form)) return FlatSdSprite("Sd_" + form, form, 0); // 新しいSDの絵（ダンジョンと同じ）
             string key = $"PlayerHd_{type}_Adv{index}" + (third ? "_3rd" : "");
             if (cache.TryGetValue(key, out var cached)) return cached;
             int k = (int)type * 2 + Mathf.Clamp(index, 0, 1);
