@@ -249,12 +249,15 @@ namespace VividOfFade
         /// <summary>攻撃を受けた（受けたダメージ）。深淵の装備の反撃に使う。</summary>
         public event System.Action<int> Hurt;
 
-        public bool TakeHit(int damage, string source = "?")
+        /// <param name="skill">ボスの技：元のダメージの一部（固定の分）は防御で減らない。</param>
+        /// <param name="pctMaxHp">最大 HP に対する割合のダメージ（防御で減らない。ボスの技）。</param>
+        public bool TakeHit(int damage, string source = "?", bool skill = false, float pctMaxHp = 0f)
         {
             if (invuln > 0f || IsDead) return false;
             MarkCombat();
-            float reduced = damage * Stats.DamageTaken * 100f / (100f + Stats.Armor);
-            int dealt = Mathf.Max(1, Mathf.RoundToInt(reduced));
+            float reduced = skill ? damage * GameConfig.TakenMult(Stats.Armor, Stats.DamageTaken) // 技：固定の分（防御で減らない）＋ 防御で減らした分
+                                  : damage * Stats.DamageTaken * 100f / (100f + Stats.Armor); // 通常の攻撃：防御でそのまま減る
+            int dealt = Mathf.Max(1, Mathf.RoundToInt(reduced + MaxHp * pctMaxHp));
             Hp = Mathf.Max(0, Hp - dealt);
             invuln = GameConfig.HitInvuln;
             hurtTimer = GameConfig.HitInvuln;

@@ -1368,7 +1368,7 @@ namespace VividOfFade
                     break;
             }
             if (atk == BossAttack.Slam || atk == BossAttack.StunNova || atk == BossAttack.Cone || atk == BossAttack.RoomWide) Sfx.Boom();
-            if (hit && Player.TakeHit(damage, $"Boss {atk}") && debuff.HasValue)
+            if (hit && Player.TakeHit(damage, $"Boss {atk}", true, GameConfig.BossPctDamage(e)) && debuff.HasValue) // 技：固定の分と、最大 HP の割合のダメージ
                 Player.AddDebuff(debuff.Value, BossInfo.DebuffTimeOf(debuff.Value));
         }
 

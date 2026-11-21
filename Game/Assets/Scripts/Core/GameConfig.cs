@@ -179,6 +179,20 @@ namespace VividOfFade
 
         // ボス（10波ごと）
         public static bool IsBossWave(int wave) => wave > 0 && wave % 10 == 0;
+        /// <summary>
+        /// ボスの技で、防御で減らせない固定の分（元のダメージに対する割合）。防御・被ダメージの軽減をどれだけ上げても、少なくともこの割合は受ける。
+        /// 守りを固めすぎて、時間をかければ楽に勝ててしまうのを防ぐ。通常の攻撃（体当たり・弾）には付けない。
+        /// </summary>
+        public const float FixedDamageShare = 0.25f;
+        /// <summary>受けるダメージの倍率：固定の分 ＋ 残りを被ダメージ倍率と防御で減らした分。</summary>
+        public static float TakenMult(float armor, float damageTaken) =>
+            FixedDamageShare + (1f - FixedDamageShare) * damageTaken * 100f / (100f + Mathf.Max(0f, armor));
+        /// <summary>
+        /// ボスの技（叩きつけ・衝撃・扇・部屋全体）で上乗せする、最大 HP の割合のダメージ（防御で減らない）。
+        /// 通常の攻撃（体当たり・弾）には付けない。怒ったら増える。呼び出された歴代のボスは少なめ。
+        /// </summary>
+        public const float BossPctHit = 0.06f, BossPctHitEnraged = 0.09f, SummonedBossPct = 0.03f;
+        public static float BossPctDamage(Enemy e) => e == null ? 0f : e.Summoned ? SummonedBossPct : e.Enraged ? BossPctHitEnraged : BossPctHit;
         public const float BossHpMult = 180f;          // 同じ波の雑魚の何倍か（前は 120）
 
         /// <summary>
