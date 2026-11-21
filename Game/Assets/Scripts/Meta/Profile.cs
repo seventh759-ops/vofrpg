@@ -56,6 +56,8 @@ namespace VividOfFade
         public int AscentBest;                        // 昇る塔でたどり着いた一番上の層
         public int AscentBossCleared;                 // 昇る塔で倒した一番上のボスの層
         public bool EverAdvanced;                     // 一度でも転職した（上位職になった）。そうなると、もう彩灯者にはなれない
+        public int ReturnFloor;                       // 帰還したときの次の層（そこから続きを登れる）。死んだら 0（チェックポイントから）
+        public int AscentReturnFloor;                 // 昇る塔での、帰還したときの次の層
 
         public void Repair()
         {
@@ -78,6 +80,8 @@ namespace VividOfFade
             foreach (var it in Loadout) it?.Repair();
             foreach (var it in Stash) it?.Repair();
             if (Run == null) Run = new RunSave();
+            if (ReturnFloor < 0) ReturnFloor = 0;
+            if (AscentReturnFloor < 0) AscentReturnFloor = 0;
             Run.Repair();
             Stash.RemoveAll(it => it == null || it.IsEmptyMarker);
             Alloc = Fit(Alloc, Attributes.Count, 0);

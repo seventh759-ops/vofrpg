@@ -2063,6 +2063,12 @@ namespace VividOfFade
                 var r = new Rect(pad + (i % cols) * (bw + gap), y + (i / cols) * (bh + gap), bw, bh);
                 string key = Application.isMobilePlatform || i >= 9 ? "" : $"[{i + 1}] ";
                 bool latest = i == floors.Count - 1; // そのタブでいちばん深い層は目立たせる
+                bool cont = floor == GameWorld.ReturnFloorOf(ch) && !GameWorld.IsCheckpointFloor(ch, floor); // 帰還した続きの層（死ぬと消える）
+                if (cont)
+                {
+                    Button(r, key + Loc.T("Resume ", "続き ") + GameConfig.FloorName(floor), new Color(0.2f, 0.5f, 0.3f, 0.9f), centered, () => confirmFloor = floor);
+                    continue;
+                }
                 Button(r, key + GameConfig.FloorName(floor), GameConfig.IsHeaven(floor) ? new Color(0.7f, 0.58f, 0.22f, latest ? 0.95f : 0.55f) : GameConfig.IsAbyss(floor) ? new Color(0.45f, 0.08f, 0.35f, latest ? 0.95f : 0.55f) : latest ? new Color(0.5f, 0.4f, 0.1f, 0.7f) : new Color(1f, 1f, 1f, 0.12f), centered,
                     () => confirmFloor = floor);
             }

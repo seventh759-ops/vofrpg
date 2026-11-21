@@ -210,7 +210,32 @@ namespace VividOfFade
             int last = GameConfig.LastFloorFor(ch); // 深淵の層は、入れるときだけ（Lv100以上・100層制覇）
             int cleared = ch.Ascended ? ch.AscentBossCleared : ch.BossCleared; // 昇る塔は、昇る塔の記録で
             for (int boss = GameConfig.BossFloorEvery; boss <= cleared && boss + 1 <= last; boss += GameConfig.BossFloorEvery) list.Add(boss + 1);
+            // 帰還した層の続き（死ぬと消えて、チェックポイントからになる）
+            int ret = ReturnFloorOf(ch);
+            if (ret > 1 && ret <= last && !list.Contains(ret))
+            {
+                list.Add(ret);
+                list.Sort();
+            }
             return list;
+        }
+
+        /// <summary>倒したボスの次の層（死んでも残るチェックポイント）か。</summary>
+        public static bool IsCheckpointFloor(CharacterData ch, int floor)
+        {
+            if (floor == 1) return true;
+            int cleared = ch.Ascended ? ch.AscentBossCleared : ch.BossCleared;
+            return (floor - 1) % GameConfig.BossFloorEvery == 0 && floor - 1 <= cleared;
+        }
+
+        /// <summary>帰還したときの次の層（続きから登れる層）。なければ 0。</summary>
+        public static int ReturnFloorOf(CharacterData ch) => ch == null ? 0 : ch.Ascended ? ch.AscentReturnFloor : ch.ReturnFloor;
+
+        static void SetReturnFloor(CharacterData ch, int floor)
+        {
+            if (ch == null) return;
+            if (ch.Ascended) ch.AscentReturnFloor = floor;
+            else ch.ReturnFloor = floor;
         }
 
         /// <summary>キャラクターを選んだ（枠）：そのキャラクターで町へ。空の枠なら何もしない（新しく作る画面は Hud が出す）。</summary>
@@ -2104,6 +2129,9 @@ namespace VividOfFade
             if (ch == null) return;
             if (chosen.Count > ch.CarrySlots) chosen = chosen.GetRange(0, ch.CarrySlots);
             Inventory.SaveForReturn(ch, chosen);
+            // 帰還した層の次から、続きを登れる（死ぬまで）
+            int next = Floors.Floor + 1;
+            SetReturnFloor(ch, next > 1 && next <= GameConfig.LastFloorFor(ch) ? next : 0);
             ClearRun(ch);
             Profile.Save();
             ShowTown();
@@ -2173,6 +2201,7 @@ namespace VividOfFade
             DeathFade = -1f;
             Player.Sr.color = Color.white;
             if (Profile.Current != null) Profile.Current.Deaths++;
+            SetReturnFloor(Profile.Current, 0); // 死んだら、続きは消えてチェックポイント（倒したボスの次の層）から
             ClearRun(Profile.Current);
             Profile.Save();
             ShowTown();
