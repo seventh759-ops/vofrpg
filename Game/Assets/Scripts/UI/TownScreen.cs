@@ -315,7 +315,7 @@ namespace VividOfFade
                 Hud.OrnateFrame(porterR, Hud.FrameGold, frameT);
             }
 
-            // ---- 施設のタブ（倉庫・ショップ・女神・カバン・鍛冶） ----
+            // ---- 施設のタブ（倉庫・ショップ・鍛冶・カバン・女神） ----
             Hud.Fill(new Rect(pad, tabBar.y, W - pad * 2f, 1f), new Color(0.85f, 0.72f, 0.42f, 0.45f)); // 台の中の仕切り
             {
                 float cw = W / 5f;
@@ -333,9 +333,9 @@ namespace VividOfFade
                 }
                 Tab(0, PixelArt.TownIcon(0), Loc.T("Storage", "倉庫"), () => Open(Panel.Storage));
                 Tab(1, PixelArt.TownIcon(1), Loc.T("Shop", "ショップ"), () => Open(Panel.Merchant));
-                Tab(2, ch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2), Loc.T("Goddess", "女神"), () => Open(Panel.Master), masterNotice); // クリア後は血の涙を流している
+                Tab(2, PixelArt.TownIcon(4), Loc.T("Smith", "鍛冶"), () => Open(Panel.Smith)); // いちばん使う鍛冶を真ん中に
                 Tab(3, PixelArt.BagIcon, Loc.T("Bag", "カバン"), world.OpenTownBag);
-                Tab(4, PixelArt.TownIcon(4), Loc.T("Smith", "鍛冶"), () => Open(Panel.Smith));
+                Tab(4, ch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2), Loc.T("Goddess", "女神"), () => Open(Panel.Master), masterNotice); // クリア後は血の涙を流している
             }
         }
 
