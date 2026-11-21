@@ -41,6 +41,9 @@ namespace VividOfFade
         {
             frame = Mathf.Clamp(frame, 0, PlayerFrameCount - 1);
             string suffix = frame == 0 ? "" : "_f" + frame;
+            // 外で作った、色をそのまま使う絵があれば、それを使う（陰影は計算しない）
+            string form = PortraitForm(type, ch);
+            if (FlatSd.TryGetValue(form, out var flatRows)) return FlatSdSprite("Sd_" + form + suffix, AnimRows(flatRows, frame, FlatSdFeet[form]), FlatSdColors[form]);
             // 特別な職「彩灯者」：専用の絵に、桃色の光の縁
             if (type == ClassType.Vividbearer)
                 return Shaded("PlayerHd_Vividbearer" + suffix, AnimRows(VividbearerHdRows, frame), VividOver, SpecialClass.AuraColor);
@@ -63,7 +66,19 @@ namespace VividOfFade
         }
 
         /// <summary>絵の行から、歩き・呼吸のコマを作る（足元の4段を左右に分けて扱う）。</summary>
-        static string[] AnimRows(string[] src, int frame)
+        /// <summary>色をそのまま使う絵（文字→色）から、キャラの絵を作る（32 ドットで 1 マス）。</summary>
+        static Sprite FlatSdSprite(string key, string[] rows, Dictionary<char, Color32> colors)
+        {
+            if (cache.TryGetValue(key, out var cached)) return cached;
+            int h = rows.Length, w = rows[0].Length;
+            var px = new Color32[w * h];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    px[(h - 1 - y) * w + x] = colors.TryGetValue(rows[y][x], out var c) ? c : new Color32(0, 0, 0, 0); // テクスチャは下から上へ並ぶ
+            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), w);
+        }
+
+        static string[] AnimRows(string[] src, int frame, string feetChars = "b")
         {
             if (frame == 0 || frame == 2) return src;
             int h = src.Length, w = src[0].Length;
@@ -74,7 +89,7 @@ namespace VividOfFade
             int feetTop = bottom - 3;
             // 足は靴（b）のある列だけ。武器や杖が足元まで伸びていても、足と一緒に切り離さない（武器は体と一緒に動く）
             int bootMin = w, bootMax = -1;
-            for (int y = feetTop - 1; y <= bottom; y++) for (int x = 0; x < w; x++) if (At(x, y) == 'b') { bootMin = Mathf.Min(bootMin, x); bootMax = Mathf.Max(bootMax, x); }
+            for (int y = feetTop - 1; y <= bottom; y++) for (int x = 0; x < w; x++) if (feetChars.IndexOf(At(x, y)) >= 0) { bootMin = Mathf.Min(bootMin, x); bootMax = Mathf.Max(bootMax, x); }
             if (bootMax < 0) { bootMin = 0; bootMax = w - 1; }
             // 足元の真ん中（左右の足の境目）
             float sum = 0f; int cnt = 0;
