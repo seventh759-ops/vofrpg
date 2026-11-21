@@ -184,7 +184,9 @@ namespace VividOfFade
 
         /// <summary>羽がぶわっと開いた瞬間（画面を少し揺らす）。</summary>
         public event System.Action WingsOpened;
-        const float WingTopHeight = 1.05f + (GameConfig.PlayerScale - 1f);        // 上がりきった高さ（頭の少し上）
+        /// <summary>プレイヤーの頭の上の高さ（足元の床から。Player が絵の高さから毎回入れる）。</summary>
+        public static float HeadTop = -0.5f + GameConfig.PlayerScale;
+        static float WingTopHeight => HeadTop + 0.55f;        // 上がりきった高さ（頭の少し上）
         bool wingBurst;
 
         /// <summary>タイトルの「VIVID」の色（水色・紫・桃・橙・黄）。レベルアップのきらめきに使う。</summary>

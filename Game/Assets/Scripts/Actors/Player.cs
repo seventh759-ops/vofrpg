@@ -98,7 +98,7 @@ namespace VividOfFade
             {
                 pos = value;
                 // 絵は中心が原点。大きくした分だけ上へずらし、足元の位置を変えない
-                transform.position = Iso.ToScreen(value) + new Vector2(0f, (GameConfig.PlayerScale - 1f) * 0.5f);
+                transform.position = Iso.ToScreen(value) + new Vector2(0f, GameConfig.PlayerScale * HalfHeight - 0.5f);
             }
         }
 
@@ -387,6 +387,9 @@ namespace VividOfFade
             if (Mathf.Abs(poseDir.x) > 0.2f) Sr.flipX = poseDir.x < 0f; // 攻撃する方を向く
         }
 
+        /// <summary>絵の高さの半分（32ドットの絵なら 0.5。縦長の 32×64 なら 1）。</summary>
+        public float HalfHeight => Sr != null && Sr.sprite != null ? Sr.sprite.bounds.extents.y : 0.5f;
+
         /// <summary>今の動きを体に当てる（足元の位置は変えない）。</summary>
         void ApplyPose(float dt, bool dashing, Vector2 screenVelocity)
         {
@@ -448,7 +451,8 @@ namespace VividOfFade
             transform.localScale = new Vector3(scale * sx, scale * sy, 1f);
             transform.localRotation = Quaternion.Euler(0f, 0f, angle);
             // 絵の中心から伸び縮みするので、縮んだ分だけ下げて足元を床に付けたままにする
-            transform.position = Iso.ToScreen(pos) + new Vector2(0f, (scale * sy - 1f) * 0.5f) + off;
+            transform.position = Iso.ToScreen(pos) + new Vector2(0f, scale * sy * HalfHeight - 0.5f) + off;
+            FxSystem.HeadTop = -0.5f + scale * HalfHeight * 2f; // 頭の上の高さ（羽・文字の位置に使う）
         }
 
         /// <summary>職業の見た目に切り替える。転生していれば、足元にその回数の色のオーラを付ける。</summary>

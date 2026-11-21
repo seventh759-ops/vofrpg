@@ -1546,7 +1546,7 @@ namespace VividOfFade
                 {
                     crumbTimer += 0.02f;
                     // 体のあちこちから、右上へ流れて舞い散る石の粒（上の方から先に崩れる）
-                    float top = (1f - fade * 0.8f) * GameConfig.PlayerScale;
+                    float top = (1f - fade * 0.8f) * (FxSystem.HeadTop + 0.5f);
                     Vector2 p = Player.Pos + new Vector2(Random.Range(-0.25f, 0.25f), Random.Range(-0.25f, 0.25f));
                     var col = Random.value < 0.3f ? new Color(0.45f, 0.43f, 0.5f) : stone;
                     Fx.Emit(p, Random.Range(0.1f, top), PixelArt.Spark, col, Random.Range(0.8f, 1.4f),

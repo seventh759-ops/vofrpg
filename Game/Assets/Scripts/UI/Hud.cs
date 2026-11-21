@@ -762,7 +762,7 @@ namespace VividOfFade
             float t = skillUpTime / SkillUpLife;
             float alpha = t < 0.7f ? 1f : 1f - (t - 0.7f) / 0.3f;
             float extra = levelUpTime >= 0f ? 0.7f : 0f; // キャラのレベルアップと重なったら、「LV UP」の上に出す
-            var head = Iso.ToScreen(World.Player.Pos) + new Vector2(0f, 1.35f * GameConfig.PlayerScale + extra + 0.35f * Mathf.Sqrt(t));
+            var head = Iso.ToScreen(World.Player.Pos) + new Vector2(0f, FxSystem.HeadTop + 0.9f + extra + 0.35f * Mathf.Sqrt(t));
             Vector3 sp = cam.WorldToScreenPoint(new Vector3(head.x, head.y, 0f));
             float pop = 1f + 0.4f * Mathf.Clamp01(1f - skillUpTime / 0.15f);
             float px = Mathf.Max(2f, Mathf.Round(number.fontSize / 8.5f)) * pop;

@@ -75,7 +75,7 @@ namespace VividOfFade
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                     px[(h - 1 - y) * w + x] = colors.TryGetValue(rows[y][x], out var c) ? c : new Color32(0, 0, 0, 0); // テクスチャは下から上へ並ぶ
-            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), w);
+            return Store(key, MakeTexture(key, w, h, px, TextureWrapMode.Clamp), 32); // 32 ドットで 1 マス（縦長の 32×64 は 2 マスの高さ、ドットの大きさは床・敵と同じ）
         }
 
         static string[] AnimRows(string[] src, int frame, string feetChars = "b")

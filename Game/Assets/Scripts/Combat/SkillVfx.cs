@@ -461,7 +461,7 @@ namespace VividOfFade
         {
             var sprite = player.Sr.sprite;
             bool flip = player.Sr.flipX;
-            float lift = (GameConfig.PlayerScale - 1f) * 0.5f; // 大きく描いた分、絵の中心は少し上
+            float lift = GameConfig.PlayerScale * player.HalfHeight - 0.5f; // 大きく描いた分（縦長の絵ならさらに）、絵の中心は上
             for (int k = 0; k < n; k++)
             {
                 Vector2 p = Vector2.Lerp(from, to, (k + 0.5f) / n);
