@@ -58,6 +58,8 @@ namespace VividOfFade
         public bool EverAdvanced;                     // 一度でも転職した（上位職になった）。そうなると、もう彩灯者にはなれない
         public int ReturnFloor;                       // 帰還したときの次の層（そこから続きを登れる）。死んだら 0（チェックポイントから）
         public int AscentReturnFloor;                 // 昇る塔での、帰還したときの次の層
+        public int OfferedEmbers;                     // 女神像に捧げた火種（昇る塔の100層で女神像を倒すと戻る。戻したら 0）
+        public int OfferedExp;                        // 女神像に捧げた経験値（Lv1 から捧げたときのレベルまでの合計）
 
         public void Repair()
         {
@@ -82,6 +84,8 @@ namespace VividOfFade
             if (Run == null) Run = new RunSave();
             if (ReturnFloor < 0) ReturnFloor = 0;
             if (AscentReturnFloor < 0) AscentReturnFloor = 0;
+            if (OfferedEmbers < 0) OfferedEmbers = 0;
+            if (OfferedExp < 0) OfferedExp = 0;
             Run.Repair();
             Stash.RemoveAll(it => it == null || it.IsEmptyMarker);
             Alloc = Fit(Alloc, Attributes.Count, 0);

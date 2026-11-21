@@ -337,7 +337,8 @@ namespace VividOfFade
                 Tab(1, PixelArt.TownIcon(1), Loc.T("Shop", "ショップ"), () => Open(Panel.Merchant));
                 Tab(2, PixelArt.TownIcon(4), Loc.T("Smith", "鍛冶"), () => Open(Panel.Smith)); // いちばん使う鍛冶を真ん中に
                 Tab(3, PixelArt.BagIcon, Loc.T("Bag", "カバン"), world.OpenTownBag);
-                Tab(4, ch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2), Loc.T("Goddess", "女神"), () => Open(Panel.Master), masterNotice); // クリア後は血の涙を流している
+                if (Shattered(ch)) Tab(4, PixelArt.EmberPedestal, Loc.T("Embers", "残り火"), () => Open(Panel.Master), masterNotice); // 昇る塔の100層で女神像を壊したあと
+                else Tab(4, ch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2), Loc.T("Goddess", "女神"), () => Open(Panel.Master), masterNotice); // クリア後は血の涙を流している
             }
         }
 
@@ -665,7 +666,7 @@ namespace VividOfFade
             float lineH = small.fontSize * 1.4f;
             // 捧げる確認（何度も聞く）の間は、ほかのボタンを出さない（押し間違えないように）
             if (offerStep > 0) { DrawOfferConfirm(world, ch); return; }
-            Header(Loc.T("GODDESS STATUE", "女神像"), ch.Embers, W, pad, out float y);
+            Header(Shattered(ch) ? Loc.T("PEDESTAL OF EMBERS", "残り火の台座") : Loc.T("GODDESS STATUE", "女神像"), ch.Embers, W, pad, out float y);
 
             // 転職・転生・奉納のタブ。転生は最初から見せる（条件の Lv99 も見えるように）。奉納はクリア後だけ
             bool showRebirth = true;
@@ -856,10 +857,21 @@ namespace VividOfFade
             float W = Screen.width, H = Screen.height;
             float pad = W * 0.05f;
             y += H * 0.01f;
-            // 大きな女神像
+            // 大きな女神像（壊したあとは、残り火の台座と情景の説明だけ）
             float big = W * 0.42f;
-            Hud.DrawSprite(new Rect((W - big) * 0.5f, y, big, big), PixelArt.GoddessBleeding);
+            bool shattered = Shattered(ch);
+            Hud.DrawSprite(new Rect((W - big) * 0.5f, y, big, big), shattered ? PixelArt.EmberPedestal : PixelArt.GoddessBleeding);
             y += big + H * 0.025f;
+            if (shattered)
+            {
+                var scene = new GUIStyle(hud.LabelStyle) { wordWrap = true, alignment = TextAnchor.UpperCenter };
+                scene.normal.textColor = new Color(0.85f, 0.82f, 0.78f);
+                string desc = Loc.T("The goddess statue lies shattered. White fragments are scattered around the pedestal, and above what remains, a small light still flickers quietly.",
+                                    "女神像は砕け、白いかけらが台座のまわりに転がっている。残った台座の上で、小さな灯りがひとつ、静かに揺れている。");
+                float sw = W - pad * 2f;
+                GUI.Label(new Rect(pad, y, sw, scene.CalcHeight(new GUIContent(desc), sw)), desc, scene);
+                return;
+            }
             string says = ch.Ascended
                 ? Loc.T("...I have received it. The tower no longer leads down. Climb... climb up to me.",
                         "……確かに、受け取りました。塔はもう、下へは続きません。上へ……私のもとへ、昇っておいでなさい。")
@@ -952,9 +964,13 @@ namespace VividOfFade
                 });
         }
 
-        /// <summary>女神像の言葉（左に女神像の絵、右にかぎかっこの言葉）。使った高さを返す。</summary>
+        /// <summary>昇る塔の100層で女神像を壊したか（町の女神像は「残り火の台座」になり、もう話さない）。</summary>
+        static bool Shattered(CharacterData ch) => ch != null && ch.Ascended && ch.AscentBossCleared >= GameConfig.MaxFloor;
+
+        /// <summary>女神像の言葉（左に女神像の絵、右にかぎかっこの言葉）。使った高さを返す。女神像を壊したあとは何も出さない。</summary>
         float GoddessSays(Rect area, string text)
         {
+            if (Shattered(Profile.Current)) return 0f;
             float icon = Mathf.Min(area.height, Screen.width * 0.13f);
             var gch = Profile.Current;
             Hud.DrawSprite(new Rect(area.x, area.y, icon, icon), gch != null && gch.EndingSeen ? PixelArt.GoddessBleeding : PixelArt.TownIcon(2));
@@ -1023,6 +1039,7 @@ namespace VividOfFade
                     "「職を変えずに、ここまで来たのですね……そのまま生まれ変われば、あなたは特別な何かになれるでしょう」")
                 : Loc.T("\"Well done. Reborn, you begin anew, yet the strength you have forged remains within you. Try as many times as you wish.\"",
                     "「見事です。生まれ変われば再び一からですが、鍛えた力はその身に残ります。何度でも挑みなさい」");
+            if (Shattered(ch)) desc = ""; // 女神像を壊したあとは、もう話さない
             wrap.fontStyle = FontStyle.Italic;
             wrap.normal.textColor = new Color(1f, 0.9f, 0.65f);
             float btnH = Screen.height * 0.045f;

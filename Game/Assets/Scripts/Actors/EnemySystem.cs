@@ -358,7 +358,7 @@ namespace VividOfFade
             e.Sr.color = Color.white;
             e.Tint = Color.white;
             if (e.BossKind == BossKind.AbyssKing) e.Speed = GameConfig.BossSpeed * 0.25f; // アビスはほとんど動かず、離れた所から攻撃して歴代のボスを呼ぶ
-            if (e.BossKind == BossKind.Goddess) e.Speed = GameConfig.BossSpeed * 0.1f;    // 女神像は石像なので、ほとんど動かない
+            if (BossInfo.IsStatic(e.BossKind)) e.Speed = 0f;    // 女神像・天の門番は、奥から動かない（技だけを繰り返す）
             ShowAura(e, new Color(1f, 0.25f, 0.2f));
         }
 
@@ -545,7 +545,7 @@ namespace VividOfFade
             {
                 e.Dying = true;
                 e.DyingTimer = e.IsBoss ? DeathTime * 4f : DeathTime;
-                if ((e.BossKind == BossKind.AbyssKing || e.BossKind == BossKind.Goddess || e.BossKind == BossKind.SeraphKing) && e.IsBoss && !e.Summoned) // アビス・女神像は、ふるえながら崩れていく
+                if ((e.BossKind == BossKind.AbyssKing || BossInfo.IsStatic(e.BossKind) || e.BossKind == BossKind.SeraphKing) && e.IsBoss && !e.Summoned) // アビス・女神像は、ふるえながら崩れていく
                 {
                     e.DeathLength = GameConfig.FinalCollapseTime; // アビスは、ふるえながら崩れていく
                     e.DyingTimer = e.DeathLength;

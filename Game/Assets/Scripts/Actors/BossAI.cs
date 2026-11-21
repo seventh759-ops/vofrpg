@@ -6,7 +6,7 @@ namespace VividOfFade
 {
     /// <summary>区域ごとのボス（FloorPattern の順）。RiftWarden からは深淵のボス。</summary>
     // 【セーブの決まり】図鑑が名前で覚えているので、名前を変えない。足すときは最後に。
-    public enum BossKind { Golem, Mother, Forge, Frost, Librarian, Void, RiftWarden, StarEater, MoonPriest, AbyssKing, Goddess, CloudWarden, GardenSaint, HymnConductor, SeraphKing } // Goddess：昇る塔の100層（血の涙を流す女神像）。CloudWarden〜：天界
+    public enum BossKind { Golem, Mother, Forge, Frost, Librarian, Void, RiftWarden, StarEater, MoonPriest, AbyssKing, Goddess, CloudWarden, GardenSaint, HymnConductor, SeraphKing, Gatekeeper } // Gatekeeper：女神像を壊したあとの昇る塔の100層 // Goddess：昇る塔の100層（血の涙を流す女神像）。CloudWarden〜：天界
 
     /// <summary>
     /// ボスの攻撃。どれも予告（Windup）のあとに判定する。
@@ -41,7 +41,10 @@ namespace VividOfFade
             : (BossKind)Mathf.Clamp((int)z.Pattern, 0, (int)BossKind.AbyssKing);
 
         /// <summary>天界のボスか。</summary>
-        public static bool IsHeaven(BossKind k) => k >= BossKind.CloudWarden;
+        public static bool IsHeaven(BossKind k) => k >= BossKind.CloudWarden && k <= BossKind.SeraphKing;
+
+        /// <summary>昇る塔の最上（100層）のボス：動かず、奥から技だけを繰り返す（女神像・天の門番）。</summary>
+        public static bool IsStatic(BossKind k) => k == BossKind.Goddess || k == BossKind.Gatekeeper;
 
         /// <summary>深淵のボスか（攻撃の間隔が短く、弾が多い）。</summary>
         public static bool IsAbyss(BossKind k) => k >= BossKind.RiftWarden;
@@ -80,6 +83,7 @@ namespace VividOfFade
                 case BossKind.GardenSaint: return Loc.T("Saint of the Garden", "花園の聖女");
                 case BossKind.HymnConductor: return Loc.T("Hymn Conductor", "聖歌の指揮者");
                 case BossKind.SeraphKing: return Loc.T("Seraph King", "熾天の王"); // 天界の最奥。3対の羽
+                case BossKind.Gatekeeper: return Loc.T("Gatekeeper of Heaven", "天の門番"); // 女神像を壊したあとの、昇る塔の100層
                 default: return Loc.T("Ash Warden", "灰の番人");
             }
         }
@@ -111,6 +115,8 @@ namespace VividOfFade
             new[] { BossAttack.RoomWide, BossAttack.BulletFan, BossAttack.BulletRing, BossAttack.Blink, BossAttack.BulletFan },
             // 熾天の王（天界の最奥）：3対の羽で、すべての技を使う
             new[] { BossAttack.RoomWide, BossAttack.Charge, BossAttack.BulletRing, BossAttack.Summon, BossAttack.Cone, BossAttack.StunNova, BossAttack.BulletFan, BossAttack.RoomWide, BossAttack.Slam },
+            // 天の門番（女神像を壊したあとの100層）：女神像と同じく門の前から動かず、光の弾と裁きで寄せつけない
+            new[] { BossAttack.BulletFan, BossAttack.RoomWide, BossAttack.BulletRing, BossAttack.StunNova, BossAttack.Summon, BossAttack.BulletFan, BossAttack.Cone, BossAttack.BulletRing },
         };
 
         /// <summary>そのボスが使う攻撃（重ならないように、使う順で）。図鑑に使う。</summary>
@@ -156,6 +162,16 @@ namespace VividOfFade
             {
                 int i = e.AttackStep % (p.Length + 1); // 1巡に1回、足した技を使う
                 return i == p.Length ? loopExtra[(int)e.BossKind] : p[i];
+            }
+            // 動かないボス（女神像・天の門番）：1巡ごとに順番を混ぜ直し、同じ技は続けない（毎回同じ流れにならないように）
+            if (IsStatic(e.BossKind))
+            {
+                int n = p.Length, cycle = e.AttackStep / n, i = e.AttackStep % n;
+                var rnd = new System.Random(cycle * 7919 + (int)e.BossKind * 131 + e.LoopCycle);
+                var order = (BossAttack[])p.Clone();
+                for (int k = n - 1; k > 0; k--) { int j = rnd.Next(k + 1); var t = order[k]; order[k] = order[j]; order[j] = t; }
+                if (cycle > 0 && order[0] == e.Attack) { var t = order[0]; order[0] = order[n - 1]; order[n - 1] = t; } // 前の巡の最後と同じ技で始めない
+                return order[i];
             }
             return p[e.AttackStep % p.Length];
         }
@@ -212,6 +228,7 @@ namespace VividOfFade
                 case BossKind.GardenSaint: return a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
                 case BossKind.HymnConductor: return a == BossAttack.RoomWide ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
                 case BossKind.SeraphKing: return a == BossAttack.RoomWide ? DebuffKind.Blind : a == BossAttack.Cone ? DebuffKind.DefenseDown : a == BossAttack.BulletFan ? DebuffKind.Slow : (DebuffKind?)null;
+                case BossKind.Gatekeeper:
                 case BossKind.Goddess: return a == BossAttack.RoomWide ? DebuffKind.AttackDown : a == BossAttack.BulletFan ? DebuffKind.Slow : a == BossAttack.Cone ? DebuffKind.DefenseDown : (DebuffKind?)null;
             }
             return null;
@@ -309,7 +326,7 @@ namespace VividOfFade
                     Begin(e, atk, dir, room);
                     return true;
                 }
-                if (e.BossKind == BossKind.AbyssKing || e.BossKind == BossKind.Goddess) e.AttackStep++; // アビス・女神像はほとんど動かないので、届かない技は飛ばして次へ
+                if (e.BossKind == BossKind.AbyssKing || BossInfo.IsStatic(e.BossKind)) e.AttackStep++; // アビス・女神像はほとんど動かないので、届かない技は飛ばして次へ
             }
             return false;
         }

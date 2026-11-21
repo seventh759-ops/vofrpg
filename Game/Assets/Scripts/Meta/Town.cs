@@ -474,6 +474,11 @@ namespace VividOfFade
         public static bool Offer(CharacterData ch)
         {
             if (!CanOffer(ch)) return false;
+            // 捧げた火種と経験値を覚えておく（昇る塔の100層で女神像を倒すと戻る）
+            ch.OfferedEmbers = ch.Embers;
+            long exp = ch.Exp;
+            for (int l = 1; l < ch.Level; l++) exp += Progression.ExpToNext(ch, l);
+            ch.OfferedExp = (int)System.Math.Min(exp, int.MaxValue / 2);
             ch.Embers = 0;
             // レベルも捧げる：Lv1 に戻る（職業・転生の回数・装備・スキルはそのまま。付けられなくなった装備は倉庫へ）。
             // 上位職・3次職の儀のボーナスのポイントは、職業を失わないので、もう一度もらえる

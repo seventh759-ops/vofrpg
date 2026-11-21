@@ -15,6 +15,8 @@ namespace VividOfFade
         readonly Hud hud;
         readonly Queue<string> lines = new Queue<string>();
         string current;
+        string speaker;   // 話す人の名前（null なら案内役）
+        Sprite speakerFace; // 話す人の顔（null なら案内役）
         float shownAt;
 
         public GuideBox(Hud hud)
@@ -41,9 +43,20 @@ namespace VividOfFade
             Next();
         }
 
+        /// <summary>案内役ではない人（女神像など）として話す。話している途中なら何もしない。</summary>
+        public void SayAs(string name, Sprite portrait, params string[] text)
+        {
+            if (current != null) return;
+            speaker = name;
+            speakerFace = portrait;
+            foreach (var t in text) lines.Enqueue(t);
+            Next();
+        }
+
         public void Next()
         {
             current = lines.Count > 0 ? lines.Dequeue() : null;
+            if (current == null) { speaker = null; speakerFace = null; } // 話し終わったら案内役に戻す
             shownAt = Time.unscaledTime;
         }
 
@@ -51,6 +64,8 @@ namespace VividOfFade
         {
             lines.Clear();
             current = null;
+            speaker = null;
+            speakerFace = null;
         }
 
         public void Draw()
@@ -73,13 +88,15 @@ namespace VividOfFade
             Hud.Fill(new Rect(box.x, box.y, box.width, H * 0.004f), new Color(1f, 0.85f, 0.45f, 0.8f));
 
             float face = boxH * 0.8f;
-            Hud.DrawSprite(new Rect(box.x + boxH * 0.1f, box.y + boxH * 0.1f, face, face), PixelArt.Guide);
+            Sprite who = speakerFace;
+            if (who == null) who = PixelArt.Guide;
+            Hud.DrawSprite(new Rect(box.x + boxH * 0.1f, box.y + boxH * 0.1f, face, face), who);
 
             float tx = box.x + face + boxH * 0.25f;
             float tw = box.xMax - tx - pad * 0.5f;
             var name = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };
             name.normal.textColor = new Color(1f, 0.85f, 0.45f);
-            GUI.Label(new Rect(tx, box.y + boxH * 0.08f, tw, hud.SmallStyle.fontSize * 1.5f), Name, name);
+            GUI.Label(new Rect(tx, box.y + boxH * 0.08f, tw, hud.SmallStyle.fontSize * 1.5f), speaker ?? Name, name);
             var text = new GUIStyle(hud.LabelStyle) { wordWrap = true };
             GUI.Label(new Rect(tx, box.y + boxH * 0.08f + hud.SmallStyle.fontSize * 1.6f, tw, boxH * 0.7f), current, text);
 

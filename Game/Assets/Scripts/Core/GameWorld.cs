@@ -703,6 +703,13 @@ namespace VividOfFade
                 cameraRig.Shake(0.25f, 0.5f);
                 Sfx.Boom();
                 Hud.ShowBanner(bossName, GameConfig.FloorName(Floors.Floor), new Color(1f, 0.45f, 0.4f));
+                // 女神像：戦う前に少し話す（話している間はゲームが止まる。読み終わってから動き出す）
+                if (boss != null && boss.BossKind == BossKind.Goddess)
+                    Hud.Guide.SayAs(BossInfo.Name(BossKind.Goddess), PixelArt.GoddessBleeding,
+                        Loc.T("...So you have come.", "……来たのですね。"),
+                        Loc.T("You turned the tower over, just to reach me.", "塔をひっくり返してまで、ここへ。"),
+                        Loc.T("What flows from my eyes will not stop anymore.", "わたしの目から流れるものは、もう止まりません。"),
+                        Loc.T("With that light of yours... bring me to an end.", "その灯りで、わたしを終わらせなさい。"));
             };
             // お供が現れた（はじめと、一定時間ごとの沸き直し）：黒い煙から出てくる
             Floors.MinionSpawned += pos => Fx.Sparks(pos, 8, new Color(0.45f, 0.3f, 0.5f, 0.85f), 1.6f, 0.5f, 1.5f, true);
@@ -1170,7 +1177,10 @@ namespace VividOfFade
             ApplyZone(Room.Zone, floor);
             Player.Pos = Room.StartPos;
             stairs.transform.position = Iso.ToScreen(Room.StairsPos);
-            stairs.sortingOrder = SortOrder.Floor + 2;
+            // 階段の絵：ふつうは下り階段。昇る塔・天界は上り階段、昇る塔の100層は天界へ続く光の柱
+            bool climbing = GameConfig.Ascent;
+            stairs.sprite = !climbing ? PixelArt.Stairs : floor == GameConfig.MaxFloor ? PixelArt.LightPillar : PixelArt.StairsUp;
+            stairs.sortingOrder = climbing ? SortOrder.For(Room.StairsPos) : SortOrder.Floor + 2; // 背の高い絵は、キャラと前後を合わせる
             stairs.enabled = Floors.StairsOpen;
             stairsLatch = false;
 
@@ -1405,6 +1415,7 @@ namespace VividOfFade
                 // 昇る塔：記録は別に持つ（塔の記録・レベルの上限はそのまま）
                 if (Floors.Floor > ch.AscentBossCleared)
                 {
+                    if (Floors.Floor == GameConfig.MaxFloor) ReturnOffering(ch); // 女神像を倒した：捧げた火種と経験値が戻る
                     ch.AscentBossCleared = Floors.Floor;
                     Profile.Save();
                     if (Floors.Floor < GameConfig.AbyssLastFloor) // 昇る塔の100層（女神像）を倒すと、天界1層から始められる
@@ -1695,6 +1706,21 @@ namespace VividOfFade
             Enemies.DamageArea(pos, radius, st.Damage * st.DodgeNovaMult);
         }
 
+        /// <summary>昇る塔の100層で女神像を倒した：捧げた火種と経験値を返す（一度だけ）。</summary>
+        void ReturnOffering(CharacterData ch)
+        {
+            int embers = ch.OfferedEmbers, exp = ch.OfferedExp;
+            ch.OfferedEmbers = 0;
+            ch.OfferedExp = 0;
+            if (embers <= 0 && exp <= 0) return;
+            ch.Embers += embers;
+            int before = ch.Level;
+            if (exp > 0) GainExp(exp, false); // 経験値の効果は掛けない（捧げた分をそのまま）
+            Profile.Save();
+            Hud.Toast(Loc.T($"What you offered has returned: {embers:N0} embers", $"捧げたものが戻ってきた：火種 {embers:N0}"), new Color(1f, 0.85f, 0.45f));
+            if (ch.Level > before) Hud.Toast(Loc.T($"Your strength returns: Lv {before} -> Lv {ch.Level}", $"力が戻ってきた：Lv {before} → Lv {ch.Level}"), new Color(1f, 0.85f, 0.45f));
+        }
+
         /// <summary>この層の敵を倒したときの経験値（mult 倍）。自分より格下の敵ほど少なくなる。</summary>
         int KillExp(float mult)
         {
@@ -1805,11 +1831,11 @@ namespace VividOfFade
                 Loc.T("Tap the same skill's button again to remove it, or pick another skill to swap.", "付いているボタンを同じスキルでもう一度タップすると外れる。別のスキルなら付け替えだ。"));
         }
 
-        void GainExp(int amount)
+        void GainExp(int amount, bool withBonus = true)
         {
             var ch = Profile.Current;
             int oldLevel = ch.Level;
-            if (Player.Stats != null) amount = Mathf.RoundToInt(amount * (1f + Player.Stats.ExpGain)); // 経験値の効果
+            if (withBonus && Player.Stats != null) amount = Mathf.RoundToInt(amount * (1f + Player.Stats.ExpGain)); // 経験値の効果
             int gained = Progression.AddExp(ch, amount);
             if (gained <= 0) return;
             Skills.OnLevelChanged(ch, oldLevel);

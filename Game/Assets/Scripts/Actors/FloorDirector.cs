@@ -33,6 +33,7 @@ namespace VividOfFade
         /// <summary>ボスと戦っている区画（お供の沸き直しに使う）。ボスが倒れたら null。</summary>
         RoomArea bossFight;
         int minionTarget;
+        Vector2? bossEntry; // ボスの区画に入ったときの位置（通路の口）
         float minionTimer;
         /// <summary>ボスの区画に入るのを待っているか（暗くしておく）。</summary>
         public bool BossWaiting => bossPending != null;
@@ -42,6 +43,7 @@ namespace VividOfFade
             Floor = floor;
             CurrentArea = null;
             bossPending = bossFight = null;
+            bossEntry = null;
             room.Generate(floor, IsBossFloor, Random.Range(int.MinValue, int.MaxValue));
             StairsOpen = false; // 普通の層も、階段のある部屋の敵を全部倒すまでは通れない
         }
@@ -90,13 +92,15 @@ namespace VividOfFade
             foreach (var a in room.Areas) if (!a.IsStart && !a.IsTreasure) rooms++;
             int perRoom = rooms > 0 ? (GameConfig.MaxEnemies - 20) / rooms : 0;
             minionTarget = Mathf.Min(GameConfig.RoomEnemies(Floor, area.W * area.H), perRoom) / 2; // お供
-            bool goddess = GameConfig.Ascent && Floor == GameConfig.MaxFloor; // 昇る塔の最上（100層）は女神像
+            bool goddess = GameConfig.Ascent && Floor == GameConfig.MaxFloor; // 昇る塔の最上（100層）は女神像（壊したあとは天の門番）
+            var ch = Profile.Current;
+            bool shattered = goddess && ch != null && ch.AscentBossCleared >= GameConfig.MaxFloor;
             bool final = Floor == GameConfig.AbyssLastFloor || goddess; // 深淵の最奥（アビス）・女神像は、ほかのボスより強い
             float bite = GameConfig.EarlyBite(Floor); // 序盤（5〜20層）のボスは少し硬く、痛い
-            Vector2 bossPos = FarSide(area, playerPos); // ボスは区画の奥（入ってきた側の反対）
+            Vector2 bossPos = FarSide(area, bossEntry ?? playerPos); // ボスは区画の奥（入ってきた通路の反対側）
             enemies.SpawnBoss(bossPos, GameConfig.EnemyHp(Tier) * GameConfig.BossHpMult * (final ? GameConfig.FinalBossHpMult : 1f) * (1f + GameConfig.EarlyBossHp * bite),
                 Mathf.RoundToInt(GameConfig.EnemyDamage(Tier) * GameConfig.BossDamageMult * (final ? GameConfig.FinalBossDamageMult : 1f) * (1f + GameConfig.EarlyBossDamage * bite)),
-                goddess ? BossKind.Goddess : (BossKind?)null);
+                goddess ? (shattered ? BossKind.Gatekeeper : BossKind.Goddess) : (BossKind?)null);
             if (enemies.Active.Count > 0) { var b = enemies.Active[enemies.Active.Count - 1]; b.Home = area; b.Hold = GameConfig.BossIntroHold; } // 現れてしばらくは身構えるだけ
             for (int i = 0; i < minionTarget; i++)
                 if (!SpawnMinion(enemies, area, NearBoss(area, bossPos, room))) break;
@@ -182,6 +186,7 @@ namespace VividOfFade
         {
             // 部屋の入口（部屋の縁から1マス外まで）に来たら、その部屋の敵が起きる
             // ボスの区画：入り口では何も起きず、中ほど（縁から数マス）まで来たらボスとお供が現れる
+            if (bossPending != null && bossEntry == null && bossPending.Contains(player.Pos, -1f)) bossEntry = player.Pos; // 入ってきた通路の口
             if (bossPending != null && bossPending.Contains(player.Pos, GameConfig.BossTriggerInset))
                 SpawnBossArea(enemies, room, player.Pos);
             TickMinions(dt, enemies, player, room);

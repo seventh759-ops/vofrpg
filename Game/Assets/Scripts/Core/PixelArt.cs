@@ -2807,6 +2807,7 @@ namespace VividOfFade
         public static Sprite BossSprite(BossKind kind, int cycle)
         {
             if (kind == BossKind.Goddess) return GoddessBleeding; // 昇る塔の100層：血の涙を流す女神像
+            if (kind == BossKind.Gatekeeper) return HeavenGatekeeper; // 女神像を壊したあとの100層
             if (BossInfo.IsHeaven(kind)) return HeavenBossSprite(kind); // 天界のボス
             if (BossInfo.IsAbyss(kind)) return AbyssBossSprite(kind);
             int i = Mathf.Clamp((int)kind, 0, BossRows.Length - 1);
