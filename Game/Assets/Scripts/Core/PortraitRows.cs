@@ -1197,7 +1197,7 @@ namespace VividOfFade
                 ".......................................AIaeeVhfXfboYPHfgmpEoJfgbicVIJDDeDDA...........AEEpqqqqqqCAA..................",
                 ".......................................AIVeeVVVXffJmrmmmmmmHGfbiHZZVZFPYeLPA........AAEqqCEECqqqCCCAA................",
                 "........................................beeeeeVVfWammmmmmmmmffiHckaVMkiYeNPA.......AEEqqEEECEEEpqCCCPA...............",
-                "......................................AIjeDPeeQVkZVmmZcjQmmmJIVkbVVTNVieNLTA......AEEqqpEEEEEEEEEECCCA...............",
+                "......................................AIjeDPeeQVkZVmmmmmmmmmJIVkbVVTNVieNLTA......AEEqqpEEEEEEEEEECCCA...............",
                 "......................................AINDDDeeeVVVVpEEppEpEpjWVbVVTDDNiNLeA......AEEqqqEEEEEEEjQeYKYQCA..............",
                 ".......................................Ai.DDDeeMjpEEEEpEEpEppppQXXPDCieNTA......AEEqqqCEEEEAAAAAAYYYYYYAAA...........",
                 "........................................A.IDDDYXpqqqEEEEEpqqqqqqqQLiiTeXA......ApEqqqqEEEEA......AAYYYYYppAAA........",

@@ -55,6 +55,7 @@ RECOLOR = {
 }
 LASH, IRIS, IRISD, HL = H('2a1a14'), H('9a6438'), H('5a3820'), (255, 255, 255)
 PIXELS = {
+    'Shadeblade_Adv0': {(x, 23): H('f5d7d1') for x in range(53, 57)},   # 首布の上の黒い線（口に見える）→ 肌
 }
 
 def touch(name):
