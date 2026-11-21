@@ -801,6 +801,7 @@ namespace VividOfFade
                 TickAuraMotes(dt);
                 TickCorruptionMotes(dt);
                 TickAbyssGear(dt);
+                TickRebirthSparkle(dt);
                 TickCollapse(dt);
                 if (!finale)
                 {
@@ -1423,6 +1424,22 @@ namespace VividOfFade
         float starfallCooldown;
 
         /// <summary>裂け目（一定時間ごと）と、落ちてくる星の処理。</summary>
+        float rebirthSparkle;
+
+        /// <summary>転生した者のまわりで、転生の回数の色の小さな光がまたたく（足元の輪の代わりに、目立つ印）。</summary>
+        void TickRebirthSparkle(float dt)
+        {
+            if (Player == null || Player.IsDead || Player.Rebirths <= 0 || !Player.Sr.enabled) return;
+            rebirthSparkle -= dt;
+            if (rebirthSparkle > 0f) return;
+            rebirthSparkle = Random.Range(0.12f, 0.22f);
+            var c = Color.Lerp(ThirdClasses.AuraColor(Player.Rebirths), Color.white, 0.35f);
+            var p = Player.Pos + new Vector2(Random.Range(-0.45f, 0.45f), Random.Range(-0.3f, 0.3f));
+            float h = Random.Range(0f, FxSystem.HeadTop + 0.15f); // 足元から頭の少し上まで
+            float s = Random.Range(0.35f, 0.6f);
+            Fx.Emit(p, h, PixelArt.Star, c, Random.Range(0.5f, 0.8f), Vector2.zero, 0.25f, 0f, s, 0f, 90f);
+        }
+
         void TickAbyssGear(float dt)
         {
             var st = Player.Stats;

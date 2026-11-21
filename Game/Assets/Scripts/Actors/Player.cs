@@ -507,7 +507,7 @@ namespace VividOfFade
             if (!aura.enabled) return;
             var c = ThirdClasses.AuraColor(Rebirths);
             float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 2.4f);
-            c.a = Mathf.Lerp(0.45f, 0.85f, pulse) * Sr.color.a;
+            c.a = Mathf.Lerp(0.14f, 0.3f, pulse) * Sr.color.a; // 足元の輪は薄く（まわりのきらめきが主役）
             aura.color = c;
             float size = 0.62f + 0.06f * pulse;
             aura.transform.localScale = new Vector3(size, size, 1f);
