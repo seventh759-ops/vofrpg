@@ -592,7 +592,7 @@ namespace VividOfFade
                 Fx.Sparks(pos, 24, new Color(1f, 0.85f, 0.3f), 4f, 0.8f, 3f);
                 Sfx.Fountain();
                 cameraRig.Shake(0.2f, 0.4f);
-                GainExp(Progression.KillExp(Floors.Tier) * 10);
+                GainExp(Progression.KillExp(GameConfig.ExpTier(Floors.Floor)) * 10);
             };
             Enemies.GoldenEscaped += () => Hud.Toast(Loc.T("The golden slime escaped...", "黄金のスライムに逃げられた……"), new Color(0.8f, 0.7f, 0.5f));
 
@@ -894,7 +894,7 @@ namespace VividOfFade
             if ((GameConfig.IsAbyss(Floors.Floor) || GameConfig.Ascent) && Random.value < GameConfig.ShardChanceElite) // 深淵が閉じたあとは、昇る塔で GainShards(pos, GameConfig.RollShards());
             Fx.Sparks(pos, 14, new Color(1f, 0.85f, 0.4f), 3f, 0.7f, 2.5f);
             Sfx.Fountain();
-            GainExp(Progression.KillExp(Floors.Tier) * 5);
+            GainExp(Progression.KillExp(GameConfig.ExpTier(Floors.Floor)) * 5);
         }
 
         /// <summary>部屋の敵を全滅させたら、最後に倒した場所からドロップの噴水。</summary>
@@ -1355,7 +1355,7 @@ namespace VividOfFade
             Fx.Ring(pos, 3f, new Color(1f, 0.4f, 0.3f, 0.9f), 0.6f);
             cameraRig.Shake(0.3f, 0.5f);
             Hud.Toast(Loc.T("BOSS DEFEATED!", "ボスを倒した！"), new Color(1f, 0.5f, 0.4f));
-            GainExp(Progression.KillExp(Floors.Tier) * 30);
+            GainExp(Progression.KillExp(GameConfig.ExpTier(Floors.Floor)) * 30);
             Floors.OpenStairs();
             var ch = Profile.Current;
             if (ch != null && ch.Ascended)
@@ -1666,7 +1666,7 @@ namespace VividOfFade
                 Fx.Sparks(pos, 6, accent, 3f, 0.5f, 2f);
                 Fx.Sparks(pos, 3, accent, 1f, 0.8f, 1.5f, true);
             }
-            GainExp(Mathf.Max(1, Mathf.RoundToInt(Progression.KillExp(Floors.Tier) * Enemies.LastKillExpMult)));
+            GainExp(Mathf.Max(1, Mathf.RoundToInt(Progression.KillExp(GameConfig.ExpTier(Floors.Floor)) * Enemies.LastKillExpMult)));
             var stats = Player.Stats;
 
             if (Random.value < GameConfig.ItemDropChance) Loot.DropItem(pos, ItemGenerator.Roll(DropLevel, 0f), Room);

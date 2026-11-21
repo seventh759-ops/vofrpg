@@ -56,6 +56,13 @@ namespace VividOfFade
         public static int Tier(int floor) => Ascent && floor <= MaxFloor
             ? Mathf.RoundToInt(AscentStartTier + (Mathf.Max(1, floor) - 1) * (MaxFloor * 2f - AscentStartTier) / (MaxFloor - 1)) // 昇る塔：1層 24 → 100層 200
             : floor * 2;
+        /// <summary>
+        /// 経験値の目安にする段階。昇る塔は敵を強くした（1層 Lv24 相当から）が、もらえる経験値は前のまま（1層 Lv10 相当から）にする。
+        /// </summary>
+        public const int AscentExpStartTier = 10;
+        public static int ExpTier(int floor) => Ascent && floor <= MaxFloor
+            ? Mathf.RoundToInt(AscentExpStartTier + (Mathf.Max(1, floor) - 1) * (MaxFloor * 2f - AscentExpStartTier) / (MaxFloor - 1))
+            : floor * 2;
         public static int RoomEnemies(int floor, int roomArea) => Mathf.Min(5 + Mathf.RoundToInt(EffectiveFloor(floor) * 1.2f) + roomArea / 14, 45); // 前の約6割の密度
         public const float StairsRadius = 0.7f;
 
