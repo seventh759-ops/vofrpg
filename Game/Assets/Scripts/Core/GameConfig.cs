@@ -65,6 +65,18 @@ namespace VividOfFade
         public static int ExpTier(int floor) => Ascent && floor <= MaxFloor
             ? Mathf.RoundToInt(AscentExpStartTier + (Mathf.Max(1, floor) - 1) * (MaxFloor * 2f - AscentExpStartTier) / (MaxFloor - 1))
             : floor * 2;
+        /// <summary>
+        /// 格下の敵の経験値を減らす倍率。敵の強さ（経験値の段階＝層×2）より自分のレベルが高いほど減る。
+        /// 差が ExpGraceLevels までは減らない。そこから1レベルごとに ExpPenaltyPerLevel ずつ減り、ExpMinMult より下にはならない。格上の敵は増やさない（1倍）。
+        /// </summary>
+        public const int ExpGraceLevels = 5;
+        public const float ExpPenaltyPerLevel = 0.05f;
+        public const float ExpMinMult = 0.1f;
+        public static float ExpLevelMult(int playerLevel, int enemyTier)
+        {
+            int over = playerLevel - enemyTier - ExpGraceLevels;
+            return over <= 0 ? 1f : Mathf.Max(ExpMinMult, 1f - over * ExpPenaltyPerLevel);
+        }
         public static int RoomEnemies(int floor, int roomArea) => Mathf.Min(5 + Mathf.RoundToInt(EffectiveFloor(floor) * 1.2f) + roomArea / 14, 45); // 前の約6割の密度
         public const float StairsRadius = 0.7f;
 
