@@ -179,7 +179,7 @@ namespace VividOfFade
 
         // ボス（10波ごと）
         public static bool IsBossWave(int wave) => wave > 0 && wave % 10 == 0;
-        public const float BossHpMult = 120f;          // 同じ波の雑魚の何倍か
+        public const float BossHpMult = 180f;          // 同じ波の雑魚の何倍か（前は 120）
 
         /// <summary>
         /// 序盤の手ごたえ（0〜1）：塔の5〜20層を山に、ボスと精鋭を少し硬く・痛くする（1〜4層で上がり、20〜30層で元に戻る）。
@@ -194,7 +194,7 @@ namespace VividOfFade
         }
         public static float EarlyBiteFromTier(int tier) => EarlyBite(tier / 2);
         public const float EarlyBossHp = 0.4f, EarlyBossDamage = 0.25f, EarlyEliteHp = 0.35f;
-        public const float BossDamageMult = 2.5f;
+        public const float BossDamageMult = 3.75f;     // 前は 2.5
         public const float BossScale = 3f;
         public const float BossSpeed = 1.25f;
         public const float BossSlamInterval = 3.4f;
