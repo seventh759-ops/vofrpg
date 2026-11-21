@@ -104,6 +104,7 @@ namespace VividOfFade
                 Hud.DrawAbyssFrame(r, item);
                 Hud.DrawEnhance(r, item);
                 Hud.DrawItemLevel(r, item);
+                Hud.DrawLockMark(r, item);
             }
             int rows = (candidates.Count + cols - 1) / cols;
             y += rows * (cell + gap) + H * 0.01f;

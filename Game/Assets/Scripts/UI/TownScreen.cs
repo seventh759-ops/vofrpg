@@ -554,7 +554,7 @@ namespace VividOfFade
                 GUI.color = old;
                 Hud.DrawEnhance(r, item);
                 Hud.DrawItemLevel(r, item);
-                if (item.Locked) { float ls = r.width * 0.3f; Hud.DrawSprite(new Rect(r.xMax - ls - r.width * 0.06f, r.yMax - ls - r.width * 0.06f, ls, ls), PixelArt.Padlock(true)); } // ロック中の印（右下）
+                Hud.DrawLockMark(r, item);
                 if (item == selected) Hud.Frame(r, new Color(1f, 0.82f, 0.4f), Mathf.Max(2f, Mathf.Round(r.width * 0.05f))); // 選んでいる品は金の枠
             }
             int rows = (shown + cols - 1) / cols;

@@ -289,12 +289,7 @@ namespace VividOfFade
             Hud.DrawEnhance(r, item);
             Hud.DrawItemLevel(r, item);
             Hud.DrawAbyssFrame(r, item);
-            if (item.Locked)
-            {
-                var lockStyle = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };
-                lockStyle.normal.textColor = new Color(1f, 0.85f, 0.4f);
-                GUI.Label(new Rect(r.x + r.width * 0.06f, r.y + r.height * 0.5f, r.width * 0.5f, r.height * 0.5f), "L", lockStyle);
-            }
+            Hud.DrawLockMark(r, item);
             if (better)
             {
                 var style = new GUIStyle(hud.SmallStyle) { fontStyle = FontStyle.Bold };

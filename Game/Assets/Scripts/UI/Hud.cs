@@ -2700,6 +2700,14 @@ namespace VividOfFade
             NumberFont.Draw(band.center, s, px, c);
         }
 
+        /// <summary>ロック中の品のマスの右下に、小さな錠の印（鞄・装備・町の一覧で共通）。</summary>
+        public static void DrawLockMark(Rect cell, Item item)
+        {
+            if (item == null || !item.Locked) return;
+            float ls = cell.width * 0.3f;
+            DrawSprite(new Rect(cell.xMax - ls - cell.width * 0.06f, cell.yMax - ls - cell.width * 0.06f, ls, ls), PixelArt.Padlock(true));
+        }
+
         public static void DrawEnhance(Rect cell, Item item)
         {
             if (item == null || item.Enhance <= 0) return;
